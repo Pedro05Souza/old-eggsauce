@@ -92,5 +92,5 @@ class CommandsCog(commands.Cog):
         
         await ctx.send(embed=embed)
 
-async def setup(bot):
-    bot.add_cog(CommandsCog(bot))
+async def setup(bot): #Since discord.py 2.0 also is an async function
+    await bot.add_cog(CommandsCog(bot))
