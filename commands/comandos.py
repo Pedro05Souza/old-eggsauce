@@ -14,11 +14,6 @@ class CommandsCog(commands.Cog):
 
 
     @commands.command()
-    async def balls(self, ctx):
-        await ctx.send("Hey doc")
-
-
-    @commands.command()
     async def changeNickname(self, ctx, User: discord.Member, apelido: str):
         if User.top_role.position <= ctx.guild.me.top_role.position:
             await User.edit(nick=apelido)
@@ -28,11 +23,6 @@ class CommandsCog(commands.Cog):
             await ctx.send(f"User {User} has higher role than you")
 
 
-    @commands.command()
-    async def mogged(self, ctx, User: discord.Member):
-            File = discord.File("mogged.png", filename="mogged.png")
-            await ctx.send(file=File)
-            await ctx.send(ctx.author.mention + " moggou " + User.mention + "!")
 
     @commands.command()
     async def momentoDeSilencio(self, ctx):
@@ -56,8 +46,9 @@ class CommandsCog(commands.Cog):
     @commands.command()
     async def implode(self, ctx):
         user = ctx.author
+        guild = ctx.me.guild
         channel = user.voice.channel
-        if user.top_role.position <= ctx.guild.me.top_role.position and channel is not None:
+        if user.id == guild.owner.id and channel is not None:
             for member in channel.members:
                 await member.move_to(None)
             
