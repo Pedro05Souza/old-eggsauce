@@ -1,5 +1,7 @@
-setup: requirements.txt
-	python3 -m venv venv
-	. venv/bin/activate && pip install -r requirements.txt
+#Setup for unix-based OS
+setup-unix: requirements.txt
+	./setup.sh
 
-
+#Setup for Windows OS
+setup-windows: requirements.txt
+	cmd /C setup.bat
