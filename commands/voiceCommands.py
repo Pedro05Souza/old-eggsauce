@@ -1,7 +1,6 @@
 # Description: Cog that contains commands that affect in some way the voice channels
 
 from discord.ext import commands
-import discord
 import os
 from dotenv import load_dotenv
 
@@ -18,19 +17,20 @@ class VoipCommands(commands.Cog):
     async def momentoDeSilencio(self, ctx):
         servidor = ctx.me.guild
         user = ctx.author
-        if user.id == servidor.owner_id or user.id in self.devs:
-            for canal in servidor.voice_channels:
-                for membro in canal.members:
-                        if canal.name == "shffgjfj":
-                                await membro.edit(mute=True)
-                        await membro.edit(mute=True)
+        if (user.id == servidor.owner_id or str(user.id) in self.devs) and user.voice.channel is not None:
+            for membro in user.voice.channel.members:
+                await membro.edit(mute = True)
+
+        await ctx.send("@everyone MOMENTO DE SILÊNCIO")
 
     @commands.command()
     async def god(self, ctx):
         user = ctx.author
-        if user.top_role.position <= ctx.guild.me.top_role.position or str(user.id) in self.devs:
+        if (user.top_role.position <= ctx.guild.me.top_role.position or str(user.id) in self.devs) and user not in self.gods:
             self.gods.append(ctx.author)
-            await ctx.send(f"{ctx.author} foi adicionado a lista de deuses")
+            await ctx.send(f"{ctx.author.mention} foi adicionado a lista de deuses", ephemeral=True)
+        elif user in self.gods:
+            await ctx.send(f"{user.mention} já é um deus", ephemeral=True)
             
 
     @commands.command()
@@ -38,7 +38,7 @@ class VoipCommands(commands.Cog):
         servidor = ctx.me.guild
         user = ctx.author
         channel = user.voice.channel #channel
-        if user.id == servidor.owner_id or user.id in self.devs and user.voice is not None and user.voice.channel is not None: 
+        if (user.id == servidor.owner_id or str(user.id) in self.devs) and user.voice is not None and user.voice.channel is not None: 
             await channel.edit(bitrate = 8000)
 
 
