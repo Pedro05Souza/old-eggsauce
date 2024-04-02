@@ -3,7 +3,7 @@ Contribution to this repository **MUST** follow all of the guidelines below. Adh
 
 
 ### GitHub
-Every new feature **MUST** be created inside a separate branch. New feature branches **MUST** be named in the following pattern: `feat/new-feature-name`.
+Every new feature **MUST** be created inside a separate branch. New feature branches **MUST** be named in the following pattern: `feat/new-feature-name`. After its successfully tested, the newly made branch should be merged with the branch `develop` to keep it up to date.    
 
 Any commit's first word **MUST** be a verb in the imperative. Some commit names that follow these guidelines are: *'Add new bot command'*, *'Create new cog for different functionality'*, etc.
 
