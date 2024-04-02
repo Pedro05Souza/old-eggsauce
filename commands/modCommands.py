@@ -40,6 +40,12 @@ class ModCommands(commands.Cog):
             await User.edit(mute=True)
             await ctx.send(f"{User.mention} foi mutado")
 
+    @commands.command()
+    async def kick(self, ctx, User: discord.Member):
+        if ctx.author.top_role.position <= ctx.guild.me.top_role.position or str(ctx.author.id) in self.devs:
+            await User.kick()
+            await ctx.send(f"{User.mention} foi kickado")
+
 
 async def setup(bot):
      await bot.add_cog(ModCommands(bot))
