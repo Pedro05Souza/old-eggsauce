@@ -1,6 +1,8 @@
 # Description: cog that contains administration and fun commands
 from discord.ext import commands
 import discord
+import os
+import random
 
 class TextCommands(commands.Cog):
 
@@ -16,9 +18,9 @@ class TextCommands(commands.Cog):
 
     @commands.command()
     async def mogged(self, ctx, User: discord.Member):
-            File = discord.File("mogged.png", filename="mogged.png")
-            await ctx.send(file=File)
-            await ctx.send(ctx.author.mention + " moggou " + User.mention + "!")
+            path = random.choice(os.listdir("images/mogged/"))
+            await ctx.send(file=discord.File("images/mogged/"+path))
+            await ctx.send(f"{User.mention} bye bye 🤫🧏‍♂️")
 
 
     async def help(self, ctx):
