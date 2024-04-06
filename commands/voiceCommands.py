@@ -20,7 +20,6 @@ class VoipCommands(commands.Cog):
         if (user.id == servidor.owner_id or str(user.id) in self.devs) and user.voice.channel is not None:
             for membro in user.voice.channel.members:
                 await membro.edit(mute = True)
-
         await ctx.send("@everyone MOMENTO DE SILÊNCIO")
 
     @commands.command()
@@ -51,6 +50,7 @@ class VoipCommands(commands.Cog):
         if member in self.gods and not before.deaf and after.deaf:
             await member.edit(deafen=False)
             print(f"{member.name} foi ensurdecido, mas era um Deus e foi desensurdecido")
+
 
 
 async def setup(bot):

@@ -21,8 +21,11 @@ class ModCommands(commands.Cog):
 
     @commands.command()
     async def purge(self, ctx, amount: int):
-        if ctx.author.top_role.position <= ctx.guild.me.top_role.position or str(ctx.author.id) in self.devs:
+        user = ctx.author
+        owner = ctx.guild.owner.id
+        if user.id == owner or str(user.id) in self.devs:
             await ctx.channel.purge(limit=amount + 1)
+    
 
     @commands.command()
     async def implode(self, ctx):
