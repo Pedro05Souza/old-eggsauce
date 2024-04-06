@@ -31,12 +31,12 @@ Both the setup commands run the `Makefile` and:
 * Creates the python virtual enviroment (venv)
 * Installs all dependencies listed on `requirements.txt`
 
-Please note that the API key nor the database.txt file are **NOT** available for use on the repo, and must be created privately in your local project directory.
+Please note that the `API key` nor the `database.txt` file are **NOT** available for use on the repo, and must be created privately in your local project directory.
 
 
 
 ## Suggestion
-A commonly faced issued with the .env file is after you set it up in your project, it may still not recognize it, in order to make our project able to run in your computer, you need to restart your Python Enviroment. If using Visual Studio code `Ctrl+Shift+P` to open the command palette, then type and select `Reload Window`.
+An issue you may encounter with the `.env` file is after you set it up in your project, it may still not recognize it, in order to make our project able to run in your computer, you need to restart your Python Enviroment. If using Visual Studio code `Ctrl+Shift+P` to open the command palette, then type and select `Reload Window`.
 
 
 
