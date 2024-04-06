@@ -13,7 +13,7 @@ class TextCommands(commands.Cog):
 
     @commands.command()
     async def balls(self, ctx):
-        await ctx.send("Hey doc")
+        await ctx.send("balls")
 
 
     @commands.command()

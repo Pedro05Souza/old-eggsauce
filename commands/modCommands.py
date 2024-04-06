@@ -24,8 +24,10 @@ class ModCommands(commands.Cog):
         user = ctx.author
         owner = ctx.guild.owner.id
         if user.id == owner or str(user.id) in self.devs:
-            await ctx.channel.purge(limit=amount + 1)
-    
+            if amount <= 25:
+                await ctx.channel.purge(limit=amount + 1)
+        else:
+            await ctx.send("Você não tem permissão para fazer isso")
 
     @commands.command()
     async def implode(self, ctx):
