@@ -17,7 +17,7 @@ class TextCommands(commands.Cog):
 
 
     @commands.command()
-    async def mogged(self, ctx, User: discord.Member):
+    async def mog(self, ctx, User: discord.Member):
             path = random.choice(os.listdir("images/mogged/"))
             await ctx.send(file=discord.File("images/mogged/"+path))
             await ctx.send(f"{User.mention} bye bye 🤫🧏‍♂️")
