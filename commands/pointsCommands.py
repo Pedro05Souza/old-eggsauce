@@ -26,11 +26,10 @@ class PointsCommands(commands.Cog):
             if User.voice is not None:
                 await self.count_points(User)
 
-    def load_Database():
+    def load_Database(self):
         with open("Database.txt", "r") as file:
             lines = file.readlines()
-            dic = {line.split(":")[0]: int(line.split(":")[1]) for line in lines}
-            return dict
+            return {line.split(":")[0]: int(line.split(":")[1]) for line in lines}
 
 
     def save_Database(self, user_id, points):
@@ -59,7 +58,7 @@ class PointsCommands(commands.Cog):
 
     async def registrarAutomatico(self, User: discord.Member):
         if(str(User.id)) in self.points:
-            print("User is already in the database.👺👺👺👺👺👺👺")
+            print("User is already in the database.👺👺👺👺👺👺👺") #Doesn't usually get here
         else:
             self.points[str(User.id)] = 0
             self.save_Database(str(User.id), 0)
