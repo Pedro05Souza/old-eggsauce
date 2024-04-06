@@ -66,7 +66,7 @@ class PointsCommands(commands.Cog):
     async def pontos(self, ctx):
         user = ctx.author   
         if str(user.id) in self.points:
-            await ctx.send(f"Você tem {self.points[str(user.id)]} pontos")
+            await ctx.send(f"Você tem {self.points[str(user.id)]} eggbux")
         else:
             await ctx.send("Você não está registrado.")        
 
@@ -87,6 +87,7 @@ class PointsCommands(commands.Cog):
                 self.points[str(User.id)] += 1
                 self.save_Database(str(User.id), self.points[str(User.id)])
                 await asyncio.sleep(5)
+                
         else:
             await self.registrarAutomatico(User)
             await self.count_points(User)
@@ -98,18 +99,23 @@ class PointsCommands(commands.Cog):
         message = "Leaderboard:\n"
         for i, (user_id, points) in enumerate(sorted_points.items()):
             user = discord.utils.get(ctx.guild.members, id=int(user_id))
-            message += f"{i+1}. {user.mention} - {points} pontos\n"
+            message += f"{i+1}. {user.mention} - {points} eggbux\n"
         await ctx.send(message)
 
     
     @commands.command()
     async def shop(self, ctx):
-        embed = discord.Embed(title="Shop", description="Compre comandos com seus pontos:", color=0xeee657)
-        embed.add_field(name="1. Moggar um usuário", value="100 pontos", inline=False)
-        embed.add_field(name="2. Balls", value="50 pontos", inline=False)
-        embed.add_field(name="3. ChangeNickname", value="200 pontos", inline=False)
-        embed.add_field(name="4. purge (deletar até 25 mensagens no chat)", value="250 pontos", inline=False)
-        embed.add_field(name="5. implode (desconectar geral do canal de voz presente)", value="300 pontos", inline=False)
+        embed = discord.Embed(title="Shop", description="Compre comandos com seus eggbux:", color=0xeee657)
+        embed.add_field(name="1. Balls", value="50 eggbux", inline=False)
+        embed.add_field(name="2. Moggar um usuário", value="100 eggbux", inline=False)
+        embed.add_field(name="3. mute (mutar um usuário)", value="150 eggbux", inline=False)
+        embed.add_field(name="4. changeNickname", value="200 eggbux", inline=False)
+        embed.add_field(name="5. purge (deletar até 25 mensagens no chat)", value="250 eggbux", inline=False)
+        embed.add_field(name="6. kick (kickar um usuário)", value="350 eggbux", inline=False)
+        embed.add_field(name="7. ban (banir um usuário)", value="450 eggbux", inline=False)
+        embed.add_field(name="8. Pardon (desbanir um usuário)", value="500 eggbux", inline=False)
+        embed.add_field(name="8. Momento De silêncio (Muta todo mundo do server)", value="500 eggbux", inline=False)
+        embed.add_field(name="9. god (Nunca é mutado por ninguém)", value="1000 eggbux", inline=False)
         await ctx.send(embed=embed)
 
 
@@ -121,7 +127,7 @@ class PointsCommands(commands.Cog):
         if str(user.id) in self.devs:
             self.points[str(User.id)] += amount
             self.save_Database(str(User.id), self.points[str(User.id)])
-            await ctx.send(f"{User.mention} recebeu {amount} pontos")
+            await ctx.send(f"{User.mention} recebeu {amount} eggbux")
         else:
             await ctx.send("Você não tem permissão para fazer isso")
 

@@ -79,5 +79,15 @@ class ModCommands(commands.Cog):
             except(discord.Forbidden):
                 await ctx.send(f"{ctx.author} não tem permissões para fazer isso")
 
+    @commands.command()
+    async def pardon(self, ctx, User: discord.Member):
+        user = ctx.author
+        owner = ctx.guild.owner.id
+        if user.id == owner or str(user.id) in self.devs:
+            await ctx.guild.unban(User)
+            await ctx.send(f"{User.mention} foi perdoado")
+        else:
+            await ctx.send("Você não tem permissão para fazer isso")
+
 async def setup(bot):
      await bot.add_cog(ModCommands(bot))
