@@ -1,6 +1,7 @@
 import asyncio
 import os
 from discord.ext import commands
+from random import randint
 from dotenv import load_dotenv
 import discord
 import asyncio
@@ -142,6 +143,19 @@ class PointsCommands(commands.Cog):
             await ctx.send("Você não tem permissão para fazer isso")
         else:
             await ctx.send("Usuário não encontrado no banco de dados")
+
+    @commands.command()
+    async def roubarPontos(self, ctx, User: discord.Member):
+        if str(ctx.author.id) in self.points and str(User.id) in self.points:
+            quantUser = self.points[str(User.id)]
+            randomInteiro = randint(0, int(quantUser/5) + 1) # 20% do total de pontos do usuário
+            self.points[str(User.id)] -= randomInteiro
+            self.points[str(ctx.author.id)] += randomInteiro
+            self.save_Database(str(User.id), self.points[str(User.id)])
+            self.save_Database(str(ctx.author.id), self.points[str(ctx.author.id)])
+            await ctx.send(f"{ctx.author.mention} roubou {randomInteiro} eggbux de {User.mention}")
+        else:
+            await ctx.send("Erro ao roubar pontos")
 
 
 async def setup(bot):   
