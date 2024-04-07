@@ -2,7 +2,7 @@ from config import mongo_client
 from config import db
 from pymongo.collection import Collection
 
-users_collection = mongo_client.db.user
+users_collection = mongo_client.db.usuario
 
 class User:
    
@@ -58,3 +58,4 @@ class User:
         except Exception as e:
             print("Erro ao buscar usuário", e)
             return None
+        
