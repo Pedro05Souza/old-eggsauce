@@ -31,38 +31,7 @@ class PointsCommands(commands.Cog):
             if User.voice is not None:
                 await self.count_points(User)
 
-    def load_Database(self):
-        with open("Database.txt", "r") as file:
-            lines = file.readlines()
-            return {line.split(":")[0]: int(line.split(":")[1]) for line in lines}
-
-
-    def save_Database(self, user_id, points):
-        lines = []
-        with open("Database.txt", "r") as file:
-            lines = file.readlines()
-
-        if any(line.split(":")[0] == user_id for line in lines):
-            with open("Database.txt", "w") as file:
-                for line in lines:
-                    if line.split(":")[0] == user_id:
-                        file.write(f"{user_id}:{points}\n")
-                    else:
-                        file.write(line)
-        else:
-            with open("Database.txt", "a") as file:
-                file.write(f"{user_id}:{points}\n")
-
-    def deleteFromDB(self, user_id):
-        with open("Database.txt", "r") as file:
-            lines = file.readlines()
-        with open("Database.txt", "w") as file:
-            for line in lines:
-                if line.split(":")[0] != user_id:   
-                    file.write(line)
-        if user_id in self.points:
-            del self.points[user_id]
-
+   
     @commands.command()
     async def pontos(self, ctx):
         user = ctx.author   
@@ -76,7 +45,6 @@ class PointsCommands(commands.Cog):
             print("User is already in the database.👺👺👺👺👺👺👺") #Doesn't usually get here
         else:
             self.points[str(User.id)] = 0
-            self.save_Database(str(User.id), 0)
             print("User registered sucessfully!🫃🫃🫃🫃🫃🫃🫃")
     
     async def count_points(self, User: discord.Member):
@@ -86,7 +54,6 @@ class PointsCommands(commands.Cog):
                 if User.voice is None:
                     break
                 self.points[str(User.id)] += 1
-                self.save_Database(str(User.id), self.points[str(User.id)])
                 await asyncio.sleep(5)
                 
         else:
@@ -126,8 +93,6 @@ class PointsCommands(commands.Cog):
             randomInteiro = randint(0, int(quantUser/5) + 1) # 20% do total de pontos do usuário
             self.points[str(User.id)] -= randomInteiro
             self.points[str(ctx.author.id)] += randomInteiro
-            self.save_Database(str(User.id), self.points[str(User.id)])
-            self.save_Database(str(ctx.author.id), self.points[str(ctx.author.id)])
             await ctx.send(f"{ctx.author.mention} roubou {randomInteiro} eggbux de {User.mention}")
         else:
             await ctx.send("Erro ao roubar pontos")
@@ -140,7 +105,6 @@ class PointsCommands(commands.Cog):
         owner = ctx.guild.owner.id
         if str(user.id) in self.devs:
             self.points[str(User.id)] += amount
-            self.save_Database(str(User.id), self.points[str(User.id)])
             await ctx.send(f"{User.mention} recebeu {amount} eggbux")
         else:
             await ctx.send("Você não tem permissão para fazer isso")
@@ -150,7 +114,6 @@ class PointsCommands(commands.Cog):
         user = ctx.author
         owner = ctx.guild.owner.id
         if str(user.id) in self.devs:
-            self.deleteFromDB(str(User.id))
             await ctx.send(f"{User.mention} foi deletado do banco de dados")
         elif str(user.id) not in self.devs:
             await ctx.send("Você não tem permissão para fazer isso")
