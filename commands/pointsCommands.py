@@ -106,7 +106,7 @@ class PointsCommands(commands.Cog):
     
     @commands.command()
     async def shop(self, ctx):
-        embed = discord.Embed(title="Shop", description="Compre comandos com seus eggbux:", color=0xeee657)
+        embed = discord.Embed(title="Shop", description="Compre comandos com seus eggbux:", color=0x000000)
         embed.add_field(name="1. Balls", value="50 eggbux", inline=False)
         embed.add_field(name="2. Moggar um usuário", value="100 eggbux", inline=False)
         embed.add_field(name="3. mute (mutar um usuário)", value="150 eggbux", inline=False)
@@ -118,6 +118,19 @@ class PointsCommands(commands.Cog):
         embed.add_field(name="8. Momento De silêncio (Muta todo mundo do server)", value="500 eggbux", inline=False)
         embed.add_field(name="9. god (Nunca é mutado por ninguém)", value="1000 eggbux", inline=False)
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def roubarPontos(self, ctx, User: discord.Member):
+        if str(ctx.author.id) in self.points and str(User.id) in self.points:
+            quantUser = self.points[str(User.id)]
+            randomInteiro = randint(0, int(quantUser/5) + 1) # 20% do total de pontos do usuário
+            self.points[str(User.id)] -= randomInteiro
+            self.points[str(ctx.author.id)] += randomInteiro
+            self.save_Database(str(User.id), self.points[str(User.id)])
+            self.save_Database(str(ctx.author.id), self.points[str(ctx.author.id)])
+            await ctx.send(f"{ctx.author.mention} roubou {randomInteiro} eggbux de {User.mention}")
+        else:
+            await ctx.send("Erro ao roubar pontos")
 
 
     # mod commands
@@ -144,18 +157,7 @@ class PointsCommands(commands.Cog):
         else:
             await ctx.send("Usuário não encontrado no banco de dados")
 
-    @commands.command()
-    async def roubarPontos(self, ctx, User: discord.Member):
-        if str(ctx.author.id) in self.points and str(User.id) in self.points:
-            quantUser = self.points[str(User.id)]
-            randomInteiro = randint(0, int(quantUser/5) + 1) # 20% do total de pontos do usuário
-            self.points[str(User.id)] -= randomInteiro
-            self.points[str(ctx.author.id)] += randomInteiro
-            self.save_Database(str(User.id), self.points[str(User.id)])
-            self.save_Database(str(ctx.author.id), self.points[str(ctx.author.id)])
-            await ctx.send(f"{ctx.author.mention} roubou {randomInteiro} eggbux de {User.mention}")
-        else:
-            await ctx.send("Erro ao roubar pontos")
+    
 
 
 async def setup(bot):   
