@@ -1,6 +1,6 @@
 # BOT Ovomaltine
 
-This is an open source Discord bot project made as personal project by [Alexius Dias](github.com/AlexiusMD) and [Pedro Souza](github.com/Pedro05Souza). This bot's purpose was made for a friends-only server with the intention of gaining points during calls in order to buy custom and default commands, such as ban, kick, momentDeSilencio and many more.
+This is an open source Discord bot project made as a personal project by [Alexius Dias](github.com/AlexiusMD) and [Pedro Souza](github.com/Pedro05Souza). This bot's purpose was made for a friends-only server with the intention of gaining points during calls in order to buy custom and default commands, such as ban, kick, momentDeSilencio and many more.
 
 ## How to run this repository locally
 

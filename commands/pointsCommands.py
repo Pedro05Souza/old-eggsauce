@@ -66,7 +66,7 @@ class PointsCommands(commands.Cog):
     async def pontos(self, ctx):
         user = ctx.author   
         if str(user.id) in self.points:
-            await ctx.send(f"Você tem {self.points[str(user.id)]} eggbux")
+            await ctx.send(f"Você tem {self.points[str(user.id)]} eggbux 💸")
         else:
             await ctx.send("Você não está registrado.")        
 

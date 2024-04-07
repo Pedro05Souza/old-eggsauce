@@ -12,7 +12,7 @@ class ModCommands(commands.Cog):
     
     @commands.command()
     async def changeNickname(self, ctx, User: discord.Member, *, apelido: str):
-        if ctx.author.top_role.postion <= ctx.guild.me.top_role.position or str(ctx.author.id) in self.devs:
+        if ctx.author.top_role.position <= ctx.guild.me.top_role.position or str(ctx.author.id) in self.devs:
             await User.edit(nick=apelido)
             await ctx.send(f"Nickname changed to {apelido} for {User}")
 
