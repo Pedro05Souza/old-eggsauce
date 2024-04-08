@@ -1,7 +1,7 @@
 from discord.ext import commands
 from random import randint
 import discord
-from db import Usuario
+from db.Usuario import Usuario
 import asyncio
 
 class PointsCommands(commands.Cog):
@@ -40,15 +40,28 @@ class PointsCommands(commands.Cog):
 
     def registrarAutomatico(self, User: discord.Member):
         if Usuario.read(User.id):
-            print("User is already in the database.👺👺👺👺👺👺👺")
+            return
         else:
             Usuario.create(User.id, 0)
-            print("User registered sucessfully!🫃🫃🫃🫃🫃🫃🫃")
 
+        
+    @commands.command()
+    async def pontos(self, ctx, User: discord.Member = None):
+        if User is None:
+            await self.pontos(ctx, ctx.author)
+        elif Usuario.read(User.id):
+            await ctx.send(f"{User.mention} tem " + str(Usuario.read(User.id)["points"]) + " eggbux :money_with_wings:")
+        else:
+            await ctx.send(f"{User.mention} não tem eggbux!")
+
+    @commands.command()
+    async def verPontos(self, ctx, User: discord.Member):
+        await self.pontos(ctx, User)
     
+
     @commands.command()
     async def shop(self, ctx):
-        embed = discord.Embed(title="Shop", description="Compre comandos com seus eggbux:", color=0x000000)
+        embed = discord.Embed(title="Shop", description="Compre comandos com seus eggbux:", color=0x00ff00)
         embed.add_field(name="1. Balls", value="50 eggbux", inline=False)
         embed.add_field(name="2. Moggar um usuário", value="100 eggbux", inline=False)
         embed.add_field(name="3. mute (mutar um usuário)", value="150 eggbux", inline=False)

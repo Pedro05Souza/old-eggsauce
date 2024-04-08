@@ -1,10 +1,10 @@
-from config import mongo_client
-from config import db
+from db.dbConfig import mongo_client
+from db.dbConfig import db
 from pymongo.collection import Collection
 
 users_collection = mongo_client.db.usuario
 
-class User:
+class Usuario:
    
     @staticmethod
     def create(user_id : int, points : int):
@@ -42,7 +42,6 @@ class User:
             user_data = users_collection.find_one({"user_id" : user_id})
             if user_data:
                 users_collection.update_one({"user_id": user_id}, {"$set": {"points": points}})
-                print("Pontos do usuário atualizados com sucesso")
         except Exception as e:
             print("Erro ao atualizar os pontos do usuário", e)
         
