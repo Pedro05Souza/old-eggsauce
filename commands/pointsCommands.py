@@ -4,6 +4,8 @@ import discord
 from db.Usuario import Usuario
 import asyncio
 from tools.pricing import pricing
+from tools.pagination import PaginationView
+from tools.pricing import Prices
 
 class PointsCommands(commands.Cog):
 
@@ -19,7 +21,10 @@ class PointsCommands(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, User: discord.Member, before, after):
-        if Usuario.read(User.id) and not User.bot and before.channel is None and after.channel is not None:
+        if User.bot:
+            return
+
+        if Usuario.read(User.id) and before.channel is None and after.channel is not None:
             await self.count_points(User)
         elif not Usuario.read(User.id) and before.channel is None and after.channel is not None:
             self.registrarAutomatico(User)
@@ -27,6 +32,9 @@ class PointsCommands(commands.Cog):
                 await self.count_points(User)
 
     async def count_points(self, User: discord.Member):
+        if User.bot:
+            return
+
         if Usuario.read(User.id):
             while True:
                 User = discord.utils.get(self.bot.get_all_members(), id=User.id)
@@ -63,32 +71,45 @@ class PointsCommands(commands.Cog):
 
     @commands.command()
     async def shop(self, ctx):
-        embed = discord.Embed(title="Shop", description="Compre comandos com seus eggbux:", color=0x00ff00)
-        embed.add_field(name="1. Balls", value="50 eggbux", inline=False)
-        embed.add_field(name="2. Mog", value="100 eggbux", inline=False)
-        embed.add_field(name="3. mute (mutar um usuário)", value="150 eggbux", inline=False)
-        embed.add_field(name="4. changeNickname", value="200 eggbux", inline=False)
-        embed.add_field(name="5. purge (deletar até 25 mensagens no chat)", value="250 eggbux", inline=False)
-        embed.add_field(name="6. kick (kickar um usuário)", value="350 eggbux", inline=False)
-        embed.add_field(name="7. ban (banir um usuário)", value="450 eggbux", inline=False)
-        embed.add_field(name="8. roubarPontos (Rouba no máximo 20%% da fortuna de eggbux de um usuário)", value="500 eggbux", inline=False)
-        embed.add_field(name="9. Pardon (desbanir um usuário)", value="500 eggbux", inline=False)
-        embed.add_field(name="10. Momento De silêncio (Muta todo mundo do server)", value="500 eggbux", inline=False)
-        embed.add_field(name="11. implode (Desconecta geral da call)", value="750 eggbux", inline=False)
-        embed.add_field(name= "12. explode (Deleta a call)", value="850 eggbux", inline=False)
-        embed.add_field(name="12. god (Nunca é mutado por ninguém)", value="1000 eggbux", inline=False)
-        await ctx.send(embed=embed)
+
+        data = []
+        for member in Prices:
+            data.append({"title": member.name, "value": str(member.value) + " eggbux"})
+        
+        view = PaginationView(data)
+        # embed = discord.Embed(title="Shop", description="Compre comandos com seus eggbux:", color=0x00ff00)
+        # embed.add_field(name="1. Balls", value="50 eggbux", inline=False)
+        # embed.add_field(name="2. Mog", value="100 eggbux", inline=False)
+        # embed.add_field(name="3. mute (mutar um usuário)", value="150 eggbux", inline=False)
+        # embed.add_field(name="4. changeNickname", value="200 eggbux", inline=False)
+        # embed.add_field(name="5. purge (deletar até 25 mensagens no chat)", value="250 eggbux", inline=False)
+        # embed.add_field(name="6. kick (kickar um usuário)", value="350 eggbux", inline=False)
+        # embed.add_field(name="7. ban (banir um usuário)", value="450 eggbux", inline=False)
+        # embed.add_field(name="8. roubarPontos (Rouba no máximo 20%% da fortuna de eggbux de um usuário)", value="500 eggbux", inline=False)
+        # embed.add_field(name="9. Pardon (desbanir um usuário)", value="500 eggbux", inline=False)
+        # embed.add_field(name="10. Momento De silêncio (Muta todo mundo do server)", value="500 eggbux", inline=False)
+        # embed.add_field(name="11. implode (Desconecta geral da call)", value="750 eggbux", inline=False)
+        # embed.add_field(name= "12. explode (Deleta a call)", value="850 eggbux", inline=False)
+        # embed.add_field(name="12. god (Nunca é mutado por ninguém)", value="1000 eggbux", inline=False)
+        await view.send(ctx, title="Shop", description="Compre comandos com seus eggbux:", color=0x00ff00)
 
 
     @commands.command()
     async def leaderboard(self, ctx):
         users = Usuario.readAll()
         users = sorted(users, key=lambda x: x["points"], reverse=True)
-        embed = discord.Embed(title="Leaderboard", description="Ranking de eggbux", color=0x00ff00)
+        #embed = discord.Embed(title="Leaderboard", description="Ranking de eggbux", color=0x00ff00)
+        data = []
         for i in users:
             member = discord.utils.get(self.bot.get_all_members(), id=i["user_id"])
-            embed.add_field(name=member.name, value=i["points"], inline=False)
-        await ctx.send(embed=embed)
+            data.append({"title": member.name, "value": i["points"]})
+            
+        view = PaginationView(data)
+        await view.send(ctx, title="Leaderboard", description="Ranking de eggbux", color=0x00ff00)
+        #for i in users:
+            #member = discord.utils.get(self.bot.get_all_members(), id=i["user_id"])
+            #embed.add_field(name=member.name, value=i["points"], inline=False)
+        #await ctx.send(embed=embed)
 
 
     @commands.command()
