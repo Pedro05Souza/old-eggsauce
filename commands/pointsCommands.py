@@ -74,7 +74,7 @@ class PointsCommands(commands.Cog):
 
         data = []
         for member in Prices:
-            data.append({"title": member.name, "value": member.value + " eggbux"})
+            data.append({"title": member.name, "value": str(member.value) + " eggbux"})
         
         view = PaginationView(data)
         # embed = discord.Embed(title="Shop", description="Compre comandos com seus eggbux:", color=0x00ff00)
