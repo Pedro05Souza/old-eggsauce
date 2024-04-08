@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import discord
 import os
 import asyncio
-
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 bot = commands.Bot(command_prefix="!", intents=Intents.all())
