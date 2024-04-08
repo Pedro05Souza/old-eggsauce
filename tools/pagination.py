@@ -5,6 +5,11 @@ class PaginationView(discord.ui.View):
 
 
     def __init__(self, data, sep : int = 5):
+        """
+        PaginationView constructor
+        param - data: dictionary with ["title"]:["value"]
+        param - sep: amount of data per page (Default = 5)
+        """
         super().__init__()
         self.current_page = 1
         self.sep = sep
@@ -14,6 +19,13 @@ class PaginationView(discord.ui.View):
         self.color = discord.Color.default()
 
     async def send(self, ctx, title= "List Page:", description=None, color=discord.Color.default()):
+        """
+        Send the embed to the context
+        param - ctx: context of the message (bot)
+        param - title: title of the embed (Default = "List Page:")
+        param - description: description of the embed (Default = None)
+        param - color: color of the embed (Default = discord.Color.default() #gray)
+        """
         self.title = title
         self.description = description
         self.color = color
