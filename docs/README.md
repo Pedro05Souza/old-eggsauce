@@ -1,6 +1,6 @@
 # BOT Ovomaltine:
 
-This is an open source Discord bot project made as a personal project by [Alexius Dias](github.com/AlexiusMD) and [Pedro Souza](github.com/Pedro05Souza). This bot's purpose was made for a friends-only server with the intention of gaining a currency named as `eggbux` during calls in order to buy custom and default commands, such as ban, kick, momentDeSilencio and many more. At the current moment the rate of eggbux is one per five seconds of call time.
+This is an open source Discord bot project made as a personal project by [Alexius Dias](github.com/AlexiusMD) and [Pedro Souza](github.com/Pedro05Souza). This bot's purpose was made for a friends-only server with the intention of gaining a currency named as `eggbux` during calls in order to buy custom and default commands, such as ban, kick, momentDeSilencio and many more. At the current moment the rate of eggbux is one per five seconds of call time. This project has built-in support for MongoDB.
 
 ## How to run this repository locally:
 
@@ -35,8 +35,21 @@ Please note that the `API key` nor the `database.txt` file are **NOT** available
 
 
 
-## Suggestion:
-An issue you may encounter with the `.env` file is after you set it up in your project, it may still not recognize it, in order to make our project able to run in your computer, you need to restart your Python Enviroment. If using Visual Studio code `Ctrl+Shift+P` to open the command palette, then type and select `Reload Window`.
+## Known Issues (Windows):
+This topic is for known issues that happened with this project and a suggestion on how fix each one of them. If you happen to find any more issues that aren't here message the developers and let us know!
+
+An issue you may encounter with the `.env` file is after you set it up in your project, your IDE may still not recognize it, in order to make our project able to run in your computer, you need to restart your Python Enviroment. If using Visual Studio code `Ctrl+Shift+P` to open the command palette, then type and select `Reload Window`.
+
+Another issue that in case you encounter is involving your virtual enviroment. If you try to run `make setup-windows` and for some reason it doesn't locate the 'requirements.txt` file in your directory, it can possible be related to this problem. To fix this you need to first remove the current enviroment. In your powershell terminal, type the following command:
+
+```
+rm -r "directorypathhere"
+```
+If sucessful, recreate the enviroment. 
+```
+python -m venv venv
+```
+If sucessful execute the make setup command again.
 
 ## Commands:
 For informational purposes, every command starts with `!`, so in this list, it will be implicity used.
@@ -49,12 +62,12 @@ As the name itself says, it randomizes between 8 images present in the project, 
 ```
 mute @User
 ```
-Self-explanatory.
+Mutes the user who tagged.
 
 ```
-ChangeNickname @User @NICKNAME_HERE
+ChangeNickname @User NICKNAME_HERE
 ```
-Self-explanatory.
+Change the nickname of the user.
 
 ```
 purge @amount
@@ -64,17 +77,17 @@ Deletes messages from the chat. The limit for safety reasons is currently set at
 ```
 kick @User
 ```
-Self-explanatory.
+Kick the user.
 
 ```
 ban @User
 ```
-Self-explanatory.
+Bans the user.
 
 ```
 Pardon @User
 ```
-self-explanatory.
+Unbans the user.
 
 ```
 momentDeSilencio
