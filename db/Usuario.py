@@ -58,3 +58,11 @@ class Usuario:
             print("Erro ao buscar usuário", e)
             return None
         
+    @staticmethod
+    def readAll() -> list:
+        try:
+            users = users_collection.find()
+            return users
+        except Exception as e:
+            print("Erro ao buscar usuários", e)
+            return None

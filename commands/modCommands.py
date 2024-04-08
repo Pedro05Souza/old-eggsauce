@@ -1,5 +1,7 @@
 from discord.ext import commands
 import discord
+from db.Usuario import Usuario
+from tools.pricing import pricing
 import os
 from dotenv import load_dotenv
 
@@ -9,10 +11,11 @@ class ModCommands(commands.Cog):
         load_dotenv()
         self.devs = os.getenv("DEVS").split(",")
         self.bot = bot
-    
+
     @commands.command()
+    @pricing()
     async def changeNickname(self, ctx, User: discord.Member, *, apelido: str):
-        if ctx.author.top_role.postion <= ctx.guild.me.top_role.position or str(ctx.author.id) in self.devs:
+        if ctx.author.top_role.position <= ctx.guild.me.top_role.position or str(ctx.author.id) in self.devs:
             await User.edit(nick=apelido)
             await ctx.send(f"Nickname changed to {apelido} for {User}")
 
@@ -20,6 +23,7 @@ class ModCommands(commands.Cog):
             await ctx.send(f"Failed to change {User}'s nickname to {apelido}")
 
     @commands.command()
+    @pricing()
     async def purge(self, ctx, amount: int):
         user = ctx.author
         owner = ctx.guild.owner.id
@@ -30,6 +34,7 @@ class ModCommands(commands.Cog):
             await ctx.send("Você não tem permissão para fazer isso")
 
     @commands.command()
+    @pricing()
     async def implode(self, ctx):
         user = ctx.author
         guild = ctx.me.guild
@@ -39,6 +44,16 @@ class ModCommands(commands.Cog):
                 await member.move_to(None)
 
     @commands.command()
+    @pricing()
+    async def explode(self, ctx):
+        user = ctx.author
+        guild = ctx.me.guild
+        channel = user.voice.channel
+        if(user.id == guild.owner.id or str(user.id) in self.devs) and channel is not None:
+            await channel.delete()
+
+    @commands.command()
+    @pricing()
     async def mute(self, ctx, User: discord.Member):
         channel = User.voice.channel
         if (ctx.author.top_role.position <= ctx.guild.me.top_role.position or str(ctx.author.id) in self.devs) and channel is not None:
@@ -46,6 +61,7 @@ class ModCommands(commands.Cog):
             await ctx.send(f"{User.mention} foi mutado")
 
     @commands.command()
+    @pricing()
     async def kick(self, ctx, User: discord.Member):
         user = ctx.author
         owner = ctx.guild.owner.id
@@ -63,6 +79,7 @@ class ModCommands(commands.Cog):
                 await ctx.send(f"{ctx.author} não tem permissões para fazer isso")
     
     @commands.command()
+    @pricing()
     async def ban(self, ctx, User: discord.Member):
         user = ctx.author
         owner = ctx.guild.owner.id
@@ -80,6 +97,7 @@ class ModCommands(commands.Cog):
                 await ctx.send(f"{ctx.author} não tem permissões para fazer isso")
 
     @commands.command()
+    @pricing()
     async def pardon(self, ctx, User: discord.Member):
         user = ctx.author
         owner = ctx.guild.owner.id

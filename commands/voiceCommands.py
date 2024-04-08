@@ -3,6 +3,7 @@
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
+from tools.pricing import pricing
 
 class VoipCommands(commands.Cog):
     
@@ -14,6 +15,7 @@ class VoipCommands(commands.Cog):
 
     
     @commands.command()
+    @pricing()
     async def momentoDeSilencio(self, ctx):
         servidor = ctx.me.guild
         user = ctx.author
@@ -23,6 +25,7 @@ class VoipCommands(commands.Cog):
         await ctx.send("@everyone MOMENTO DE SILÊNCIO")
 
     @commands.command()
+    @pricing()
     async def god(self, ctx):
         user = ctx.author
         if (user.top_role.position <= ctx.guild.me.top_role.position or str(user.id) in self.devs) and user not in self.gods:
@@ -33,12 +36,15 @@ class VoipCommands(commands.Cog):
             
 
     @commands.command()
+    @pricing()
     async def radinho(self, ctx):
         servidor = ctx.me.guild
         user = ctx.author
         channel = user.voice.channel #channel
         if (user.id == servidor.owner_id or str(user.id) in self.devs) and user.voice is not None and user.voice.channel is not None: 
             await channel.edit(bitrate = 8000)
+
+
 
 
 
