@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord import Message
 from random import randint
 import discord
 from db.Usuario import Usuario
@@ -14,6 +15,7 @@ class PointsCommands(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        self.drop_eggbux_task = self.bot.loop.create_task(self.drop_periodically())
         for guild in self.bot.guilds:
             for member in guild.members:
                 if member.voice is not None:
@@ -111,6 +113,28 @@ class PointsCommands(commands.Cog):
             #embed.add_field(name=member.name, value=i["points"], inline=False)
         #await ctx.send(embed=embed)
 
+    async def drop_eggbux(self):
+        chance = randint(1, 100)
+        channel = self.bot.get_channel(1225289999608582207)
+        if chance >= 80:  # 10% de chance de dropar
+            quantEgg = randint(1, 1250)
+            await channel.send(f"uma bolsa com {quantEgg} foi dropada no chat! :money_with_wings:. Digite !claim para pegar")
+            try:
+                Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "!claim" and message.channel == channel), timeout=60)
+                if Usuario.read(Message.author.id):
+                    Usuario.update(Message.author.id, Usuario.read(Message.author.id)["points"] + quantEgg)
+                    await channel.send(f"{Message.author.mention} pegou {quantEgg} eggbux")
+                else:
+                    Usuario.create(Message.author.id, quantEgg)
+                    await channel.send(f"{Message.author.mention} pegou {quantEgg} eggbux")
+            except asyncio.TimeoutError:
+                await channel.send(f"A bolsa com {quantEgg} eggbux foi perdida. :cry:")
+
+    async def drop_periodically(self):
+        while True:
+            await self.drop_eggbux()
+            await asyncio.sleep(1000)
+
 
     @commands.command()
     @pricing()
@@ -140,8 +164,20 @@ class PointsCommands(commands.Cog):
             else:
                 await ctx.send("Você não tem permissão para fazer isso")
 
-        
+    @commands.command()
+    async def removePontos(self, ctx, amount: int, User: discord.Member = None):
+        if User is None:
+            User = ctx.author
+            Usuario.update(User.id, Usuario.read(User.id)["points"] - amount)
+            await ctx.send(f"{User.mention} perdeu {amount} eggbux")
+        else:
+            if Usuario.read(User.id):
+                Usuario.update(User.id, Usuario.read(User.id)["points"] - amount)
+                await ctx.send(f"{User.mention} perdeu {amount} eggbux")
+            else:
+                await ctx.send("Você não tem permissão para fazer isso")
 
+        
     @commands.command()
     async def deleteDB(self, ctx,  User: discord.Member):
         if Usuario.read(User):
