@@ -116,7 +116,7 @@ class PointsCommands(commands.Cog):
     async def drop_eggbux(self):
         chance = randint(1, 100)
         channel = self.bot.get_channel(1225289999608582207)
-        if chance >= 80:  # 10% de chance de dropar
+        if chance <= 20:  # 20% de chance de dropar
             quantEgg = randint(1, 1250)
             await channel.send(f"uma bolsa com {quantEgg} foi dropada no chat! :money_with_wings:. Digite !claim para pegar")
             try:
