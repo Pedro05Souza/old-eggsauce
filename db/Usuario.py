@@ -66,3 +66,5 @@ class Usuario:
         except Exception as e:
             print("Erro ao buscar usuários", e)
             return None
+        
+

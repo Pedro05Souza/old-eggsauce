@@ -115,10 +115,10 @@ class PointsCommands(commands.Cog):
 
     async def drop_eggbux(self):
         chance = randint(1, 100)
-        channel = self.bot.get_channel(1225289999608582207)
+        channel = self.bot.get_channel(1109839394598289458)
         if chance <= 20:  # 20% de chance de dropar
-            quantEgg = randint(1, 1250)
-            await channel.send(f"uma bolsa com {quantEgg} foi dropada no chat! :money_with_wings:. Digite !claim para pegar")
+            quantEgg = randint(1, 1250) 
+            await channel.send(f"uma bolsa com {quantEgg} eggbux foi dropada no chat! :money_with_wings:. Digite !claim para pegar")
             try:
                 Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "!claim" and message.channel == channel), timeout=60)
                 if Usuario.read(Message.author.id):
@@ -134,6 +134,18 @@ class PointsCommands(commands.Cog):
         while True:
             await self.drop_eggbux()
             await asyncio.sleep(1000)
+
+    @commands.command()
+    async def doarPontos(self, ctx, User:discord.Member, amount: int):
+        if Usuario.read(ctx.author.id) and Usuario.read(User.id):
+            if Usuario.read(ctx.author.id)["points"] >= amount:
+                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount)
+                Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
+                await ctx.send(f"{ctx.author.mention} doou {amount} eggbux para {User.mention}")
+            else:
+                await ctx.send(f"{ctx.author.mention} você não tem eggbux suficiente para fazer essa doação")
+        else:
+            await ctx.send("Você não tem permissão para fazer isso")
 
 
     @commands.command()
