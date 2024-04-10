@@ -1,4 +1,5 @@
 # Description: cog that contains administration and fun commands
+import asyncio
 from discord.ext import commands
 import discord
 import os
@@ -24,6 +25,18 @@ class TextCommands(commands.Cog):
             path = random.choice(os.listdir("images/mogged/"))
             await ctx.send(file=discord.File("images/mogged/"+path))
             await ctx.send(f"{User.mention} bye bye 🤫🧏‍♂️")
+
+    @commands.command()
+    async def duelo(self, ctx, User: discord.Member):
+        await ctx.send(f"{ctx.author.mention} desafiou {User.mention} para um duelo!")
+        await ctx.send(f"{User.mention} aceita o desafio?")
+        self.bot.wait_for('message', check=lambda message: message.author == User, timeout=60)
+        try:
+            await ctx.send(f"{User.mention} aceitou o desafio!")
+            # falta implementar: Ideia cada membro especial do server tem um ataque customizado
+            # exemplo: Cruz: bankai
+        except asyncio.TimeoutError:
+            await ctx.send(f"{User.mention} foi um cabaço e não aceitou o desafio.")
 
 
     @commands.command()

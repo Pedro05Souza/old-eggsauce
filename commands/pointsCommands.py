@@ -2,6 +2,8 @@ from discord.ext import commands
 from random import randint
 import discord
 from db.Usuario import Usuario
+import os
+from dotenv import load_dotenv
 import asyncio
 from tools.pricing import pricing
 from tools.pagination import PaginationView
@@ -113,8 +115,10 @@ class PointsCommands(commands.Cog):
         #await ctx.send(embed=embed)
 
     async def drop_eggbux(self):
+        load_dotenv()
+        channelEnv = os.getenv("CHANNEL_ID")
+        channel = self.bot.get_channel(int(channelEnv))
         chance = randint(1, 100)
-        channel = self.bot.get_channel(1109839394598289458)
         if chance <= 20:  # 20% de chance de dropar
             quantEgg = randint(1, 500) 
             await channel.send(f"uma bolsa com {quantEgg} eggbux foi dropada no chat! :money_with_wings:. Digite !claim para pegar, lembrando você tem 5 minutos para pegar!")
@@ -128,6 +132,7 @@ class PointsCommands(commands.Cog):
                     await channel.send(f"{Message.author.mention} pegou {quantEgg} eggbux")
             except asyncio.TimeoutError:
                 await channel.send(f"A bolsa com {quantEgg} eggbux foi perdida. :cry:")
+    
 
     async def drop_periodically(self):
         while True:
@@ -203,8 +208,6 @@ class PointsCommands(commands.Cog):
         else:
             ctx.send(f"{User} não está registrado no Banco de Dados!")
 
-
-            
 async def setup(bot):   
     await bot.add_cog(PointsCommands(bot))
             
