@@ -6,6 +6,7 @@ from discord.ext import commands
 class Prices(Enum):
     balls = 50
     mog = 100
+    radinho = 125
     mute = 150
     changeNickname = 200
     purge = 250
@@ -13,10 +14,10 @@ class Prices(Enum):
     ban = 450
     pardon = 500
     momentoDeSilencio = 500
+    roubarPontos = 500
     implode = 750
     explode = 850
     god = 1000
-    roubarPontos = 500
 
 def verificar_pontos(User: discord.Member, comando):
     price = Prices[comando].value

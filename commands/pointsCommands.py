@@ -1,5 +1,4 @@
 from discord.ext import commands
-from discord import Message
 from random import randint
 import discord
 from db.Usuario import Usuario
@@ -117,10 +116,10 @@ class PointsCommands(commands.Cog):
         chance = randint(1, 100)
         channel = self.bot.get_channel(1109839394598289458)
         if chance <= 20:  # 20% de chance de dropar
-            quantEgg = randint(1, 1250) 
-            await channel.send(f"uma bolsa com {quantEgg} eggbux foi dropada no chat! :money_with_wings:. Digite !claim para pegar")
+            quantEgg = randint(1, 500) 
+            await channel.send(f"uma bolsa com {quantEgg} eggbux foi dropada no chat! :money_with_wings:. Digite !claim para pegar, lembrando você tem 5 minutos para pegar!")
             try:
-                Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "!claim" and message.channel == channel), timeout=60)
+                Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "!claim" and message.channel == channel), timeout=300)
                 if Usuario.read(Message.author.id):
                     Usuario.update(Message.author.id, Usuario.read(Message.author.id)["points"] + quantEgg)
                     await channel.send(f"{Message.author.mention} pegou {quantEgg} eggbux")
@@ -138,7 +137,9 @@ class PointsCommands(commands.Cog):
     @commands.command()
     async def doarPontos(self, ctx, User:discord.Member, amount: int):
         if Usuario.read(ctx.author.id) and Usuario.read(User.id):
-            if Usuario.read(ctx.author.id)["points"] >= amount:
+            if ctx.author.id == User.id:
+                await ctx.send("Você não pode doar para si mesmo")
+            elif Usuario.read(ctx.author.id)["points"] >= amount:
                 Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount)
                 Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
                 await ctx.send(f"{ctx.author.mention} doou {amount} eggbux para {User.mention}")
@@ -147,13 +148,15 @@ class PointsCommands(commands.Cog):
         else:
             await ctx.send("Você não tem permissão para fazer isso")
 
-
     @commands.command()
     @pricing()
     async def roubarPontos(self, ctx, User: discord.Member):
         chance  = randint(0, 100)
         if Usuario.read(ctx.author.id) and Usuario.read(User.id):
-            if chance >= 10: # 10% de chance de falhar
+            if ctx.author.id == User.id:
+                await ctx.send("Você não pode roubar de si mesmo")
+                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + Prices.roubarPontos.value)
+            elif chance >= 10: # 10% de chance de falhar
                 quantUser = Usuario.read(User.id)["points"]
                 randomInteiro = randint(0, int(quantUser/5) + 1) # 20% do total de pontos do usuário
                 Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro)
@@ -161,6 +164,9 @@ class PointsCommands(commands.Cog):
                 await ctx.send(f"{ctx.author.mention} roubou {randomInteiro} eggbux de {User.mention}")
             else:
                 await ctx.send(f"{ctx.author.mention} tentou roubar {User.mention}, mas falhou miseravelmente")
+        else:
+            await ctx.send("Você não tem permissão para fazer isso")
+            Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + Prices.roubarPontos.value)
 
     # mod commands
     @commands.command()

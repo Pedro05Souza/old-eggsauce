@@ -1,9 +1,10 @@
 # Description: Cog that contains commands that affect in some way the voice channels
 
 from discord.ext import commands
+from db.Usuario import Usuario
 import os
 from dotenv import load_dotenv
-from tools.pricing import pricing
+from tools.pricing import pricing, Prices
 
 class VoipCommands(commands.Cog):
     
@@ -19,16 +20,18 @@ class VoipCommands(commands.Cog):
     async def momentoDeSilencio(self, ctx):
         servidor = ctx.me.guild
         user = ctx.author
-        if (user.id == servidor.owner_id or str(user.id) in self.devs) and user.voice.channel is not None:
+        if user.voice.channel is not None:
             for membro in user.voice.channel.members:
                 await membro.edit(mute = True)
-        await ctx.send("@everyone MOMENTO DE SILÊNCIO")
+        else:
+            await ctx.send("Você não está em um canal de voz.")
+            Usuario.update(user.id, Usuario.read(user.id)["points"] + Prices.momentoDeSilencio.value)
 
     @commands.command()
     @pricing()
     async def god(self, ctx):
         user = ctx.author
-        if (user.top_role.position <= ctx.guild.me.top_role.position or str(user.id) in self.devs) and user not in self.gods:
+        if user not in self.gods:
             self.gods.append(ctx.author)
             await ctx.send(f"{ctx.author.mention} foi adicionado a lista de deuses", ephemeral=True)
         elif user in self.gods:
@@ -41,10 +44,11 @@ class VoipCommands(commands.Cog):
         servidor = ctx.me.guild
         user = ctx.author
         channel = user.voice.channel #channel
-        if (user.id == servidor.owner_id or str(user.id) in self.devs) and user.voice is not None and user.voice.channel is not None: 
+        if user.voice.channel is not None: 
             await channel.edit(bitrate = 8000)
-
-
+        else:
+            await ctx.send("Você não está em um canal de voz.")
+            Usuario.update(user.id, Usuario.read(user.id)["points"] + Prices.radinho.value)
 
 
 
