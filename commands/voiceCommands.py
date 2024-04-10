@@ -50,8 +50,6 @@ class VoipCommands(commands.Cog):
             await ctx.send("Você não está em um canal de voz.")
             Usuario.update(user.id, Usuario.read(user.id)["points"] + Prices.radinho.value)
 
-
-
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if member in self.gods and not before.mute and after.mute:

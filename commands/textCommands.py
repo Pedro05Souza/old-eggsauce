@@ -28,15 +28,22 @@ class TextCommands(commands.Cog):
 
     @commands.command()
     async def duelo(self, ctx, User: discord.Member):
-        await ctx.send(f"{ctx.author.mention} desafiou {User.mention} para um duelo!")
-        await ctx.send(f"{User.mention} aceita o desafio?")
-        self.bot.wait_for('message', check=lambda message: message.author == User, timeout=60)
-        try:
-            await ctx.send(f"{User.mention} aceitou o desafio!")
-            # falta implementar: Ideia cada membro especial do server tem um ataque customizado
-            # exemplo: Cruz: bankai
-        except asyncio.TimeoutError:
-            await ctx.send(f"{User.mention} foi um cabaço e não aceitou o desafio.")
+        if User.bot:
+            await ctx.send("Você não pode desafiar um bot.")
+            return
+        elif User == ctx.author:
+            await ctx.send("Você não pode desafiar a si mesmo.")
+            return
+        else:
+            await ctx.send(f"{ctx.author.mention} desafiou {User.mention} para um duelo!")
+            await ctx.send(f"{User.mention} aceita o desafio?")
+            await self.bot.wait_for('message', check=lambda message: message.author == User and message.content == "!aceitar", timeout=10)
+            try:
+                await ctx.send(f"{User.mention} aceitou o desafio!")
+                # falta implementar: Ideia cada membro especial do server tem um ataque customizado
+                # exemplo: Cruz: bankai
+            except Exception as e:
+                await ctx.send(f"{User.mention} foi um cabaço e não aceitou o desafio.")
 
 
     @commands.command()

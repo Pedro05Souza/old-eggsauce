@@ -10,13 +10,13 @@ class Prices(Enum):
     mute = 150
     changeNickname = 200
     purge = 250
-    kick = 350
-    ban = 450
     pardon = 500
     momentoDeSilencio = 500
     roubarPontos = 500
     implode = 750
     explode = 850
+    kick = 850
+    ban = 950
     god = 1000
 
 def verificar_pontos(User: discord.Member, comando):
