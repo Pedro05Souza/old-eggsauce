@@ -27,6 +27,9 @@ def verificar_pontos(User: discord.Member, comando):
     else:
         return False
 
+async def refund(User: discord.Member, ctx):
+    price = Prices[ctx.command.name].value
+    await Usuario.update(User.id, Usuario.read(User.id)["points"] + price)
 
 def pricing():
     async def predicate(ctx):

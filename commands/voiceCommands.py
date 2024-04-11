@@ -4,7 +4,7 @@ from discord.ext import commands
 from db.Usuario import Usuario
 import os
 from dotenv import load_dotenv
-from tools.pricing import pricing, Prices
+from tools.pricing import pricing, Prices, refund
 
 class VoipCommands(commands.Cog):
     
@@ -25,7 +25,7 @@ class VoipCommands(commands.Cog):
                 await membro.edit(mute = True)
         else:
             await ctx.send("Você não está em um canal de voz.")
-            Usuario.update(user.id, Usuario.read(user.id)["points"] + Prices.momentoDeSilencio.value)
+            await refund(user, ctx)
 
     @commands.command()
     @pricing()
@@ -36,6 +36,7 @@ class VoipCommands(commands.Cog):
             await ctx.send(f"{ctx.author.mention} foi adicionado a lista de deuses", ephemeral=True)
         elif user in self.gods:
             await ctx.send(f"{user.mention} já é um deus", ephemeral=True)
+            await refund(user, ctx)
             
 
     @commands.command()
@@ -48,7 +49,7 @@ class VoipCommands(commands.Cog):
             await channel.edit(bitrate = 8000)
         else:
             await ctx.send("Você não está em um canal de voz.")
-            Usuario.update(user.id, Usuario.read(user.id)["points"] + Prices.radinho.value)
+            await refund(user, ctx)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):

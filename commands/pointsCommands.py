@@ -5,9 +5,8 @@ from db.Usuario import Usuario
 import os
 from dotenv import load_dotenv
 import asyncio
-from tools.pricing import pricing
+from tools.pricing import pricing, Prices, refund
 from tools.pagination import PaginationView
-from tools.pricing import Prices
 
 class PointsCommands(commands.Cog):
 
@@ -151,7 +150,7 @@ class PointsCommands(commands.Cog):
                 await ctx.send(f"{ctx.author.mention} tentou roubar {User.mention}, mas falhou miseravelmente")
         else:
             await ctx.send("Você não tem permissão para fazer isso")
-            Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + Prices.roubarPontos.value)
+            await refund(ctx.author, ctx)
 
     # mod commands
     @commands.command()
