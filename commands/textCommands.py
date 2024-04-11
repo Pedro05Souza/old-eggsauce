@@ -1,5 +1,4 @@
 # Description: cog that contains administration and fun commands
-import asyncio
 from discord.ext import commands
 import discord
 import os
@@ -86,34 +85,6 @@ class TextCommands(commands.Cog):
         else:
             await ctx.send("Este usuário não está banido")
             await refund(user, ctx)        
-
-    @commands.command()
-    async def duelo(self, ctx, User: discord.Member):
-        if User.bot:
-            await ctx.send("Você não pode desafiar um bot.")
-            return
-        elif User == ctx.author:
-            await ctx.send("Você não pode desafiar a si mesmo.")
-            return
-        else:
-            await ctx.send(f"{ctx.author.mention} desafiou {User.mention} para um duelo!")
-            await ctx.send(f"{User.mention} aceita o desafio?")
-            await self.bot.wait_for('message', check=lambda message: message.author == User and message.content == "!aceitar", timeout=10)
-            try:
-                await ctx.send(f"{User.mention} aceitou o desafio!")
-                # falta implementar: Ideia cada membro especial do server tem um ataque customizado
-                # exemplo: Cruz: bankai
-            except Exception as e:
-                await ctx.send(f"{User.mention} foi um cabaço e não aceitou o desafio.")
-
-
-    @commands.command()
-    async def help(self, ctx):
-        embed = discord.Embed(title="Lista de comandos do commands", description="Hey", color=0xeee657)
-        embed.add_field(name="mogged", value="Moga outro usuário", inline=False)
-        embed.add_field(name="changeNickname", value="Muda o nome", inline=False)
-        embed.add_field(name="balls", value="Hey doc", inline=False)
-        await ctx.send(embed=embed)
         
 
 async def setup(bot):

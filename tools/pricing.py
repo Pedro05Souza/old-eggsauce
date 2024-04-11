@@ -11,9 +11,9 @@ class Prices(Enum):
     deafen = 150
     changeNickname = 200
     purge = 250
+    roubarPontos = 350
     pardon = 500
     momentoDeSilencio = 500
-    roubarPontos = 500
     implode = 750
     explode = 850
     kick = 850

@@ -1,7 +1,6 @@
 from discord.ext import commands
 import discord
 from db.Usuario import Usuario
-from tools.pricing import pricing, Prices, refund
 import os
 from dotenv import load_dotenv
 

@@ -5,7 +5,7 @@ from db.Usuario import Usuario
 import discord
 import os
 from dotenv import load_dotenv
-from tools.pricing import pricing, Prices, refund
+from tools.pricing import pricing, refund
 
 class VoipCommands(commands.Cog):
     

@@ -73,7 +73,6 @@ class PointsCommands(commands.Cog):
 
     @commands.command()
     async def shop(self, ctx):
-
         data = []
         for member in Prices.__members__:
             data.append({"title": member, "value": str(Prices.__members__[member].value) + " eggbux"})
@@ -142,7 +141,7 @@ class PointsCommands(commands.Cog):
                 Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + Prices.roubarPontos.value)
             elif chance >= 10: # 10% de chance de falhar
                 quantUser = Usuario.read(User.id)["points"]
-                randomInteiro = randint(0, int(quantUser/5) + 1) # 20% do total de pontos do usuário
+                randomInteiro = randint(0, int(quantUser/2)) # 50% do total de pontos do usuário
                 Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro)
                 Usuario.update(User.id, Usuario.read(User.id)["points"] - randomInteiro)
                 await ctx.send(f"{ctx.author.mention} roubou {randomInteiro} eggbux de {User.mention}")
@@ -152,7 +151,6 @@ class PointsCommands(commands.Cog):
             await ctx.send("Você não tem permissão para fazer isso")
             await refund(ctx.author, ctx)
 
-    # mod commands
 
 async def setup(bot):   
     await bot.add_cog(PointsCommands(bot))
