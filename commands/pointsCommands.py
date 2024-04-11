@@ -98,7 +98,7 @@ class PointsCommands(commands.Cog):
         channel = self.bot.get_channel(int(channelEnv))
         chance = randint(1, 100)
         if chance <= 20:  # 20% de chance de dropar
-            quantEgg = randint(1, 500) 
+            quantEgg = randint(1, 750) 
             await channel.send(f"uma bolsa com {quantEgg} eggbux foi dropada no chat! :money_with_wings:. Digite !claim para pegar, lembrando você tem 5 minutos para pegar!")
             try:
                 Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "!claim" and message.channel == channel), timeout=300)

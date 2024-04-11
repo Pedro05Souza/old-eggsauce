@@ -67,4 +67,5 @@ class Usuario:
             print("Erro ao buscar usuários", e)
             return None
         
+        
 

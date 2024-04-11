@@ -8,12 +8,16 @@ class Prices(Enum):
     mog = 100
     radinho = 125
     mute = 150
+    unmute = 150
     deafen = 150
+    undeafen = 150
+    disconnect = 175
     changeNickname = 200
     purge = 250
     roubarPontos = 350
     pardon = 500
     momentoDeSilencio = 500
+    #giveRole3 = 500
     implode = 750
     explode = 850
     kick = 850

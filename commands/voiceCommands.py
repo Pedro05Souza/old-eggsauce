@@ -111,6 +111,45 @@ class VoipCommands(commands.Cog):
             await ctx.send("Este usuário não está em um canal de voz.")
             await refund(user, ctx)
 
+    @commands.command()
+    @pricing()
+    async def disconnect(self, ctx, User: discord.Member):
+        user = ctx.author
+        channel = User.voice.channel
+        if channel is not None:
+            await User.move_to(None)
+            await ctx.send(f"{User.mention} foi desconectado")
+        else:
+            await ctx.send("Este usuário não está em um canal de voz.")
+            await refund(user, ctx)
+
+    @commands.command()
+    @pricing()
+    async def unmute(self, ctx, User: discord.Member):
+        user = ctx.author
+        channel = User.voice.channel
+        if channel is not None:
+            await User.edit(mute=False)
+            await ctx.send(f"{User.mention} foi desmutado")
+        else:
+            await ctx.send("Este usuário não está em um canal de voz.")
+            await refund(user, ctx)
+
+    @commands.command()
+    @pricing()
+    async def undeafen(self, ctx, User: discord.Member):
+        user = ctx.author
+        channel = User.voice.channel
+        if channel is not None:
+            await User.edit(deafen=False)
+            await ctx.send(f"{User.mention} foi dessurdo")
+        else:
+            await ctx.send("Este usuário não está em um canal de voz.")
+            await refund(user, ctx)
+
+    #@commands.command()
+    #async def prisao(self, ctx, User:discord.Member):
+
 
 
 async def setup(bot):

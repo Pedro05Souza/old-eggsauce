@@ -1,6 +1,7 @@
 # Description: cog that contains administration and fun commands
 from discord.ext import commands
 import discord
+from discord import Role
 import os
 import random
 from tools.pricing import pricing, refund
@@ -68,6 +69,10 @@ class TextCommands(commands.Cog):
     @pricing()
     async def changeNickname(self, ctx, User: discord.Member, *, apelido: str):
         if User.top_role.position <= ctx.guild.me.top_role.position:
+            if User.id == ctx.me.id:
+                await ctx.send("Eu não posso mudar meu próprio apelido.")
+                await refund(ctx.author, ctx)
+                return
             await User.edit(nick=apelido)
             await ctx.send(f"Apelido de {User.mention} foi alterado para {apelido}")   
         else:
@@ -84,7 +89,8 @@ class TextCommands(commands.Cog):
             await ctx.send(f"{User.mention} foi perdoado")
         else:
             await ctx.send("Este usuário não está banido")
-            await refund(user, ctx)        
+            await refund(user, ctx)
+     
         
 
 async def setup(bot):
