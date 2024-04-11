@@ -2,6 +2,7 @@
 
 from discord.ext import commands
 from db.Usuario import Usuario
+import discord
 import os
 from dotenv import load_dotenv
 from tools.pricing import pricing, Prices, refund
@@ -59,6 +60,56 @@ class VoipCommands(commands.Cog):
         if member in self.gods and not before.deaf and after.deaf:
             await member.edit(deafen=False)
             print(f"{member.name} foi ensurdecido, mas era um Deus e foi desensurdecido")
+
+    @commands.command()
+    @pricing()
+    async def explode(self, ctx):
+        user = ctx.author
+        guild = ctx.me.guild
+        channel = user.voice.channel if user.voice else None
+        if channel is not None:
+            await channel.delete()
+        else:
+            await ctx.send("Você não está em um canal de voz.")
+            await refund(user, ctx)
+
+    @commands.command()
+    @pricing()
+    async def mute(self, ctx, User: discord.Member):
+        user = ctx.author
+        channel = User.voice.channel
+        if channel is not None:
+            await User.edit(mute=True)
+            await ctx.send(f"{User.mention} foi mutado")
+        else:
+            await ctx.send("Este usuário não está em um canal de voz.")
+            await refund(user, ctx)
+
+    @commands.command()
+    @pricing()
+    async def implode(self, ctx):
+        user = ctx.author
+        guild = ctx.me.guild
+        channel = user.voice.channel if user.voice else None
+        if channel is not None:
+            for member in channel.members:
+                await member.move_to(None)
+        else:
+            await ctx.send("Você não está em um canal de voz.")
+            await refund(user, ctx)
+
+
+    @commands.command()
+    @pricing()
+    async def deafen(self, ctx, User: discord.Member):
+        user = ctx.author
+        channel = User.voice.channel
+        if channel is not None:
+            await User.edit(deafen=True)
+            await ctx.send(f"{User.mention} foi surdo")
+        else:
+            await ctx.send("Este usuário não está em um canal de voz.")
+            await refund(user, ctx)
 
 
 

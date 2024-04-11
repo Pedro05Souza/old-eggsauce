@@ -153,39 +153,6 @@ class PointsCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     # mod commands
-    @commands.command()
-    async def addPontos(self, ctx, amount: int, User: discord.Member = None):
-        if User is None:
-            User = ctx.author
-            Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
-            await ctx.send(f"{User.mention} recebeu {amount} eggbux")
-        else:
-            if Usuario.read(User.id):
-                Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
-                await ctx.send(f"{User.mention} recebeu {amount} eggbux")
-            else:
-                await ctx.send("Você não tem permissão para fazer isso")
-
-    @commands.command()
-    async def removePontos(self, ctx, amount: int, User: discord.Member = None):
-        if User is None:
-            User = ctx.author
-            Usuario.update(User.id, Usuario.read(User.id)["points"] - amount)
-            await ctx.send(f"{User.mention} perdeu {amount} eggbux")
-        else:
-            if Usuario.read(User.id):
-                Usuario.update(User.id, Usuario.read(User.id)["points"] - amount)
-                await ctx.send(f"{User.mention} perdeu {amount} eggbux")
-            else:
-                await ctx.send("Você não tem permissão para fazer isso")
-
-        
-    @commands.command()
-    async def deleteDB(self, ctx,  User: discord.Member):
-        if Usuario.read(User):
-            Usuario.delete(User)
-        else:
-            ctx.send(f"{User} não está registrado no Banco de Dados!")
 
 async def setup(bot):   
     await bot.add_cog(PointsCommands(bot))
