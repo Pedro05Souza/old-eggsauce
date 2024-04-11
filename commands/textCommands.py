@@ -90,6 +90,7 @@ class TextCommands(commands.Cog):
         else:
             await ctx.send("Este usuário não está banido")
             await refund(user, ctx)
+
      
         
 

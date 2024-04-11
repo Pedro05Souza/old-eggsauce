@@ -6,7 +6,6 @@ from discord.ext import commands
 class Prices(Enum):
     balls = 50
     mog = 100
-    radinho = 125
     mute = 150
     unmute = 150
     deafen = 150
@@ -16,6 +15,8 @@ class Prices(Enum):
     purge = 250
     roubarPontos = 350
     pardon = 500
+    radinho = 325
+    tirarRadinho = 500
     momentoDeSilencio = 500
     #giveRole3 = 500
     implode = 750

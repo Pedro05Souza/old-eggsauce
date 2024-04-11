@@ -101,6 +101,18 @@ class VoipCommands(commands.Cog):
 
     @commands.command()
     @pricing()
+    async def tirarRadinho(self, ctx):
+        servidor = ctx.me.guild
+        user = ctx.author
+        channel = user.voice.channel
+        if user.voice.channel is not None:
+            await channel.edit(bitrate = 64000)
+        else:
+            await ctx.send("Você não está em um canal de voz.")
+            await refund(user, ctx)
+
+    @commands.command()
+    @pricing()
     async def deafen(self, ctx, User: discord.Member):
         user = ctx.author
         channel = User.voice.channel
