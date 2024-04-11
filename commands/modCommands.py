@@ -16,39 +16,47 @@ class ModCommands(commands.Cog):
     async def addPontos(self, ctx, amount: int, User: discord.Member = None):
         if User is None:
             User = ctx.author
-            if User.id in self.devs:
+            if str(User.id) in self.devs:
                 Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
                 await ctx.send(f"{User.mention} recebeu {amount} eggbux")
             else:
                 await ctx.send("Você não tem permissão para fazer isso")
         else:
             if Usuario.read(User.id):
-                Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
-                await ctx.send(f"{User.mention} recebeu {amount} eggbux")
+                if str(ctx.author.id) in self.devs:
+                    Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
+                    await ctx.send(f"{User.mention} recebeu {amount} eggbux")
+                else:
+                    await ctx.send("Você não tem permissão para fazer isso")
             else:
-                await ctx.send("Você não tem permissão para fazer isso")
+                await ctx.send("Usuario não registrado no Banco de Dados!")
 
     @commands.command()
     async def removePontos(self, ctx, amount: int, User: discord.Member = None):
         if User is None:
             User = ctx.author
-            if User.id in self.devs:
+            if str(User.id) in self.devs:
                 Usuario.update(User.id, Usuario.read(User.id)["points"] - amount)
                 await ctx.send(f"{User.mention} perdeu {amount} eggbux")
             else:
                 await ctx.send("Você não tem permissão para fazer isso")
         else:
             if Usuario.read(User.id):
-                Usuario.update(User.id, Usuario.read(User.id)["points"] - amount)
-                await ctx.send(f"{User.mention} perdeu {amount} eggbux")
+                if str(ctx.author.id) in self.devs:
+                    Usuario.update(User.id, Usuario.read(User.id)["points"] - amount)
+                    await ctx.send(f"{User.mention} perdeu {amount} eggbux")
+                else:
+                    await ctx.send("Você não tem permissão para fazer isso")
             else:
                 await ctx.send("Você não tem permissão para fazer isso")
 
     @commands.command()
     async def deleteDB(self, ctx,  User: discord.Member):
-        if Usuario.read(User.id):
-            if ctx.author.id in self.devs:
+        User = User.id
+        if Usuario.read(User):
+            if str(ctx.author.id) in self.devs:
                 Usuario.delete(User)
+                await ctx.send(f"{User} foi deletado do Banco de Dados")
             else:
                 await ctx.send("Você não tem permissão para fazer isso")
         else:
