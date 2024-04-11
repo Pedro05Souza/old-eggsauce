@@ -76,8 +76,8 @@ class PointsCommands(commands.Cog):
     async def shop(self, ctx):
 
         data = []
-        for member in Prices:
-            data.append({"title": member.name, "value": str(member.value) + " eggbux"})
+        for member in Prices.__members__:
+            data.append({"title": member, "value": str(Prices.__members__[member].value) + " eggbux"})
         view = PaginationView(data)
         await view.send(ctx, title="Shop", description="Compre comandos com seus eggbux:", color=0x00ff00)
 
