@@ -73,6 +73,19 @@ class ModCommands(commands.Cog):
 
     @commands.command()
     @pricing()
+    async def deafen(self, ctx, User: discord.Member):
+        user = ctx.author
+        channel = User.voice.channel
+        if channel is not None:
+            await User.edit(deafen=True)
+            await ctx.send(f"{User.mention} foi surdo")
+        else:
+            await ctx.send("Este usuário não está em um canal de voz.")
+            Usuario.update(user.id, Usuario.read(user.id)["points"] + Prices.deafen.value)
+
+
+    @commands.command()
+    @pricing()
     async def kick(self, ctx, User: discord.Member):
         if User.id == ctx.author.id:
                 await ctx.send("Você não pode se kickar.")

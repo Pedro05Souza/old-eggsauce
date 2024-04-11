@@ -8,6 +8,7 @@ class Prices(Enum):
     mog = 100
     radinho = 125
     mute = 150
+    deafen = 150
     changeNickname = 200
     purge = 250
     pardon = 500
