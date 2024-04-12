@@ -33,8 +33,11 @@ def verificar_pontos(User: discord.Member, comando):
         return False
 
 async def refund(User: discord.Member, ctx):
-    price = Prices[ctx.command.name].value
-    await Usuario.update(User.id, Usuario.read(User.id)["points"] + price)
+    try:
+        price = Prices[ctx.command.name].value
+        await Usuario.update(User.id, Usuario.read(User.id)["points"] + price)
+    except Exception as e:
+        print("Erro ao devolver os pontos", e)
 
 def pricing():
     async def predicate(ctx):

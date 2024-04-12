@@ -54,8 +54,8 @@ class Usuario:
             else:
                 print("Usuário não encontrado")
                 return None
-        except Exception as e:
-            print("Erro ao buscar usuário", e)
+        except Exception:
+            print("Erro ao buscar usuário")
             return None
         
     @staticmethod
