@@ -1,7 +1,7 @@
 from discord.ext import commands
 from random import randint
 import discord
-from db.Usuario import Usuario
+from db.UserDB import Usuario
 import os
 from dotenv import load_dotenv
 import asyncio
@@ -118,6 +118,7 @@ class PointsCommands(commands.Cog):
             await asyncio.sleep(1000)
 
     @commands.command()
+    @pricing()
     async def doarPontos(self, ctx, User:discord.Member, amount: int):
         if Usuario.read(ctx.author.id) and Usuario.read(User.id):
             if ctx.author.id == User.id:

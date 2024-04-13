@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord
-from db.Usuario import Usuario
+from db.UserDB import Usuario
 import os
 from dotenv import load_dotenv
 
