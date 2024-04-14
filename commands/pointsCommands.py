@@ -12,42 +12,46 @@ class PointsCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.tasks = {}
 
     @commands.Cog.listener()
     async def on_ready(self):
         self.drop_eggbux_task = self.bot.loop.create_task(self.drop_periodically())
         for guild in self.bot.guilds:
             for member in guild.members:
-                if member.voice is not None:
-                    asyncio.create_task(self.count_points(member))
+                if member.voice is not None and member.id not in self.tasks:
+                    self.tasks[member.id] = asyncio.create_task(self.count_points(member))
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, User: discord.Member, before, after):
         if User.bot:
             return
-
         if Usuario.read(User.id) and before.channel is None and after.channel is not None:
-            await self.count_points(User)
+            if User.id in self.tasks and not self.tasks[User.id].done():
+                return 
+            self.tasks[User.id] = asyncio.create_task(self.count_points(User))
         elif not Usuario.read(User.id) and before.channel is None and after.channel is not None:
             self.registrarAutomatico(User)
             if User.voice is not None:
-                await self.count_points(User)
+                if User.id in self.tasks and not self.tasks[User.id].done():
+                    return 
+                self.tasks[User.id] = asyncio.create_task(self.count_points(User))
 
     async def count_points(self, User: discord.Member):
         if User.bot:
             return
-
         if Usuario.read(User.id):
             while True:
                 User = discord.utils.get(self.bot.get_all_members(), id=User.id)
-                if User.voice is None:
+                if User.voice is None and User.id in self.tasks:
+                    self.tasks[User.id].cancel()
                     break
                 Usuario.update(User.id, Usuario.read(User.id)["points"] + 1)
-                await asyncio.sleep(10)
-                
+                await asyncio.sleep(10)      
         else:
             self.registrarAutomatico(User)
-            await self.count_points(User)
+            if User.id not in self.tasks:
+                self.tasks[User.id] = asyncio.create_task(self.count_points(User))
 
     def registrarAutomatico(self, User: discord.Member):
         if Usuario.read(User.id) and User.bot:
@@ -162,6 +166,7 @@ class PointsCommands(commands.Cog):
                 await refund(ctx.author, ctx)
         else:
             await ctx.send("Você não tem permissão para fazer isso")
+
             
 
 

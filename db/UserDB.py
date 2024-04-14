@@ -66,6 +66,14 @@ class Usuario:
         except Exception as e:
             print("Erro ao buscar usuários", e)
             return None
+
+    @staticmethod
+    def deleteAll():
+        try:
+            users_collection.delete_many({})
+        except Exception as e:
+            print("Erro ao excluir todos os usuários", e)
+            return None
         
         
 

@@ -1,6 +1,7 @@
 # Description: Cog that contains commands that affect in some way the voice channels
 
 from discord.ext import commands
+import asyncio
 import discord
 import os
 from dotenv import load_dotenv
@@ -38,7 +39,6 @@ class VoipCommands(commands.Cog):
             await ctx.send(f"{user.mention} já é um deus", ephemeral=True)
             await refund(user, ctx)
             
-
     @commands.command()
     @pricing()
     async def radinho(self, ctx):
@@ -74,15 +74,35 @@ class VoipCommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def mute(self, ctx, User: discord.Member):
+    async def mute(self, ctx, User: discord.Member = None):
         user = ctx.author
         channel = User.voice.channel
-        if channel is not None:
+        if User is None:
+            User = ctx.author
+        if channel is not None and User.voice.mute == False:
             await User.edit(mute=True)
             await ctx.send(f"{User.mention} foi mutado")
+        elif User.voice.mute == True:
+            await ctx.send(f"{User.mention} já está mutado")
+            await refund(user, ctx)
         else:
             await ctx.send("Este usuário não está em um canal de voz.")
             await refund(user, ctx)
+
+    @commands.command()
+    @pricing()
+    async def unmute(self, ctx, User: discord.Member = None):
+        if User is None:
+            User = ctx.author
+        if User.voice.channel is not None and User.voice.mute == True:
+            await User.edit(mute=False)
+            await ctx.send(f"{User.mention} foi desmutado")
+        elif User.voice.mute == False:
+            await ctx.send(f"{User.mention} já está desmutado")
+            await refund(ctx.author, ctx)
+        else:
+            await ctx.send("Este usuário não está em um canal de voz.")
+            await refund(ctx.author, ctx)
 
     @commands.command()
     @pricing()
@@ -97,11 +117,9 @@ class VoipCommands(commands.Cog):
             await ctx.send("Você não está em um canal de voz.")
             await refund(user, ctx)
 
-
     @commands.command()
     @pricing()
     async def tirarRadinho(self, ctx):
-        servidor = ctx.me.guild
         user = ctx.author
         channel = user.voice.channel
         if user.voice.channel is not None:
@@ -112,10 +130,30 @@ class VoipCommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def deafen(self, ctx, User: discord.Member):
-        if User.voice.channel is not None:
+    async def deafen(self, ctx, User: discord.Member=None):
+        if User is None:
+            User = ctx.author
+        if User.voice.channel is not None and User.voice.deaf == False:
             await User.edit(deafen=True)
-            await ctx.send(f"{User.mention} foi surdo")
+            await ctx.send(f"{User.mention} foi ensurdecido")
+        elif User.voice.deaf == True:
+            await ctx.send(f"{User.mention} já está ensurdecido")
+            await refund(ctx.author, ctx)
+        else:
+            await ctx.send("Este usuário não está em um canal de voz.")
+            await refund(ctx.author, ctx)
+
+    @commands.command()
+    @pricing()
+    async def undeafen(self, ctx, User: discord.Member = None):
+        if User is None:
+            User = ctx.author
+        if User.voice.channel is not None and User.voice.deaf == True:
+            await User.edit(deafen=False)
+            await ctx.send(f"{User.mention} foi desensurdecido")
+        elif User.voice.deaf == False:
+            await ctx.send(f"{User.mention} já está desensurdecido")
+            await refund(ctx.author, ctx)
         else:
             await ctx.send("Este usuário não está em um canal de voz.")
             await refund(ctx.author, ctx)
@@ -132,28 +170,27 @@ class VoipCommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def unmute(self, ctx, User: discord.Member):
-        if User.voice.channel is not None:
-            await User.edit(mute=False)
-            await ctx.send(f"{User.mention} foi desmutado")
-        else:
-            await ctx.send("Este usuário não está em um canal de voz.")
-            await refund(ctx.author, ctx)
+    async def prisao(self, ctx, User:discord.Member):
+        await ctx.send(f"{User.mention} foi preso")
+        await self.prision_counter(ctx, User, 60)
+            
+    async def prision_counter(self, ctx, User: discord.Member, time: int):
+        servidor = ctx.guild
+        category_name = "penis" 
+        channel_name = "Prisão"
+        category = discord.utils.get(servidor.categories, name=category_name)
+        prison_channel = discord.utils.get(category.voice_channels, name=channel_name)
+        if prison_channel is None:
+            prison_channel = await servidor.create_voice_channel(channel_name, category=category)
+        if User.voice and User.voice.channel:
+            await User.move_to(prison_channel)
+            if time > 0:
+                await asyncio.sleep(1)
+                await self.prision_counter(ctx, User, time - 1)
+            else:
+                await prison_channel.delete()
+                
 
-    @commands.command()
-    @pricing()
-    async def undeafen(self, ctx, User: discord.Member):
-        if User.voice.channel is not None:
-            await User.edit(deafen=False)
-            await ctx.send(f"{User.mention} foi dessurdo")
-        else:
-            await ctx.send("Este usuário não está em um canal de voz.")
-            await refund(ctx.author, ctx)
-
-
-
-    #@commands.command()
-    #async def prisao(self, ctx, User:discord.Member):
 
 async def setup(bot):
     await bot.add_cog(VoipCommands(bot))

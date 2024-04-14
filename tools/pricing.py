@@ -20,12 +20,17 @@ class Prices(Enum):
     perdoar = 500
     tirarRadinho = 500
     momentoDeSilencio = 500
-    #giveRole3 = 500
+    cargoTrabalhador = 650
     implode = 750
     explode = 850
     kick = 850
+    prisao = 900
+    cargoClasseBaixa = 920
     ban = 950
     god = 1000
+    cargoClasseMedia = 1100
+    cargoClasseAlta = 1600
+    nuke = 50000
 
 def verificar_pontos(User: discord.Member, comando):
     price = Prices[comando].value
@@ -52,41 +57,58 @@ def pricing():
             if verificar_pontos(ctx.author, comando):
                 command_func = ctx.command.callback
                 parameters = list(inspect.signature(command_func).parameters.values())
+                parameters = parameters[2:]  
                 
-                if list(parameters)[0].name == 'self':
-                    parameters = parameters[1:]
-
-                if list(parameters)[0].name == 'ctx':
-                    parameters = parameters[1:]
-
-                if len(command_args) != len(parameters):
-                    await ctx.send("Número incorreto de argumentos.")
+                # Encontrando índices de parâmetros opcionais e com valores padrão
+                optional_params_indices = [i for i, param in enumerate(parameters) if param.default != inspect.Parameter.empty]
+                varargs_index = next((i for i, param in enumerate(parameters) if param.kind == param.VAR_POSITIONAL), None)
+                
+                # Calculando o número esperado de argumentos
+                expected_args_count = len(parameters) - len(optional_params_indices)
+                if varargs_index is not None:
+                    expected_args_count -= 1  # Descontando um para o *args, se existir
+                
+                # Verificando o número de argumentos fornecidos
+                if len(command_args) < expected_args_count:
+                    await ctx.send("Número insuficiente de argumentos.")
                     return False
-
-                for arg, param in zip(command_args, parameters):
+                elif len(command_args) > len(parameters) and varargs_index is None:
+                    await ctx.send("Número excessivo de argumentos.")
+                    return False
+                
+                i = 0
+                for index, param in enumerate(parameters):
                     param_type = param.annotation
                     if param_type is inspect.Parameter.empty:
                         continue
                     try:
-                        if param_type == discord.Member:
-                            arg = await commands.MemberConverter().convert(ctx, arg)
+                        if varargs_index is not None and index >= varargs_index:  # Check if varargs_index is not None
+                            arg = ' '.join(command_args[i:])
+                            command_args = command_args[:i]
                         else:
-                            arg = param_type(arg)
+                            arg = command_args[i] if i < len(command_args) else param.default  # Use default value if no argument is provided
+                        if arg is not None:  # Skip conversion if arg is None
+                            if param_type == discord.Member:
+                                arg = await commands.MemberConverter().convert(ctx, arg)
+                            else:
+                                arg = param_type(arg)
                     except ValueError:
                         await ctx.send("Argumentos inválidos.")
                         return False
                     except commands.MemberNotFound:
                         await ctx.send("Membro não encontrado.")
                         return False
-                    except commands.BadArgument:
-                        await ctx.send("Argumentos inválidos.")
-                        return False
-                        
-                    if not isinstance(arg, param_type):
+                    except commands.errors.BadArgument:
                         await ctx.send("Argumentos inválidos.")
                         return False
 
-                        
+                    if arg is not None and not isinstance(arg, param_type):
+                        await ctx.send("Argumentos inválidos.")
+                        return False
+                    if '*' not in str(param) and index not in optional_params_indices:
+                        i += 1
+
+                # Atualizando os pontos do usuário e permitindo a execução do comando
                 new_points = Usuario.read(ctx.author.id)["points"] - Prices[comando].value
                 Usuario.update(ctx.author.id, new_points)
                 return True

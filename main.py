@@ -20,5 +20,4 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game(name="Ballsack"))
     print("Command Package loaded")
 
-bot.run(TOKEN) #Does not use a coroutine but is a blocking function - i.e. must be the last one to run
-
+bot.run(TOKEN) #Does not use a coroutine but is a blocking function - i.e. must be the last one to run      
