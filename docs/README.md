@@ -1,6 +1,6 @@
 # BOT Ovomaltine:
 
-This is an open source Discord bot project made as a personal project by [Alexius Dias](github.com/AlexiusMD) and [Pedro Souza](github.com/Pedro05Souza). This bot's purpose was made for a friends-only server with the intention of gaining a currency named as `eggbux` during calls in order to buy custom and default commands, such as ban, kick, momentDeSilencio and many more. At the current moment the rate of eggbux is one per five seconds of call time. This project has built-in support for MongoDB.
+This is an open source Discord bot project made as a personal project by [Alexius Dias](github.com/AlexiusMD) and [Pedro Souza](github.com/Pedro05Souza). This bot's purpose was made for a friends-only server with the intention of gaining a currency named as `eggbux` during calls in order to buy custom and default commands, such as ban, kick, momentDeSilencio and many more. At the current moment the rate of eggbux is one per ten seconds of call time. If you want to use this bot in your server, it is recommended that every member has the same roles, same permissions so the experience can be as best as the bot can provide. This project has built-in support for MongoDB.
 
 ## How to run this repository locally:
 
@@ -31,7 +31,7 @@ Both the setup commands run the `Makefile` and:
 * Creates the python virtual enviroment (venv)
 * Installs all dependencies listed on `requirements.txt`
 
-Please note that the `API key` nor the `database.txt` file are **NOT** available for use on the repo, and must be created privately in your local project directory.
+Please note that the `API key` and MongoDB database storage are **NOT** available for use on the repo, and must be created privately in your local project directory.
 
 
 
@@ -65,7 +65,7 @@ mute @User
 Mutes the user who tagged.
 
 ```
-ChangeNickname @User NICKNAME_HERE
+mudarApelido @User NICKNAME_HERE
 ```
 Change the nickname of the user.
 
@@ -108,7 +108,7 @@ Returns back how much eggbux the user has accumulated.
 ```
 leaderboard
 ```
-Returns back the whole user-list saved in the `database.txt` file and sort them by descending.
+Returns back the whole user-list saved in MongoDB and sort them by descending.
 
 ```
 shop
