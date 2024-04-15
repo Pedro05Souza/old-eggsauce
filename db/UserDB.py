@@ -53,7 +53,6 @@ class Usuario:
             if user_data:
                 return user_data
             else:
-                print("Usuário não encontrado")
                 return None
         except Exception:
             print("Erro ao buscar usuário")

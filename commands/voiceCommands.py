@@ -170,6 +170,10 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def prisao(self, ctx, User:discord.Member):
+        if User.voice is None or User.voice.channel is None:
+            await ctx.send("Este usuário não está em um canal de voz.")
+            await refund(ctx.author, ctx)
+            return
         await ctx.send(f"{User.mention} foi preso")
         await self.prision_counter(ctx, User, 60)
             

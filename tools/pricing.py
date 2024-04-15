@@ -28,7 +28,7 @@ class Prices(Enum):
     cargoClasseBaixa = 920
     ban = 950
     god = 1000
-    cargoClasseMedia = 1100
+    cargoClasseMedia = 1200
     cargoClasseAlta = 1600
     nuke = 50000
 

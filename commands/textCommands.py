@@ -130,6 +130,7 @@ class TextCommands(commands.Cog):
                     await role.edit(position=8, hoist=True, mentionable=True)
              if ctx.author in role.members:
                     await ctx.send("Você já tem esse cargo.")
+                    await refund(ctx.author, ctx)
                     return
              if Usuario.read(ctx.author.id)["roles"] == "T":
                 await ctx.author.add_roles(role)
@@ -155,10 +156,11 @@ class TextCommands(commands.Cog):
                     await role.edit(position=7, hoist=True, mentionable=True)
              if ctx.author in role.members:
                     await ctx.send("Você já tem esse cargo.")
+                    await refund(ctx.author, ctx)
                     return
              if Usuario.read(ctx.author.id)["roles"] == "TB":
                 await ctx.author.add_roles(role)
-                await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe magnata.")
+                await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe média.")
                 Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "M")
              else:
                     await ctx.send("Você não tem algum ou alguns dos cargos necessários.")
@@ -181,10 +183,11 @@ class TextCommands(commands.Cog):
                     await role.edit(position=6, hoist=True, mentionable=True)
              if ctx.author in role.members:
                     await ctx.send("Você já tem esse cargo.")
+                    await refund(ctx.author, ctx)
                     return
              if Usuario.read(ctx.author.id)["roles"] == "TBM":
                 await ctx.author.add_roles(role)
-                await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe baixa.")
+                await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe alta.")
                 Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "A")
              else:
                   await ctx.send("Você não tem algum ou alguns dos cargos necessários.")
@@ -248,10 +251,7 @@ class TextCommands(commands.Cog):
                    if user_data:
                         if user_data["roles"] != "":
                             Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarios(member), Usuario.read(member.id)["roles"])
-                            await asyncio.sleep(1800)
-                
-                       
-    
+                            await asyncio.sleep(1600)
 
     @commands.command()
     async def nuke(self, ctx):

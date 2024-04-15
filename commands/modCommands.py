@@ -60,6 +60,31 @@ class ModCommands(commands.Cog):
                 await ctx.send("Você não tem permissão para fazer isso")
         else:
             await ctx.send(f"{User} não está registrado no Banco de Dados!")
+
+
+    @commands.command()
+    async def removerCargo(self, ctx ,User:discord.Member, role: str):
+        possibleRoles = {"T": "trabalhador assalariado", "B" : "Plebeu", "M" : "pobretão com um gol 1.0", "A" : "magnata"}
+        if str(ctx.author.id) in self.devs:
+            user_data = Usuario.read(User.id)
+            if user_data:
+                if len(user_data["roles"]) > 0 and role in possibleRoles.keys():
+                    if role in user_data["roles"]:
+                        roles = Usuario.read(User.id)["roles"]
+                        roles = roles.replace(role, "")
+                        roleRemove = discord.utils.get(ctx.guild.roles, name=possibleRoles[role])
+                        if roleRemove:
+                            await User.remove_roles(roleRemove)
+                            Usuario.update(User.id, Usuario.read(User.id)["points"], roles)
+                            await ctx.send(f"{User.mention} perdeu o cargo {possibleRoles[role]}")
+                    else:
+                        await ctx.send(f"{User.mention} não tem o cargo {role}")
+            else:
+                await ctx.send(f"{User.mention} não está registrado no Banco de Dados!")
+        else:
+            await ctx.send("Você não tem permissão para fazer isso")
+
+
        
 
 async def setup(bot):
