@@ -1,8 +1,10 @@
 # Description: cog that contains administration and fun commands
+import asyncio
 from discord.ext import commands
 import discord
 from db.UserDB import Usuario
 from random import randint
+from dotenv import load_dotenv
 import os
 import random
 from tools.pricing import pricing, refund
@@ -12,6 +14,10 @@ class TextCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.remove_command('help')
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        asyncio.create_task(self.work_periodically())
 
 
     @commands.command()
@@ -217,6 +223,35 @@ class TextCommands(commands.Cog):
             await ctx.send("Por favor, insira um valor válido.")
         else:
             await ctx.send("Ocorreu um erro inesperado.")
+
+    def salarios(self, User:discord.Member):
+        salarios = {
+            "T": 50,
+            "B": 100,
+            "M": 200,
+            "A": 300
+        }
+        if Usuario.read(User.id):
+             return salarios[Usuario.read(User.id)["roles"] [-1]]
+        else:
+            return 0
+        
+    
+    async def work_periodically(self):
+        load_dotenv()
+        guild_id = int(os.getenv("GUILD_ID"))
+        channel = self.bot.get_channel(int(os.getenv("CHANNEL_ID")))
+        guild = self.bot.get_guild(guild_id)
+        while True:
+              for member in guild.members:
+                   user_data = Usuario.read(member.id)
+                   if user_data:
+                        if user_data["roles"] != "":
+                            Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarios(member), Usuario.read(member.id)["roles"])
+                            await asyncio.sleep(1800)
+                
+                       
+    
 
     @commands.command()
     async def nuke(self, ctx):
