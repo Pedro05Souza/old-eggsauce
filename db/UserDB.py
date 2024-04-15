@@ -16,7 +16,8 @@ class Usuario:
             else:
                 user = {
                     "user_id": user_id,
-                    "points": points
+                    "points": points,
+                    "roles" : ""
                 }
                 users_collection.insert_one(user)
                 print("Usuário criado com sucesso")
@@ -37,11 +38,11 @@ class Usuario:
                 print("Erro ao excluir o usuário", e)
     
     @staticmethod
-    def update(user_id : int, points : int):
+    def update(user_id : int, points : int, roles: str):
         try:
             user_data = users_collection.find_one({"user_id" : user_id})
             if user_data:
-                users_collection.update_one({"user_id": user_id}, {"$set": {"points": points}})
+                users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})#agr vai funcionar 😁
         except Exception as e:
             print("Erro ao atualizar os pontos do usuário", e)
         
@@ -74,6 +75,17 @@ class Usuario:
         except Exception as e:
             print("Erro ao excluir todos os usuários", e)
             return None
+    
+    @staticmethod
+    def updateAll(role : str):
+        try:
+            users_collection.update_many({}, {"$set": {"roles": role}})
+        except Exception as e:
+            print("Erro ao atualizar todos os usuários", e)
+            return None
+
+    
+
         
         
 

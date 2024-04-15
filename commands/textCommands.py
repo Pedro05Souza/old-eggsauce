@@ -13,6 +13,7 @@ class TextCommands(commands.Cog):
         self.bot = bot
         bot.remove_command('help')
 
+
     @commands.command()
     @pricing()
     async def balls(self, ctx):
@@ -87,23 +88,26 @@ class TextCommands(commands.Cog):
         else:
             await ctx.send("Este usuário não está banido")
             await refund(ctx.author, ctx)
-
+            
     @commands.command()
     @pricing()
     async def cargoTrabalhador(self, ctx):
          if Usuario.read(ctx.author.id):    
-             permissions = discord.Permissions(
-                 move_members = True,
-             )
-             role = discord.utils.get(ctx.guild.roles, name="trabalhador assalariado")
-             if role is None:
-                    role = await ctx.guild.create_role(name="trabalhador assalariado", permissions=permissions, color=discord.Color.from_rgb(165, 42, 42))
-                    await role.edit(position=9, hoist=True, mentionable=True)
-             if ctx.author in role.members:
-                    await ctx.send("Você já tem esse cargo.")
-                    return
-             await ctx.author.add_roles(role)
-             await ctx.send(f"{ctx.author.mention} recebeu o cargo de trabalhador.")
+            permissions = discord.Permissions(
+                move_members = True,
+            )
+            role = discord.utils.get(ctx.guild.roles, name="trabalhador assalariado")
+            if role is None:
+                role = await ctx.guild.create_role(name="trabalhador assalariado", permissions=permissions, color=discord.Color.from_rgb(165, 42, 42))
+                await role.edit(position=9, hoist=True, mentionable=True)
+            if ctx.author in role.members:
+                await ctx.send("Você já tem esse cargo.")
+                return
+            if Usuario.read(ctx.author.id)["roles"] == "":
+                await ctx.author.add_roles(role)
+                await ctx.send(f"{ctx.author.mention} recebeu o cargo de trabalhador.")
+                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "T")
+
 
     @commands.command()
     @pricing()
@@ -117,12 +121,17 @@ class TextCommands(commands.Cog):
              role = discord.utils.get(ctx.guild.roles, name="Plebeu")
              if role is None:
                     role = await ctx.guild.create_role(name="Plebeu", permissions=permissions, color=discord.Color.from_rgb(255, 0, 0))
-                    await role.edit(position=9, hoist=True, mentionable=True)
+                    await role.edit(position=8, hoist=True, mentionable=True)
              if ctx.author in role.members:
                     await ctx.send("Você já tem esse cargo.")
                     return
-             await ctx.author.add_roles(role)
-             await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe baixa.")
+             if Usuario.read(ctx.author.id)["roles"] == "T":
+                await ctx.author.add_roles(role)
+                await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe baixa.")
+                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "B")
+             else:
+                await ctx.send("Você não tem algum ou alguns dos cargos necessários.")
+                await refund(ctx.author, ctx)   
 
     @commands.command()
     @pricing()
@@ -137,12 +146,17 @@ class TextCommands(commands.Cog):
              role = discord.utils.get(ctx.guild.roles, name="pobretão com um gol 1.0")
              if role is None:
                     role = await ctx.guild.create_role(name="pobretão com um gol 1.0", permissions=permissions, color=discord.Color.from_rgb(0, 0, 255))
-                    await role.edit(position=9, hoist=True, mentionable=True)
+                    await role.edit(position=7, hoist=True, mentionable=True)
              if ctx.author in role.members:
                     await ctx.send("Você já tem esse cargo.")
                     return
-             await ctx.author.add_roles(role)
-             await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe magnata.")
+             if Usuario.read(ctx.author.id)["roles"] == "TB":
+                await ctx.author.add_roles(role)
+                await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe magnata.")
+                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "M")
+             else:
+                    await ctx.send("Você não tem algum ou alguns dos cargos necessários.")
+                    await refund(ctx.author, ctx)
 
     @commands.command()
     @pricing()
@@ -158,12 +172,17 @@ class TextCommands(commands.Cog):
              role = discord.utils.get(ctx.guild.roles, name="magnata")
              if role is None:
                     role = await ctx.guild.create_role(name="magnata", permissions=permissions, color=discord.Color.from_rgb(0, 0, 0))
-                    await role.edit(position=9, hoist=True, mentionable=True)
+                    await role.edit(position=6, hoist=True, mentionable=True)
              if ctx.author in role.members:
                     await ctx.send("Você já tem esse cargo.")
                     return
-             await ctx.author.add_roles(role)
-             await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe baixa.")
+             if Usuario.read(ctx.author.id)["roles"] == "TBM":
+                await ctx.author.add_roles(role)
+                await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe baixa.")
+                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "A")
+             else:
+                  await ctx.send("Você não tem algum ou alguns dos cargos necessários.")
+                  await refund(ctx.author, ctx)
          
     @commands.command() 
     async def cassino(self, ctx, amount: int, cor: str):
@@ -175,14 +194,14 @@ class TextCommands(commands.Cog):
                 cassino = randint(0, 35)
                 corSorteada = "RED" if cassino < 18 and cassino != 0 else ("GREEN" if cassino == 0 else "BLACK")
                 if corSorteada == cor and cor == "GREEN":
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14))
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
                     await ctx.send(f"{ctx.author.display_name} ganhou!")
                 elif corSorteada == cor:
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount )
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
                     await ctx.send(f"{ctx.author.display_name} ganhou!")
                 else:
                     await ctx.send(f"{ctx.author.display_name} perdeu, a cor sorteada foi {corSorteada} {corEmoji[corSorteada]}")                        
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount)
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
                     return
             else:
                 await ctx.send(f"{ctx.author.display_name} não tem pontos suficientes")

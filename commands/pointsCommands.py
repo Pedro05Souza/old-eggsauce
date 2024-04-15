@@ -14,6 +14,7 @@ class PointsCommands(commands.Cog):
         self.bot = bot
         self.tasks = {}
 
+
     @commands.Cog.listener()
     async def on_ready(self):
         self.drop_eggbux_task = self.bot.loop.create_task(self.drop_periodically())
@@ -21,6 +22,7 @@ class PointsCommands(commands.Cog):
             for member in guild.members:
                 if member.voice is not None and member.id not in self.tasks:
                     self.tasks[member.id] = asyncio.create_task(self.count_points(member))
+
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, User: discord.Member, before, after):
@@ -46,7 +48,7 @@ class PointsCommands(commands.Cog):
                 if User.voice is None and User.id in self.tasks:
                     self.tasks[User.id].cancel()
                     break
-                Usuario.update(User.id, Usuario.read(User.id)["points"] + 1)
+                Usuario.update(User.id, Usuario.read(User.id)["points"] + 1, Usuario.read(User.id)["roles"])
                 await asyncio.sleep(10)      
         else:
             self.registrarAutomatico(User)
@@ -107,7 +109,7 @@ class PointsCommands(commands.Cog):
             try:
                 Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "!claim" and message.channel == channel), timeout=300)
                 if Usuario.read(Message.author.id):
-                    Usuario.update(Message.author.id, Usuario.read(Message.author.id)["points"] + quantEgg)
+                    Usuario.update(Message.author.id, Usuario.read(Message.author.id)["points"] + quantEgg, Usuario.read(Message.author.id)["roles"])
                     await channel.send(f"{Message.author.mention} pegou {quantEgg} eggbux")
                 else:
                     Usuario.create(Message.author.id, quantEgg)
@@ -132,8 +134,8 @@ class PointsCommands(commands.Cog):
                     await ctx.send("Você não pode doar 0 ou uma quantidade negativa de eggbux")
                     return
                 else:
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount)
-                    Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
+                    Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
                     await ctx.send(f"{ctx.author.mention} doou {amount} eggbux para {User.mention}")
             else:
                 await ctx.send(f"{ctx.author.mention} você não tem eggbux suficiente para fazer essa doação")
@@ -152,15 +154,15 @@ class PointsCommands(commands.Cog):
             if Usuario.read(User.id):
                 if ctx.author.id == User.id:
                     await ctx.send("Você não pode roubar de si mesmo")
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + Prices.roubarPontos.value)
+                    await refund(ctx.author, ctx)
                 elif chance >= 10: # 10% de chance de falhar
                     quantUser = Usuario.read(User.id)["points"]
                     randomInteiro = randint(0, int(quantUser/2)) # 50% do total de pontos do usuário
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro)
-                    Usuario.update(User.id, Usuario.read(User.id)["points"] - randomInteiro)
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
+                    Usuario.update(User.id, Usuario.read(User.id)["points"] - randomInteiro, Usuario.read(User.id)["roles"])
                     await ctx.send(f"{ctx.author.mention} roubou {randomInteiro} eggbux de {User.mention}")
                 else:
-                    await ctx.send(f"{ctx.author.mention} tentou roubar {User.mention}, mas falhou miseravelmente")
+                    await ctx.send(f"{ctx.author.mention} falhou ao tentar roubar de {User.mention}")
             else:
                 await ctx.send("Você não tem permissão para fazer isso")
                 await refund(ctx.author, ctx)

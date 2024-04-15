@@ -16,14 +16,14 @@ class ModCommands(commands.Cog):
         if User is None:
             User = ctx.author
             if str(User.id) in self.devs:
-                Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
+                Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
                 await ctx.send(f"{User.mention} recebeu {amount} eggbux")
             else:
                 await ctx.send("Você não tem permissão para fazer isso")
         else:
             if Usuario.read(User.id):
                 if str(ctx.author.id) in self.devs:
-                    Usuario.update(User.id, Usuario.read(User.id)["points"] + amount)
+                    Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
                     await ctx.send(f"{User.mention} recebeu {amount} eggbux")
                 else:
                     await ctx.send("Você não tem permissão para fazer isso")
@@ -35,14 +35,14 @@ class ModCommands(commands.Cog):
         if User is None:
             User = ctx.author
             if str(User.id) in self.devs:
-                Usuario.update(User.id, Usuario.read(User.id)["points"] - amount)
+                Usuario.update(User.id, Usuario.read(User.id)["points"] - amount, Usuario.read(User.id)["roles"])
                 await ctx.send(f"{User.mention} perdeu {amount} eggbux")
             else:
                 await ctx.send("Você não tem permissão para fazer isso")
         else:
             if Usuario.read(User.id):
                 if str(ctx.author.id) in self.devs:
-                    Usuario.update(User.id, Usuario.read(User.id)["points"] - amount)
+                    Usuario.update(User.id, Usuario.read(User.id)["points"] - amount, Usuario.read(User.id)["roles"])
                     await ctx.send(f"{User.mention} perdeu {amount} eggbux")
                 else:
                     await ctx.send("Você não tem permissão para fazer isso")

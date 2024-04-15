@@ -1,5 +1,4 @@
 # Description: Cog that contains commands that affect in some way the voice channels
-
 from discord.ext import commands
 import asyncio
 import discord
@@ -8,7 +7,6 @@ from dotenv import load_dotenv
 from tools.pricing import pricing, refund
 
 class VoipCommands(commands.Cog):
-    
     def __init__(self, bot):
         load_dotenv()
         self.bot = bot
@@ -27,6 +25,7 @@ class VoipCommands(commands.Cog):
         else:
             await ctx.send("Você não está em um canal de voz.")
             await refund(user, ctx)
+            
 
     @commands.command()
     @pricing()
@@ -76,9 +75,9 @@ class VoipCommands(commands.Cog):
     @pricing()
     async def mute(self, ctx, User: discord.Member = None):
         user = ctx.author
-        channel = User.voice.channel
         if User is None:
             User = ctx.author
+            channel = User.voice.channel
         if channel is not None and User.voice.mute == False:
             await User.edit(mute=True)
             await ctx.send(f"{User.mention} foi mutado")
