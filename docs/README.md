@@ -37,7 +37,7 @@ Please note that the `API key` and MongoDB database storage are **NOT** availabl
 
 ![alt text](image.png)
 
-Give the application a name and click "Create". Navigate to the `Bot` tab, reset your token and copy it to the clipboard and paste it in the `.envexample` file.
+Give the application a name and click "Create". Navigate to the `Bot` tab, reset your token and copy it to the clipboard and paste it in the `.env` file. If you do not have a `.env` file in your directory, you should create one. The `.env` file should follow the format in `.env.example`.
 
 
 ## Known Issues (Windows):
