@@ -239,7 +239,6 @@ class TextCommands(commands.Cog):
         else:
             return 0
         
-    
     async def work_periodically(self):
         load_dotenv()
         guild_id = int(os.getenv("GUILD_ID"))
@@ -252,6 +251,13 @@ class TextCommands(commands.Cog):
                         if user_data["roles"] != "":
                             Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarios(member), Usuario.read(member.id)["roles"])
                             await asyncio.sleep(1600)
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+         if Usuario.read(member.id):
+             Usuario.update(member.id, Usuario.read(member.id)["roles"], "")
+         else:
+              print("Usuário não registrado no Banco de Dados")
 
     @commands.command()
     async def nuke(self, ctx):

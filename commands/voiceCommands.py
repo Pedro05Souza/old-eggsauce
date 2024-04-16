@@ -202,10 +202,22 @@ class VoipCommands(commands.Cog):
             channelVet.append(channels)
 
         if User.voice is not None:
+            await ctx.send(f"{User.mention} foi movido")
             await User.move_to(random.choice(channelVet))
         else:
             await ctx.send("Usuário não está em um canal de voz.")
             await refund(ctx.author, ctx)
+
+    @commands.command()
+    @pricing()
+    async def detonate(self, ctx):
+        for channels in ctx.guild.channels:
+            if isinstance(channels, discord.VoiceChannel):
+                for member in channels:
+                 await member.move_to(None)
+        await ctx.send("Todos os usuários foram desconectados")
+
+
 
 
 

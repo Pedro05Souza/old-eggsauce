@@ -14,10 +14,10 @@ class Prices(Enum):
     undeafen = 150
     disconnect = 175
     mudarApelido = 200
+    fling = 200
     purge = 250
     radinho = 325
     roubarPontos = 350
-    fling = 400
     perdoar = 500
     tirarRadinho = 500
     momentoDeSilencio = 500
@@ -25,6 +25,7 @@ class Prices(Enum):
     implode = 750
     explode = 850
     kick = 850
+    detonate = 880
     prisao = 900
     cargoClasseBaixa = 920
     ban = 950
