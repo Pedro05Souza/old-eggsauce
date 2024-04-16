@@ -145,7 +145,64 @@ this role comes with the permissions of managing channels and earns a salary of 
 
 
 ## VOICE COMMANDS:
-amn eu faço
+This subtopic contains all the voice related commands.
+
+```
+momentoDeSilencio
+```
+
+Mutes every user in any of the guild's voice channels.
+
+```
+radinho
+```
+Reduce the author's voice channel bitrate to 8kbps.
+
+```
+implode
+```
+Disconnect every member from the author's voice channel.
+
+```
+explode
+```
+Deletes the author's voice channel.
+
+```
+mute @Optional User
+```
+If no user is specified mutes the author, if specified mutes the user if they aren't muted already.
+
+```
+unmute @Optional User
+```
+If no user is specified unmutes the author, if specified unmutes the user if they aren't unmuted already.
+
+```
+deafen @Optional User
+```
+if no user is specified deafens the author, if specified deafens the user if they aren't deafened already.
+
+```
+undeafen @Optional User
+```
+if no user is specified undeafens the author, if specified undeafens the user if they aren't undeafened already.
+
+```
+disconnect User
+```
+Disconnects the specified user from their respective voice channel if they are in one.
+
+```
+prisao
+```
+Creates a new voice channel called `Prisão`, moves the user there for 60 seconds
+
+```
+tirarRadinho
+```
+Sets the author's currently voice channel bitrate to 64 kbps
+
 
 
 
