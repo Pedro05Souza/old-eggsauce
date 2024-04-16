@@ -67,7 +67,7 @@ Gives the author's selected amount of points to the specified User.
 ```
 roubarPontos User
 ```
-Steals a maximum of 20% of the specified User networth.
+Steals a maximum of 50% of the specified User networth.
 
 ## TEXT COMMANDS:
 
@@ -113,9 +113,9 @@ cassino amount color
 ```
 The cassino command has three possible results, red, black that multiplies the amount by two and green which multiplies the given amount by fourteen. The chances are, from 0 to 35:
 
-RED: Below 18
-BLACK: Above 18
-GREEN: 0
+- RED: Below 18
+- BLACK: Above 18
+- GREEN: 0
 
 
 ## ROLE COMMANDS:
