@@ -3,6 +3,7 @@ from discord.ext import commands
 import asyncio
 import discord
 import os
+import random
 from dotenv import load_dotenv
 from tools.pricing import pricing, refund
 
@@ -193,6 +194,21 @@ class VoipCommands(commands.Cog):
             else:
                 await prison_channel.delete()
                 
+    @commands.command()
+    async def fling(self, ctx, User: discord.Member):
+        channelVet = []
+        for channels in User.guild.channels:
+            channelVet.append(channels)
+
+        if User.voice is not None:
+            await User.move_to(random.choice(channelVet))
+        else:
+            await ctx.send("Usuário não está em um canal de voz.")
+            await refund(ctx.author, ctx)
+
+
+
+
 
 
 async def setup(bot):
