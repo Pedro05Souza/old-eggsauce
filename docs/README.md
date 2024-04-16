@@ -1,6 +1,8 @@
 # BOT Ovomaltine:
 
-This is an open source Discord bot project made as a personal project by [Alexius Dias](github.com/AlexiusMD) and [Pedro Souza](github.com/Pedro05Souza). This bot's purpose was made for a friends-only server with the intention of gaining a currency named as `eggbux` during calls in order to buy custom and default commands, such as ban, kick, momentDeSilencio and many more. At the current moment the rate of eggbux is one per ten seconds of call time. If you want to use this bot in your server, it is recommended that every member has the same roles, same permissions so the experience can be as best as the bot can provide. This project has built-in support for MongoDB.
+![alt text](image-2.png)
+
+This is an open source Discord bot project made as a personal project by [Alexius Dias](github.com/AlexiusMD) and [Pedro Souza](github.com/Pedro05Souza). This bot's purpose was made for a friends-only server with the intention of gaining a currency named as `eggbux` during calls, the current rate is set at 1 eggbux every 10 seconds of call time. You can use the currency to buy custom an immense amount of commands. If you want to use this bot in your server, it is recommended that every member has the same roles, same permissions so the experience can be as best as the bot can provide. This project has built-in support for MongoDB.
 
 ## How to run this repository locally:
 
@@ -31,8 +33,11 @@ Both the setup commands run the `Makefile` and:
 * Creates the python virtual enviroment (venv)
 * Installs all dependencies listed on `requirements.txt`
 
-Please note that the `API key` and MongoDB database storage are **NOT** available for use on the repo, and must be created privately in your local project directory.
+Please note that the `API key` and MongoDB database storage are **NOT** available for use on the repo, and must be created privately in your local project directory. To generate your API key, click [here](https://discord.com/developers/applications). Make sure you're logged on to the discord website. Top right of your screen, click `new application`
 
+![alt text](image.png)
+
+Give the application a name and click "Create". Navigate to the `Bot` tab, reset your token and copy it to the clipboard and paste it in the `.envexample` file.
 
 
 ## Known Issues (Windows):
@@ -51,66 +56,3 @@ python -m venv venv
 ```
 If sucessful execute the make setup command again.
 
-## Commands:
-For informational purposes, every command starts with `!`, so in this list, it will be implicity used.
-
-```
-mog
-```
-As the name itself says, it randomizes between 8 images present in the project, you can find them at: `images/mogged`.
-
-```
-mute @User
-```
-Mutes the user who tagged.
-
-```
-mudarApelido @User NICKNAME_HERE
-```
-Change the nickname of the user.
-
-```
-purge @amount
-```
-Deletes messages from the chat. The limit for safety reasons is currently set at `25`.
-
-```
-kick @User
-```
-Kick the user.
-
-```
-ban @User
-```
-Bans the user.
-
-```
-Pardon @User
-```
-Unbans the user.
-
-```
-momentDeSilencio
-```
-Mutes every single user in every call in the server.
-
-```
-god
-```
-If you apply this command in yourself, it's impossible for any user to mute/deafen you.
-
-```
-pontos
-```
-Returns back how much eggbux the user has accumulated.
-
-
-```
-leaderboard
-```
-Returns back the whole user-list saved in MongoDB and sort them by descending.
-
-```
-shop
-```
-Essentially shows every single command there is and their eggbux price.
