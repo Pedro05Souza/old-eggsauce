@@ -17,6 +17,7 @@ class Prices(Enum):
     purge = 250
     radinho = 325
     roubarPontos = 350
+    fling = 400
     perdoar = 500
     tirarRadinho = 500
     momentoDeSilencio = 500

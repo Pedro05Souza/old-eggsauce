@@ -195,6 +195,7 @@ class VoipCommands(commands.Cog):
                 await prison_channel.delete()
                 
     @commands.command()
+    @pricing()
     async def fling(self, ctx, User: discord.Member):
         channelVet = []
         for channels in User.guild.channels:
