@@ -208,7 +208,7 @@ class TextCommands(commands.Cog):
                 if corSorteada == "GREEN" and cor == "GREEN":
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
                     await ctx.send(f"{ctx.author.display_name} ganhou!")
-                elif corSorteada == cor:
+                elif corSorteada[cassino] == cor:
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
                     await ctx.send(f"{ctx.author.display_name} ganhou!")
                 else:
