@@ -197,13 +197,13 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def fling(self, ctx, User: discord.Member):
-        channelVet = []
-        for channels in User.guild.voice_channels:
-            channelVet.append(channels)
-
         if User.voice is not None:
-            await ctx.send(f"{User.mention} foi movido")
-            await User.move_to(random.choice(channelVet))
+            channelVet = [channel for channel in User.guild.voice_channels if channel != User.voice.channel]
+            if not channelVet:
+                await ctx.send("Não há outros canais de voz disponíveis")
+            else:
+                await User.move_to(random.choice(channelVet))
+                await ctx.send(f"{User.mention} foi movido")
         else:
             await ctx.send("Usuário não está em um canal de voz.")
             await refund(ctx.author, ctx)

@@ -142,6 +142,42 @@ class PointsCommands(commands.Cog):
         else:
             await ctx.send("Você não tem permissão para fazer isso")
 
+    @commands.command() 
+    async def cassino(self, ctx, amount: int, cor: str):
+        cor = cor.upper()
+        coresPossiveis = ["RED", "BLACK", "GREEN"]
+        corEmoji = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
+        vermelhos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+        roleta = {i : "RED" if i in vermelhos else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
+        if Usuario.read(ctx.author.id) and cor in coresPossiveis:
+            if Usuario.read(ctx.author.id)["points"] >= amount and amount > 0:
+                cassino = randint(0, 36)
+                corSorteada = roleta[cassino]
+                if corSorteada == "GREEN" and cor == "GREEN":
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
+                    await ctx.send(f"{ctx.author.display_name} ganhou!")
+                elif corSorteada == cor:
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
+                    await ctx.send(f"{ctx.author.display_name} ganhou!")
+                else:
+                    await ctx.send(f"{ctx.author.display_name} perdeu, a cor sorteada foi {corSorteada} {corEmoji[corSorteada]}")                        
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
+                    return
+            else:
+                await ctx.send(f"{ctx.author.display_name} não tem pontos suficientes")
+                return  
+        else:
+            await ctx.send("Selecione uma cor válida.")
+
+    @cassino.error
+    async def cassino_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("Por favor, insira um valor e uma cor.")
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send("Por favor, insira um valor válido.")
+        else:
+            await ctx.send("Ocorreu um erro inesperado.")
+
     @commands.command()
     @pricing()
     async def roubarPontos(self, ctx, User: discord.Member):

@@ -1,6 +1,4 @@
 from db.dbConfig import mongo_client
-from db.dbConfig import db
-from pymongo.collection import Collection
 
 users_collection = mongo_client.db.usuario
 

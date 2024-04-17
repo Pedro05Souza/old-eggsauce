@@ -112,7 +112,6 @@ class TextCommands(commands.Cog):
             if Usuario.read(ctx.author.id)["roles"] == "":
                 await ctx.author.add_roles(role)
                 await ctx.send(f"{ctx.author.mention} recebeu o cargo de trabalhador.")
-                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "T")
 
 
     @commands.command()
@@ -135,7 +134,6 @@ class TextCommands(commands.Cog):
              if Usuario.read(ctx.author.id)["roles"] == "T":
                 await ctx.author.add_roles(role)
                 await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe baixa.")
-                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "B")
              else:
                 await ctx.send("Você não tem algum ou alguns dos cargos necessários.")
                 await refund(ctx.author, ctx)   
@@ -161,7 +159,6 @@ class TextCommands(commands.Cog):
              if Usuario.read(ctx.author.id)["roles"] == "TB":
                 await ctx.author.add_roles(role)
                 await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe média.")
-                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "M")
              else:
                     await ctx.send("Você não tem algum ou alguns dos cargos necessários.")
                     await refund(ctx.author, ctx)
@@ -188,49 +185,11 @@ class TextCommands(commands.Cog):
              if Usuario.read(ctx.author.id)["roles"] == "TBM":
                 await ctx.author.add_roles(role)
                 await ctx.send(f"{ctx.author.mention} recebeu o cargo de classe alta.")
-                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"], Usuario.read(ctx.author.id)["roles"] + "A")
              else:
                   await ctx.send("Você não tem algum ou alguns dos cargos necessários.")
                   await refund(ctx.author, ctx)
-         
-    @commands.command() 
-    async def cassino(self, ctx, amount: int, cor: str):
-        cor = cor.upper()
-        coresPossiveis = ["RED", "BLACK", "GREEN"]
-        corEmoji = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
-        vermelhos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
-        roleta = {i : "RED" if i in vermelhos else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
 
-        if Usuario.read(ctx.author.id) and cor in coresPossiveis:
-            if Usuario.read(ctx.author.id)["points"] >= amount and amount > 0:
-                cassino = randint(0, 36)
-                corSorteada = roleta[cassino]
-                if corSorteada == "GREEN" and cor == "GREEN":
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
-                    await ctx.send(f"{ctx.author.display_name} ganhou!")
-                elif corSorteada == cor:
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
-                    await ctx.send(f"{ctx.author.display_name} ganhou!")
-                else:
-                    await ctx.send(f"{ctx.author.display_name} perdeu, a cor sorteada foi {corSorteada} {corEmoji[corSorteada]}")                        
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
-                    return
-            else:
-                await ctx.send(f"{ctx.author.display_name} não tem pontos suficientes")
-                return  
-        else:
-            await ctx.send("Selecione uma cor válida.")
-
-    @cassino.error
-    async def cassino_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Por favor, insira um valor e uma cor.")
-        elif isinstance(error, commands.BadArgument):
-            await ctx.send("Por favor, insira um valor válido.")
-        else:
-            await ctx.send("Ocorreu um erro inesperado.")
-
-    def salarios(self, User:discord.Member):
+    def salarioCargo(self, User:discord.Member):
         salarios = {
             "T": 50,
             "B": 100,
@@ -238,7 +197,7 @@ class TextCommands(commands.Cog):
             "A": 300
         }
         if Usuario.read(User.id):
-             return salarios[Usuario.read(User.id)["roles"] [-1]]
+            return salarios[Usuario.read(User.id)["roles"] [-1]]
         else:
             return 0
         
@@ -252,15 +211,20 @@ class TextCommands(commands.Cog):
                    user_data = Usuario.read(member.id)
                    if user_data:
                         if user_data["roles"] != "":
-                            Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarios(member), Usuario.read(member.id)["roles"])
+                            Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarioCargo(member), Usuario.read(member.id)["roles"])
                             await asyncio.sleep(1600)
 
-    @commands.Cog.listener()
-    async def on_member_remove(self, member):
-         if Usuario.read(member.id):
-             Usuario.update(member.id, Usuario.read(member.id)["roles"], "")
-         else:
-              print("Usuário não registrado no Banco de Dados")
+    @commands.command()
+    async def salario(self, ctx, User: discord.Member = None):
+        if User is None:
+            User = ctx.author
+        if Usuario.read(User.id) and Usuario.read(User.id)["roles"] != "":
+            await ctx.send(f"{User.display_name} ganha {self.salarioCargo(User)} eggbux de salário")
+        elif Usuario.read(User.id)["roles"] == "":
+            await ctx.send(f"{User.display_name} não tem um cargo para receber salário.")
+        else:
+            await ctx.send(f"{User.display_name} não está registrado no Banco de Dados.")
+            await refund(ctx.author, ctx)
 
     @commands.command()
     async def nuke(self, ctx):
