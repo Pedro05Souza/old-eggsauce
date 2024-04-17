@@ -198,7 +198,7 @@ class VoipCommands(commands.Cog):
     @pricing()
     async def fling(self, ctx, User: discord.Member):
         channelVet = []
-        for channels in User.guild.channels:
+        for channels in User.guild.voice_channels:
             channelVet.append(channels)
 
         if User.voice is not None:
@@ -211,18 +211,11 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def detonate(self, ctx):
-        for channels in ctx.guild.channels:
-            if isinstance(channels, discord.VoiceChannel):
-                for member in channels:
-                 await member.move_to(None)
-        await ctx.send("Todos os usuários foram desconectados")
-
-
-
-
-
-
-
+        for vc in ctx.author.guild.voice_channels:
+            for membros in vc.members:
+                await membros.move_to(None)
+        await ctx.send("Todos os usuários foram desconectados dos canais de voz.")
+        
 
 async def setup(bot):
     await bot.add_cog(VoipCommands(bot))
