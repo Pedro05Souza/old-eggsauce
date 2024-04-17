@@ -198,11 +198,14 @@ class TextCommands(commands.Cog):
         cor = cor.upper()
         coresPossiveis = ["RED", "BLACK", "GREEN"]
         corEmoji = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
+        vermelhos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+        roleta = {i : "RED" if i in vermelhos else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
+
         if Usuario.read(ctx.author.id) and cor in coresPossiveis:
             if Usuario.read(ctx.author.id)["points"] >= amount and amount > 0:
-                cassino = randint(0, 35)
-                corSorteada = "RED" if cassino < 18 and cassino != 0 else ("GREEN" if cassino == 0 else "BLACK")
-                if corSorteada == cor and cor == "GREEN":
+                cassino = randint(0, 36)
+                corSorteada = roleta[cassino]
+                if corSorteada == "GREEN" and cor == "GREEN":
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
                     await ctx.send(f"{ctx.author.display_name} ganhou!")
                 elif corSorteada == cor:
