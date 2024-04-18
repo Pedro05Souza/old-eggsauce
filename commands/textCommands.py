@@ -63,8 +63,8 @@ class TextCommands(commands.Cog):
                 await refund(ctx.author, ctx)
                 return
         if User.top_role.position <= ctx.guild.me.top_role.position:
-            await User.kick()
-            await ctx.send(f"{User.mention} foi kickado")
+            await User.ban()
+            await ctx.send(f"{User.mention} foi banido.")
         else:
             await ctx.send("não tenho permissão para fazer isso.")
             await refund(ctx.author, ctx)
