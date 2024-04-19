@@ -6,6 +6,7 @@ from discord.ext import commands
 
 class Prices(Enum):
     doarPontos = 0
+    salario = 0
     balls = 50
     mog = 100
     mute = 150
@@ -36,8 +37,9 @@ class Prices(Enum):
 
 def verificar_pontos(User: discord.Member, comando):
     price = Prices[comando].value
-    if Usuario.read(User.id):
-        return Usuario.read(User.id)["points"] >= price
+    user_data = Usuario.read(User.id)
+    if user_data:
+        return user_data["points"] >= price
     else:
         return False
 

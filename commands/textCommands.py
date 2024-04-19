@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import os
 import random
 from tools.pricing import pricing, refund
+from pymongo.errors import ConnectionFailure
 
 class TextCommands(commands.Cog):
 
@@ -207,24 +208,28 @@ class TextCommands(commands.Cog):
         channel = self.bot.get_channel(int(os.getenv("CHANNEL_ID")))
         guild = self.bot.get_guild(guild_id)
         while True:
-              for member in guild.members:
-                   user_data = Usuario.read(member.id)
-                   if user_data:
+            for member in guild.members:
+                    user_data = Usuario.read(member.id)
+                    if user_data:
                         if user_data["roles"] != "":
                             Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarioCargo(member), Usuario.read(member.id)["roles"])
-                            await asyncio.sleep(1600)
+            await asyncio.sleep(1600)
 
     @commands.command()
     async def salario(self, ctx, User: discord.Member = None):
         if User is None:
             User = ctx.author
-        if Usuario.read(User.id) and Usuario.read(User.id)["roles"] != "":
-            await ctx.send(f"{User.display_name} ganha {self.salarioCargo(User)} eggbux de salário")
-        elif Usuario.read(User.id)["roles"] == "":
+        user_data = Usuario.read(User.id)
+
+        if user_data:
+            if user_data["roles"] != "":
+                await ctx.send(f"{User.display_name} ganha {self.salarioCargo(User)} eggbux de salário")
+                return   
             await ctx.send(f"{User.display_name} não tem um cargo para receber salário.")
         else:
             await ctx.send(f"{User.display_name} não está registrado no Banco de Dados.")
             await refund(ctx.author, ctx)
+            
 
     @commands.command()
     async def nuke(self, ctx):
