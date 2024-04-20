@@ -8,6 +8,7 @@ class Prices(Enum):
     doarPontos = 0
     salario = 0
     balls = 50
+    amor = 75
     mog = 100
     mute = 150
     unmute = 150
