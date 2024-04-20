@@ -40,6 +40,30 @@ Please note that the `API key` and MongoDB database storage are **NOT** availabl
 Give the application a name and click "Create". Navigate to the `Bot` tab, reset your token and copy it to the clipboard and paste it in the `.env` file. If you do not have a `.env` file in your directory, you should create one. The `.env` file should follow the format in `.env.example`.
 
 
+## How to run Docker in your machine:
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop.).
+
+2. After installing docker, verify your installation, open your terminal and run the following command:
+
+```
+docker --version
+```
+
+3. If sucessful, proceed to build the docker image. Open the terminal and navigate to your project directory and enter the following command. (Remember to switch the `image_name` with a name for your image)
+
+```
+docker build -t image_name .
+```
+
+4. Once the image is built, you can run a container based on that image using the following command:
+
+```
+docker run -p host_port:container_port image_name
+```
+Replace the `host_port` and `container_port` with the ports you're going to use
+
+
 ## Known Issues (Windows):
 This topic is for known issues that happened with this project and a suggestion on how fix each one of them. If you happen to find any more issues that aren't here message the developers and let us know!
 
