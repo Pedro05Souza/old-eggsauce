@@ -41,7 +41,7 @@ class AICommands(commands.Cog):
     @pricing()
     async def amor(self, ctx, User: discord.Member, User2: discord.Member):
         if Usuario.read(ctx.author.id):
-            history = await self.completionModel("user", f"faça uma história curta de amor de no máximo 50 palavras entre {User.display_name} e {User2.display_name} em português. Caso a história tenha un final, não continue ela.")
+            history = await self.completionModel("user", f"faça uma história curta de amor de no máximo 50 palavras entre {User.display_name} e {User2.display_name} em português. Caso a história tenha um final, não continue ela.")
             await ctx.send(history[-1]["content"])
         else:
             await ctx.send("Você precisa se registrar para usar este comando.")
@@ -52,10 +52,6 @@ class AICommands(commands.Cog):
         history = await self.completionModel("user", content)
         await ctx.send(history[-1]["content"])
 
-
-
-
-    
 
 async def setup(bot):
     await bot.add_cog(AICommands(bot))

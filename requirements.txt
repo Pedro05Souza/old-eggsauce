@@ -1,3 +1,4 @@
 discord.py
+openai
 python-dotenv
 pymongo[svr,tls]
