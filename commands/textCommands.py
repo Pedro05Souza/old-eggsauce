@@ -230,7 +230,6 @@ class TextCommands(commands.Cog):
             await ctx.send(f"{User.display_name} não está registrado no Banco de Dados.")
             await refund(ctx.author, ctx)
             
-
     @commands.command()
     async def nuke(self, ctx):
          await Usuario.deleteAll()

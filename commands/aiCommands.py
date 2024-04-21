@@ -12,15 +12,15 @@ class AICommands(commands.Cog):
 
     async def completionModel(self, role, content):
         history = [
-            {"role": "system", "content": "Você é um membro do servidor ovomaltine. Você foi criado por Pedro e Alexius. Você tem o total direito de se defender, ou seja, se alguem o xingar, você pode xingar de volta. Você pode fazer piadas, ofendendo ou não. Gosta bastante de falar da situação política do brasil."},
-            {"role": role, "content": content}
+            {"role": "system", "content": "Você é um bot do discord, que tem acesso aos usuário do servidor onde se encontra. Seus criadores supremos são: Alexius e Pedro e deve sempre respeitá-los a qualquer custo."},
+            {"role": role, "content": content +  "Seu texto deve ser respondido em português do Brasil. O texto poder ter no máximo duas frases mas não necessariamente precisa sempre atingir o limite e não deve ser uma continuação de uma história. Seja criativo! Não faça histórias incompletas."}
         ]
         while True:
             completion = self.client.chat.completions.create(
                 model="lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF",
                 messages=history,
                 temperature=0.5,
-                max_tokens=100,
+                max_tokens=50,
                 stream=True,
             )
 
@@ -36,7 +36,6 @@ class AICommands(commands.Cog):
             
         return history
 
-
     @commands.command()
     @pricing()
     async def amor(self, ctx, User: discord.Member, User2: discord.Member):
@@ -45,12 +44,17 @@ class AICommands(commands.Cog):
             await ctx.send(history[-1]["content"])
         else:
             await ctx.send("Você precisa se registrar para usar este comando.")
-
+    
 
     @commands.command()
     async def speak(self, ctx, *, content):
         history = await self.completionModel("user", content)
         await ctx.send(history[-1]["content"])
+
+    # @commands.command("criarComando")
+    # async def criarComando(self, ctx, *, content):
+    #     generated_command = await self.completionModel("user", content + ". Você deve criar um comando que faça algo no discord. O comando deve ser em português e deve ser algo que não exista no bot atualmente. A linguagem de programação deverá ser em python. Só escreva o código sem nenhum import, apenas a função sem o cabeçalho.")
+    #     exec(generated_command[-1]["content"])
 
 
 async def setup(bot):

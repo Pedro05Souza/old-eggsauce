@@ -128,9 +128,7 @@ class ModCommands(commands.Cog):
                     if any(role.name == role_name for role in after.roles):
                         roles += role_letters[role_name]
                 Usuario.update(after.id, Usuario.read(after.id)["points"], roles)
-                print("rolas adicionadas: " + roles)
-               
-    
+                print("rolas adicionadas: " + roles)    
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if Usuario.read(member.id):
