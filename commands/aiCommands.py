@@ -44,17 +44,6 @@ class AICommands(commands.Cog):
             await ctx.send(history[-1]["content"])
         else:
             await ctx.send("Você precisa se registrar para usar este comando.")
-    
-
-    @commands.command()
-    async def speak(self, ctx, *, content):
-        history = await self.completionModel("user", content)
-        await ctx.send(history[-1]["content"])
-
-    # @commands.command("criarComando")
-    # async def criarComando(self, ctx, *, content):
-    #     generated_command = await self.completionModel("user", content + ". Você deve criar um comando que faça algo no discord. O comando deve ser em português e deve ser algo que não exista no bot atualmente. A linguagem de programação deverá ser em python. Só escreva o código sem nenhum import, apenas a função sem o cabeçalho.")
-    #     exec(generated_command[-1]["content"])
 
 
 async def setup(bot):
