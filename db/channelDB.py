@@ -8,7 +8,7 @@ class ChannelDB:
         try:
             channel_data = channels_collection.find_one({"channel_id" : channel_id})
             if channel_data:
-                print("Esse canal já está setado")
+                print("This cannel already exists.")
                 return None
             else:
                 channel = {
@@ -16,9 +16,9 @@ class ChannelDB:
                     "channel_id": channel_id,
                 }
                 channels_collection.insert_one(channel)
-                print("Canal registrado com sucesso")
+                print("Channel created successfully.")
         except Exception as e:
-            print("Erro ao criar usuário", e)
+            print("Error encountered while creating a channel.", e)
             return None
     
     @staticmethod
@@ -27,11 +27,11 @@ class ChannelDB:
             channel_data = channels_collection.find_one({"channel_id": channel_id})
             if channel_data:
                 channels_collection.delete_one({"channel_id" : channel_id})
-                print("Canal excluído com sucesso")
+                print("Channel has been deleted successfully.")
             else:
-                print("Canal não encontrado")
+                print("Channel not found.")
         except Exception as e:
-                print("Erro ao excluir o canal", e)
+                print("Error encountered while deleting a channel.", e)
 
                 
     @staticmethod
@@ -41,10 +41,10 @@ class ChannelDB:
             if channel_data:
                 return channel_data
             else:
-                print("Canal não encontrado")
+                print("Channel not found.")
                 return None
         except Exception as e:
-            print("Erro ao encontrar o canal", e)
+            print("Error encountered while reading a channel.", e)
             return None
 
     @staticmethod
@@ -54,10 +54,10 @@ class ChannelDB:
             if channel_data:
                 return channel_data
             else:
-                print("Servidor não encontrado.")
+                print("Guild not found.")
                 return None
         except Exception as e:
-            print("Erro ao encontrar o canal", e)
+            print("Error encountered while reading a guild.", e)
             return None
         
 

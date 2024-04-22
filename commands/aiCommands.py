@@ -5,6 +5,7 @@ from tools.pricing import pricing
 from db.userDB import Usuario
 from tools.processing import Processing
 
+# This class is responsible for handling the AI commands.
 class AICommands(commands.Cog):
 
     def __init__(self, bot):
@@ -12,11 +13,11 @@ class AICommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def amor(self, ctx, User: discord.Member, User2: discord.Member):
+    async def love(self, ctx, User: discord.Member, User2: discord.Member):
         try:
             if Usuario.read(ctx.author.id):
                 async with ctx.typing():
-                    data = {"role": "user", "content":f"faça uma história curta de amor entre {User.display_name} e {User2.display_name}. Não escreva histórias incompletas, use no máximo seu limite de tokens que é de 100."}
+                    data = {"role": "user", "content":f"Make a short love story between {User.display_name} and {User2.display_name}. Don't write incomplete stories, Use a maximum of 100 tokens."}
                     processing = Processing(data)
                     processing.start()
                     loop = asyncio.get_event_loop()
@@ -25,17 +26,17 @@ class AICommands(commands.Cog):
                     if(len(content) > 0):
                         await ctx.send(content)
                     else:
-                        await ctx.send("Erro! AI não gerou conteúdo.")
+                        await ctx.send("Error! AI didn't generate content.")
             else:
-                await ctx.send("Você precisa se registrar para usar este comando.")
+                await ctx.send("You need to be registered to use this command. Join any voice channels to register.")
         except Exception as e:
-            ctx.send("Ocorreu um problema inesperado!")
+            ctx.send("An unexpected problem occurred!")
 
     @commands.command()
     async def speak(self, ctx, *, content):
         try:
             async with ctx.typing():
-                data ={"role" : "user", "content" : content + ". De preferência escreva mensagens curtas."}
+                data ={"role" : "user", "content" : content + ". Prefelaby send a short message. If the user message requires more, write more than one message."}
                 processing = Processing(data)
                 processing.start()
                 loop = asyncio.get_event_loop()
@@ -44,9 +45,9 @@ class AICommands(commands.Cog):
                 if(len(content) > 0):
                     await ctx.send(content)
                 else:
-                    await ctx.send("Erro! AI não gerou conteúdo.")
+                    await ctx.send("Error! AI didn't generate content.")
         except Exception as e:
-            ctx.send("Ocorreu um problema inesperado!")
+            ctx.send("An unexpected problem occurred!")
 
         
 

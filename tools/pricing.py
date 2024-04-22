@@ -5,6 +5,8 @@ import inspect
 from discord.ext import commands
 from db.channelDB import ChannelDB
 
+# This class is responsible for handling the prices of the commands.
+
 class Prices(Enum):
     doarPontos = 0
     shop = 0
@@ -51,7 +53,7 @@ async def refund(User: discord.Member, ctx):
         price = Prices[ctx.command.name].value
         await Usuario.update(User.id, Usuario.read(User.id)["points"] + price, Usuario.read(User.id)["roles"])
     except Exception as e:
-        print("Erro ao devolver os pontos", e)
+        print("Error encountered while refunding the money.", e)
 
 async def treat_exceptions(ctx, comando):
         
@@ -70,10 +72,10 @@ async def treat_exceptions(ctx, comando):
         expected_args_count -= 1 
     
     if len(command_args) < expected_args_count:
-        await ctx.send("Número insuficiente de argumentos.")
+        await ctx.send("Insufficient amount of arguments.")
         return False
     elif len(command_args) > len(parameters) and varargs_index is None:
-        await ctx.send("Número excessivo de argumentos.")
+        await ctx.send("Excessive amount of arguments.")
         return False
     
     channel_list = ChannelDB.readAll() 
@@ -83,7 +85,7 @@ async def treat_exceptions(ctx, comando):
         channels.append(channel)
     
     if ctx.channel not in channels:
-        await ctx.send("Você não pode usar o comando nesse canal.")
+        await ctx.send("You are not allowed to use commands in this channel.")
         return False
     
     i = 0
@@ -103,17 +105,17 @@ async def treat_exceptions(ctx, comando):
                 else:
                     arg = param_type(arg)
         except ValueError:
-            await ctx.send("Argumentos inválidos.")
+            await ctx.send("Invalid arguments.")
             return False
         except commands.MemberNotFound:
-            await ctx.send("Membro não encontrado.")
+            await ctx.send("Member not found.")
             return False
         except commands.errors.BadArgument:
-            await ctx.send("Argumentos inválidos.")
+            await ctx.send("Invalid arguments.")
             return False
 
         if arg is not None and not isinstance(arg, param_type):
-            await ctx.send("Argumentos inválidos.")
+            await ctx.send("Invalid arguments.")
             return False
         if '*' not in str(param) and index not in optional_params_indices:
             i += 1
@@ -130,9 +132,9 @@ def pricing():
             if verificar_pontos(ctx.author, comando):
                 return await treat_exceptions(ctx,comando)
             else:
-                await ctx.send("Você não tem créditos suficientes para executar este comando.")
+                await ctx.send("You dont have enough points to use this command.")
                 return False 
         else:
-            await ctx.send("Comando não identificado.")
+            await ctx.send("Unknown command.")
             return False
     return commands.check(predicate)

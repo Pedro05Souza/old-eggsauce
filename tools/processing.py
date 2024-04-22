@@ -3,11 +3,13 @@ import concurrent.futures
 import asyncio
 from openai import OpenAI
 
+# This class is responsible for processing the AI requests.
+
 class Processing (Thread):
     def __init__(self, data):
         self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lmstudio")
         Thread.__init__(self)
-        self.data = [{"role": "system", "content": "Você é um bot do discord, que tem acesso aos usuário do servidor onde se encontra. Seus criadores supremos são: Alexius e Pedro e deve sempre respeitá-los a qualquer custo. Sua mensagem sempre deve ser mandada no Português do Brasil. Qualquer texto que você mandar deve ter até 100 palavras mas não necessariamente precisa sempre atingir o limite e não deve ser uma continuação de uma história. Seja criativo! Não faça histórias incompletas."}, data]
+        self.data = [{"role": "system", "content": "I'm a Discord bot with server access granted by my creators, Alexius and Pedro. Always honoring them above all. Messages are in American english, concise yet impactful. Creativity flows within 100 words, no unfinished stories. Let's engage!"}, data]
         self.future = concurrent.futures.Future()
 
     def run(self):

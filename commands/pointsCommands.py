@@ -44,16 +44,16 @@ class PointsCommands(commands.Cog):
             return
         else:
             Usuario.create(User.id, 0)
-            print(f"Usuário criado: {User.name}")
+            print(f"User created: {User.name}")
  
     @commands.command("pontos" , aliases=["verpontos", "money" , "eggbux"])
     async def points(self, ctx, User: discord.Member = None):
         if User is None:
-            await ctx.send(f"{ctx.author.mention} tem " + str(Usuario.read(ctx.author.id)["points"]) + " eggbux :money_with_wings:")
+            await ctx.send(f"{ctx.author.mention} has " + str(Usuario.read(ctx.author.id)["points"]) + " eggbux :money_with_wings:")
         elif Usuario.read(User.id):
-            await ctx.send(f"{User.mention} tem " + str(Usuario.read(User.id)["points"]) + " eggbux :money_with_wings:")
+            await ctx.send(f"{User.mention} has " + str(Usuario.read(User.id)["points"]) + " eggbux :money_with_wings:")
         else:
-            await ctx.send(f"{User.mention} não tem eggbux!")
+            await ctx.send(f"{User.mention} has no eggbux :cry:")
     
     @commands.command("shop", aliases=["loja", "comprar", "store"])
     @pricing()
@@ -62,7 +62,7 @@ class PointsCommands(commands.Cog):
         for member in Prices.__members__:
             data.append({"title": member, "value": str(Prices.__members__[member].value) + " eggbux"})
         view = PaginationView(data)
-        await view.send(ctx, title="Shop", description="Compre comandos com seus eggbux:", color=0x00ff00)
+        await view.send(ctx, title="Shop", description="Buy commands with your eggbux:", color=0x00ff00)
 
     @commands.command("leaderboard", aliases=["ranking"])
     async def leaderboard(self, ctx):
@@ -75,7 +75,7 @@ class PointsCommands(commands.Cog):
             if member is not None and member in guild.members:
                 data.append({"title": member.name, "value": i["points"]})
         view = PaginationView(data)
-        await view.send(ctx, title="Leaderboard", description="Ranking de eggbux", color=0x00ff00)
+        await view.send(ctx, title="Leaderboard", description="Eggbux's ranking", color=0x00ff00)
 
     async def drop_eggbux_for_guild(self, guild):
         server = ChannelDB.read(server_id=guild.id)
@@ -84,17 +84,17 @@ class PointsCommands(commands.Cog):
             chance = randint(0, 100)
             if chance <= 20:  # 20% de chance de dropar
                 quantEgg = randint(1, 750) 
-                await channel.send(f"uma bolsa com {quantEgg} eggbux foi dropada no chat! :money_with_wings:. Digite !claim para pegar, lembrando você tem 5 minutos para pegar!")
+                await channel.send(f"A bag with {quantEgg} eggbux has been dropped in the chat! :money_with_wings:. Type !claim to get it. Remember you only have 5 minutes to claim it.")
                 try:
                     Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "!claim" and message.channel == channel), timeout=300)
                     if Usuario.read(Message.author.id):
                         Usuario.update(Message.author.id, Usuario.read(Message.author.id)["points"] + quantEgg, Usuario.read(Message.author.id)["roles"])
-                        await channel.send(f"{Message.author.mention} pegou {quantEgg} eggbux")
+                        await channel.send(f"{Message.author.mention} claimed {quantEgg} eggbux")
                     else:
                         Usuario.create(Message.author.id, quantEgg)
-                        await channel.send(f"{Message.author.mention} pegou {quantEgg} eggbux")
+                        await channel.send(f"{Message.author.mention} claimed {quantEgg} eggbux")
                 except asyncio.TimeoutError:
-                    await channel.send(f"A bolsa com {quantEgg} eggbux foi perdida. :cry:")
+                    await channel.send(f"The bag with {quantEgg} eggbux has been lost. :cry:")
 
     async def drop_eggbux(self):
         await asyncio.gather(*(self.drop_eggbux_for_guild(guild) for guild in self.bot.guilds))
@@ -106,10 +106,10 @@ class PointsCommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def doarPontos(self, ctx, User:discord.Member, amount: int):
+    async def donatePoints(self, ctx, User:discord.Member, amount: int):
         if Usuario.read(ctx.author.id) and Usuario.read(User.id):
             if ctx.author.id == User.id:
-                await ctx.send("Você não pode doar para si mesmo")
+                await ctx.send("You can't donate to yourself")
             elif Usuario.read(ctx.author.id)["points"] >= amount:
                 if amount <= 0:
                     await ctx.send("Você não pode doar 0 ou uma quantidade negativa de eggbux")
@@ -136,55 +136,55 @@ class PointsCommands(commands.Cog):
                 corSorteada = roleta[cassino]
                 if corSorteada == "GREEN" and cor == "GREEN":
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
-                    await ctx.send(f"{ctx.author.display_name} ganhou!")
+                    await ctx.send(f"{ctx.author.display_name} has won!")
                 elif corSorteada == cor:
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
-                    await ctx.send(f"{ctx.author.display_name} ganhou!")
+                    await ctx.send(f"{ctx.author.display_name} has won!")
                 else:
-                    await ctx.send(f"{ctx.author.display_name} perdeu, a cor sorteada foi {corSorteada} {corEmoji[corSorteada]}")                        
+                    await ctx.send(f"{ctx.author.display_name} lost, the selected color was {corSorteada} {corEmoji[corSorteada]}")                        
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
                     return
             else:
-                await ctx.send(f"{ctx.author.display_name} não tem pontos suficientes")
+                await ctx.send(f"{ctx.author.display_name} doesn't have enough eggbux or the amount is less than 50 eggbux.")
                 return  
         else:
-            await ctx.send("Selecione uma cor válida.")
+            await ctx.send("Select a valid color.")
 
     @cassino.error
     async def cassino_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Por favor, insira um valor e uma cor.")
+            await ctx.send("Please, insert the amount and the color.")
         elif isinstance(error, commands.BadArgument):
-            await ctx.send("Por favor, insira um valor válido.")
+            await ctx.send("Please, insert a valid amount.")
         else:
-            await ctx.send("Ocorreu um erro inesperado.")
+            await ctx.send("An unexpected error occurred.")
 
-    @commands.command("roubarPontos", aliases=["stealPoints", "roubar", "steal"])
+    @commands.command()
     @pricing()
     async def stealPoints(self, ctx, User: discord.Member):
         if Usuario.read(ctx.author.id):
             chance  = randint(0, 100)
             if User.bot:
-                await ctx.send("Você não pode roubar de um bot")
+                await ctx.send("You can't steal from a bot.")
                 await refund(ctx.author, ctx)
                 return
             if Usuario.read(User.id):
                 if ctx.author.id == User.id:
-                    await ctx.send("Você não pode roubar de si mesmo")
+                    await ctx.send("You can't steal from yourself.")
                     await refund(ctx.author, ctx)
                 elif chance >= 10: # 10% de chance de falhar
                     quantUser = Usuario.read(User.id)["points"]
                     randomInteiro = randint(0, int(quantUser/2)) # 50% do total de pontos do usuário
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
                     Usuario.update(User.id, Usuario.read(User.id)["points"] - randomInteiro, Usuario.read(User.id)["roles"])
-                    await ctx.send(f"{ctx.author.mention} roubou {randomInteiro} eggbux de {User.mention}")
+                    await ctx.send(f"{ctx.author.mention} stole {randomInteiro} eggbux from {User.mention}")
                 else:
-                    await ctx.send(f"{ctx.author.mention} falhou ao tentar roubar de {User.mention}")
+                    await ctx.send(f"{ctx.author.mention} failed while trying to rob {User.mention}")
             else:
-                await ctx.send("Você não tem permissão para fazer isso")
+                await ctx.send("User not found in the database.")
                 await refund(ctx.author, ctx)
         else:
-            await ctx.send("Você não tem permissão para fazer isso")
+            await ctx.send("You don't have permission to do this.")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, User: discord.Member, before, after):

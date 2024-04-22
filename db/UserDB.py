@@ -1,6 +1,7 @@
 from db.dbConfig import mongo_client
-
 users_collection = mongo_client.db.usuario
+
+# This class is responsible for handling user data in the database.
 
 class Usuario:
     @staticmethod
@@ -8,7 +9,7 @@ class Usuario:
         try:            
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
-                print("Usuário já existe")
+                print("User already exists.")
                 return None 
             else:
                 user = {
@@ -17,9 +18,9 @@ class Usuario:
                     "roles" : ""
                 }
                 users_collection.insert_one(user)
-                print("Usuário criado com sucesso")
+                print("User has been created successfully.")
         except Exception as e:
-            print("Erro ao criar usuário", e)
+            print("Error encountered while creating the user.", e)
             return None    
         
     @staticmethod
@@ -28,11 +29,11 @@ class Usuario:
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
                 users_collection.delete_one({"user_id" : user_id})
-                print("Usuário excluído com sucesso")
+                print("User has been deleted successfully.")
             else:
-                print("Usuário não encontrado")
+                print("User not found.")
         except Exception as e:
-                print("Erro ao excluir o usuário", e)
+                print("Error encountered while deleting the user.", e)
     
     @staticmethod
     def update(user_id : int, points : int, roles: str):
@@ -41,7 +42,7 @@ class Usuario:
             if user_data:
                 users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})#agr vai funcionar 😁
         except Exception as e:
-            print("Erro ao atualizar os pontos do usuário", e)
+            print("Error encountered while trying to update user's status.", e)
         
     @staticmethod
     def read(user_id : int):
@@ -52,7 +53,7 @@ class Usuario:
             else:
                 return None
         except Exception:
-            print("Erro ao buscar usuário")
+            print("Error encountered while finding user.")
             return None
         
     @staticmethod
@@ -61,7 +62,7 @@ class Usuario:
             users = users_collection.find()
             return users
         except Exception as e:
-            print("Erro ao buscar usuários", e)
+            print("Error encountered while reading users.", e)
             return None
 
     @staticmethod
@@ -69,7 +70,7 @@ class Usuario:
         try:
             users_collection.delete_many({})
         except Exception as e:
-            print("Erro ao excluir todos os usuários", e)
+            print("Error encountered while deleting users.", e)
             return None
     
     @staticmethod
@@ -77,7 +78,7 @@ class Usuario:
         try:
             users_collection.update_many({}, {"$set": {"roles": role}})
         except Exception as e:
-            print("Erro ao atualizar todos os usuários", e)
+            print("Error encountered while updating users.", e)
             return None
 
     
