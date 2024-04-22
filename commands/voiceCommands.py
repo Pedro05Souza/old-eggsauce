@@ -69,9 +69,14 @@ class VoipCommands(commands.Cog):
     @pricing()
     async def mute(self, ctx, User: discord.Member = None):
         user = ctx.author
-        channel = User.voice.channel
         if User is None:
             User = ctx.author
+        if User.voice is not None:
+            channel = User.voice.channel
+        else:
+            channel = None
+            await ctx.send("This user is not in a voice channel.")
+            await refund(user,ctx)
         if channel is not None and User.voice.mute == False:
             await User.edit(mute=True)
             await ctx.send(f"{User.mention} has been muted.")
