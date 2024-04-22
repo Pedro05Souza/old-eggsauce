@@ -1,9 +1,11 @@
 import os
 import discord
 from discord.ext import commands
-from db.UserDB import Usuario
+from db.userDB import Usuario
+from db.channelDB import ChannelDB
 from dotenv import load_dotenv
 
+# This ModCommands class is specifically for testing purposes;
 class ModCommands(commands.Cog):
     
     def __init__(self, bot):
@@ -11,8 +13,9 @@ class ModCommands(commands.Cog):
         self.devs = os.getenv("DEVS").split(",")
         self.bot = bot
 
-    @commands.command()
-    async def addPontos(self, ctx, amount: int, User: discord.Member = None):
+    @commands.command("addPontos", aliases=["addPoints"]) 
+    async def addPoints(self, ctx, amount: int, User: discord.Member = None):
+        """Add points to a user. If no user is specified, the author of the command will receive the points."""
         if User is None:
             User = ctx.author
             if str(User.id) in self.devs:
@@ -30,8 +33,9 @@ class ModCommands(commands.Cog):
             else:
                 await ctx.send("Usuario não registrado no Banco de Dados!")
 
-    @commands.command()
-    async def removePontos(self, ctx, amount: int, User: discord.Member = None):
+    @commands.command("removePontos", aliases=["removePoints"])
+    async def removePoints(self, ctx, amount: int, User: discord.Member = None):
+        """Remove points from a user. If no user is specified, the author of the command will lose the points."""
         if User is None:
             User = ctx.author
             if str(User.id) in self.devs:
@@ -49,8 +53,9 @@ class ModCommands(commands.Cog):
             else:
                 await ctx.send("Você não tem permissão para fazer isso")
 
-    @commands.command()
+    @commands.command("deleteDB")
     async def deleteDB(self, ctx,  User: discord.Member):
+        """Delete a user from the database."""
         User = User.id
         if Usuario.read(User):
             if str(ctx.author.id) in self.devs:
@@ -61,9 +66,9 @@ class ModCommands(commands.Cog):
         else:
             await ctx.send(f"{User} não está registrado no Banco de Dados!")
 
-
-    @commands.command()
-    async def removerCargo(self, ctx ,User:discord.Member, role: str):
+    @commands.command("removerCargo", aliases=["removeRole"])
+    async def removeRole(self, ctx ,User:discord.Member, role: str):
+        """Remove one one of the custom roles created by the bot."""
         possibleRoles = {"T": "trabalhador assalariado", "B" : "Plebeu", "M" : "pobretão com um gol 1.0", "A" : "magnata"}
         if str(ctx.author.id) in self.devs:
             user_data = Usuario.read(User.id)
@@ -84,8 +89,9 @@ class ModCommands(commands.Cog):
         else:
             await ctx.send("Você não tem permissão para fazer isso")
             
-    @commands.command()
-    async def removerTodosCargos(self, ctx, User: discord.Member):
+    @commands.command("removerTodosCargos")
+    async def removeAllRoles(self, ctx, User: discord.Member):
+        """Remove all custom roles created by the bot."""
         if str(ctx.author.id) in self.devs:
             user_data = Usuario.read(User.id)
             if user_data:
@@ -100,6 +106,15 @@ class ModCommands(commands.Cog):
                 await ctx.send(f"{User.mention} não está registrado no Banco de Dados!")
         else:
             await ctx.send("Você não tem permissão para fazer isso")
+
+    @commands.command()
+    async def setChannel(self, ctx):
+        if str(ctx.author.id) in self.devs:
+            ChannelDB.create(ctx.guild.id, ctx.channel.id)
+        else:
+            await ctx.send("Você não tem permissão para fazer isso.")
+
+    # Event listeners; these functions are called when the event they are listening for is triggered
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -128,7 +143,8 @@ class ModCommands(commands.Cog):
                     if any(role.name == role_name for role in after.roles):
                         roles += role_letters[role_name]
                 Usuario.update(after.id, Usuario.read(after.id)["points"], roles)
-                print("rolas adicionadas: " + roles)    
+                print("rolas adicionadas: " + roles)  
+                
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if Usuario.read(member.id):

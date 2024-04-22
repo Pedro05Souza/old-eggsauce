@@ -1,11 +1,13 @@
 from enum import Enum
-from db.UserDB import Usuario
+from db.userDB import Usuario
 import discord
 import inspect
 from discord.ext import commands
+from db.channelDB import ChannelDB
 
 class Prices(Enum):
     doarPontos = 0
+    shop = 0
     salario = 0
     balls = 50
     amor = 75
@@ -72,6 +74,16 @@ async def treat_exceptions(ctx, comando):
         return False
     elif len(command_args) > len(parameters) and varargs_index is None:
         await ctx.send("Número excessivo de argumentos.")
+        return False
+    
+    channel_list = ChannelDB.readAll() 
+    channels = []
+    for channel_dic in channel_list:
+        channel = ctx.bot.get_channel(channel_dic["channel_id"])
+        channels.append(channel)
+    
+    if ctx.channel not in channels:
+        await ctx.send("Você não pode usar o comando nesse canal.")
         return False
     
     i = 0

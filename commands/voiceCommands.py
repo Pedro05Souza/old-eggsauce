@@ -13,6 +13,7 @@ class VoipCommands(commands.Cog):
         self.bot = bot
         self.gods = []
         self.devs = os.getenv("DEVS").split(",")
+        self.prisioner = {}
 
     
     @commands.command()
@@ -51,15 +52,6 @@ class VoipCommands(commands.Cog):
             await ctx.send("Você não está em um canal de voz.")
             await refund(user, ctx)
 
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        if member in self.gods and not before.mute and after.mute:
-            await member.edit(mute=False)
-            print(f"{member.name} foi mutado, mas era um Deus e foi desmutado")
-        if member in self.gods and not before.deaf and after.deaf:
-            await member.edit(deafen=False)
-            print(f"{member.name} foi ensurdecido, mas era um Deus e foi desensurdecido")
-
     @commands.command()
     @pricing()
     async def explode(self, ctx):
@@ -76,9 +68,9 @@ class VoipCommands(commands.Cog):
     @pricing()
     async def mute(self, ctx, User: discord.Member = None):
         user = ctx.author
+        channel = User.voice.channel
         if User is None:
             User = ctx.author
-            channel = User.voice.channel
         if channel is not None and User.voice.mute == False:
             await User.edit(mute=True)
             await ctx.send(f"{User.mention} foi mutado")
@@ -176,20 +168,21 @@ class VoipCommands(commands.Cog):
             await refund(ctx.author, ctx)
             return
         await ctx.send(f"{User.mention} foi preso")
+        self.prisioner[User.id] = 60
         await self.prision_counter(ctx, User, 60)
             
     async def prision_counter(self, ctx, User: discord.Member, time: int):
         servidor = ctx.guild
-        category_name = "penis" 
         channel_name = "Prisão"
-        category = discord.utils.get(servidor.categories, name=category_name)
-        prison_channel = discord.utils.get(category.voice_channels, name=channel_name)
+        channels = ctx.guild.channels
+        prison_channel = discord.utils.get(channels, name=channel_name)
         if prison_channel is None:
-            prison_channel = await servidor.create_voice_channel(channel_name, category=category)
+            prison_channel = await servidor.create_voice_channel(channel_name)
         if User.voice and User.voice.channel:
             await User.move_to(prison_channel)
             if time > 0:
                 await asyncio.sleep(1)
+                self.prisioner[User.id] = time - 1
                 await self.prision_counter(ctx, User, time - 1)
             else:
                 await prison_channel.delete()
@@ -215,6 +208,20 @@ class VoipCommands(commands.Cog):
             for membros in vc.members:
                 await membros.move_to(None)
         await ctx.send("Todos os usuários foram desconectados dos canais de voz.")
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if self.prisioner.get(member.id, 0) > 0:
+            if after.channel is None or after.channel.name != "Prisão":
+                prison_channel = discord.utils.get(member.guild.channels, name="Prisão")
+                if prison_channel is not None:
+                    await member.move_to(prison_channel)       
+        if member in self.gods and not before.mute and after.mute:
+            await member.edit(mute=False)
+            print(f"{member.name} foi mutado, mas era um Deus e foi desmutado")
+        if member in self.gods and not before.deaf and after.deaf:
+            await member.edit(deafen=False)
+            print(f"{member.name} foi ensurdecido, mas era um Deus e foi desensurdecido")
         
 
 async def setup(bot):

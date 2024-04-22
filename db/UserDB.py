@@ -3,7 +3,6 @@ from db.dbConfig import mongo_client
 users_collection = mongo_client.db.usuario
 
 class Usuario:
-   
     @staticmethod
     def create(user_id : int, points : int):
         try:            

@@ -2,13 +2,11 @@
 import asyncio
 from discord.ext import commands
 import discord
-from db.UserDB import Usuario
-from random import randint
-from dotenv import load_dotenv
+from db.userDB import Usuario
+from db.channelDB import ChannelDB
 import os
 import random
 from tools.pricing import pricing, refund
-from pymongo.errors import ConnectionFailure
 
 class TextCommands(commands.Cog):
 
@@ -70,7 +68,7 @@ class TextCommands(commands.Cog):
             await ctx.send("não tenho permissão para fazer isso.")
             await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.command("mudarApelido", aliases=["changeNickname"])
     @pricing()
     async def mudarApelido(self, ctx, User: discord.Member, *, apelido: str):
         if User.top_role.position <= ctx.guild.me.top_role.position:
@@ -164,7 +162,7 @@ class TextCommands(commands.Cog):
                     await ctx.send("Você não tem algum ou alguns dos cargos necessários.")
                     await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.command("cargoClasseAlta", aliases=["HighClassRole"])
     @pricing()
     async def cargoClasseAlta(self, ctx):
          if Usuario.read(ctx.author.id):    
@@ -203,24 +201,20 @@ class TextCommands(commands.Cog):
             return 0
         
     async def work_periodically(self):
-        load_dotenv()
-        guild_id = int(os.getenv("GUILD_ID"))
-        channel = self.bot.get_channel(int(os.getenv("CHANNEL_ID")))
-        guild = self.bot.get_guild(guild_id)
         while True:
-            for member in guild.members:
-                    user_data = Usuario.read(member.id)
-                    if user_data:
-                        if user_data["roles"] != "":
-                            Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarioCargo(member), Usuario.read(member.id)["roles"])
-            await asyncio.sleep(1600)
+            for guild in self.bot.guilds:
+                for member in guild.members:
+                        user_data = Usuario.read(member.id)
+                        if user_data:
+                            if user_data["roles"] != "":
+                                Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarioCargo(member), Usuario.read(member.id)["roles"])
+                await asyncio.sleep(1600)
 
-    @commands.command()
+    @commands.command("salario", aliases=["salary"])
     async def salario(self, ctx, User: discord.Member = None):
         if User is None:
             User = ctx.author
         user_data = Usuario.read(User.id)
-
         if user_data:
             if user_data["roles"] != "":
                 await ctx.send(f"{User.display_name} ganha {self.salarioCargo(User)} eggbux de salário")
