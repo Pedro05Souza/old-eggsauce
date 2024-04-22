@@ -13,7 +13,7 @@ class ModCommands(commands.Cog):
         self.devs = os.getenv("DEVS").split(",")
         self.bot = bot
 
-    @commands.command("addPontos", aliases=["addPoints"]) 
+    @commands.command() 
     async def addPoints(self, ctx, amount: int, User: discord.Member = None):
         """Add points to a user. If no user is specified, the author of the command will receive the points."""
         if User is None:
@@ -33,7 +33,7 @@ class ModCommands(commands.Cog):
             else:
                 await ctx.send("User not found in the database.")
 
-    @commands.command("removePontos", aliases=["removePoints"])
+    @commands.command()
     async def removePoints(self, ctx, amount: int, User: discord.Member = None):
         """Remove points from a user. If no user is specified, the author of the command will lose the points."""
         if User is None:
@@ -53,7 +53,7 @@ class ModCommands(commands.Cog):
             else:
                 await ctx.send("User not found in the database.")
 
-    @commands.command("deleteDB")
+    @commands.command()
     async def deleteDB(self, ctx,  User: discord.Member):
         """Delete a user from the database."""
         User = User.id
@@ -66,7 +66,7 @@ class ModCommands(commands.Cog):
         else:
             await ctx.send(f"{User} not found in the database.")
 
-    @commands.command("removerCargo", aliases=["removeRole"])
+    @commands.command()
     async def removeRole(self, ctx ,User:discord.Member, role: str):
         """Remove one one of the custom roles created by the bot."""
         possibleRoles = {"T": "trabalhador assalariado", "B" : "Plebeu", "M" : "pobretão com um gol 1.0", "A" : "magnata"}
@@ -89,7 +89,7 @@ class ModCommands(commands.Cog):
         else:
             await ctx.send("You do not have permission to do this.")
             
-    @commands.command("removerTodosCargos")
+    @commands.command()
     async def removeAllRoles(self, ctx, User: discord.Member):
         """Remove all custom roles created by the bot."""
         if str(ctx.author.id) in self.devs:
@@ -120,8 +120,8 @@ class ModCommands(commands.Cog):
     async def on_member_update(self, before, after):
         if before.roles != after.roles:
             roles = ""
-            role_order = ["trabalhador assalariado", "Plebeu", "pobretão com um gol 1.0", "magnata"]
-            role_letters = {"trabalhador assalariado": "T", "Plebeu": "B", "pobretão com um gol 1.0": "M", "magnata": "A"}
+            role_order = ["Low wage worker", "Peasant", "Brokie who thinks they are rich", "Magnate"]
+            role_letters = {"Low wage worker": "T", "Peasant": "B", "Brokie who thinks they are rich": "M", "Magnate": "A"}
             lost_role = None
             for role in before.roles:
                 if role not in after.roles:
