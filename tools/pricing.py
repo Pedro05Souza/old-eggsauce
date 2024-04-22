@@ -8,6 +8,10 @@ from db.channelDB import ChannelDB
 # This class is responsible for handling the prices of the commands.
 
 class Prices(Enum):
+    points = 0
+    leaderboard = 0
+    cassino = 0
+    speak = 0
     donatePoints = 0
     shop = 0
     salario = 0

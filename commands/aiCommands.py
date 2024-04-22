@@ -33,6 +33,7 @@ class AICommands(commands.Cog):
             ctx.send("An unexpected problem occurred!")
 
     @commands.command()
+    @pricing()
     async def speak(self, ctx, *, content):
         try:
             async with ctx.typing():

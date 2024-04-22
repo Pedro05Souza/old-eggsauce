@@ -47,6 +47,7 @@ class PointsCommands(commands.Cog):
             print(f"User created: {User.name}")
  
     @commands.command()
+    @pricing()
     async def points(self, ctx, User: discord.Member = None):
         if User is None:
             user_data = Usuario.read(ctx.author.id)
@@ -67,11 +68,13 @@ class PointsCommands(commands.Cog):
     async def shop(self, ctx):
         data = []
         for member in Prices.__members__:
-            data.append({"title": member, "value": str(Prices.__members__[member].value) + " eggbux"})
+            if Prices.__members__[member].value > 0:
+                data.append({"title": member, "value": str(Prices.__members__[member].value) + " eggbux"})
         view = PaginationView(data)
         await view.send(ctx, title="Shop", description="Buy commands with your eggbux:", color=0x00ff00)
 
     @commands.command("leaderboard", aliases=["ranking"])
+    @pricing()
     async def leaderboard(self, ctx):
         users = Usuario.readAll()
         users = sorted(users, key=lambda x: x["points"], reverse=True)
@@ -130,7 +133,8 @@ class PointsCommands(commands.Cog):
         else:
             await ctx.send("Você não tem permissão para fazer isso")
 
-    @commands.command("cassino", aliases=["roleta", "roulette"]) 
+    @commands.command("cassino", aliases=["roleta", "roulette"])
+    @pricing()
     async def cassino(self, ctx, amount: int, cor: str):
         cor = cor.upper()
         coresPossiveis = ["RED", "BLACK", "GREEN"]
