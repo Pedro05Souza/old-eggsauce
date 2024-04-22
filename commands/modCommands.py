@@ -109,9 +109,9 @@ class ModCommands(commands.Cog):
 
     @commands.command()
     async def setChannel(self, ctx):
-        if ctx.author.guild_permission.administrator or str(ctx.author.id in self.devs):
+        if ctx.author.guild_permissions.administrator or str(ctx.author.id in self.devs):
             if ChannelDB.read(server_id=ctx.guild.id):
-                ChannelDB.update(ctx.guild.id, ctx.channel_id)
+                ChannelDB.update(ctx.channel.id)
                 print(f"Channel updated for guild {ctx.guild.name}")
                 await ctx.send("Commands channel has been updated.")
             else:
