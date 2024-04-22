@@ -109,10 +109,18 @@ class ModCommands(commands.Cog):
 
     @commands.command()
     async def setChannel(self, ctx):
-        if str(ctx.author.id) in self.devs:
-            ChannelDB.create(ctx.guild.id, ctx.channel.id)
+        if ctx.author.guild_permission.administrator or str(ctx.author.id in self.devs):
+            if ChannelDB.read(server_id=ctx.guild.id):
+                ChannelDB.update(ctx.guild.id, ctx.channel_id)
+                print(f"Channel updated for guild {ctx.guild.name}")
+                await ctx.send("Commands channel has been updated.")
+            else:
+                ChannelDB.create(ctx.guild.id, ctx.channel.id)
+                print(f"New channel registered for guild {ctx.guild.name}")
+                await ctx.send("Commands channel has been set.")
         else:
-            await ctx.send("You do not have permission to do this.")
+            await ctx.send(f"You do not have permission to do this.")
+
 
     # Event listeners; these functions are called when the event they are listening for is triggered
 
