@@ -50,7 +50,5 @@ class AICommands(commands.Cog):
             ctx.send("An unexpected problem occurred!")
 
         
-
-
 async def setup(bot):
     await bot.add_cog(AICommands(bot))

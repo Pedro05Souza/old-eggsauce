@@ -20,14 +20,14 @@ class ModCommands(commands.Cog):
             User = ctx.author
             if str(User.id) in self.devs:
                 Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                await ctx.send(f"{User.mention} recebeu {amount} eggbux")
+                await ctx.send(f"{User.mention} received{amount} eggbux")
             else:
                 await ctx.send("You do not have permission to do this.")
         else:
             if Usuario.read(User.id):
                 if str(ctx.author.id) in self.devs:
                     Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                    await ctx.send(f"{User.mention} recebeu {amount} eggbux")
+                    await ctx.send(f"{User.mention} received {amount} eggbux")
                 else:
                     await ctx.send("You do not have permission to do this.")
             else:
@@ -40,7 +40,7 @@ class ModCommands(commands.Cog):
             User = ctx.author
             if str(User.id) in self.devs:
                 Usuario.update(User.id, Usuario.read(User.id)["points"] - amount, Usuario.read(User.id)["roles"])
-                await ctx.send(f"{User.mention} perdeu {amount} eggbux")
+                await ctx.send(f"{User.mention} lost {amount} eggbux.")
             else:
                 await ctx.send("You do not have permission to do this.")
         else:
@@ -69,7 +69,7 @@ class ModCommands(commands.Cog):
     @commands.command()
     async def removeRole(self, ctx ,User:discord.Member, role: str):
         """Remove one one of the custom roles created by the bot."""
-        possibleRoles = {"T": "trabalhador assalariado", "B" : "Plebeu", "M" : "pobretão com um gol 1.0", "A" : "magnata"}
+        possibleRoles = {"T": "Low wage worker", "B" : "Peasant", "M" : "Brokie who thinks they are rich", "A" : "Magnate"}
         if str(ctx.author.id) in self.devs:
             user_data = Usuario.read(User.id)
             if user_data:
@@ -81,11 +81,11 @@ class ModCommands(commands.Cog):
                         if roleRemove:
                             await User.remove_roles(roleRemove)
                             Usuario.update(User.id, Usuario.read(User.id)["points"], roles)
-                            await ctx.send(f"{User.mention} perdeu o cargo {possibleRoles[role]}")
+                            await ctx.send(f"{User.mention} lost the role {possibleRoles[role]}.")
                     else:
-                        await ctx.send(f"{User.mention} não tem o cargo {role}")
+                        await ctx.send(f"{User.mention} lost the role {role}")
             else:
-                await ctx.send(f"{User.mention} is not registered in the database!")
+                await ctx.send(f"{User.mention} is not registered in the database.")
         else:
             await ctx.send("You do not have permission to do this.")
             

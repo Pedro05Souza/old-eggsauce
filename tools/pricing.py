@@ -8,36 +8,36 @@ from db.channelDB import ChannelDB
 # This class is responsible for handling the prices of the commands.
 
 class Prices(Enum):
-    doarPontos = 0
+    donatePoints = 0
     shop = 0
     salario = 0
     balls = 50
-    amor = 75
+    love = 75
     mog = 100
     mute = 150
     unmute = 150
     deafen = 150
     undeafen = 150
     disconnect = 175
-    mudarApelido = 200
+    changeNickname = 200
     fling = 200
     purge = 250
     radinho = 325
-    roubarPontos = 350
-    perdoar = 500
+    stealPoints = 350
+    pardon = 500
     tirarRadinho = 500
-    momentoDeSilencio = 500
-    cargoTrabalhador = 650
+    momentOfSilence = 500
+    lowWageRole = 650
     implode = 750
     explode = 850
     kick = 850
     detonate = 880
-    prisao = 900
-    cargoClasseBaixa = 920
+    prision = 900
+    lowClassRole = 920
     ban = 950
     god = 1000
-    cargoClasseMedia = 1200
-    cargoClasseAlta = 1600
+    middleClassRole = 1200
+    highClassRole = 1600
     nuke = 50000
 
 def verificar_pontos(User: discord.Member, comando):

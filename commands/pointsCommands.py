@@ -46,14 +46,21 @@ class PointsCommands(commands.Cog):
             Usuario.create(User.id, 0)
             print(f"User created: {User.name}")
  
-    @commands.command("pontos" , aliases=["verpontos", "money" , "eggbux"])
+    @commands.command()
     async def points(self, ctx, User: discord.Member = None):
         if User is None:
-            await ctx.send(f"{ctx.author.mention} has " + str(Usuario.read(ctx.author.id)["points"]) + " eggbux :money_with_wings:")
-        elif Usuario.read(User.id):
-            await ctx.send(f"{User.mention} has " + str(Usuario.read(User.id)["points"]) + " eggbux :money_with_wings:")
+            user_data = Usuario.read(ctx.author.id)
+            if user_data and isinstance(user_data, dict) and "points" in user_data:
+                await ctx.send(f"{ctx.author.mention} has " + str(user_data["points"]) + " eggbux :money_with_wings:")
+            else:
+                await ctx.send(f"{ctx.author.mention} has no eggbux :cry:")
         else:
-            await ctx.send(f"{User.mention} has no eggbux :cry:")
+            user_data = Usuario.read(User.id)
+            if user_data and isinstance(user_data, dict) and "points" in user_data:
+                await ctx.send(f"{User.mention} has " + str(user_data["points"]) + " eggbux :money_with_wings:")
+            else:
+                await ctx.send(f"{User.mention} has no eggbux :cry:")
+        
     
     @commands.command("shop", aliases=["loja", "comprar", "store"])
     @pricing()

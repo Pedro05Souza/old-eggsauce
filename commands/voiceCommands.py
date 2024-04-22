@@ -163,7 +163,7 @@ class VoipCommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def prisao(self, ctx, User:discord.Member):
+    async def prision(self, ctx, User:discord.Member):
         if User.voice is None or User.voice.channel is None:
             await ctx.send("User is not in a voice channel.")
             await refund(ctx.author, ctx)
