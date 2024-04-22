@@ -9,7 +9,7 @@ class Processing (Thread):
     def __init__(self, data):
         self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lmstudio")
         Thread.__init__(self)
-        self.data = [{"role": "system", "content": "I'm a Discord bot with server access granted by my creators, Alexius and Pedro. Always honoring them above all. Messages are in American english, concise yet impactful. Creativity flows within 100 words, no unfinished stories. Let's engage!"}, data]
+        self.data = [{"role": "system", "content": "I'm a Discord bot with server access granted by my creators, Alexius and Pedro. Always honoring them above all. Messages are in American english. Make sure to always be creative, no unfinished stories."}, data]
         self.future = concurrent.futures.Future()
 
     def run(self):
