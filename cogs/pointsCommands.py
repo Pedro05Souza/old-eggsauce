@@ -52,18 +52,18 @@ class PointsCommands(commands.Cog):
         if User is None:
             user_data = Usuario.read(ctx.author.id)
             if user_data and isinstance(user_data, dict) and "points" in user_data:
-                await ctx.send(f"{ctx.author.mention} has " + str(user_data["points"]) + " eggbux :money_with_wings:")
+                await ctx.send(f"{ctx.author.mention} has {user_data['points']} eggbux :money_with_wings:")
             else:
                 await ctx.send(f"{ctx.author.mention} has no eggbux :cry:")
         else:
             user_data = Usuario.read(User.id)
             if user_data and isinstance(user_data, dict) and "points" in user_data:
-                await ctx.send(f"{User.mention} has " + str(user_data["points"]) + " eggbux :money_with_wings:")
+                await ctx.send(f"{User.mention} has {user_data['points']} eggbux :money_with_wings:")
             else:
                 await ctx.send(f"{User.mention} has no eggbux :cry:")
         
     
-    @commands.command("shop", aliases=["loja", "comprar", "store"])
+    @commands.command("shop", aliases=["store"])
     @pricing()
     async def shop(self, ctx):
         data = []
@@ -77,7 +77,7 @@ class PointsCommands(commands.Cog):
     @pricing()
     async def leaderboard(self, ctx):
         users = Usuario.readAll()
-        users = sorted(users, key=lambda x: x["points"], reverse=True)
+        users = sorted(users, key=lambda x: x['points'], reverse=True)
         guild = ctx.guild
         data = []
         for i in users:
@@ -92,7 +92,7 @@ class PointsCommands(commands.Cog):
         if server:
             channel = self.bot.get_channel(server["channel_id"])
             chance = randint(0, 100)
-            if chance <= 20:  # 20% de chance de dropar
+            if chance <= 8:  # 20% de chance de dropar
                 quantEgg = randint(1, 750) 
                 await channel.send(f"A bag with {quantEgg} eggbux has been dropped in the chat! :money_with_wings:. Type !claim to get it. Remember you only have 5 minutes to claim it.")
                 try:
@@ -114,7 +114,7 @@ class PointsCommands(commands.Cog):
             await self.drop_eggbux()
             await asyncio.sleep(1000)
 
-    @commands.command()
+    @commands.command("donatePoints", aliases=["donate"])
     @pricing()
     async def donatePoints(self, ctx, User:discord.Member, amount: int):
         if Usuario.read(ctx.author.id) and Usuario.read(User.id):
@@ -122,16 +122,16 @@ class PointsCommands(commands.Cog):
                 await ctx.send("You can't donate to yourself")
             elif Usuario.read(ctx.author.id)["points"] >= amount:
                 if amount <= 0:
-                    await ctx.send("Você não pode doar 0 ou uma quantidade negativa de eggbux")
+                    await ctx.send("You can't donate zero or negative eggbux.")
                     return
                 else:
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
                     Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                    await ctx.send(f"{ctx.author.mention} doou {amount} eggbux para {User.mention}")
+                    await ctx.send(f"{ctx.author.mention} donated {amount} eggbux to {User.mention}")
             else:
-                await ctx.send(f"{ctx.author.mention} você não tem eggbux suficiente para fazer essa doação")
+                await ctx.send(f"{ctx.author.mention} doesn't have enough eggbux.")
         else:
-            await ctx.send("Você não tem permissão para fazer isso")
+            await ctx.send("You don't have permission to do this.")
 
     @commands.command("cassino", aliases=["roleta", "roulette"])
     @pricing()
@@ -170,7 +170,7 @@ class PointsCommands(commands.Cog):
         else:
             await ctx.send("An unexpected error occurred.")
 
-    @commands.command()
+    @commands.command("stealPoints", aliases=["steal"])
     @pricing()
     async def stealPoints(self, ctx, User: discord.Member):
         if Usuario.read(ctx.author.id):

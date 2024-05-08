@@ -10,9 +10,9 @@ bot = commands.Bot(command_prefix="!", intents=Intents.all(), case_insensitive=T
 
 
 async def load_cogs():
-    for filename in os.listdir('./commands'):
+    for filename in os.listdir('./cogs'):
             if filename.endswith('.py'): # loads all the cogs in commands package
-                await bot.load_extension(f'commands.{filename[:-3]}')
+                await bot.load_extension(f'cogs.{filename[:-3]}')
 
 asyncio.run(load_cogs())
 

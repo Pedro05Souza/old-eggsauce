@@ -168,7 +168,7 @@ class VoipCommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def prision(self, ctx, User:discord.Member):
+    async def prison(self, ctx, User:discord.Member):
         if User.voice is None or User.voice.channel is None:
             await ctx.send("User is not in a voice channel.")
             await refund(ctx.author, ctx)
@@ -201,7 +201,10 @@ class VoipCommands(commands.Cog):
             if not channelVet:
                 await ctx.send("There are no other voice channels to throw the user to.")
             else:
-                await User.move_to(random.choice(channelVet))
+                channel = random.choice(channelVet)
+                if channel == User.voice.channel:
+                    return
+                await User.move_to(channel)
                 await ctx.send(f"{User.mention} has been thrown to another voice channel.")
         else:
             await ctx.send("This user is not in a voice channel.")
@@ -214,6 +217,18 @@ class VoipCommands(commands.Cog):
             for membros in vc.members:
                 await membros.move_to(None)
         await ctx.send("All users have been disconnected from their voice channels.")
+
+    @commands.command("shuffle")
+    @pricing()
+    async def shuffle(self, ctx):
+        channelVet = [channel for channel in ctx.author.guild.voice_channels]
+        if not channelVet:
+            await ctx.send("There are no voice channels to throw the users to.")
+        else:
+            for vc in channelVet:
+                for membros in vc.members:
+                    await membros.move_to(random.choice(channelVet))
+        await ctx.send("All users have been thrown to random voice channels.")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):

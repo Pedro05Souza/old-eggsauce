@@ -3,7 +3,6 @@ import asyncio
 from discord.ext import commands
 import discord
 from db.userDB import Usuario
-from db.channelDB import ChannelDB
 import os
 import random
 from tools.pricing import pricing, refund
@@ -49,8 +48,13 @@ class TextCommands(commands.Cog):
                 await refund(ctx.author, ctx) 
                 return
         if User.top_role.position <= ctx.guild.me.top_role.position:
-            await User.kick()
-            await ctx.send(f"{User.mention} was kicked.")
+            try:
+                await User.kick()
+                await ctx.send(f"{User.mention} was kicked.")
+            except discord.errors.Forbidden:
+                await ctx.send(f"{ctx.author.mention}, you don't have permission to do that.")
+                await refund(ctx.author, ctx)
+                return
         else:
             await ctx.send("I don't have permission to do that.")
             await refund(ctx.author, ctx)
@@ -63,21 +67,27 @@ class TextCommands(commands.Cog):
                 await refund(ctx.author, ctx)
                 return
         if User.top_role.position <= ctx.guild.me.top_role.position:
-            await User.ban()
-            await ctx.send(f"{User.mention} was banned.")
+            try:
+                await User.ban()
+                await ctx.send(f"{User.mention} was banned.")
+            except discord.errors.Forbidden:
+                await ctx.send(f"{ctx.author.mention}, you don't have permission to do that")
+                await refund(ctx.author, ctx)
+                return
         else:
             await ctx.send("I don't have permission to do that.")
             await refund(ctx.author, ctx)
 
     @commands.command()
     @pricing()
-    async def changeNickname(self, ctx, User: discord.Member, *, apelido: str):
+    async def changeNickname(self, ctx, User: discord.Member, *apelido: str):
         if User.top_role.position <= ctx.guild.me.top_role.position:
             if User.id == ctx.me.id:
                 await ctx.send("I can't change my own nickname.")
                 await refund(ctx.author, ctx)
                 return
             else:
+                apelido = " ".join(apelido)
                 await User.edit(nick=apelido)
                 await ctx.send(f"{User.mention}'s nickname has changed to {apelido}.")   
         else:
@@ -211,7 +221,7 @@ class TextCommands(commands.Cog):
                                 Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarioCargo(member), Usuario.read(member.id)["roles"])
                 await asyncio.sleep(1600)
 
-    @commands.command()
+    @commands.command("salary", aliases=["income"])
     async def salary(self, ctx, User: discord.Member = None):
         if User is None:
             User = ctx.author

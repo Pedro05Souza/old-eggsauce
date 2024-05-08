@@ -20,7 +20,7 @@ class ModCommands(commands.Cog):
             User = ctx.author
             if str(User.id) in self.devs:
                 Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                await ctx.send(f"{User.mention} received{amount} eggbux")
+                await ctx.send(f"{User.mention} received {amount} eggbux")
             else:
                 await ctx.send("You do not have permission to do this.")
         else:

@@ -36,7 +36,8 @@ class Prices(Enum):
     explode = 850
     kick = 850
     detonate = 880
-    prision = 900
+    shuffle = 900
+    prison = 900
     lowClassRole = 920
     ban = 950
     god = 1000
@@ -108,6 +109,11 @@ async def treat_exceptions(ctx, comando):
                     arg = await commands.MemberConverter().convert(ctx, arg)
                 else:
                     arg = param_type(arg)
+            if arg is not None and not isinstance(arg, param_type):
+                await ctx.send("Invalid arguments.")
+                return False
+            if '*' not in str(param) and index not in optional_params_indices:
+                i += 1
         except ValueError:
             await ctx.send("Invalid arguments.")
             return False
@@ -117,13 +123,15 @@ async def treat_exceptions(ctx, comando):
         except commands.errors.BadArgument:
             await ctx.send("Invalid arguments.")
             return False
-
-        if arg is not None and not isinstance(arg, param_type):
-            await ctx.send("Invalid arguments.")
+        except commands.errors.MissingPermissions:
+            await ctx.send("Insufficient permissions.")
             return False
-        if '*' not in str(param) and index not in optional_params_indices:
-            i += 1
-
+        except commands.errors.BotMissingPermissions:
+            await ctx.send("Bot has insufficient permissions.")
+            return False
+        except commands.errors.CommandInvokeError:
+            await ctx.send("An error occurred while executing the command.")
+            return False
 
     new_points = Usuario.read(ctx.author.id)["points"] - Prices[comando].value
     Usuario.update(ctx.author.id, new_points, Usuario.read(ctx.author.id)["roles"])
