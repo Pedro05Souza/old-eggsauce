@@ -29,6 +29,7 @@ class Prices(Enum):
     radinho = 325
     stealPoints = 350
     pardon = 500
+    emergency = 500
     tirarRadinho = 500
     momentOfSilence = 500
     lowWageRole = 650

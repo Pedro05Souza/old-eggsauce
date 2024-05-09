@@ -64,6 +64,11 @@ docker run -p host_port:container_port image_name
 Replace the `host_port` and `container_port` with the ports you're going to use
 
 
+## AI Integration:
+
+WIP
+
+
 ## Known Issues (Windows):
 This topic is for known issues that happened with this project and a suggestion on how fix each one of them. If you happen to find any more issues that aren't here message the developers and let us know!
 

@@ -38,7 +38,7 @@ class VoipCommands(commands.Cog):
             self.gods.append(ctx.author)
             await ctx.send(f"{ctx.author.mention} has been added to the unmuttable list.", ephemeral=True)
         elif user in self.gods:
-            await ctx.send(f"{user.mention} is already unmuttable.", ephemeral=True)
+            await ctx.send(f"{user.mention} is already a divine being.", ephemeral=True)
             await refund(user, ctx)
             
     @commands.command()
@@ -203,9 +203,10 @@ class VoipCommands(commands.Cog):
             else:
                 channel = random.choice(channelVet)
                 if channel == User.voice.channel:
-                    return
-                await User.move_to(channel)
-                await ctx.send(f"{User.mention} has been thrown to another voice channel.")
+                    self.fling(ctx, User)
+                else:
+                    await User.move_to(channel)
+                    await ctx.send(f"{User.mention} has been thrown to another voice channel.")
         else:
             await ctx.send("This user is not in a voice channel.")
             await refund(ctx.author, ctx)
@@ -229,6 +230,19 @@ class VoipCommands(commands.Cog):
                 for membros in vc.members:
                     await membros.move_to(random.choice(channelVet))
         await ctx.send("All users have been thrown to random voice channels.")
+    
+    @commands.command("emergency")
+    @pricing()
+    async def emergency(self, ctx):
+        for vc in ctx.author.guild.voice_channels:
+            for membros in vc.members:
+                authorchannel = ctx.author.voice.channel
+                if authorchannel is not None:
+                    await membros.move_to(authorchannel)
+                else:
+                    refund(ctx.author, ctx)
+                    await ctx.send("You are not in a voice channel.")
+        await ctx.send("All users have been moved to the author's call.")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):

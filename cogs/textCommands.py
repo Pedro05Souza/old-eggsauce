@@ -95,6 +95,10 @@ class TextCommands(commands.Cog):
             await ctx.send("I don't have permission to do that.")
 
     @commands.command()
+    async def help(self, ctx):
+         pass
+
+    @commands.command()
     @pricing()
     async def pardon(self, ctx, id: str):
         User = await self.bot.fetch_user(id)
@@ -233,11 +237,12 @@ class TextCommands(commands.Cog):
             await ctx.send(f"{User.display_name} doesn't have a custom role that receives a salary.")
         else:
             await ctx.send(f"{User.display_name} is not registered in the database.")
-            await refund(ctx.author, ctx)
+            await refund(ctx.author, ctx) 
             
     @commands.command()
     async def nuke(self, ctx):
          await Usuario.deleteAll()
+         await ctx.send("Database has been nuked.")
               
 async def setup(bot):
     await bot.add_cog(TextCommands(bot))

@@ -18,7 +18,7 @@ asyncio.run(load_cogs())
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Game(name="eggbux."))
+    await bot.change_presence(activity=discord.Game(name="🥚 eggbux."))
     print("Command Package loaded")
 
 bot.run(TOKEN) #Does not use a coroutine but is a blocking function - i.e. must be the last one to run

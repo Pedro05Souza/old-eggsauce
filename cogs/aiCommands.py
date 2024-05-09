@@ -38,12 +38,13 @@ class AICommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def speak(self, ctx, *, content):
+    async def speak(self, ctx, *content):
         try:
+            content = " ".join(content)
             data ={"role" : "user", "content" : content + ". Preferably send a short message. If the user message requires more, write more than one message."}
             processing = Processing(data)
             processing.start()
-            await asyncio.sleep(16)
+            await asyncio.sleep(5)
             if processing.exception is None:
                 async with ctx.typing():
                     loop = asyncio.get_event_loop()

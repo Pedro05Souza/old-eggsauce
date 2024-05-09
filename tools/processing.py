@@ -1,5 +1,6 @@
 from threading import Thread
 import concurrent.futures
+import requests
 from openai import OpenAI
 import openai
 
@@ -14,6 +15,10 @@ class Processing (Thread):
             self.exception = None
 
     def run(self):
+        if not self.check_api_connection():
+            self.exception = "API connection error"
+            return
+        
         result = []
         try:
             for chunk in self.client.chat.completions.create(
@@ -26,5 +31,11 @@ class Processing (Thread):
                 result.append(chunk)
             self.future.set_result(result)
         except openai.APIConnectionError or openai.APIError:
-            print("hey")
-            self.exception = "ballsack"
+            self.exception = "Oops! Something went wrong."
+
+    def check_api_connection(self):
+         try:
+              response = requests.get("http://localhost:1234/v1/health", timeout=5)
+              return response.status_code == 200
+         except requests.RequestException:
+              return False

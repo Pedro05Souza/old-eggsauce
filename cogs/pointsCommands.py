@@ -62,7 +62,6 @@ class PointsCommands(commands.Cog):
             else:
                 await ctx.send(f"{User.mention} has no eggbux :cry:")
         
-    
     @commands.command("shop", aliases=["store"])
     @pricing()
     async def shop(self, ctx):
