@@ -19,7 +19,7 @@ class AICommands(commands.Cog):
                 data = {"role": "user", "content":f"Make a short love story between {User.display_name} and {User2.display_name}. Don't write incomplete stories, Use a maximum of 100 tokens."}
                 processing = Processing(data)
                 processing.start()
-                await asyncio.sleep(16)
+                await asyncio.sleep(5)
                 if processing.exception is None:
                     async with ctx.typing():
                         loop = asyncio.get_event_loop()

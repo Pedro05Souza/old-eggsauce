@@ -3,7 +3,6 @@ from random import randint
 import discord
 from db.userDB import Usuario
 from db.channelDB import ChannelDB
-import os
 import asyncio
 from tools.pricing import pricing, Prices, refund
 from tools.pagination import PaginationView
@@ -28,16 +27,21 @@ class PointsCommands(commands.Cog):
             return
         if Usuario.read(User.id):
             while True:
-                User = discord.utils.get(self.bot.get_all_members(), id=User.id)
-                if User.voice is None and User.id in self.tasks:
+                voice_state = any(guild.get_member(User.id) and guild.get_member(User.id).voice for guild in self.bot.guilds)
+                print(f"{User.name} voice is {voice_state}")
+                if not voice_state and User.id in self.tasks:
                     self.tasks[User.id].cancel()
                     break
                 Usuario.update(User.id, Usuario.read(User.id)["points"] + 1, Usuario.read(User.id)["roles"])
+                print(f"{User.name} gained +1 eggbux")
                 await asyncio.sleep(10)      
         else:
             self.registrarAutomatico(User)
             if User.id not in self.tasks:
                 self.tasks[User.id] = asyncio.create_task(self.count_points(User))
+
+    async def drop_eggbux(self):
+        await asyncio.gather(*(self.drop_eggbux_for_guild(guild) for guild in self.bot.guilds))
 
     def registrarAutomatico(self, User: discord.Member):
         if Usuario.read(User.id) and User.bot:
@@ -104,9 +108,6 @@ class PointsCommands(commands.Cog):
                         await channel.send(f"{Message.author.mention} claimed {quantEgg} eggbux")
                 except asyncio.TimeoutError:
                     await channel.send(f"The bag with {quantEgg} eggbux has been lost. :cry:")
-
-    async def drop_eggbux(self):
-        await asyncio.gather(*(self.drop_eggbux_for_guild(guild) for guild in self.bot.guilds))
             
     async def drop_periodically(self):
         while True:
@@ -132,7 +133,7 @@ class PointsCommands(commands.Cog):
         else:
             await ctx.send("You don't have permission to do this.")
 
-    @commands.command("cassino", aliases=["roleta", "roulette"])
+    @commands.command("cassino", aliases=["roulette", "casino"])
     @pricing()
     async def cassino(self, ctx, amount: int, cor: str):
         cor = cor.upper()
@@ -195,6 +196,7 @@ class PointsCommands(commands.Cog):
                 await refund(ctx.author, ctx)
         else:
             await ctx.send("You don't have permission to do this.")
+
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, User: discord.Member, before, after):

@@ -27,6 +27,7 @@ class Prices(Enum):
     fling = 200
     purge = 250
     radinho = 325
+    fish = 325
     stealPoints = 350
     pardon = 500
     emergency = 500

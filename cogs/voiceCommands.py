@@ -243,6 +243,16 @@ class VoipCommands(commands.Cog):
                     refund(ctx.author, ctx)
                     await ctx.send("You are not in a voice channel.")
         await ctx.send("All users have been moved to the author's call.")
+    
+    @commands.command("fish")
+    @pricing()
+    async def fish(self, ctx, User: discord.Member):
+        if User.voice is not None and ctx.author.voice is not None:
+            await User.move_to(ctx.author.voice.channel)
+            await ctx.send(f"{User.mention} has been fished.")
+        else:
+            await ctx.send("This user is not in a voice channel.")
+            await refund(ctx.author, ctx)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):

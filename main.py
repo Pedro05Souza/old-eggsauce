@@ -16,7 +16,7 @@ async def load_cogs():
 
 asyncio.run(load_cogs())
 
-@bot.event
+@bot.event  
 async def on_ready():
     await bot.change_presence(activity=discord.Game(name="🥚 eggbux."))
     print("Command Package loaded")

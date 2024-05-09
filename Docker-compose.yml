@@ -1,0 +1,31 @@
+version: "3.8"
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile.main
+    image: app
+    container_name: EggsauceBot
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - MONGODB_KEY=${MONGODB_KEY}
+      - DEVS=${DEVS}
+    networks:
+      - EggsauceBot
+
+  language_model:
+    build:
+      context: ./language_model
+      dockerfile: Dockerfile.LLM
+    image: language_model
+    container_name: LLM
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - EggsauceBot
+
+networks:
+  EggsauceBot:
+    driver: bridge
