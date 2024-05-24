@@ -240,6 +240,7 @@ class TextCommands(commands.Cog):
             await refund(ctx.author, ctx) 
             
     @commands.command()
+    @pricing()
     async def nuke(self, ctx):
          await Usuario.deleteAll()
          await ctx.send("Database has been nuked.")

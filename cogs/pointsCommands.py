@@ -29,13 +29,17 @@ class PointsCommands(commands.Cog):
         userId = User.id
         print(f"User id: {userId}")
         if userId in self.joinTime.keys():
-            if Usuario.read(userId):
                 print(f"Updating points for {User.name}")
-                print((math.ceil(time.time()) - self.joinTime[userId]) // 10)
-                Usuario.update(userId, ((Usuario.read(userId)["points"] + ((math.ceil(time.time()) - self.joinTime[userId])) // 10)), Usuario.read(userId)["roles"])
+                addPoints = (math.ceil(time.time()) - self.joinTime[userId]) // 10
+                print(math.ceil(time.time()))
+                print(addPoints)
+                totalPoints = Usuario.read(userId)["points"] + addPoints
+                Usuario.update(userId, totalPoints, Usuario.read(userId)["roles"])
+                self.joinTime[userId] = math.ceil(time.time())
+                return totalPoints
         else:
-            print(self.joinTime)
-            print("User not found in dict")
+            print(f"{User.name} not found in dict")
+            return
         
     async def count_points(self, User: discord.Member):
         userId = User.id
@@ -47,7 +51,6 @@ class PointsCommands(commands.Cog):
             self.joinTime[userId] = math.ceil(time.time())
         else:
             return
-
 
     async def drop_eggbux(self):
         await asyncio.gather(*(self.drop_eggbux_for_guild(guild) for guild in self.bot.guilds))
@@ -65,8 +68,8 @@ class PointsCommands(commands.Cog):
         if User is None:
             user_data = Usuario.read(ctx.author.id)
             if user_data and isinstance(user_data, dict) and "points" in user_data:
-                await self.update_points(ctx.author)
-                await ctx.send(f"{ctx.author.mention} has {user_data['points']} eggbux :money_with_wings:")
+                points = await self.update_points(ctx.author) 
+                await ctx.send(f"{ctx.author.mention} has {points} eggbux :money_with_wings:")
             else:
                 await ctx.send(f"{ctx.author.mention} has no eggbux :cry:")
         else:

@@ -6,6 +6,7 @@ from db.userDB import Usuario
 from tools.processing import Processing
 
 # This class is responsible for handling the AI commands.
+
 class AICommands(commands.Cog):
 
     def __init__(self, bot):
@@ -56,9 +57,9 @@ class AICommands(commands.Cog):
                         await ctx.send("Error! AI didn't generate content.")
             else:
                 await ctx.send("Api connection failed. Probably due to the AI model being deactivated.")
-        except Exception:
-            ctx.send("An unexpected problem occurred!")
-
+        except Exception as e:
+           await ctx.send("An unexpected problem occurred!")
+           print(e)
         
 async def setup(bot):
     await bot.add_cog(AICommands(bot))

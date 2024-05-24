@@ -151,8 +151,17 @@ class ModCommands(commands.Cog):
                     if any(role.name == role_name for role in after.roles):
                         roles += role_letters[role_name]
                 Usuario.update(after.id, Usuario.read(after.id)["points"], roles)
-                print("added roles: " + roles)  
-                
+                print("added roles: " + roles)
+
+    @commands.command()
+    async def reset(self, ctx, User: discord.Member):
+        if str(User.id) in self.devs and Usuario.read(User.id):
+            Usuario.update(User.id, 0, "")
+            await ctx.send(f"{User.name} has been sucessfully reset.")
+        else:
+            await ctx.send("You do not have permission execute this command.")
+
+       
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if Usuario.read(member.id):
