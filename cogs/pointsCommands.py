@@ -1,6 +1,8 @@
 from discord.ext import commands
 from random import randint
 import discord
+import time
+import math
 from db.userDB import Usuario
 from db.channelDB import ChannelDB
 import asyncio
@@ -12,33 +14,40 @@ class PointsCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.tasks = {}
+        self.joinTime = {}
 
     @commands.Cog.listener()
     async def on_ready(self):
         self.drop_eggbux_task = self.bot.loop.create_task(self.drop_periodically())
         for guild in self.bot.guilds:
-            for member in guild.members:
-                if member.voice is not None and member.id not in self.tasks:
-                    self.tasks[member.id] = asyncio.create_task(self.count_points(member))
+            for vc in guild.voice_channels:
+                for member in vc.members:
+                    if member.voice is not None:
+                        await self.count_points(member)
 
+    async def update_points(self, User: discord.Member):
+        userId = User.id
+        print(f"User id: {userId}")
+        if userId in self.joinTime.keys():
+            if Usuario.read(userId):
+                print(f"Updating points for {User.name}")
+                print((math.ceil(time.time()) - self.joinTime[userId]) // 10)
+                Usuario.update(userId, ((Usuario.read(userId)["points"] + ((math.ceil(time.time()) - self.joinTime[userId])) // 10)), Usuario.read(userId)["roles"])
+        else:
+            print(self.joinTime)
+            print("User not found in dict")
+        
     async def count_points(self, User: discord.Member):
+        userId = User.id
         if User.bot:
             return
-        if Usuario.read(User.id):
-            while True:
-                voice_state = any(guild.get_member(User.id) and guild.get_member(User.id).voice for guild in self.bot.guilds)
-                print(f"{User.name} voice is {voice_state}")
-                if not voice_state and User.id in self.tasks:
-                    self.tasks[User.id].cancel()
-                    break
-                Usuario.update(User.id, Usuario.read(User.id)["points"] + 1, Usuario.read(User.id)["roles"])
-                print(f"{User.name} gained +1 eggbux")
-                await asyncio.sleep(10)      
+        print(f"Counting points for {User.name}")
+        print(f"User id: {userId}")
+        if userId not in self.joinTime.keys():
+            self.joinTime[userId] = math.ceil(time.time())
         else:
-            self.registrarAutomatico(User)
-            if User.id not in self.tasks:
-                self.tasks[User.id] = asyncio.create_task(self.count_points(User))
+            return
+
 
     async def drop_eggbux(self):
         await asyncio.gather(*(self.drop_eggbux_for_guild(guild) for guild in self.bot.guilds))
@@ -56,12 +65,14 @@ class PointsCommands(commands.Cog):
         if User is None:
             user_data = Usuario.read(ctx.author.id)
             if user_data and isinstance(user_data, dict) and "points" in user_data:
+                await self.update_points(ctx.author)
                 await ctx.send(f"{ctx.author.mention} has {user_data['points']} eggbux :money_with_wings:")
             else:
                 await ctx.send(f"{ctx.author.mention} has no eggbux :cry:")
         else:
             user_data = Usuario.read(User.id)
             if user_data and isinstance(user_data, dict) and "points" in user_data:
+                await self.update_points(User)
                 await ctx.send(f"{User.mention} has {user_data['points']} eggbux :money_with_wings:")
             else:
                 await ctx.send(f"{User.mention} has no eggbux :cry:")
@@ -203,15 +214,13 @@ class PointsCommands(commands.Cog):
         if User.bot:
             return
         if Usuario.read(User.id) and before.channel is None and after.channel is not None:
-            if User.id in self.tasks and not self.tasks[User.id].done():
-                return 
-            self.tasks[User.id] = asyncio.create_task(self.count_points(User))
+            await self.count_points(User)
         elif not Usuario.read(User.id) and before.channel is None and after.channel is not None:
             self.registrarAutomatico(User)
             if User.voice is not None:
-                if User.id in self.tasks and not self.tasks[User.id].done():
-                    return 
-                self.tasks[User.id] = asyncio.create_task(self.count_points(User))
+                await self.count_points(User)
+        elif Usuario.read(User.id) and before.channel is not None and after.channel is None:
+            await self.update_points(User)
 
 async def setup(bot):   
     await bot.add_cog(PointsCommands(bot))
