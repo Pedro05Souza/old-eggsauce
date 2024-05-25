@@ -245,130 +245,185 @@ class TextCommands(commands.Cog):
 
     @commands.command()
     async def hungergames(self, ctx):
-        end_time = time.time() + 10
-        players = []
-        round_count = 1
-        await ctx.send("The Hunger Games have begun, may the odds be in your favor. Type !join to participate. You have 20 seconds to join.")
-        while True:
-            timeout = end_time - time.time()
-            if timeout <= 0: 
+        round = 1
+        tributes = []
+        limit_time = time.time() + 20
+        await ctx.send("The hunger games are starting in 20 seconds. Type !join to participate.")
+        while time.time() != limit_time:
+            if time.time() == limit_time:
                 break
-            try:
-                message = await asyncio.wait_for(self.bot.wait_for("message", check=lambda message: message.content == "!join"), timeout=timeout)
-                if not any(player['player'] == message.author for player in players):
-                    players.append({"player" : message.author, "inventory" : [], "team" : 0, "has_team" : False, "is_alive" : True})
-                    # players.append({"player" : discord.utils.get(ctx.guild.members, id=391289130438623233), "inventory" : [], "team" : 0, "has_team" : False, "is_alive" : True})
-                    # players.append({"player" : discord.utils.get(ctx.guild.members, id=254931754941415424), "inventory" : [], "team" : 0, "has_team" : False, "is_alive" : True})
-                    # players.append({"player" : discord.utils.get(ctx.guild.members, id=270364294959333376), "inventory" : [], "team" : 0, "has_team" : False, "is_alive" : True})
-                    # players.append({"player" : discord.utils.get(ctx.guild.members, id=303309575166099457), "inventory" : [], "team" : 0, "has_team" : False, "is_alive" : True})
-                    # players.append({"player" : discord.utils.get(ctx.guild.members, id=322465483502780417), "inventory" : [], "team" : 0, "has_team" : False, "is_alive" : True})
-                    await ctx.send(f"{message.author.display_name} has joined the Hunger Games.")
-                else:
-                    await ctx.send(f"{message.author.display_name} is already in the Hunger Games.")
-            except asyncio.TimeoutError:
-                break
+        message = await self.bot.wait_for("message", check=lambda message: message.content == "!join")
+        if Usuario.read(message.author.id):
+            if message.author not in tributes:
+                tributes.append({"tribute" : message.author, "kills": 0, "inventory" : [] ,"is_alive": True, "has_event" : False, "event" : None, "team": 0, "has_team" : False})
+                await ctx.send(f"{message.author.display_name} has joined the hunger games.")
+            else:
+                await ctx.send(f"{message.author.display_name} is already in the hunger games.")
+        else:
+            await ctx.send(f"{message.author.display_name} is not registered in the database.")
+        await ctx.send("The hunger games have started.")
+        alive_tributes = tributes
+        while len(alive_tributes) > 1:
+            ctx.send(f"# Round {round} has officialy begun.")
+            for tribute in alive_tributes:
+                if tribute["has_event"] == False:
+                    event = self.events()
+                    random_tributes = self.pickRandomTribute(tribute, alive_tributes)
+                    await self.eventActions(ctx, alive_tributes, tribute, random_tributes, event)
+                    alive_tributes = self.checkAliveTributes(alive_tributes)
+            round += 1
+            alive_tributes = self.disableHasEventPerRound(alive_tributes)    
+        winner = alive_tributes[0]
+        await ctx.send(f"{winner['tribute'].display_name} has won the hunger games. Congratulations for winning 200 eggbux.")
+        Usuario.update(winner["tribute"].id, Usuario.read(winner["tribute"].id)["points"] + 200, Usuario.read(winner["tribute"].id)["roles"])
 
-        if len(players) < 2:
-            await ctx.send("Not enough players to begin the Hunger Games.")
-            return
+    def checkAliveTributes(self, tributes):
+        alive_tributes = []
+        for tribute in tributes:
+            if tribute['is_alive']:
+                alive_tributes.append(tribute)
         
-        await ctx.send("The Hunger Games have begun.")
-        while sum(player['is_alive'] for player in players) > 1:
-            await ctx.send(f"Round {round_count} has offically started.")
-            events = await self.events()
-            for player in players:
-                if player['is_alive']:
-                    await asyncio.sleep(2)
-                    print(player)
-                    players = await self.eventActions(ctx, events, player, players)
-            round_count += 1
-        print("ballsack")
-        #winner = (player['player'] for player in players if player['is_alive'])
-        #await ctx.send(f"{winner.display_name} has won the Hunger Games winning 250 eggbux.")
-        #Usuario.update(winner['player'], Usuario.read(winner['player']['points']) + 250, Usuario.read(winner['player'].id)['roles'])
-            
-    async def events(self):
+        return alive_tributes
+        
+    def events(self):
         events = {
         0: " has been killed by a bear.",
         1: " has teamed up with",
-        2: " has found a weapon.",
-        3: " has found a medkit.",
+        2: " has found a knife.",
+        3: " has successfully stole a .",
         4: " has been killed by a trap set by",
         5: " was spotted hiding and was killed by",
-        6: " narrowly escaped an attack from ",
-        7: " has found food.",
-        8: " has found a shelter.",
+        6: " narrowly escaped an ambush from ",
+        7: " was shot by",
+        8: " was stabbed by ",
         9: " has found a trap.",
-        10: "has been killed by team "
+        10: "has been killed by team ",
+        11: " has found a gun.",
+        12: " slept throught the night safely.",
+        13: " began to hallucinate.",
+        14: " has found a beatiful rock.",
+        15: "has built a campfire.",
+        16: " has found a map.", 
+        17: "has been betrayed by "
         }
         return events
     
-    async def eventActions(self, ctx, events, player, players: list):
-        if not player['is_alive']:
-            return players
-        for player in players:
-            if player['is_alive']:
-                print("balls", len(players))
-                player1 = player
-                player2 = random.choice(players)
-                while player1 == player2:
-                    player2 = random.choice(players)
-                event_keys = list(events.keys())
-                random_event = random.choice(event_keys)
-        match (random_event):
-            case 0:
-                player1['is_alive'] = False
-                await ctx.send(f"{player1['player'].display_name} {events[0]}")
-            case 1:
-                if not (player1['has_team']) and not (player2['has_team']):
-                    player_team = randint(1, 100)
-                    await ctx.send(f"{player1['player'].display_name} {events[1]} {player2['player'].display_name}, creating the team {player_team}.")
-                    player1['team'] = player_team
-                    player2['team'] = player_team 
-                    player1['has_team'] = True
-                    player2['has_team'] = True    
-            case 2: 
-                await ctx.send(f"{player1['player'].display_name} {events[2]}")
-                player1['inventory'].append("weapon")
-            case 3:
-                await ctx.send(f"{player1['player'].display_name} {events[3]}")
-                player1['inventory'].append("medkit") 
-            case 4:
-                if player1['is_alive'] and player2['is_alive'] and self.isPlayerInSameTeam(player1, player2) >= 70:
-                    await ctx.send(f"{player1['player'].d} was betrayed by {player2['player'].display_name} and was killed.")
-                    return 
-                player1['is_alive'] = False
-                await ctx.send(f"{player1['player'].display_name} {events[4]} {player2['player'].display_name}")
-            case 5:
-                player1['is_alive'] = False
-                await ctx.send(f"{player1['player'].display_name} {events[5]} {player2['player'].display_name}")
-            case 6:
-                await ctx.send(f"{player1['player'].display_name} {events[6]} {player2['player'].display_name}.")
-            case 7:
-                await ctx.send(f"{player1['player'].display_name} {events[7]}")
-            case 8:
-                await ctx.send(f"{player1['player'].display_name} {events[8]}") 
-            case 9:
-                await ctx.send(f"{player1['player'].display_name} {events[9]}")
-                player1['inventory'].append("trap")
-            case 10:
-                team_count = Counter(player['team'] for player in players if player['team'] != 0)
-                if len(team_count) < 1:
-                    players = await self.eventActions(ctx, events, player, players)
-                else:
-                    most_common_team = team_count.most_common(1)
-                    await ctx.send(f"{player1['player'].display_name} {events[10]} {most_common_team[0]}")
-                    player1['is_alive'] = False
-                    
-        return players
+    async def eventActions(self, ctx, tributes, tribute1, tribute2, event):
+        if tribute1['has_event'] == False and tribute2['has_event'] == False:
+            tributeEvent = self.pickEventRandom(tributes, tribute1, tribute2)
+            tribute1['has_event'] = True
+            tribute2['has_event'] = True
+            match (tributeEvent):
+                case 0:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
+                    tribute1['is_alive'] = False 
+                case 1:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}")
+                    self.pickTributeTeam(tributes, tribute1, tribute2)
+                case 2:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
+                    tribute1['inventory'].append("knife")
+                case 3:
+                    if tribute2['inventory']:
+                        stolen_item = random.choice(tribute2['inventory'])
+                        tribute1['inventory'].append(stolen_item)
+                        tribute2['inventory'].remove(stolen_item)
+                        await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}'s {stolen_item}") 
+                case 4:
+                    if "trap" in tribute2['inventory']:
+                        await ctx.send(f"{tribute2['tribute'].display_name} {event[tributeEvent]} {tribute1['tribute'].display_name}")
+                        tribute1['is_alive'] = False
+                        tribute1['inventory'].remove("trap")
+                case 5:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}")
+                    tribute2['is_alive'] = False
+                case 6:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}")
+                case 7:
+                    if "gun" in tribute2['inventory']:
+                        await ctx.send(f"{tribute2['tribute'].display_name} {event[tributeEvent]} {tribute1['tribute'].display_name}")
+                        tribute1['is_alive'] = False
+                        tribute2['inventory'].remove("gun")
+                case 8:
+                    if "knife" in tribute2['inventory']:
+                        await ctx.send(f"{tribute2['tribute'].display_name} {event[tributeEvent]} {tribute1['tribute'].display_name}")
+                        tribute1['is_alive'] = False
+                        tribute2['inventory'].remove("knife")
+                case 9:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
+                    tribute1['inventory'].append("trap")
+                case 10:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['team']}")
+                    tribute2['is_alive'] = False
+                case 11:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
+                    tribute1['inventory'].append("gun")
+                case 17:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}")
+                    tribute1['is_alive'] = False
+                case _:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
 
-    def chooseRandomEventAction(self, ctx, player1, player2, events):
+
+    def disableHasEventPerRound(self, tributes):
+        for tribute in tributes:
+            tribute['has_event'] = False
+        return tributes
     
-    def isPlayerInSameTeam(self, player1, player2) -> int:
-        betrayalChance = randint(1, 100)
-        if (player1['team'] is player2['team']) and player1['has_team'] and player2['has_team']:
-            return betrayalChance
-        return 0
+    def checkIfTributesAreInSameTeam(self, tribute1, tribute2):
+        return tribute1['team'] == tribute2['team']
+    
+    def pickEventRandom(self, tributes, tribute1, tribute2):
+        choices = list(range(17))
+        tribute1Inv = tribute1['inventory']
+        tribute2Inv = tribute2['inventory']
+        teams = Counter(teams for teams in tributes['team'] if teams != 0)
+        match (tribute2Inv):
+            case []:
+                choices.remove(3, 4, 7, 8)
+            case "trap" if "trap" not in tribute2Inv:
+                choices.remove(4)
+            case "knife" if "knife" not in tribute2Inv:
+                choices.remove(8)
+            case "gun" if "gun" not in tribute2Inv:
+                choices.remove(7)
+
+        match (tribute1Inv):
+            case "knife" if "knife" in tribute1Inv:
+                choices.remove(2)
+            case "trap" if "trap" in tribute1Inv:
+                choices.remove(9)
+            case "gun" if "gun" in tribute1Inv:
+                choices.remove(11)
+
+        if tribute1['has_team'] or tribute2['has_team']:
+            choices.remove(1)
+
+        if not tribute1['has_team'] and not tribute2['has_team']:
+            choices.remove(17)
+
+        if self.checkIfTributesAreInSameTeam(tribute1, tribute2):
+            choices.remove(1, 4, 5, 7, 8)
+            
+        if not teams:
+            choices.remove(10)
+
+        return random.choice(choices)
+
+
+    def pickRandomTribute(self, tribute, tributes):
+        aux_tributes = tributes.copy()
+        aux_tributes.remove(tribute)
+        return random.choice(aux_tributes)
+    
+    def pickTributeTeam(self, tributes, tribute1, tribute2):
+        if not tribute1['has_team'] and not tribute2['has_team']:
+            team = randint(1, 100)
+            if team not in Counter(tributes['team']):
+                tribute1['team'] = team
+                tribute2['team'] = team
+            else:
+                self.pickTributeTeam(tributes, tribute1, tribute2)
     
     @commands.command()
     @pricing()
