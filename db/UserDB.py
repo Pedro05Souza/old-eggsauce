@@ -12,6 +12,8 @@ class Usuario:
                 print("User already exists.")
                 return None 
             else:
+                if not isinstance(points, int):
+                    points = 0
                 user = {
                     "user_id": user_id,
                     "points": points,
@@ -40,7 +42,9 @@ class Usuario:
         try:
             user_data = users_collection.find_one({"user_id" : user_id})
             if user_data:
-                users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})#agr vai funcionar 😁
+                if not isinstance(points, int): #fuck you my ni
+                    points = 0
+                users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})
         except Exception as e:
             print("Error encountered while trying to update user's status.", e)
         

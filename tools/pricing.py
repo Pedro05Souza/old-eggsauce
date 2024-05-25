@@ -14,7 +14,7 @@ class Prices(Enum):
     speak = 0
     donatePoints = 0
     shop = 0
-    salario = 0
+    salary = 0
     balls = 50
     love = 75
     mog = 100

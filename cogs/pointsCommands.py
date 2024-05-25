@@ -45,8 +45,6 @@ class PointsCommands(commands.Cog):
         userId = User.id
         if User.bot:
             return
-        print(f"Counting points for {User.name}")
-        print(f"User id: {userId}")
         if userId not in self.joinTime.keys():
             self.joinTime[userId] = math.ceil(time.time())
         else:
@@ -68,7 +66,9 @@ class PointsCommands(commands.Cog):
         if User is None:
             user_data = Usuario.read(ctx.author.id)
             if user_data and isinstance(user_data, dict) and "points" in user_data:
-                points = await self.update_points(ctx.author) 
+                points = await self.update_points(ctx.author)
+                if points is None:
+                    points = user_data["points"]
                 await ctx.send(f"{ctx.author.mention} has {points} eggbux :money_with_wings:")
             else:
                 await ctx.send(f"{ctx.author.mention} has no eggbux :cry:")
@@ -109,7 +109,7 @@ class PointsCommands(commands.Cog):
         if server:
             channel = self.bot.get_channel(server["channel_id"])
             chance = randint(0, 100)
-            if chance <= 8:  # 20% de chance de dropar
+            if chance <= 8:  # 8% de chance de dropar
                 quantEgg = randint(1, 750) 
                 await channel.send(f"A bag with {quantEgg} eggbux has been dropped in the chat! :money_with_wings:. Type !claim to get it. Remember you only have 5 minutes to claim it.")
                 try:

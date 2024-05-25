@@ -161,7 +161,6 @@ class ModCommands(commands.Cog):
         else:
             await ctx.send("You do not have permission execute this command.")
 
-       
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if Usuario.read(member.id):
