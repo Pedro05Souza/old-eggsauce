@@ -31,7 +31,7 @@ class AICommands(commands.Cog):
                         else:
                             await ctx.send("Error! AI didn't generate content.")
                 else:
-                    await ctx.send("Api connection failed. Probably due to the AI model being deactivated. Try again soon.")
+                    await ctx.send("Api connection failed. Probably due to the AI model being deactivated. Try again later.")
             else:
                 await ctx.send("You need to be registered to use this command. Join any voice channels to register.")
         except Exception:

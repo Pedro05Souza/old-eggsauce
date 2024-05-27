@@ -9,6 +9,7 @@ import discord
 from db.userDB import Usuario
 import os
 import random
+from tools.pagination import PaginationView
 from tools.pricing import pricing, refund
 
 # This class is responsible for handling the text commands.
@@ -245,186 +246,302 @@ class TextCommands(commands.Cog):
 
     @commands.command()
     async def hungergames(self, ctx):
-        round = 1
+        day = 1
         tributes = []
-        limit_time = time.time() + 20
-        await ctx.send("The hunger games are starting in 20 seconds. Type !join to participate.")
-        while time.time() != limit_time:
-            if time.time() == limit_time:
+        wait_time = 1
+        end_time = time.time() + wait_time
+        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=675996677366218774), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
+        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=656621136808902656), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
+        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=247283454440374274), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
+        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=411916947773587456), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
+        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=692045914436796436), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
+        await ctx.send(f"The hunger games are about to start. Type !join to join the hunger games. You have {wait_time} seconds to join.")
+        while True:
+            actual_time = end_time - time.time()
+            if actual_time <= 0:
                 break
-        message = await self.bot.wait_for("message", check=lambda message: message.content == "!join")
-        if Usuario.read(message.author.id):
-            if message.author not in tributes:
-                tributes.append({"tribute" : message.author, "kills": 0, "inventory" : [] ,"is_alive": True, "has_event" : False, "event" : None, "team": 0, "has_team" : False})
-                await ctx.send(f"{message.author.display_name} has joined the hunger games.")
-            else:
-                await ctx.send(f"{message.author.display_name} is already in the hunger games.")
+            try:
+                message = await asyncio.wait_for(self.bot.wait_for("message", check=lambda message: message.content == "!join"), timeout=actual_time)
+                allowplay = self.checkIfTributePlay(discord.utils.get(ctx.guild.members, id=message.author.id))
+                if allowplay:
+                    if not any(tribute['tribute'] == message.author for tribute in tributes):
+                        tributes.append({"tribute": message.author, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
+                        await ctx.send(f"{message.author.display_name} has joined the hunger games.")
+                    else:
+                        await ctx.send(f"{message.author.display_name} is already in the hunger games.")
+                else:
+                    await ctx.send(f"{message.author.display_name} doesn't have enough eggbux to join the hunger games.")
+            except asyncio.TimeoutError:
+                break
+        if len(tributes) < 2:
+            await ctx.send("Not enough players to start the hunger games. At least 4 players are needed.")
+            Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + 200, Usuario.read(ctx.author.id)["roles"])
+            return
         else:
-            await ctx.send(f"{message.author.display_name} is not registered in the database.")
-        await ctx.send("The hunger games have started.")
-        alive_tributes = tributes
-        while len(alive_tributes) > 1:
-            ctx.send(f"# Round {round} has officialy begun.")
-            for tribute in alive_tributes:
-                if tribute["has_event"] == False:
-                    event = self.events()
-                    random_tributes = self.pickRandomTribute(tribute, alive_tributes)
-                    await self.eventActions(ctx, alive_tributes, tribute, random_tributes, event)
-                    alive_tributes = self.checkAliveTributes(alive_tributes)
-            round += 1
-            alive_tributes = self.disableHasEventPerRound(alive_tributes)    
-        winner = alive_tributes[0]
-        await ctx.send(f"{winner['tribute'].display_name} has won the hunger games. Congratulations for winning 200 eggbux.")
-        Usuario.update(winner["tribute"].id, Usuario.read(winner["tribute"].id)["points"] + 200, Usuario.read(winner["tribute"].id)["roles"])
+            await ctx.send("# The hunger games have started.")
+            alive_tributes = tributes
+            while len(alive_tributes) > 1:
+                await ctx.send(f"## Day {day} has started.")
+                for tribute in alive_tributes:
+                    if tribute['is_alive']:
+                        await asyncio.sleep(2)
+                        print(f"Tribute: {tribute['tribute'].display_name}, inventory: {tribute['inventory']}")
+                        random_tribute = self.pickRandomTribute(tribute, alive_tributes)
+                        if random_tribute:
+                            print(f"Random tribute: {random_tribute['tribute'].display_name}, inventory: {random_tribute['inventory']}")
+                        else:
+                            print("Random tribute: None")
+                        event_possibilities = self.checkEventPossibilities(tribute, random_tribute, alive_tributes)
+                        print(f"Possibilities: {event_possibilities}")
+                        random_event = self.chooseRandomEvent(event_possibilities)
+                        await self.eventActions(ctx, tribute, random_tribute, alive_tributes, random_event)
+                        alive_tributes = self.checkAliveTributes(alive_tributes)
+                        if len(alive_tributes) == 1:
+                            break
+                await ctx.send(f"**Tributes remaining: {len(alive_tributes)}**")
+                self.increaseDaysAlive(alive_tributes)
+                self.removePlrTeamOnDeath(tributes)
+                self.updateTributeEvent(alive_tributes)
+                day += 1
 
+            winner = alive_tributes[0]
+            await ctx.send(f"{winner['tribute'].display_name} has won the hunger games and has won 350 Eggbux!.")
+            #Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
+            await self.statistics(ctx, tributes)
+
+
+    def checkIfTributePlay(self, tribute):
+        if Usuario.read(tribute.id) and Usuario.read(tribute.id)["points"] >= 50:
+            Usuario.update(tribute.id, Usuario.read(tribute.id)["points"] - 50, Usuario.read(tribute.id)["roles"])
+            return True
+        else:
+            return False
+        
+    def increaseDaysAlive(self, tributes):
+        for tribute in tributes:
+            if tribute['is_alive']:
+                tribute['days_alive'] += 1
+     
     def checkAliveTributes(self, tributes):
         alive_tributes = []
         for tribute in tributes:
             if tribute['is_alive']:
                 alive_tributes.append(tribute)
-        
         return alive_tributes
-        
+                
     def events(self):
         events = {
-        0: " has been killed by a bear.",
-        1: " has teamed up with",
-        2: " has found a knife.",
-        3: " has successfully stole a .",
-        4: " has been killed by a trap set by",
-        5: " was spotted hiding and was killed by",
-        6: " narrowly escaped an ambush from ",
-        7: " was shot by",
-        8: " was stabbed by ",
-        9: " has found a trap.",
-        10: "has been killed by team ",
-        11: " has found a gun.",
-        12: " slept throught the night safely.",
-        13: " began to hallucinate.",
-        14: " has found a beatiful rock.",
+        0: "has been killed by a bear.",
+        1: "has teamed up with",
+        2: "has found a knife.",
+        3: "has successfully stolen a",
+        4: "has been killed by a trap set by",
+        5: "was spotted hiding and was killed by",
+        6: "narrowly escaped an ambush from",
+        7: "was shot by",
+        8: "was stabbed by",
+        9: "has found a trap.",
+        10: "has been killed by team",
+        11: "has found a gun.",
+        12: "slept through the night safely.",
+        13: "began to hallucinate.",
+        14: "has found a beatiful rock.",
         15: "has built a campfire.",
-        16: " has found a map.", 
-        17: "has been betrayed by "
+        16: "has found a map.", 
+        17: "has been betrayed by",
+        18: "has disbanded team"
         }
         return events
+
+    def chooseRandomEvent(self, events):
+        return random.choice(events)
     
-    async def eventActions(self, ctx, tributes, tribute1, tribute2, event):
-        if tribute1['has_event'] == False and tribute2['has_event'] == False:
-            tributeEvent = self.pickEventRandom(tributes, tribute1, tribute2)
-            tribute1['has_event'] = True
-            tribute2['has_event'] = True
-            match (tributeEvent):
-                case 0:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
-                    tribute1['is_alive'] = False 
-                case 1:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}")
-                    self.pickTributeTeam(tributes, tribute1, tribute2)
-                case 2:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
-                    tribute1['inventory'].append("knife")
-                case 3:
-                    if tribute2['inventory']:
-                        stolen_item = random.choice(tribute2['inventory'])
-                        tribute1['inventory'].append(stolen_item)
-                        tribute2['inventory'].remove(stolen_item)
-                        await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}'s {stolen_item}") 
-                case 4:
-                    if "trap" in tribute2['inventory']:
-                        await ctx.send(f"{tribute2['tribute'].display_name} {event[tributeEvent]} {tribute1['tribute'].display_name}")
-                        tribute1['is_alive'] = False
-                        tribute1['inventory'].remove("trap")
-                case 5:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}")
-                    tribute2['is_alive'] = False
-                case 6:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}")
-                case 7:
-                    if "gun" in tribute2['inventory']:
-                        await ctx.send(f"{tribute2['tribute'].display_name} {event[tributeEvent]} {tribute1['tribute'].display_name}")
-                        tribute1['is_alive'] = False
-                        tribute2['inventory'].remove("gun")
-                case 8:
-                    if "knife" in tribute2['inventory']:
-                        await ctx.send(f"{tribute2['tribute'].display_name} {event[tributeEvent]} {tribute1['tribute'].display_name}")
-                        tribute1['is_alive'] = False
-                        tribute2['inventory'].remove("knife")
-                case 9:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
-                    tribute1['inventory'].append("trap")
-                case 10:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['team']}")
-                    tribute2['is_alive'] = False
-                case 11:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
-                    tribute1['inventory'].append("gun")
-                case 17:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]} {tribute2['tribute'].display_name}")
-                    tribute1['is_alive'] = False
-                case _:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {event[tributeEvent]}")
-
-
-    def disableHasEventPerRound(self, tributes):
+    def updateTributeEvent(self, tributes):
         for tribute in tributes:
             tribute['has_event'] = False
-        return tributes
     
-    def checkIfTributesAreInSameTeam(self, tribute1, tribute2):
-        return tribute1['team'] == tribute2['team']
-    
-    def pickEventRandom(self, tributes, tribute1, tribute2):
-        choices = list(range(17))
-        tribute1Inv = tribute1['inventory']
-        tribute2Inv = tribute2['inventory']
-        teams = Counter(teams for teams in tributes['team'] if teams != 0)
-        match (tribute2Inv):
-            case []:
-                choices.remove(3, 4, 7, 8)
-            case "trap" if "trap" not in tribute2Inv:
-                choices.remove(4)
-            case "knife" if "knife" not in tribute2Inv:
-                choices.remove(8)
-            case "gun" if "gun" not in tribute2Inv:
-                choices.remove(7)
 
-        match (tribute1Inv):
-            case "knife" if "knife" in tribute1Inv:
-                choices.remove(2)
-            case "trap" if "trap" in tribute1Inv:
-                choices.remove(9)
-            case "gun" if "gun" in tribute1Inv:
-                choices.remove(11)
-
-        if tribute1['has_team'] or tribute2['has_team']:
-            choices.remove(1)
-
-        if not tribute1['has_team'] and not tribute2['has_team']:
-            choices.remove(17)
-
-        if self.checkIfTributesAreInSameTeam(tribute1, tribute2):
-            choices.remove(1, 4, 5, 7, 8)
-            
-        if not teams:
-            choices.remove(10)
-
-        return random.choice(choices)
-
-
-    def pickRandomTribute(self, tribute, tributes):
+    def pickRandomTribute(self, tribute1, tributes):
         aux_tributes = tributes.copy()
-        aux_tributes.remove(tribute)
-        return random.choice(aux_tributes)
+        aux_tributes.remove(tribute1)
+        if aux_tributes:
+            return aux_tributes[randint(0, len(aux_tributes) - 1)]
+        else:
+            return None
     
-    def pickTributeTeam(self, tributes, tribute1, tribute2):
-        if not tribute1['has_team'] and not tribute2['has_team']:
-            team = randint(1, 100)
-            if team not in Counter(tributes['team']):
-                tribute1['team'] = team
-                tribute2['team'] = team
-            else:
-                self.pickTributeTeam(tributes, tribute1, tribute2)
     
+    async def eventActions(self, ctx, tribute1, tribute2, tributes, chosen_event):
+        events = self.events()
+        print(f"Chosen event: {chosen_event}")
+        if not tribute1['has_event']:
+            tribute1['has_event'] = True
+            match (chosen_event):
+                case 0:
+                    tribute1['is_alive'] = False
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+                case 1:
+                    team = self.createTeam(tribute1, tribute2, tributes)
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name} creating team {team}!")
+                case 2:
+                    tribute1['inventory'].append("knife")
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+                case 3:
+                    item = self.stealItem(tribute1, tribute2)
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {item} from {tribute2['tribute'].display_name}.")
+                case 4:
+                    tribute1['is_alive'] = False
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                    tribute2['kills'] += 1
+                    tribute2['inventory'].remove("trap")
+                case 5:
+                    tribute1['is_alive'] = False
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                    tribute2['kills'] += 1
+                case 6:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                case 7:
+                    tribute1['is_alive'] = False
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                    tribute2['kills'] += 1
+                    tribute2['inventory'].remove("gun")
+                case 8:
+                    tribute1['is_alive'] = False
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                    tribute2['kills'] += 1
+                    tribute2['inventory'].remove("knife")
+                case 9:
+                    tribute1['inventory'].append("trap")
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+                case 10:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['team']}!")
+                    tribute1['is_alive'] = False
+                    tribute2['kills'] += 1
+                    for tribute in tributes:
+                        if tribute['team'] == tribute2['team'] and tribute['is_alive']:
+                            if tribute['team'] is not None:
+                                tribute['kills'] += 1
+                case 11:
+                    tribute1['inventory'].append("gun")
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+                case 17:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
+                    tribute1['team'] = None
+                    tribute2['team'] = None
+                    tribute1['is_alive'] = False
+                    tribute2['kills'] += 1
+                case 18:
+                    disbanded_team = self.getTributeTeam(tribute1, tributes)
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} team {disbanded_team}!")
+                case _:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+
+
+    def checkEventPossibilities(self, tribute1, tribute2, tributes):
+        list_events = list(range(17))
+
+        collect_requirements = {
+                2: "knife",
+                9: "trap",
+                11: "gun"
+            }
+        
+        list_events = [event for event in list_events if event not in collect_requirements.keys() or collect_requirements[event] not in tribute1['inventory']]
+
+        if tribute2:
+
+            kill_requirements = {
+                4: "trap",
+                7: "gun",
+                8: "knife"
+            }
+            
+            list_events = [event for event in list_events if event not in kill_requirements.keys() or kill_requirements[event] in tribute2['inventory']]
+
+            if not tribute2['inventory']:
+                list_events = [event for event in list_events if event != 3]
+
+            if tribute1['team'] is not None or tribute2['team'] is not None: 
+                list_events = [event for event in list_events if event != 1]
+
+            friendly_fire_events = [4, 5, 6, 7, 8, 10]
+
+            if tribute1['team'] == tribute2['team'] and tribute1['team'] is not None and tribute2['team'] is not None:
+                list_events = [event for event in list_events if event not in friendly_fire_events]
+                list_events.append(17)
+                list_events.append(18)
+
+            if tribute2['team'] is None:
+                list_events = [event for event in list_events if event != 10]
+
+            if len(tributes) == 2 and tribute1['team'] == tribute2['team'] and tribute1['team'] is not None and tribute2['team'] is not None:
+                list_events = [17, 18]
+
+            existing_teams = self.checkExistingTeams(tributes)
+
+            if len(existing_teams) == 0:
+                list_events = [event for event in list_events if event != 10]
+
+        else:
+            tribute2_events = [1, 3, 4, 5, 6, 7, 8, 10]
+            list_events = [event for event in list_events if event not in tribute2_events]
+
+        return list_events
+
+
+    def removePlrTeamOnDeath(self, tributes):
+        teams_to_remove = set()
+
+        for tribute in tributes:
+            if not tribute['is_alive']:
+                teams_to_remove.add(tribute['team'])
+
+        for tribute in tributes:
+            if tribute['team'] in teams_to_remove:
+                tribute['team'] = None
+
+    def stealItem(self, tribute1, tribute2):
+        item = random.choice(tribute2['inventory'])
+        tribute1['inventory'].append(item)
+        tribute2['inventory'].remove(item)
+        return item
+    
+    async def statistics (self, ctx, tributes):
+        data = []
+        for tribute in tributes:
+            data.append(
+            {"title": tribute['tribute'].display_name, 
+            "value": (
+                f"Kills: {str(tribute['kills'])}" 
+                + f"\n Days survived: {str(tribute['days_alive'])}" 
+                + "\n" + (f" Team: {str(tribute['team'])}" if tribute['team'] is not None else "Team: No team.") 
+                + "\n" + (f"Inventory: {str(tribute['inventory'])}" if tribute['inventory'] else "Inventory: No items.")
+                )
+            })
+        sorted_data = sorted(data, key=lambda x: x['value'], reverse=True)
+        view = PaginationView(sorted_data)
+        await view.send(ctx, title="Match results:", description="Match statistics for each tribute:", color=0xff0000)
+        
+    
+    def createTeam(self, tribute1, tribute2, tributes):
+        teams = self.checkExistingTeams(tributes)
+        teamNumber = randint(1, 100)
+        if teamNumber not in teams.keys():
+            tribute1['team'] = teamNumber
+            tribute2['team'] = teamNumber
+            return teamNumber
+        else:
+            self.createTeam(tribute1, tribute2, tributes)
+
+    def checkExistingTeams(self, tributes):
+        teams = Counter([tribute['team'] for tribute in tributes if tribute['team'] is not None])
+        return teams
+    
+    def getTributeTeam(self, tribute1, tributes):
+        for tribute in tributes:
+            if tribute1['team'] == tribute['team']:
+                return tribute1['team']
+
+   
     @commands.command()
     @pricing()
     async def nuke(self, ctx):

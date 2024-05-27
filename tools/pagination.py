@@ -56,22 +56,22 @@ class PaginationView(discord.ui.View):
         end = start + self.sep if self.current_page != self.total_pages else None
         return self.data[start:end]
 
-    @discord.ui.button(label='Primeira página', style=discord.ButtonStyle.green)
+    @discord.ui.button(label='First page', style=discord.ButtonStyle.green)
     async def first_page_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.current_page = 1
         await self.update_message(self.get_current_page_data())
 
-    @discord.ui.button(label='Página anterior', style=discord.ButtonStyle.primary)
+    @discord.ui.button(label='Previous page', style=discord.ButtonStyle.primary)
     async def prev_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.current_page -= 1
         await self.update_message(self.get_current_page_data())
 
-    @discord.ui.button(label='Próxima página', style=discord.ButtonStyle.primary)
+    @discord.ui.button(label='Next page', style=discord.ButtonStyle.primary)
     async def next_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.current_page += 1
         await self.update_message(self.get_current_page_data())
 
-    @discord.ui.button(label='Última página', style=discord.ButtonStyle.green)
+    @discord.ui.button(label='Last page', style=discord.ButtonStyle.green)
     async def last_page_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.current_page = self.total_pages
         await self.update_message(self.get_current_page_data())

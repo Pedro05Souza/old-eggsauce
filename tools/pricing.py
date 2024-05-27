@@ -18,6 +18,7 @@ class Prices(Enum):
     balls = 50
     love = 75
     mog = 100
+    hungergames = 100
     mute = 150
     unmute = 150
     deafen = 150
