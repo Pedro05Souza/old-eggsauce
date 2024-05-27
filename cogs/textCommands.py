@@ -248,7 +248,7 @@ class TextCommands(commands.Cog):
     async def hungergames(self, ctx):
         day = 1
         tributes = []
-        wait_time = 1
+        wait_time = 10
         end_time = time.time() + wait_time
         tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=675996677366218774), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
         tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=656621136808902656), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
@@ -284,7 +284,7 @@ class TextCommands(commands.Cog):
                 await ctx.send(f"## Day {day} has started.")
                 for tribute in alive_tributes:
                     if tribute['is_alive']:
-                        await asyncio.sleep(2)
+                        await asyncio.sleep(3)
                         print(f"Tribute: {tribute['tribute'].display_name}, inventory: {tribute['inventory']}")
                         random_tribute = self.pickRandomTribute(tribute, alive_tributes)
                         if random_tribute:
@@ -345,11 +345,12 @@ class TextCommands(commands.Cog):
         11: "has found a gun.",
         12: "slept through the night safely.",
         13: "began to hallucinate.",
-        14: "has found a beatiful rock.",
+        14: "has found a beautiful rock.",
         15: "has built a campfire.",
         16: "has found a map.", 
         17: "has been betrayed by",
-        18: "has disbanded team"
+        18: "has disbanded team",
+        19: "team"
         }
         return events
 
@@ -432,6 +433,18 @@ class TextCommands(commands.Cog):
                 case 18:
                     disbanded_team = self.getTributeTeam(tribute1, tributes)
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} team {disbanded_team}!")
+                    for tribute in tributes:
+                        if tribute['team'] == disbanded_team:
+                            tribute['team'] = None
+                case 19:
+                    for tribute in tributes:
+                        if tribute['team'] == tribute1['team']:
+                            tribute['is_alive'] = False
+                            tribute1['is_alive'] = False
+                        if tribute['team'] == tribute2['team']:
+                            tribute['kills'] += 1
+                            tribute2['kills'] += 1
+                    await ctx.send(f"{events[chosen_event]} {tribute1['team']} has been eliminated by team {tribute2['team']}!")
                 case _:
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
 
@@ -478,6 +491,10 @@ class TextCommands(commands.Cog):
 
             existing_teams = self.checkExistingTeams(tributes)
 
+            if len(existing_teams) >= 2 and tribute2['team'] is not None and tribute1['team'] is not None and tribute1['team'] != tribute2['team']:
+                list_events = [event for event in list_events]
+                list_events.append(19)
+
             if len(existing_teams) == 0:
                 list_events = [event for event in list_events if event != 10]
 
@@ -496,7 +513,7 @@ class TextCommands(commands.Cog):
                 teams_to_remove.add(tribute['team'])
 
         for tribute in tributes:
-            if tribute['team'] in teams_to_remove:
+            if tribute['team'] in teams_to_remove and tribute['is_alive']:
                 tribute['team'] = None
 
     def stealItem(self, tribute1, tribute2):
