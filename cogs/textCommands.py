@@ -11,9 +11,11 @@ import os
 import random
 from tools.pagination import PaginationView
 from tools.pricing import pricing, refund
+game_Start = False
 
 # This class is responsible for handling the text commands.
 class TextCommands(commands.Cog):
+
 
     def __init__(self, bot):
         self.bot = bot
@@ -246,6 +248,12 @@ class TextCommands(commands.Cog):
 
     @commands.command()
     async def hungergames(self, ctx):
+        print(globals().keys())        
+        global game_Start
+        if game_Start:
+            await ctx.send("The hunger games are already in progress.")
+            return
+        game_Start = True
         day = 1
         tributes = []
         wait_time = 10
@@ -307,6 +315,7 @@ class TextCommands(commands.Cog):
             winner = alive_tributes[0]
             await ctx.send(f"{winner['tribute'].display_name} has won the hunger games and has won 350 Eggbux!.")
             #Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
+            game_Start = False
             await self.statistics(ctx, tributes)
 
 
@@ -498,6 +507,8 @@ class TextCommands(commands.Cog):
             if len(existing_teams) == 0:
                 list_events = [event for event in list_events if event != 10]
 
+            if len(tributes) == 2:
+                list_events = [event for event in list_events if event != 1]
         else:
             tribute2_events = [1, 3, 4, 5, 6, 7, 8, 10]
             list_events = [event for event in list_events if event not in tribute2_events]
@@ -526,7 +537,7 @@ class TextCommands(commands.Cog):
         data = []
         for tribute in tributes:
             data.append(
-            {"title": tribute['tribute'].display_name, 
+            {"title": ":medal: " + tribute['tribute'].display_name if self.getWinner(tributes) == tribute else ":x: " + tribute['tribute'].display_name, 
             "value": (
                 f"Kills: {str(tribute['kills'])}" 
                 + f"\n Days survived: {str(tribute['days_alive'])}" 
@@ -557,6 +568,14 @@ class TextCommands(commands.Cog):
         for tribute in tributes:
             if tribute1['team'] == tribute['team']:
                 return tribute1['team']
+    
+    def getWinner(self, tributes):
+        highestdayAlive = 0
+        for tribute in tributes:
+            if tribute['days_alive'] > highestdayAlive:
+                highestdayAlive = tribute['days_alive']
+                winner = tribute
+        return winner
 
    
     @commands.command()
@@ -567,3 +586,4 @@ class TextCommands(commands.Cog):
               
 async def setup(bot):
     await bot.add_cog(TextCommands(bot))
+
