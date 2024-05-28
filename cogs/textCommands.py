@@ -12,6 +12,8 @@ import random
 from tools.pagination import PaginationView
 from tools.pricing import pricing, refund
 game_Start = False
+dead_tribute = None
+bear_disabled = False
 
 # This class is responsible for handling the text commands.
 class TextCommands(commands.Cog):
@@ -54,18 +56,14 @@ class TextCommands(commands.Cog):
                 await ctx.send("You can't kick yourself.")
                 await refund(ctx.author, ctx) 
                 return
-        if User.top_role.position <= ctx.guild.me.top_role.position:
-            try:
-                await User.kick()
-                await ctx.send(f"{User.mention} was kicked.")
-            except discord.errors.Forbidden:
-                await ctx.send(f"{ctx.author.mention}, you don't have permission to do that.")
-                await refund(ctx.author, ctx)
-                return
-        else:
-            await ctx.send("I don't have permission to do that.")
+        try:
+            await User.kick()
+            await ctx.send(f"{User.mention} was kicked.")
+        except discord.errors.Forbidden:
+            await ctx.send(f"{ctx.author.mention}, i don't have permission to do that.")
             await refund(ctx.author, ctx)
-
+            return
+     
     @commands.command()
     @pricing()
     async def ban(self, ctx, User: discord.Member):
@@ -73,14 +71,13 @@ class TextCommands(commands.Cog):
                 await ctx.send("You can't ban yourself.")
                 await refund(ctx.author, ctx)
                 return
-        if User.top_role.position <= ctx.guild.me.top_role.position:
-            try:
-                await User.ban()
-                await ctx.send(f"{User.mention} was banned.")
-            except discord.errors.Forbidden:
-                await ctx.send(f"{ctx.author.mention}, you don't have permission to do that")
-                await refund(ctx.author, ctx)
-                return
+        try:
+            await User.ban()
+            await ctx.send(f"{User.mention} was banned.")
+        except discord.errors.Forbidden:
+            await ctx.send(f"{ctx.author.mention}, i don't have permission to do that.")
+            await refund(ctx.author, ctx)
+            return
         else:
             await ctx.send("I don't have permission to do that.")
             await refund(ctx.author, ctx)
@@ -247,8 +244,7 @@ class TextCommands(commands.Cog):
             await refund(ctx.author, ctx) 
 
     @commands.command()
-    async def hungergames(self, ctx):
-        print(globals().keys())        
+    async def hungergames(self, ctx):     
         global game_Start
         if game_Start:
             await ctx.send("The hunger games are already in progress.")
@@ -257,12 +253,8 @@ class TextCommands(commands.Cog):
         day = 1
         tributes = []
         wait_time = 10
+        min_tributes = 2
         end_time = time.time() + wait_time
-        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=675996677366218774), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
-        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=656621136808902656), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
-        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=247283454440374274), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
-        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=411916947773587456), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
-        tributes.append({"tribute": discord.utils.get(ctx.guild.members, id=692045914436796436), "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
         await ctx.send(f"The hunger games are about to start. Type !join to join the hunger games. You have {wait_time} seconds to join.")
         while True:
             actual_time = end_time - time.time()
@@ -273,7 +265,7 @@ class TextCommands(commands.Cog):
                 allowplay = self.checkIfTributePlay(discord.utils.get(ctx.guild.members, id=message.author.id))
                 if allowplay:
                     if not any(tribute['tribute'] == message.author for tribute in tributes):
-                        tributes.append({"tribute": message.author, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0})
+                        tributes.append({"tribute": message.author, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
                         await ctx.send(f"{message.author.display_name} has joined the hunger games.")
                     else:
                         await ctx.send(f"{message.author.display_name} is already in the hunger games.")
@@ -281,9 +273,10 @@ class TextCommands(commands.Cog):
                     await ctx.send(f"{message.author.display_name} doesn't have enough eggbux to join the hunger games.")
             except asyncio.TimeoutError:
                 break
-        if len(tributes) < 2:
-            await ctx.send("Not enough players to start the hunger games. At least 4 players are needed.")
-            Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + 200, Usuario.read(ctx.author.id)["roles"])
+        if len(tributes) < min_tributes:
+            await ctx.send(f"Not enough players to start the hunger games. At least {min_tributes} players are needed.")
+            Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + 350, Usuario.read(ctx.author.id)["roles"])
+            game_Start = False
             return
         else:
             await ctx.send("# The hunger games have started.")
@@ -299,7 +292,7 @@ class TextCommands(commands.Cog):
                             print(f"Random tribute: {random_tribute['tribute'].display_name}, inventory: {random_tribute['inventory']}")
                         else:
                             print("Random tribute: None")
-                        event_possibilities = self.checkEventPossibilities(tribute, random_tribute, alive_tributes)
+                        event_possibilities = self.checkEventPossibilities(tribute, random_tribute, alive_tributes, self.lootTributeBody(tributes))
                         print(f"Possibilities: {event_possibilities}")
                         random_event = self.chooseRandomEvent(event_possibilities)
                         await self.eventActions(ctx, tribute, random_tribute, alive_tributes, random_event)
@@ -314,10 +307,9 @@ class TextCommands(commands.Cog):
 
             winner = alive_tributes[0]
             await ctx.send(f"{winner['tribute'].display_name} has won the hunger games and has won 350 Eggbux!.")
-            #Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
+           Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
             game_Start = False
             await self.statistics(ctx, tributes)
-
 
     def checkIfTributePlay(self, tribute):
         if Usuario.read(tribute.id) and Usuario.read(tribute.id)["points"] >= 50:
@@ -347,8 +339,8 @@ class TextCommands(commands.Cog):
         4: "has been killed by a trap set by",
         5: "was spotted hiding and was killed by",
         6: "narrowly escaped an ambush from",
-        7: "was shot by",
-        8: "was stabbed by",
+        7: "was shot to death by",
+        8: "was stabbed to death by",
         9: "has found a trap.",
         10: "has been killed by team",
         11: "has found a gun.",
@@ -356,10 +348,16 @@ class TextCommands(commands.Cog):
         13: "began to hallucinate.",
         14: "has found a beautiful rock.",
         15: "has built a campfire.",
-        16: "has found a map.", 
-        17: "has been betrayed by",
-        18: "has disbanded team",
-        19: "team"
+        16: "has found a map.",
+        17: "spares the life of", 
+        18: "is hunting for other tributes.",
+        19: "has found a trail leading to",
+        20: "has looted the dead body of the fallen tribute",
+        21: "has been betrayed by",
+        22: "has disbanded from team",
+        23: "team",
+        24:"has triumphantly killed the entirety of team",
+        25: "team"
         }
         return events
 
@@ -369,7 +367,6 @@ class TextCommands(commands.Cog):
     def updateTributeEvent(self, tributes):
         for tribute in tributes:
             tribute['has_event'] = False
-    
 
     def pickRandomTribute(self, tribute1, tributes):
         aux_tributes = tributes.copy()
@@ -379,8 +376,8 @@ class TextCommands(commands.Cog):
         else:
             return None
     
-    
     async def eventActions(self, ctx, tribute1, tribute2, tributes, chosen_event):
+        global dead_tribute, bear_disabled
         events = self.events()
         print(f"Chosen event: {chosen_event}")
         if not tribute1['has_event']:
@@ -388,6 +385,7 @@ class TextCommands(commands.Cog):
             match (chosen_event):
                 case 0:
                     tribute1['is_alive'] = False
+                    tribute1['Killed_by'] = "Bear"
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
                 case 1:
                     team = self.createTeam(tribute1, tribute2, tributes)
@@ -400,22 +398,26 @@ class TextCommands(commands.Cog):
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {item} from {tribute2['tribute'].display_name}.")
                 case 4:
                     tribute1['is_alive'] = False
+                    tribute1['Killed_by'] = tribute2['tribute'].display_name
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
                     tribute2['kills'] += 1
                     tribute2['inventory'].remove("trap")
                 case 5:
                     tribute1['is_alive'] = False
+                    tribute1['Killed_by'] = tribute2['tribute'].display_name
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
                     tribute2['kills'] += 1
                 case 6:
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
                 case 7:
                     tribute1['is_alive'] = False
+                    tribute1['Killed_by'] = tribute2['tribute'].display_name
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
                     tribute2['kills'] += 1
                     tribute2['inventory'].remove("gun")
                 case 8:
                     tribute1['is_alive'] = False
+                    tribute1['Killed_by'] = tribute2['tribute'].display_name
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
                     tribute2['kills'] += 1
                     tribute2['inventory'].remove("knife")
@@ -425,6 +427,7 @@ class TextCommands(commands.Cog):
                 case 10:
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['team']}!")
                     tribute1['is_alive'] = False
+                    tribute1['Killed_by'] = "team " + str(tribute2['team'])
                     tribute2['kills'] += 1
                     for tribute in tributes:
                         if tribute['team'] == tribute2['team'] and tribute['is_alive']:
@@ -435,31 +438,56 @@ class TextCommands(commands.Cog):
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
                 case 17:
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
+                case 19:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
+                case 20:
+                    item = self.stealItem(tribute1, dead_tribute)
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {dead_tribute['tribute'].display_name} stealing a {item} in the progress!")
+                case 21:
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
                     tribute1['team'] = None
                     tribute2['team'] = None
                     tribute1['is_alive'] = False
+                    tribute1['Killed_by'] = tribute2['tribute'].display_name
                     tribute2['kills'] += 1
-                case 18:
+                case 22:
                     disbanded_team = self.getTributeTeam(tribute1, tributes)
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} team {disbanded_team}!")
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {disbanded_team}!")
                     for tribute in tributes:
                         if tribute['team'] == disbanded_team:
                             tribute['team'] = None
-                case 19:
+                case 23:
                     for tribute in tributes:
                         if tribute['team'] == tribute1['team']:
                             tribute['is_alive'] = False
+                            tribute['Killed_by'] = "team " + str(tribute2['team'])
                             tribute1['is_alive'] = False
+                            tribute1['Killed_by'] = "team " + str(tribute2['team'])
                         if tribute['team'] == tribute2['team']:
                             tribute['kills'] += 1
                             tribute2['kills'] += 1
                     await ctx.send(f"{events[chosen_event]} {tribute1['team']} has been eliminated by team {tribute2['team']}!")
+                case 24:
+                    for tribute in tributes:
+                        if tribute['team'] == tribute2['team']:
+                            tribute['is_alive'] = False
+                            tribute['Killed_by'] = tribute1['tribute'].display_name
+                            tribute2['is_alive'] = False
+                            tribute2['Killed_by'] = tribute1['tribute'].display_name
+                    tribute1['kills'] += 2
+                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['team']}!")
+                case 25:
+                    team = self.getTributeTeam(tribute1, tributes)
+                    await ctx.send(f"{team} has managed to kill a bear, disabling that for the rest of the game.")
+                    bear_disabled = True
+
                 case _:
                     await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
 
 
-    def checkEventPossibilities(self, tribute1, tribute2, tributes):
-        list_events = list(range(17))
+    def checkEventPossibilities(self, tribute1, tribute2, tributes, dead_tributes):
+        global dead_tribute, bear_disabled
+        list_events = list(range(20))
 
         collect_requirements = {
                 2: "knife",
@@ -468,6 +496,14 @@ class TextCommands(commands.Cog):
             }
         
         list_events = [event for event in list_events if event not in collect_requirements.keys() or collect_requirements[event] not in tribute1['inventory']]
+        
+        if dead_tributes:
+            dead_tribute = random.choice(dead_tributes)
+            if dead_tribute and not any(item for item in tribute1['inventory'] if item in dead_tribute['inventory']):
+                list_events.append(20)
+
+        if bear_disabled:
+            list_events = [event for event in list_events if event != 0]
 
         if tribute2:
 
@@ -479,30 +515,39 @@ class TextCommands(commands.Cog):
             
             list_events = [event for event in list_events if event not in kill_requirements.keys() or kill_requirements[event] in tribute2['inventory']]
 
-            if not tribute2['inventory']:
+            if not tribute2['inventory'] and not any(item in tribute1['inventory'] for item in tribute2['inventory'] if item in tribute2['inventory']):
                 list_events = [event for event in list_events if event != 3]
 
             if tribute1['team'] is not None or tribute2['team'] is not None: 
                 list_events = [event for event in list_events if event != 1]
 
-            friendly_fire_events = [4, 5, 6, 7, 8, 10]
+            friendly_fire_events = [3, 4, 5, 6, 7, 8, 10, 17, 19]
 
             if tribute1['team'] == tribute2['team'] and tribute1['team'] is not None and tribute2['team'] is not None:
                 list_events = [event for event in list_events if event not in friendly_fire_events]
-                list_events.append(17)
-                list_events.append(18)
+                list_events.append(21)
+                list_events.append(22)
+
+            no_team_events = [10, 21, 22, 23]
 
             if tribute2['team'] is None:
-                list_events = [event for event in list_events if event != 10]
+                list_events = [event for event in list_events if event not in no_team_events]
 
             if len(tributes) == 2 and tribute1['team'] == tribute2['team'] and tribute1['team'] is not None and tribute2['team'] is not None:
-                list_events = [17, 18]
+                list_events = [21, 22]
 
             existing_teams = self.checkExistingTeams(tributes)
 
             if len(existing_teams) >= 2 and tribute2['team'] is not None and tribute1['team'] is not None and tribute1['team'] != tribute2['team']:
                 list_events = [event for event in list_events]
-                list_events.append(19)
+                list_events.append(23)
+
+            if len(existing_teams) >= 1 and tribute2['team'] is not None and tribute1['team'] is None:
+                list_events = [event for event in list_events]
+                list_events.append(24)
+
+            if tribute1['team'] is not None:
+                list_events.append(25)
 
             if len(existing_teams) == 0:
                 list_events = [event for event in list_events if event != 10]
@@ -510,11 +555,10 @@ class TextCommands(commands.Cog):
             if len(tributes) == 2:
                 list_events = [event for event in list_events if event != 1]
         else:
-            tribute2_events = [1, 3, 4, 5, 6, 7, 8, 10]
+            tribute2_events = [1, 3, 4, 5, 6, 7, 8, 10, 17, 19, 21, 22, 23, 24]
             list_events = [event for event in list_events if event not in tribute2_events]
 
         return list_events
-
 
     def removePlrTeamOnDeath(self, tributes):
         teams_to_remove = set()
@@ -533,7 +577,14 @@ class TextCommands(commands.Cog):
         tribute2['inventory'].remove(item)
         return item
     
-    async def statistics (self, ctx, tributes):
+    def lootTributeBody(self, tributes):
+        dead_tributes = [dead_tribute for dead_tribute in tributes if not dead_tribute['is_alive'] and len(dead_tribute['inventory']) > 0]
+        if len(dead_tributes) >= 1:
+            return dead_tributes
+        else:
+            return None
+    
+    async def statistics(self, ctx, tributes):
         data = []
         for tribute in tributes:
             data.append(
@@ -542,7 +593,8 @@ class TextCommands(commands.Cog):
                 f"Kills: {str(tribute['kills'])}" 
                 + f"\n Days survived: {str(tribute['days_alive'])}" 
                 + "\n" + (f" Team: {str(tribute['team'])}" if tribute['team'] is not None else "Team: No team.") 
-                + "\n" + (f"Inventory: {str(tribute['inventory'])}" if tribute['inventory'] else "Inventory: No items.")
+                + "\n" + (f"Inventory: {str(tribute['inventory'])}" if tribute['inventory'] else "Inventory: No items.") +
+                "\n" + (f"Killed by: {tribute['Killed_by']}" if tribute['Killed_by'] is not None else "Killed by: No one.")
                 )
             })
         sorted_data = sorted(data, key=lambda x: x['value'], reverse=True)
@@ -576,8 +628,7 @@ class TextCommands(commands.Cog):
                 highestdayAlive = tribute['days_alive']
                 winner = tribute
         return winner
-
-   
+    
     @commands.command()
     @pricing()
     async def nuke(self, ctx):

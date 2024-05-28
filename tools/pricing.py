@@ -16,9 +16,9 @@ class Prices(Enum):
     shop = 0
     salary = 0
     balls = 50
+    hungergames = 50
     love = 75
     mog = 100
-    hungergames = 100
     mute = 150
     unmute = 150
     deafen = 150
