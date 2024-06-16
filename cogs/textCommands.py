@@ -31,7 +31,15 @@ class TextCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def balls(self, ctx):
-        await ctx.send("balls")
+        await TextCommands.create_embed_without_title(ctx, f":soccer: balls")
+
+    async def create_embed_without_title(ctx, description):
+        embed = discord.Embed(description=description)
+        await ctx.send(embed=embed)
+
+    async def create_embed_with_title(ctx, title, description):
+        embed = discord.Embed(title=title, description=description)
+        await ctx.send(embed=embed)
 
     @commands.command()
     @pricing()
@@ -46,21 +54,21 @@ class TextCommands(commands.Cog):
         if amount > 0 and amount <= 25:
             await ctx.channel.purge(limit=amount + 1)
         else:
-            await ctx.send("Please, insert a number between 1 and 25.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, please enter a number between 1 and 25.", "")
             await refund(ctx.author, ctx)
 
     @commands.command()
     @pricing()
     async def kick(self, ctx, User: discord.Member):
         if User.id == ctx.author.id:
-                await ctx.send("You can't kick yourself.")
+                await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't kick yourself.")
                 await refund(ctx.author, ctx) 
                 return
         try:
             await User.kick()
-            await ctx.send(f"{User.mention} was kicked.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} was kicked.")
         except discord.errors.Forbidden:
-            await ctx.send(f"{ctx.author.mention}, i don't have permission to do that.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i don't have permission to do that.")
             await refund(ctx.author, ctx)
             return
      
@@ -68,18 +76,18 @@ class TextCommands(commands.Cog):
     @pricing()
     async def ban(self, ctx, User: discord.Member):
         if User.id == ctx.author.id:
-                await ctx.send("You can't ban yourself.")
+                await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't ban yourself.")
                 await refund(ctx.author, ctx)
                 return
         try:
             await User.ban()
-            await ctx.send(f"{User.mention} was banned.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} was banned.")
         except discord.errors.Forbidden:
-            await ctx.send(f"{ctx.author.mention}, i don't have permission to do that.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i don't have permission to do that.")
             await refund(ctx.author, ctx)
             return
         else:
-            await ctx.send("I don't have permission to do that.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: I don't have permission to do that.")
             await refund(ctx.author, ctx)
 
     @commands.command()
@@ -87,20 +95,16 @@ class TextCommands(commands.Cog):
     async def changeNickname(self, ctx, User: discord.Member, *apelido: str):
         if User.top_role.position <= ctx.guild.me.top_role.position:
             if User.id == ctx.me.id:
-                await ctx.send("I can't change my own nickname.")
+                await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i can't change my own nickname.")
                 await refund(ctx.author, ctx)
                 return
             else:
                 apelido = " ".join(apelido)
                 await User.edit(nick=apelido)
-                await ctx.send(f"{User.mention}'s nickname has changed to {apelido}.")   
+                await TextCommands.create_embed_without_title(ctx, f"{User.display_name}'s nickname has been changed to {apelido}.")  
         else:
             await refund(ctx.author, ctx)
-            await ctx.send("I don't have permission to do that.")
-
-    @commands.command()
-    async def help(self, ctx):
-         pass
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i don't have permission to do that.")
 
     @commands.command()
     @pricing()
@@ -108,9 +112,9 @@ class TextCommands(commands.Cog):
         User = await self.bot.fetch_user(id)
         if await ctx.guild.fetch_ban(User):
             await ctx.guild.unban(User)
-            await ctx.send(f"{User.mention} has been unbanned.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} was unbanned.")
         else:
-            await ctx.send("This user is not banned.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} is not banned.")
             await refund(ctx.author, ctx)
             
     @commands.command()
@@ -125,11 +129,11 @@ class TextCommands(commands.Cog):
                 role = await ctx.guild.create_role(name="Low wage worker", permissions=permissions, color=discord.Color.from_rgb(165, 42, 42))
                 await role.edit(position=9, hoist=True, mentionable=True)
             if ctx.author in role.members:
-                await ctx.send("You already have this role.")
+                await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have this role.")
                 return
             if Usuario.read(ctx.author.id)["roles"] == "":
                 await ctx.author.add_roles(role)
-                await ctx.send(f"{ctx.author.mention} received the low wage worker role.")
+                await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} received the low wage worker role.")
 
 
     @commands.command()
@@ -146,14 +150,14 @@ class TextCommands(commands.Cog):
                     role = await ctx.guild.create_role(name="Peasant", permissions=permissions, color=discord.Color.from_rgb(255, 0, 0))
                     await role.edit(position=8, hoist=True, mentionable=True)
              if ctx.author in role.members:
-                    await ctx.send("You already have this role.")
+                    await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have this role.")
                     await refund(ctx.author, ctx)
                     return
              if Usuario.read(ctx.author.id)["roles"] == "T":
                 await ctx.author.add_roles(role)
-                await ctx.send(f"{ctx.author.mention} received the low class role.")
+                await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} received the low class role.")
              else:
-                await ctx.send("You don't have one or more of the necessary roles.")
+                await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have one or more of the necessary roles.")
                 await refund(ctx.author, ctx)   
 
     @commands.command()
@@ -171,16 +175,16 @@ class TextCommands(commands.Cog):
                     role = await ctx.guild.create_role(name="Brokie who thinks they are rich", permissions=permissions, color=discord.Color.from_rgb(0, 0, 255))
                     await role.edit(position=7, hoist=True, mentionable=True)
              if ctx.author in role.members:
-                    await ctx.send("You already have this role.")
+                    await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have this role.")
                     await refund(ctx.author, ctx)
                     return
              if Usuario.read(ctx.author.id)["roles"] == "TB":
                 await ctx.author.add_roles(role)
-                await ctx.send(f"{ctx.author.mention} received the middle class role.")
+                await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} received the middle class role.")
              else:
-                    await ctx.send("You don't have one or more of the necessary roles.")
-                    await refund(ctx.author, ctx)
-
+                await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have one or more of the necessary roles.")
+                await refund(ctx.author, ctx)
+                    
     @commands.command()
     @pricing()
     async def highClassRole(self, ctx):
@@ -197,15 +201,15 @@ class TextCommands(commands.Cog):
                     role = await ctx.guild.create_role(name="Magnate", permissions=permissions, color=discord.Color.from_rgb(0, 0, 0))
                     await role.edit(position=6, hoist=True, mentionable=True)
              if ctx.author in role.members:
-                    await ctx.send("You already have this role.")
+                    await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have this role.")
                     await refund(ctx.author, ctx)
                     return
              if Usuario.read(ctx.author.id)["roles"] == "TBM":
                 await ctx.author.add_roles(role)
-                await ctx.send(f"{ctx.author.mention} received the high class role.")
+                await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} received the high class role.")
              else:
-                  await ctx.send("You don't have one or more of the necessary roles.")
-                  await refund(ctx.author, ctx)
+                await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have one or more of the necessary roles.")
+                await refund(ctx.author, ctx)
 
     def salarioCargo(self, User:discord.Member):
         salarios = {
@@ -236,26 +240,28 @@ class TextCommands(commands.Cog):
         user_data = Usuario.read(User.id)
         if user_data:
             if user_data["roles"] != "":
-                await ctx.send(f"{User.display_name} earns {self.salarioCargo(User)} eggbux of salary.")
+                await TextCommands.create_embed_without_title(ctx, f":moneybag: {User.display_name} has a salary of {self.salarioCargo(User)} eggbux.")
                 return   
-            await ctx.send(f"{User.display_name} doesn't have a custom role that receives a salary.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} doesn't have a job.")
         else:
-            await ctx.send(f"{User.display_name} is not registered in the database.")
-            await refund(ctx.author, ctx) 
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} isn't registered in the database.")
+            await refund(ctx.author, ctx)
 
     @commands.command()
     async def hungergames(self, ctx):     
         global game_Start
         if game_Start:
-            await ctx.send("The hunger games are already in progress.")
+            await TextCommands.create_embed_without_title(ctx, ":no_entry_sign: A hunger games match is already in progress.")
             return
         game_Start = True
         day = 1
         tributes = []
         wait_time = 10
-        min_tributes = 2
+        min_tributes = 4
         end_time = time.time() + wait_time
-        await ctx.send(f"The hunger games are about to start. Type !join to join the hunger games. You have {wait_time} seconds to join.")
+        for member in ctx.guild.members:
+                tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 1, "Killed_by": None})
+        await TextCommands.create_embed_without_title(ctx, f"Type !join to join the hunger games. The game will start in {wait_time} seconds.")
         while True:
             actual_time = end_time - time.time()
             if actual_time <= 0:
@@ -266,54 +272,51 @@ class TextCommands(commands.Cog):
                 if allowplay:
                     if not any(tribute['tribute'] == message.author for tribute in tributes):
                         tributes.append({"tribute": message.author, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
-                        await ctx.send(f"{message.author.display_name} has joined the hunger games.")
+                        await TextCommands.create_embed_without_title(ctx, f":white_check_mark: {message.author.display_name} has joined the hunger games.")
                     else:
-                        await ctx.send(f"{message.author.display_name} is already in the hunger games.")
+                        await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {message.author.display_name} is already in the hunger games.")
                 else:
-                    await ctx.send(f"{message.author.display_name} doesn't have enough eggbux to join the hunger games.")
+                    await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {message.author.display_name}, you don't have enough eggbux to join the hunger games.")
             except asyncio.TimeoutError:
                 break
         if len(tributes) < min_tributes:
-            await ctx.send(f"Not enough players to start the hunger games. At least {min_tributes} players are needed.")
-            Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + 350, Usuario.read(ctx.author.id)["roles"])
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is {min_tributes}.")
+            Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + 100, Usuario.read(ctx.author.id)["roles"])
             game_Start = False
             return
         else:
-            await ctx.send("# The hunger games have started.")
+            await TextCommands.create_embed_without_title(ctx, f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
             alive_tributes = tributes
             while len(alive_tributes) > 1:
-                await ctx.send(f"## Day {day} has started.")
+                await TextCommands.create_embed_with_title(ctx, f"Day {day}", f"**Tributes remaining: {len(alive_tributes)}**")
                 for tribute in alive_tributes:
                     if tribute['is_alive']:
                         await asyncio.sleep(3)
-                        print(f"Tribute: {tribute['tribute'].display_name}, inventory: {tribute['inventory']}")
                         random_tribute = self.pickRandomTribute(tribute, alive_tributes)
-                        if random_tribute:
-                            print(f"Random tribute: {random_tribute['tribute'].display_name}, inventory: {random_tribute['inventory']}")
-                        else:
-                            print("Random tribute: None")
                         event_possibilities = self.checkEventPossibilities(tribute, random_tribute, alive_tributes, self.lootTributeBody(tributes))
-                        print(f"Possibilities: {event_possibilities}")
                         random_event = self.chooseRandomEvent(event_possibilities)
                         await self.eventActions(ctx, tribute, random_tribute, alive_tributes, random_event)
                         alive_tributes = self.checkAliveTributes(alive_tributes)
                         if len(alive_tributes) == 1:
                             break
-                await ctx.send(f"**Tributes remaining: {len(alive_tributes)}**")
+                fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == day]
+                if fallen_tributes:
+                    await TextCommands.create_embed_without_title(ctx, f"**Fallen tributes:** {', '.join([tribute['tribute'].display_name for tribute in fallen_tributes])}")
                 self.increaseDaysAlive(alive_tributes)
                 self.removePlrTeamOnDeath(tributes)
                 self.updateTributeEvent(alive_tributes)
                 day += 1
 
             winner = alive_tributes[0]
-            await ctx.send(f"{winner['tribute'].display_name} has won the hunger games and has won 350 Eggbux!.")
-           Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
+            prizeMultiplier = len(tributes) * 50
+            await TextCommands.create_embed_without_title(ctx, f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
+            #Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
             game_Start = False
             await self.statistics(ctx, tributes)
 
     def checkIfTributePlay(self, tribute):
-        if Usuario.read(tribute.id) and Usuario.read(tribute.id)["points"] >= 50:
-            Usuario.update(tribute.id, Usuario.read(tribute.id)["points"] - 50, Usuario.read(tribute.id)["roles"])
+        if Usuario.read(tribute.id) and Usuario.read(tribute.id)["points"] >= 100:
+            Usuario.update(tribute.id, Usuario.read(tribute.id)["points"] - 100, Usuario.read(tribute.id)["roles"])
             return True
         else:
             return False
@@ -351,13 +354,14 @@ class TextCommands(commands.Cog):
         16: "has found a map.",
         17: "spares the life of", 
         18: "is hunting for other tributes.",
-        19: "has found a trail leading to",
-        20: "has looted the dead body of the fallen tribute",
+        19: "has spotted ",
+        20: "has looted the body of the fallen tribute",
         21: "has been betrayed by",
         22: "has disbanded from team",
         23: "team",
         24:"has triumphantly killed the entirety of team",
-        25: "team"
+        25: "team",
+        26: "team"
         }
         return events
 
@@ -386,46 +390,45 @@ class TextCommands(commands.Cog):
                 case 0:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = "Bear"
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+                    await TextCommands.create_embed_without_title(ctx, f":x: {tribute1['tribute'].display_name} {events[chosen_event]}")
                 case 1:
                     team = self.createTeam(tribute1, tribute2, tributes)
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name} creating team {team}!")
+                    await TextCommands.create_embed_without_title(ctx, f":people_hugging: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name} creating team {team}!")
                 case 2:
                     tribute1['inventory'].append("knife")
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+                    await TextCommands.create_embed_without_title(ctx, f":dagger: {tribute1['tribute'].display_name} {events[chosen_event]}")
                 case 3:
                     item = self.stealItem(tribute1, tribute2)
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {item} from {tribute2['tribute'].display_name}.")
+                    await TextCommands.create_embed_without_title(ctx, f":crossed_swords: {tribute1['tribute'].display_name} {events[chosen_event]} {item} from {tribute2['tribute'].display_name}!")
                 case 4:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                    await TextCommands.create_embed_without_title(ctx, f":x: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
                     tribute2['kills'] += 1
                     tribute2['inventory'].remove("trap")
                 case 5:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                    await TextCommands.create_embed_without_title(ctx, f":x: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
                     tribute2['kills'] += 1
                 case 6:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                    await TextCommands.create_embed_without_title(ctx, f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
                 case 7:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                    await TextCommands.create_embed_without_title(ctx, f":x: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
                     tribute2['kills'] += 1
                     tribute2['inventory'].remove("gun")
                 case 8:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
+                    await TextCommands.create_embed_without_title(ctx, f":x: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}")
                     tribute2['kills'] += 1
                     tribute2['inventory'].remove("knife")
                 case 9:
                     tribute1['inventory'].append("trap")
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+                    await TextCommands.create_embed_without_title(ctx, f":mouse_trap: {tribute1['tribute'].display_name} {events[chosen_event]}")
                 case 10:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['team']}!")
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = "team " + str(tribute2['team'])
                     tribute2['kills'] += 1
@@ -433,18 +436,19 @@ class TextCommands(commands.Cog):
                         if tribute['team'] == tribute2['team'] and tribute['is_alive']:
                             if tribute['team'] is not None:
                                 tribute['kills'] += 1
+                    await TextCommands.create_embed_without_title(ctx, f":x: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['team']}!")
                 case 11:
                     tribute1['inventory'].append("gun")
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+                    await TextCommands.create_embed_without_title(ctx, f":gun: {tribute1['tribute'].display_name} {events[chosen_event]}")
                 case 17:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
+                    await TextCommands.create_embed_without_title(ctx, f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
                 case 19:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
+                    await TextCommands.create_embed_without_title(ctx, f":warning: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name} running in the distance!")
                 case 20:
                     item = self.stealItem(tribute1, dead_tribute)
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {dead_tribute['tribute'].display_name} stealing a {item} in the progress!")
+                    await TextCommands.create_embed_without_title(ctx, f"{tribute1['tribute'].display_name} {events[chosen_event]} {dead_tribute['tribute'].display_name} stealing a {item} in the progress!")
                 case 21:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
+                    await TextCommands.create_embed_without_title(ctx, f":broken_heart: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
                     tribute1['team'] = None
                     tribute2['team'] = None
                     tribute1['is_alive'] = False
@@ -452,7 +456,7 @@ class TextCommands(commands.Cog):
                     tribute2['kills'] += 1
                 case 22:
                     disbanded_team = self.getTributeTeam(tribute1, tributes)
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {disbanded_team}!")
+                    await TextCommands.create_embed_without_title(ctx, f":broken_heart: {tribute1['tribute'].display_name} {events[chosen_event]} {disbanded_team}!")
                     for tribute in tributes:
                         if tribute['team'] == disbanded_team:
                             tribute['team'] = None
@@ -466,7 +470,7 @@ class TextCommands(commands.Cog):
                         if tribute['team'] == tribute2['team']:
                             tribute['kills'] += 1
                             tribute2['kills'] += 1
-                    await ctx.send(f"{events[chosen_event]} {tribute1['team']} has been eliminated by team {tribute2['team']}!")
+                    await TextCommands.create_embed_without_title(ctx, f":x: {events[chosen_event]} {tribute1['team']} has been eliminated by team {tribute2['team']}!")
                 case 24:
                     for tribute in tributes:
                         if tribute['team'] == tribute2['team']:
@@ -475,14 +479,13 @@ class TextCommands(commands.Cog):
                             tribute2['is_alive'] = False
                             tribute2['Killed_by'] = tribute1['tribute'].display_name
                     tribute1['kills'] += 2
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['team']}!")
+                    await TextCommands.create_embed_without_title(ctx, f":zap: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['team']}!")
                 case 25:
                     team = self.getTributeTeam(tribute1, tributes)
-                    await ctx.send(f"{team} has managed to kill a bear, disabling that for the rest of the game.")
+                    await TextCommands.create_embed_without_title(ctx, f":bear: {events[chosen_event]} {team} has managed to kill the bear, disabling that for the rest of the game.")
                     bear_disabled = True
-
                 case _:
-                    await ctx.send(f"{tribute1['tribute'].display_name} {events[chosen_event]}")
+                    await TextCommands.create_embed_without_title(ctx, f"{tribute1['tribute'].display_name} {events[chosen_event]}")
 
 
     def checkEventPossibilities(self, tribute1, tribute2, tributes, dead_tributes):
@@ -502,8 +505,10 @@ class TextCommands(commands.Cog):
             if dead_tribute and not any(item for item in tribute1['inventory'] if item in dead_tribute['inventory']):
                 list_events.append(20)
 
+        bear_events = [0, 25]
+
         if bear_disabled:
-            list_events = [event for event in list_events if event != 0]
+            list_events = [event for event in list_events if event not in bear_events]
 
         if tribute2:
 
@@ -546,7 +551,7 @@ class TextCommands(commands.Cog):
                 list_events = [event for event in list_events]
                 list_events.append(24)
 
-            if tribute1['team'] is not None:
+            if tribute1['team'] is not None and not bear_disabled:
                 list_events.append(25)
 
             if len(existing_teams) == 0:
@@ -633,7 +638,7 @@ class TextCommands(commands.Cog):
     @pricing()
     async def nuke(self, ctx):
         await Usuario.deleteAll()
-        await ctx.send("Database has been nuked.")
+        await TextCommands.create_embed_without_title(ctx, ":radioactive: Database has been nuked.")
               
 async def setup(bot):
     await bot.add_cog(TextCommands(bot))

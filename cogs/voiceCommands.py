@@ -5,6 +5,7 @@ import discord
 import os
 import random
 from dotenv import load_dotenv
+from cogs.textCommands import TextCommands
 from tools.pricing import pricing, refund
 
 # This class is responsible for handling the voice commands.
@@ -20,13 +21,12 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def momentOfSilence(self, ctx):
-        servidor = ctx.me.guild
         user = ctx.author
         if user.voice.channel is not None:
             for membro in user.voice.channel.members:
                 await membro.edit(mute = True)
         else:
-            await ctx.send("You are not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name}is not in a voice channel.")
             await refund(user, ctx)
             
 
@@ -36,9 +36,9 @@ class VoipCommands(commands.Cog):
         user = ctx.author
         if user not in self.gods:
             self.gods.append(ctx.author)
-            await ctx.send(f"{ctx.author.mention} has been added to the unmuttable list.", ephemeral=True)
+            await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} has been added to the divine beings.")
         elif user in self.gods:
-            await ctx.send(f"{user.mention} is already a divine being.", ephemeral=True)
+            await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} is already a divine being.")
             await refund(user, ctx)
             
     @commands.command()
@@ -50,7 +50,7 @@ class VoipCommands(commands.Cog):
         if user.voice.channel is not None: 
             await channel.edit(bitrate = 8000)
         else:
-            await ctx.send("You are not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
     @commands.command()
@@ -62,7 +62,7 @@ class VoipCommands(commands.Cog):
         if channel is not None:
             await channel.delete()
         else:
-            await ctx.send("You are not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
     @commands.command()
@@ -75,16 +75,16 @@ class VoipCommands(commands.Cog):
             channel = User.voice.channel
         else:
             channel = None
-            await ctx.send("This user is not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(user,ctx)
         if channel is not None and User.voice.mute == False:
             await User.edit(mute=True)
-            await ctx.send(f"{User.mention} has been muted.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} has been muted.")
         elif User.voice.mute == True:
-            await ctx.send(f"{User.mention} is already muted.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} is already muted.")
             await refund(user, ctx)
         else:
-            await ctx.send("This user is not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(user, ctx)
 
     @commands.command()
@@ -94,12 +94,12 @@ class VoipCommands(commands.Cog):
             User = ctx.author
         if User.voice.channel is not None and User.voice.mute == True:
             await User.edit(mute=False)
-            await ctx.send(f"{User.mention} has been unmuted.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} has been unmuted.")
         elif User.voice.mute == False:
-            await ctx.send(f"{User.mention} is already unmuted.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} is already unmuted.")
             await refund(ctx.author, ctx)
         else:
-            await ctx.send("This user is not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
     @commands.command()
@@ -112,7 +112,7 @@ class VoipCommands(commands.Cog):
             for member in channel.members:
                 await member.move_to(None)
         else:
-            await ctx.send("You are not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
     @commands.command()
@@ -123,7 +123,7 @@ class VoipCommands(commands.Cog):
         if user.voice.channel is not None:
             await channel.edit(bitrate = 64000)
         else:
-            await ctx.send("You are not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
     @commands.command()
@@ -133,12 +133,12 @@ class VoipCommands(commands.Cog):
             User = ctx.author
         if User.voice.channel is not None and User.voice.deaf == False:
             await User.edit(deafen=True)
-            await ctx.send(f"{User.mention} has been deafened.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} has been deafened.")
         elif User.voice.deaf == True:
-            await ctx.send(f"{User.mention} is already deafened.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} is already deafened.")
             await refund(ctx.author, ctx)
         else:
-            await ctx.send("This user is not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
     @commands.command()
@@ -148,12 +148,12 @@ class VoipCommands(commands.Cog):
             User = ctx.author
         if User.voice.channel is not None and User.voice.deaf == True:
             await User.edit(deafen=False)
-            await ctx.send(f"{User.mention} has been undeafened.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} has been undeafened.")
         elif User.voice.deaf == False:
-            await ctx.send(f"{User.mention} is already undeafened.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} is already undeafened.")
             await refund(ctx.author, ctx)
         else:
-            await ctx.send("This user is not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
     @commands.command()
@@ -161,19 +161,19 @@ class VoipCommands(commands.Cog):
     async def disconnect(self, ctx, User: discord.Member):
         if User.voice.channel is not None:
             await User.move_to(None)
-            await ctx.send(f"{User.mention} has been disconnected.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} has been disconnected.")
         else:
-            await ctx.send("This user is not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
     @commands.command()
     @pricing()
     async def prison(self, ctx, User:discord.Member):
         if User.voice is None or User.voice.channel is None:
-            await ctx.send("User is not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
             return
-        await ctx.send(f"{User.mention} has been imprisoned.")
+        await TextCommands.create_embed_without_title(ctx, f":chains: {User.display_name} has been imprisoned for 60 seconds.")
         self.prisioner[User.id] = 60
         await self.prision_counter(ctx, User, 60)
             
@@ -199,16 +199,16 @@ class VoipCommands(commands.Cog):
         if User.voice is not None:
             channelVet = [channel for channel in User.guild.voice_channels if channel != User.voice.channel]
             if not channelVet:
-                await ctx.send("There are no other voice channels to throw the user to.")
+                await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: There are no voice channels to throw the user to.")
             else:
                 channel = random.choice(channelVet)
                 if channel == User.voice.channel:
                     self.fling(ctx, User)
                 else:
                     await User.move_to(channel)
-                    await ctx.send(f"{User.mention} has been thrown to another voice channel.")
+                    await TextCommands.create_embed_without_title(ctx, f"{User.display_name} has been thrown to {channel.name}.")
         else:
-            await ctx.send("This user is not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
 
     @commands.command()
@@ -217,19 +217,19 @@ class VoipCommands(commands.Cog):
         for vc in ctx.author.guild.voice_channels:
             for membros in vc.members:
                 await membros.move_to(None)
-        await ctx.send("All users have been disconnected from their voice channels.")
+        await TextCommands.create_embed_without_title(ctx, f"All users have been disconnected from their voice channels.")
 
     @commands.command("shuffle")
     @pricing()
     async def shuffle(self, ctx):
         channelVet = [channel for channel in ctx.author.guild.voice_channels]
         if not channelVet:
-            await ctx.send("There are no voice channels to throw the users to.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: There are no voice channels to throw the users to.")
         else:
             for vc in channelVet:
                 for membros in vc.members:
                     await membros.move_to(random.choice(channelVet))
-        await ctx.send("All users have been thrown to random voice channels.")
+        await TextCommands.create_embed_without_title(ctx, f"All users have been thrown to random voice channels.")
     
     @commands.command("emergency")
     @pricing()
@@ -241,17 +241,17 @@ class VoipCommands(commands.Cog):
                     await membros.move_to(authorchannel)
                 else:
                     refund(ctx.author, ctx)
-                    await ctx.send("You are not in a voice channel.")
-        await ctx.send("All users have been moved to the author's call.")
+                    await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
+        await TextCommands.create_embed_without_title(ctx, f"All users have been thrown to {ctx.author.voice.channel.name}.")
     
     @commands.command("fish")
     @pricing()
     async def fish(self, ctx, User: discord.Member):
         if User.voice is not None and ctx.author.voice is not None:
             await User.move_to(ctx.author.voice.channel)
-            await ctx.send(f"{User.mention} has been fished.")
+            await TextCommands.create_embed_without_title(ctx, f"{User.display_name} has been thrown to {ctx.author.voice.channel.name}.")
         else:
-            await ctx.send("This user is not in a voice channel.")
+            await TextCommands.create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} or {ctx.author.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
 
     @commands.Cog.listener()

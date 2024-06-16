@@ -7,6 +7,7 @@ from db.userDB import Usuario
 from db.channelDB import ChannelDB
 import asyncio
 from tools.pricing import pricing, Prices, refund
+from cogs.textCommands import TextCommands
 from tools.pagination import PaginationView
 
 # This PointsCommands class is specifically for the points system;
@@ -69,16 +70,16 @@ class PointsCommands(commands.Cog):
                 points = await self.update_points(ctx.author)
                 if points is None:
                     points = user_data["points"]
-                await ctx.send(f"{ctx.author.mention} has {points} eggbux :money_with_wings:")
+                await TextCommands.create_embed_without_title(ctx, f":coin: {ctx.author.display_name} has {points} eggbux.")
             else:
-                await ctx.send(f"{ctx.author.mention} has no eggbux :cry:")
+                await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} has no eggbux :cry:")
         else:
             user_data = Usuario.read(User.id)
             if user_data and isinstance(user_data, dict) and "points" in user_data:
                 await self.update_points(User)
-                await ctx.send(f"{User.mention} has {user_data['points']} eggbux :money_with_wings:")
+                await TextCommands.create_embed_without_title(ctx, f":coin: {User.display_name} has {user_data['points']} eggbux.")
             else:
-                await ctx.send(f"{User.mention} has no eggbux :cry:")
+                await TextCommands.create_embed_without_title(ctx, f"{User.display_name} has no eggbux :cry:")
         
     @commands.command("shop", aliases=["store"])
     @pricing()
@@ -133,21 +134,21 @@ class PointsCommands(commands.Cog):
     async def donatePoints(self, ctx, User:discord.Member, amount: int):
         if Usuario.read(ctx.author.id) and Usuario.read(User.id):
             if ctx.author.id == User.id:
-                await ctx.send("You can't donate to yourself")
+                await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate to yourself.")
             elif Usuario.read(ctx.author.id)["points"] >= amount:
                 if amount <= 0:
-                    await ctx.send("You can't donate zero or negative eggbux.")
+                    await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate 0 or negative eggbux.")
                     return
                 else:
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
                     Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                    await ctx.send(f"{ctx.author.mention} donated {amount} eggbux to {User.mention}")
+                    await TextCommands.create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {User.display_name}")
             else:
-                await ctx.send(f"{ctx.author.mention} doesn't have enough eggbux.")
+                await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
         else:
-            await ctx.send("You don't have permission to do this.")
-
-    @commands.command("cassino", aliases=["roulette", "casino"])
+            await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have permission to do this.")
+            
+    @commands.command("cassino", aliases=["roulette", "casino", "bet"])
     @pricing()
     async def cassino(self, ctx, amount: int, cor: str):
         cor = cor.upper()
@@ -161,28 +162,29 @@ class PointsCommands(commands.Cog):
                 corSorteada = roleta[cassino]
                 if corSorteada == "GREEN" and cor == "GREEN":
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
-                    await ctx.send(f"{ctx.author.display_name} has won!")
+                    await TextCommands.create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has won!")
                 elif corSorteada == cor:
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
-                    await ctx.send(f"{ctx.author.display_name} has won!")
-                else:
-                    await ctx.send(f"{ctx.author.display_name} lost, the selected color was {corSorteada} {corEmoji[corSorteada]}")                        
+                    await TextCommands.create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has won!")
+                else:                  
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
+                    await TextCommands.create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has lost! The selected color was {corSorteada} {corEmoji[corSorteada]}")
                     return
             else:
-                await ctx.send(f"{ctx.author.display_name} doesn't have enough eggbux or the amount is less than 50 eggbux.")
+                await TextCommands.create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} You don't have enough eggbux or the amount is less than 50.")
                 return  
         else:
-            await ctx.send("Select a valid color.")
+            await TextCommands.create_embed_with_title(ctx, ":slot_machine:" ,f"{ctx.author.display_name} You don't have permission to do this.")
+            return
 
     @cassino.error
     async def cassino_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Please, insert the amount and the color.")
+            await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} Please, insert a valid amount and color.")
         elif isinstance(error, commands.BadArgument):
-            await ctx.send("Please, insert a valid amount.")
+            await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} Please, insert a valid amount.")
         else:
-            await ctx.send("An unexpected error occurred.")
+            await TextCommands.create_embed_without_title(ctx, f"An unexpected error has occurred.")
 
     @commands.command("stealPoints", aliases=["steal"])
     @pricing()
@@ -190,26 +192,26 @@ class PointsCommands(commands.Cog):
         if Usuario.read(ctx.author.id):
             chance  = randint(0, 100)
             if User.bot:
-                await ctx.send("You can't steal from a bot.")
+                await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a bot.")
                 await refund(ctx.author, ctx)
                 return
             if Usuario.read(User.id):
                 if ctx.author.id == User.id:
-                    await ctx.send("You can't steal from yourself.")
+                    await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from yourself.")
                     await refund(ctx.author, ctx)
                 elif chance >= 10: # 10% de chance de falhar
                     quantUser = Usuario.read(User.id)["points"]
                     randomInteiro = randint(0, int(quantUser/2)) # 50% do total de pontos do usuário
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
                     Usuario.update(User.id, Usuario.read(User.id)["points"] - randomInteiro, Usuario.read(User.id)["roles"])
-                    await ctx.send(f"{ctx.author.mention} stole {randomInteiro} eggbux from {User.mention}")
+                    await TextCommands.create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {User.display_name}")
                 else:
-                    await ctx.send(f"{ctx.author.mention} failed while trying to rob {User.mention}")
+                    await TextCommands.create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} failed to steal from {User.display_name}")
             else:
-                await ctx.send("User not found in the database.")
+                await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
                 await refund(ctx.author, ctx)
         else:
-            await ctx.send("You don't have permission to do this.")
+            await TextCommands.create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
 
 
     @commands.Cog.listener()
