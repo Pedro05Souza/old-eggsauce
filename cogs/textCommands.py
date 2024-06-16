@@ -441,7 +441,7 @@ class TextCommands(commands.Cog):
                     tribute1['inventory'].append("gun")
                     await TextCommands.create_embed_without_title(ctx, f":gun: {tribute1['tribute'].display_name} {events[chosen_event]}")
                 case 17:
-                    await TextCommands.create_embed_without_title(ctx, f"{tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
+                    await TextCommands.create_embed_without_title(ctx, f":flag_white: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name}!")
                 case 19:
                     await TextCommands.create_embed_without_title(ctx, f":warning: {tribute1['tribute'].display_name} {events[chosen_event]} {tribute2['tribute'].display_name} running in the distance!")
                 case 20:
