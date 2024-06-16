@@ -3,10 +3,12 @@ from db.userDB import Usuario
 import discord
 import inspect
 from discord.ext import commands
+from tools.embed import create_embed_without_title
 from db.channelDB import ChannelDB
+import time
 
 # This class is responsible for handling the prices of the commands.
-
+cooldown_tracker = {}
 class Prices(Enum):
     points = 0
     leaderboard = 0
@@ -15,8 +17,8 @@ class Prices(Enum):
     donatePoints = 0
     shop = 0
     salary = 0
+    hungergames = 0
     balls = 50
-    hungergames = 50
     love = 75
     mog = 100
     mute = 150
@@ -48,7 +50,7 @@ class Prices(Enum):
     highClassRole = 1600
     nuke = 50000
 
-def verificar_pontos(User: discord.Member, comando):
+def verify_points(User: discord.Member, comando):
     price = Prices[comando].value
     user_data = Usuario.read(User.id)
     if user_data:
@@ -80,10 +82,10 @@ async def treat_exceptions(ctx, comando):
         expected_args_count -= 1 
     
     if len(command_args) < expected_args_count:
-        await ctx.send("Insufficient amount of arguments.")
+        await create_embed_without_title(ctx, ":no_entry_sign: Insufficient amount of arguments.")
         return False
     elif len(command_args) > len(parameters) and varargs_index is None:
-        await ctx.send("Excessive amount of arguments.")
+        await create_embed_without_title(ctx, ":no_entry_sign: Excessive amount of arguments.")
         return False
     
     channel_list = ChannelDB.readAll() 
@@ -93,7 +95,7 @@ async def treat_exceptions(ctx, comando):
         channels.append(channel)
     
     if ctx.channel not in channels:
-        await ctx.send("You are not allowed to use commands in this channel.")
+        await create_embed_without_title(ctx, ":no_entry_sign: This command can only be used in the commands channel.")
         return False
     
     i = 0
@@ -113,43 +115,66 @@ async def treat_exceptions(ctx, comando):
                 else:
                     arg = param_type(arg)
             if arg is not None and not isinstance(arg, param_type):
-                await ctx.send("Invalid arguments.")
+                await create_embed_without_title(ctx, f":no_entry_sign: Invalid argument type. Expected {param_type.__name__}.")
                 return False
             if '*' not in str(param) and index not in optional_params_indices:
                 i += 1
         except ValueError:
-            await ctx.send("Invalid arguments.")
+            await create_embed_without_title(ctx, ":no_entry_sign: Invalid arguments.")
             return False
         except commands.MemberNotFound:
-            await ctx.send("Member not found.")
+            await create_embed_without_title(ctx, ":no_entry_sign: Member not found.")
             return False
         except commands.errors.BadArgument:
-            await ctx.send("Invalid arguments.")
+            await create_embed_without_title(ctx, ":no_entry_sign: Invalid arguments.")
             return False
         except commands.errors.MissingPermissions:
-            await ctx.send("Insufficient permissions.")
+            await create_embed_without_title(ctx, ":no_entry_sign: insufficient permissions.")
             return False
         except commands.errors.BotMissingPermissions:
-            await ctx.send("Bot has insufficient permissions.")
+            await create_embed_without_title(ctx, ":no_entry_sign: insufficient permissions.")
             return False
         except commands.errors.CommandInvokeError:
-            await ctx.send("An error occurred while executing the command.")
+            await create_embed_without_title(ctx, ":no_entry_sign: An error occurred while executing the command.")
             return False
+
 
     new_points = Usuario.read(ctx.author.id)["points"] - Prices[comando].value
     Usuario.update(ctx.author.id, new_points, Usuario.read(ctx.author.id)["roles"])
     return True
 
+async def command_cooldown(ctx, command, cooldown_period):
+
+    user_command_key = f"{ctx.author.id}_{command}"
+    print(f"user_command_key: {user_command_key}")
+
+    current_time = time.time()
+
+    if user_command_key in cooldown_tracker:
+        print(f"current_time: {current_time}")
+        last_used_time = cooldown_tracker[user_command_key]
+        if current_time - last_used_time < cooldown_period:
+            print(f"cooldown period: {current_time - last_used_time}")
+            return False
+
+    cooldown_tracker[user_command_key] = current_time
+    print(f"cooldown tracker: {cooldown_tracker}")
+    return True
+
+
 def pricing():
     async def predicate(ctx):
-        comando = ctx.command.name        
-        if comando in Prices.__members__:
-            if verificar_pontos(ctx.author, comando):
-                return await treat_exceptions(ctx,comando)
+        command = ctx.command.name
+        cooldown_period = 3        
+        if command in Prices.__members__:
+            if not await command_cooldown(ctx, command, cooldown_period):
+                return False
+            if verify_points(ctx.author, command):
+                return await treat_exceptions(ctx,command)
             else:
-                await ctx.send("You dont have enough points to use this command.")
+                await create_embed_without_title(ctx, ":no_entry_sign: You do not have enough points to use this command.")
                 return False 
         else:
-            await ctx.send("Unknown command.")
+            await create_embed_without_title(ctx, ":no_entry_sign: Unknown command.")
             return False
     return commands.check(predicate)

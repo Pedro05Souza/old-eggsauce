@@ -3,7 +3,7 @@ import asyncio
 from discord.ext import commands
 from tools.pricing import pricing
 from db.userDB import Usuario
-from cogs.textCommands import TextCommands
+from tools.embed import create_embed_without_title
 from tools.processing import Processing
 
 # This class is responsible for handling the AI commands.
@@ -30,13 +30,13 @@ class AICommands(commands.Cog):
                         if(len(content) > 0):
                             await ctx.send(content)
                         else:
-                            await TextCommands.create_embed_without_title(ctx, ":no_entry_sign: Error! AI didn't generate content.")
+                            await create_embed_without_title(ctx, ":no_entry_sign: Error! AI didn't generate content.")
                 else:
-                    await TextCommands.create_embed_without_title(ctx, ":no_entry_sign: Api connection failed. Probably due to the AI model being deactivated. Try again later.")
+                    await create_embed_without_title(ctx, ":no_entry_sign: Api connection failed. Probably due to the AI model being deactivated. Try again later.")
             else:
-                await TextCommands.create_embed_without_title(ctx, ":no_entry_sign: You are not registered in the database.")
+                await create_embed_without_title(ctx, ":no_entry_sign: You are not registered in the database.")
         except Exception:
-            await TextCommands.create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
+            await create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
 
     @commands.command()
     @pricing()
@@ -55,11 +55,11 @@ class AICommands(commands.Cog):
                     if(len(content) > 0):
                         await ctx.send(content)
                     else:
-                        await TextCommands.create_embed_without_title(ctx, ":no_entry_sign: Error! AI didn't generate content.")
+                        await create_embed_without_title(ctx, ":no_entry_sign: Error! AI didn't generate content.")
             else:
-                await TextCommands.create_embed_without_title(ctx, ":no_entry_sign: Api connection failed. Probably due to the AI model being deactivated. Try again later.")
+                await create_embed_without_title(ctx, ":no_entry_sign: Api connection failed. Probably due to the AI model being deactivated. Try again later.")
         except Exception as e:
-           await TextCommands.create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
+           await create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
            print(e)
         
 async def setup(bot):

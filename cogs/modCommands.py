@@ -2,6 +2,7 @@ import os
 import discord
 from discord.ext import commands
 from db.userDB import Usuario
+from tools.embed import create_embed_without_title
 from db.channelDB import ChannelDB
 from dotenv import load_dotenv
 
@@ -20,18 +21,18 @@ class ModCommands(commands.Cog):
             User = ctx.author
             if str(User.id) in self.devs:
                 Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                await ctx.send(f"{User.mention} received {amount} eggbux")
+                await create_embed_without_title(ctx, f"{User.display_name} received {amount} eggbux")
             else:
-                await ctx.send("You do not have permission to do this.")
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
             if Usuario.read(User.id):
                 if str(ctx.author.id) in self.devs:
                     Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                    await ctx.send(f"{User.mention} received {amount} eggbux")
+                    await create_embed_without_title(ctx, f"{User.display_name} received {amount} eggbux")
                 else:
-                    await ctx.send("You do not have permission to do this.")
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
             else:
-                await ctx.send("User not found in the database.")
+                await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
 
     @commands.command()
     async def removePoints(self, ctx, amount: int, User: discord.Member = None):
@@ -40,18 +41,18 @@ class ModCommands(commands.Cog):
             User = ctx.author
             if str(User.id) in self.devs:
                 Usuario.update(User.id, Usuario.read(User.id)["points"] - amount, Usuario.read(User.id)["roles"])
-                await ctx.send(f"{User.mention} lost {amount} eggbux.")
+                await create_embed_without_title(ctx, f"{User.display_name} lost {amount} eggbux")
             else:
-                await ctx.send("You do not have permission to do this.")
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
             if Usuario.read(User.id):
                 if str(ctx.author.id) in self.devs:
                     Usuario.update(User.id, Usuario.read(User.id)["points"] - amount, Usuario.read(User.id)["roles"])
-                    await ctx.send(f"{User.mention} perdeu {amount} eggbux")
+                    await create_embed_without_title(ctx, f"{User.display_name} lost {amount} eggbux")
                 else:
-                    await ctx.send("You do not have permission to do this.")
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
             else:
-                await ctx.send("User not found in the database.")
+                await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
 
     @commands.command()
     async def deleteDB(self, ctx,  User: discord.Member):
@@ -60,11 +61,11 @@ class ModCommands(commands.Cog):
         if Usuario.read(User):
             if str(ctx.author.id) in self.devs:
                 Usuario.delete(User)
-                await ctx.send(f"{User} has been deleted from the database.")
+                await create_embed_without_title(ctx, f":warning: {User.display_name} has been deleted from the database.")
             else:
-                await ctx.send("You do not have permission to do this.")
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
-            await ctx.send(f"{User} not found in the database.")
+                await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
 
     @commands.command()
     async def removeRole(self, ctx ,User:discord.Member, role: str):
@@ -81,13 +82,13 @@ class ModCommands(commands.Cog):
                         if roleRemove:
                             await User.remove_roles(roleRemove)
                             Usuario.update(User.id, Usuario.read(User.id)["points"], roles)
-                            await ctx.send(f"{User.mention} lost the role {possibleRoles[role]}.")
+                            await create_embed_without_title(ctx, f"{User.mention} lost the role {roleRemove}")
                     else:
-                        await ctx.send(f"{User.mention} lost the role {role}")
+                        await create_embed_without_title(ctx, f"{User.display_name} does not have the role {possibleRoles[role]}")
             else:
-                await ctx.send(f"{User.mention} is not registered in the database.")
+                await create_embed_without_title(ctx, f"{User.display_name} is not registered in the database!")
         else:
-            await ctx.send("You do not have permission to do this.")
+            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
             
     @commands.command()
     async def removeAllRoles(self, ctx, User: discord.Member):
@@ -101,11 +102,11 @@ class ModCommands(commands.Cog):
                     if roleRemove:
                         await User.remove_roles(roleRemove)
                 Usuario.update(User.id, Usuario.read(User.id)["points"], "")
-                await ctx.send(f"{User.mention} lost all custom roles.")
+                await create_embed_without_title(ctx, f"{User.display_name} lost all custom roles.")
             else:
-                await ctx.send(f"{User.mention} is not registered in the database!")
+                await create_embed_without_title(ctx, f"{User.display_name} is not registered in the database!")
         else:
-            await ctx.send("You do not have permission to do this.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
 
     @commands.command()
     async def setChannel(self, ctx):
@@ -113,13 +114,22 @@ class ModCommands(commands.Cog):
             if ChannelDB.read(server_id=ctx.guild.id):
                 ChannelDB.update(ctx.channel.id)
                 print(f"Channel updated for guild {ctx.guild.name}")
-                await ctx.send("Commands channel has been updated.")
+                await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been updated.")
             else:
                 ChannelDB.create(ctx.guild.id, ctx.channel.id)
                 print(f"New channel registered for guild {ctx.guild.name}")
-                await ctx.send("Commands channel has been set.")
+                await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been set.")
         else:
-            await ctx.send(f"You do not have permission to do this.")
+            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+
+
+    @commands.command()
+    async def reset(self, ctx, User: discord.Member):
+        if str(User.id) in self.devs and Usuario.read(User.id):
+            Usuario.update(User.id, 0, "")
+            await create_embed_without_title(ctx, f"{User.display_name} has been reset.")
+        else:
+            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
 
 
     # Event listeners; these functions are called when the event they are listening for is triggered
@@ -152,14 +162,6 @@ class ModCommands(commands.Cog):
                         roles += role_letters[role_name]
                 Usuario.update(after.id, Usuario.read(after.id)["points"], roles)
                 print("added roles: " + roles)
-
-    @commands.command()
-    async def reset(self, ctx, User: discord.Member):
-        if str(User.id) in self.devs and Usuario.read(User.id):
-            Usuario.update(User.id, 0, "")
-            await ctx.send(f"{User.name} has been sucessfully reset.")
-        else:
-            await ctx.send("You do not have permission execute this command.")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
