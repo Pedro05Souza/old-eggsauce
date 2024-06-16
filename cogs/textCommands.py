@@ -12,9 +12,7 @@ import os
 import random
 from tools.pagination import PaginationView
 from tools.pricing import pricing, refund
-game_Start = False
-dead_tribute = None
-bear_disabled = False
+hungergames_status = {}
 
 # This class is responsible for handling the text commands.
 class TextCommands(commands.Cog):
@@ -242,12 +240,17 @@ class TextCommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def hungergames(self, ctx):     
-        global game_Start
-        if game_Start:
-            await create_embed_without_title(ctx, ":no_entry_sign: A hunger games match is already in progress.")
+    async def hungergames(self, ctx):
+        global hungergames_status     
+        guild_id = ctx.guild.id
+        if guild_id in hungergames_status:
+            await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
             return
-        game_Start = True
+        hungergames_status[guild_id] = {
+        "game_Start": False,
+        "dead_tribute": None,
+        "bear_disabled": False
+        }
         day = 1
         tributes = []
         wait_time = 10
@@ -276,7 +279,7 @@ class TextCommands(commands.Cog):
         if len(tributes) < min_tributes:
             await create_embed_without_title(ctx, f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is {min_tributes}.")
             Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + 100, Usuario.read(ctx.author.id)["roles"])
-            game_Start = False
+            hungergames_status.remove(guild_id)
             return
         else:
             await create_embed_without_title(ctx, f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
@@ -287,7 +290,7 @@ class TextCommands(commands.Cog):
                     if tribute['is_alive']:
                         await asyncio.sleep(3)
                         random_tribute = self.pickRandomTribute(tribute, alive_tributes)
-                        event_possibilities = self.checkEventPossibilities(tribute, random_tribute, alive_tributes, self.lootTributeBody(tributes))
+                        event_possibilities = self.checkEventPossibilities(tribute, random_tribute, alive_tributes, self.lootTributeBody(tributes), guild_id)
                         random_event = self.chooseRandomEvent(event_possibilities)
                         await self.eventActions(ctx, tribute, random_tribute, alive_tributes, random_event)
                         alive_tributes = self.checkAliveTributes(alive_tributes)
@@ -305,7 +308,7 @@ class TextCommands(commands.Cog):
             prizeMultiplier = len(tributes) * 50
             await create_embed_without_title(ctx, f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
             #Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
-            game_Start = False
+            hungergames_status.pop(guild_id)
             await self.statistics(ctx, tributes)
 
     def checkIfTributePlay(self, tribute):
@@ -375,7 +378,6 @@ class TextCommands(commands.Cog):
             return None
     
     async def eventActions(self, ctx, tribute1, tribute2, tributes, chosen_event):
-        global dead_tribute, bear_disabled
         events = self.events()
         print(f"Chosen event: {chosen_event}")
         if not tribute1['has_event']:
@@ -439,6 +441,7 @@ class TextCommands(commands.Cog):
                 case 19:
                     await create_embed_without_title(ctx, f":warning: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}** running in the distance!")
                 case 20:
+                    dead_tribute = hungergames_status[ctx.guild.id]['dead_tribute']
                     item = self.stealItem(tribute1, dead_tribute)
                     await create_embed_without_title(ctx, f":ninja: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{dead_tribute['tribute'].display_name}** stealing a {item} in the progress!")
                 case 21:
@@ -477,13 +480,13 @@ class TextCommands(commands.Cog):
                 case 25:
                     team = self.getTributeTeam(tribute1, tributes)
                     await create_embed_without_title(ctx, f":bear: {events[chosen_event]} **{team}** has managed to kill the bear, disabling that for the rest of the game.")
-                    bear_disabled = True
+                    hungergames_status[ctx.guild.id]['bear_disabled'] = True
                 case _:
                     await create_embed_without_title(ctx, f"**{tribute1['tribute'].display_name}** {events[chosen_event]}")
 
 
-    def checkEventPossibilities(self, tribute1, tribute2, tributes, dead_tributes):
-        global dead_tribute, bear_disabled
+    def checkEventPossibilities(self, tribute1, tribute2, tributes, dead_tributes, guild_id):
+        global hungergames_status
         list_events = list(range(20))
 
         collect_requirements = {
@@ -495,13 +498,13 @@ class TextCommands(commands.Cog):
         list_events = [event for event in list_events if event not in collect_requirements.keys() or collect_requirements[event] not in tribute1['inventory']]
         
         if dead_tributes:
-            dead_tribute = random.choice(dead_tributes)
+            dead_tribute = hungergames_status[guild_id]['dead_tribute'] = random.choice(dead_tributes)
             if dead_tribute and not any(item for item in tribute1['inventory'] if item in dead_tribute['inventory']):
                 list_events.append(20)
 
         bear_events = [0, 25]
 
-        if bear_disabled:
+        if hungergames_status[guild_id]['bear_disabled']:
             list_events = [event for event in list_events if event not in bear_events]
 
         if tribute2:
@@ -545,7 +548,7 @@ class TextCommands(commands.Cog):
                 list_events = [event for event in list_events]
                 list_events.append(24)
 
-            if tribute1['team'] is not None and not bear_disabled:
+            if tribute1['team'] is not None and not hungergames_status[guild_id]['bear_disabled']:
                 list_events.append(25)
 
             if len(existing_teams) == 0:

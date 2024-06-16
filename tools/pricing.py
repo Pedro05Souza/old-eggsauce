@@ -146,19 +146,15 @@ async def treat_exceptions(ctx, comando):
 async def command_cooldown(ctx, command, cooldown_period):
 
     user_command_key = f"{ctx.author.id}_{command}"
-    print(f"user_command_key: {user_command_key}")
 
     current_time = time.time()
 
     if user_command_key in cooldown_tracker:
-        print(f"current_time: {current_time}")
         last_used_time = cooldown_tracker[user_command_key]
         if current_time - last_used_time < cooldown_period:
-            print(f"cooldown period: {current_time - last_used_time}")
             return False
 
     cooldown_tracker[user_command_key] = current_time
-    print(f"cooldown tracker: {cooldown_tracker}")
     return True
 
 
