@@ -285,6 +285,8 @@ class TextCommands(commands.Cog):
             await create_embed_without_title(ctx, f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
             alive_tributes = tributes
             while len(alive_tributes) > 1:
+                shuffle_tributes = random.sample(alive_tributes, len(alive_tributes))
+                alive_tributes = shuffle_tributes
                 await create_embed_with_title(ctx, f"Day {day}", f"**Tributes remaining: {len(alive_tributes)}**")
                 for tribute in alive_tributes:
                     if tribute['is_alive']:
