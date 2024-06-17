@@ -358,7 +358,8 @@ class TextCommands(commands.Cog):
         23: "team",
         24:"has triumphantly killed the entirety of team",
         25: "team",
-        26: "team"
+        26: "has gifted a",
+        27: "has traded a"
         }
         return events
 
@@ -481,6 +482,19 @@ class TextCommands(commands.Cog):
                     team = self.getTributeTeam(tribute1, tributes)
                     await create_embed_without_title(ctx, f":bear: {events[chosen_event]} **{team}** has managed to kill the bear, disabling that for the rest of the game.")
                     hungergames_status[ctx.guild.id]['bear_disabled'] = True
+                case 26:
+                    tribute1Item = random.choice(tribute1['inventory'])
+                    tribute2['inventory'].append(tribute1Item)
+                    tribute1['inventory'].remove(tribute1Item)
+                    await create_embed_without_title(ctx, f":gift: **{tribute1['tribute'].display_name}** {events[chosen_event]} {tribute1Item} to **{tribute2['tribute'].display_name}**!")
+                case 27:
+                    tribute1Item = random.choice(tribute1['inventory'])
+                    tribute2Item = random.choice(tribute2['inventory'])
+                    tribute1['inventory'].append(tribute2Item)
+                    tribute2['inventory'].append(tribute1Item)
+                    tribute1['inventory'].remove(tribute1Item)
+                    tribute2['inventory'].remove(tribute2Item)
+                    await create_embed_without_title(ctx, f":handshake: **{tribute1['tribute'].display_name}** {events[chosen_event]} {tribute1Item} for a {tribute2Item} with **{tribute2['tribute'].display_name}**!")
                 case _:
                     await create_embed_without_title(ctx, f"**{tribute1['tribute'].display_name}** {events[chosen_event]}")
 
@@ -523,6 +537,12 @@ class TextCommands(commands.Cog):
             if tribute1['team'] is not None or tribute2['team'] is not None: 
                 list_events = [event for event in list_events if event != 1]
 
+            if len(tribute1['inventory']) and len(tribute2['inventory']) and not any(item in tribute1['inventory'] for item in tribute2['inventory'] if item in tribute2['inventory']):
+                list_events.append(27)
+
+            if len(tribute1['inventory']) >= 2 and len(tribute2['inventory']) == 0:
+                list_events.append(26)
+            
             friendly_fire_events = [3, 4, 5, 6, 7, 8, 10, 17, 19]
 
             if tribute1['team'] == tribute2['team'] and tribute1['team'] is not None and tribute2['team'] is not None:
@@ -554,12 +574,14 @@ class TextCommands(commands.Cog):
             if len(existing_teams) == 0:
                 list_events = [event for event in list_events if event != 10]
 
+            finalists_events = [1, 26, 27]
+
             if len(tributes) == 2:
-                list_events = [event for event in list_events if event != 1]
+                list_events = [event for event in list_events if event not in finalists_events]
         else:
             tribute2_events = [1, 3, 4, 5, 6, 7, 8, 10, 17, 19, 21, 22, 23, 24]
             list_events = [event for event in list_events if event not in tribute2_events]
-
+        print(f"List of events: {list_events}")
         return list_events
 
     def removePlrTeamOnDeath(self, tributes):
