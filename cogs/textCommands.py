@@ -11,7 +11,7 @@ from tools.embed import create_embed_without_title, create_embed_with_title
 import os
 import random
 from tools.pagination import PaginationView
-from tools.pricing import pricing, refund
+from tools.pricing import pricing, refund, toggle_perServer
 hungergames_status = {}
 
 # This class is responsible for handling the text commands.
@@ -25,6 +25,12 @@ class TextCommands(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         asyncio.create_task(self.work_periodically())
+
+
+    @commands.command("pointsStatus")
+    async def points_status(self, ctx):
+        await create_embed_without_title(ctx, f":warning: The points commands are {'**enabled**' if toggle_perServer[ctx.guild.id]['toggle'] else '**disabled**'} in this server.")
+
 
 
     @commands.command()
@@ -202,7 +208,6 @@ class TextCommands(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have one or more of the necessary roles.")
                 await refund(ctx.author, ctx)
 
-
     def salary_role(self, User:discord.Member):
         salarios = {
             "T": 50,
@@ -226,6 +231,7 @@ class TextCommands(commands.Cog):
                 await asyncio.sleep(1600)
 
     @commands.command("salary", aliases=["income"])
+    @pricing()
     async def salary(self, ctx, User: discord.Member = None):
         if User is None:
             User = ctx.author
@@ -239,7 +245,7 @@ class TextCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} isn't registered in the database.")
             await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.command(aliases=["hg"])
     @pricing()
     async def hungergames(self, ctx):
         global hungergames_status     

@@ -9,6 +9,7 @@ import time
 
 # This class is responsible for handling the prices of the commands.
 cooldown_tracker = {}
+toggle_perServer = {}
 class Prices(Enum):
     points = 0
     leaderboard = 0
@@ -160,8 +161,13 @@ async def command_cooldown(ctx, command, cooldown_period):
 
 def pricing():
     async def predicate(ctx):
-        command = ctx.command.name
-        cooldown_period = 3        
+        cooldown_period = 3 
+        if ctx.guild.id in toggle_perServer and not toggle_perServer[ctx.guild.id]['toggle']:
+            if not await command_cooldown(ctx, "points", cooldown_period):
+                return False
+            await create_embed_without_title(ctx, ":warning: The points commands are disabled in this server.")
+            return False
+        command = ctx.command.name       
         if command in Prices.__members__:
             if not await command_cooldown(ctx, command, cooldown_period):
                 return False
