@@ -29,6 +29,7 @@ class TextCommands(commands.Cog):
 
     @commands.command("pointsStatus")
     async def points_status(self, ctx):
+        """Check if the points commands are enabled or disabled in the server."""
         await create_embed_without_title(ctx, f":warning: The points commands are {'**enabled**' if toggle_perServer[ctx.guild.id]['toggle'] else '**disabled**'} in this server.")
 
 
@@ -36,11 +37,13 @@ class TextCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def balls(self, ctx):
+        """Bot sends balls."""
         await create_embed_without_title(ctx, f":soccer: balls")
 
     @commands.command()
     @pricing()
     async def mog(self, ctx, User: discord.Member):
+            """Mog a user."""
             path = random.choice(os.listdir("images/mogged/"))
             await ctx.send(file=discord.File("images/mogged/"+path))
             await ctx.send(f"{User.mention} bye bye 🤫🧏‍♂️")
@@ -48,6 +51,7 @@ class TextCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def purge(self, ctx, amount: int):
+        """Deletes a certain amount of messages."""
         if amount > 0 and amount <= 25:
             await ctx.channel.purge(limit=amount + 1)
         else:
@@ -57,6 +61,7 @@ class TextCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def kick(self, ctx, User: discord.Member):
+        """Kicks a user."""
         if User.id == ctx.author.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't kick yourself.")
                 await refund(ctx.author, ctx) 
@@ -72,6 +77,7 @@ class TextCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def ban(self, ctx, User: discord.Member):
+        """Bans a user."""
         if User.id == ctx.author.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't ban yourself.")
                 await refund(ctx.author, ctx)
@@ -90,6 +96,7 @@ class TextCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def changeNickname(self, ctx, User: discord.Member, *apelido: str):
+        """Changes a user's nickname."""
         if User.top_role.position <= ctx.guild.me.top_role.position:
             if User.id == ctx.me.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i can't change my own nickname.")
@@ -106,6 +113,7 @@ class TextCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def pardon(self, ctx, id: str):
+        """Unbans a user."""
         User = await self.bot.fetch_user(id)
         if await ctx.guild.fetch_ban(User):
             await ctx.guild.unban(User)
@@ -209,6 +217,7 @@ class TextCommands(commands.Cog):
                 await refund(ctx.author, ctx)
 
     def salary_role(self, User:discord.Member):
+        """Returns the salary of a user based on their roles."""
         salarios = {
             "T": 50,
             "B": 100,
@@ -221,6 +230,7 @@ class TextCommands(commands.Cog):
             return 0
         
     async def work_periodically(self):
+        """Periodically updates the salary of users with roles."""
         while True:
             for guild in self.bot.guilds:
                 for member in guild.members:
@@ -233,6 +243,7 @@ class TextCommands(commands.Cog):
     @commands.command("salary", aliases=["income"])
     @pricing()
     async def salary(self, ctx, User: discord.Member = None):
+        """Check the salary of a user."""
         if User is None:
             User = ctx.author
         user_data = Usuario.read(User.id)
@@ -248,6 +259,7 @@ class TextCommands(commands.Cog):
     @commands.command(aliases=["hg"])
     @pricing()
     async def hungergames(self, ctx):
+        """Starts a hunger games event."""
         global hungergames_status     
         guild_id = ctx.guild.id
         if guild_id in hungergames_status:
@@ -321,6 +333,7 @@ class TextCommands(commands.Cog):
             await self.statistics(ctx, tributes)
 
     def check_tribute_play(self, tribute):
+        """Check if the tribute has enough points to play."""
         if Usuario.read(tribute.id) and Usuario.read(tribute.id)["points"] >= 100:
             Usuario.update(tribute.id, Usuario.read(tribute.id)["points"] - 100, Usuario.read(tribute.id)["roles"])
             return True
@@ -328,11 +341,13 @@ class TextCommands(commands.Cog):
             return False
         
     def increase_days_alive(self, tributes):
+        """Increase the days alive of the tributes."""
         for tribute in tributes:
             if tribute['is_alive']:
                 tribute['days_alive'] += 1
      
     def check_alive_tributes(self, tributes):
+        """Check the alive tributes."""
         alive_tributes = []
         for tribute in tributes:
             if tribute['is_alive']:
@@ -340,6 +355,7 @@ class TextCommands(commands.Cog):
         return alive_tributes
                 
     def events(self):
+        """Returns the events that can happen in the hunger games."""
         events = {
         0: "has been killed by a bear.",
         1: "has teamed up with",
@@ -373,13 +389,16 @@ class TextCommands(commands.Cog):
         return events
 
     def choose_random_event(self, events):
+        """Choose a random event from the list of events."""
         return random.choice(events)
     
     def update_tribute_event(self, tributes):
+        """Update the tribute event."""
         for tribute in tributes:
             tribute['has_event'] = False
 
     def pick_random_tribute(self, tribute1, tributes):
+        """Pick a random tribute."""
         aux_tributes = tributes.copy()
         aux_tributes.remove(tribute1)
         if aux_tributes:
@@ -388,6 +407,7 @@ class TextCommands(commands.Cog):
             return None
     
     async def event_actions(self, ctx, tribute1, tribute2, tributes, chosen_event):
+        """Perform the actions of the event."""
         events = self.events()
         print(f"Chosen event: {chosen_event}")
         if not tribute1['has_event']:
@@ -509,6 +529,7 @@ class TextCommands(commands.Cog):
 
 
     def check_event_possibilities(self, tribute1, tribute2, tributes, dead_tributes, guild_id):
+        """Check the event possibilities."""
         global hungergames_status
         list_events = list(range(20))
 
@@ -594,6 +615,7 @@ class TextCommands(commands.Cog):
         return list_events
 
     def remove_plr_team_on_death(self, tributes):
+        """Remove the player's team on death."""
         teams_to_remove = set()
 
         for tribute in tributes:
@@ -605,12 +627,14 @@ class TextCommands(commands.Cog):
                 tribute['team'] = None
 
     def steal_item(self, tribute1, tribute2):
+        """Steal an item from a tribute."""
         item = random.choice(tribute2['inventory'])
         tribute1['inventory'].append(item)
         tribute2['inventory'].remove(item)
         return item
     
     def loot_tribute_Body(self, tributes):
+        """Loot the body of a fallen tribute."""
         dead_tributes = [dead_tribute for dead_tribute in tributes if not dead_tribute['is_alive'] and len(dead_tribute['inventory']) > 0]
         if len(dead_tributes) >= 1:
             return dead_tributes
@@ -618,6 +642,7 @@ class TextCommands(commands.Cog):
             return None
     
     async def statistics(self, ctx, tributes):
+        """Show the statistics of the hungergames match."""
         data = []
         for tribute in tributes:
             data.append(
@@ -636,6 +661,7 @@ class TextCommands(commands.Cog):
         
     
     def create_team(self, tribute1, tribute2, tributes):
+        """Create a team."""
         teams = self.check_existing_teams(tributes)
         teamNumber = randint(1, 100)
         if teamNumber not in teams.keys():
@@ -646,15 +672,18 @@ class TextCommands(commands.Cog):
             self.create_team(tribute1, tribute2, tributes)
 
     def check_existing_teams(self, tributes):
+        """Check the existing teams."""
         teams = Counter([tribute['team'] for tribute in tributes if tribute['team'] is not None])
         return teams
     
     def get_tribute_team(self, tribute1, tributes):
+        """Get the tribute team."""
         for tribute in tributes:
             if tribute1['team'] == tribute['team']:
                 return tribute1['team']
     
     def get_winner(self, tributes):
+        """Get the winner of the hunger games."""
         highestdayAlive = 0
         for tribute in tributes:
             if tribute['days_alive'] > highestdayAlive:
@@ -665,6 +694,7 @@ class TextCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def nuke(self, ctx):
+        """Nuke the database."""
         await Usuario.deleteAll()
         await create_embed_without_title(ctx, ":radioactive: Database has been nuked.")
               

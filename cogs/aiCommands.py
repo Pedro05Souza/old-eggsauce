@@ -16,6 +16,7 @@ class AICommands(commands.Cog):
     @commands.command()
     @pricing()
     async def love(self, ctx, User: discord.Member, User2: discord.Member):
+        """Make a short love story between two users."""
         try:
             if Usuario.read(ctx.author.id):
                 data = {"role": "user", "content":f"Make a short love story between {User.display_name} and {User2.display_name}. Don't write incomplete stories, Use a maximum of 100 tokens."}
@@ -41,6 +42,7 @@ class AICommands(commands.Cog):
     @commands.command()
     @pricing()
     async def speak(self, ctx, *content):
+        """Make the AI say something."""
         try:
             content = " ".join(content)
             data ={"role" : "user", "content" : content + ". Preferably send a short message. If the user message requires more, write more than one message."}

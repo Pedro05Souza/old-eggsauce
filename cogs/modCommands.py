@@ -111,6 +111,7 @@ class ModCommands(commands.Cog):
 
     @commands.command("setChannel")
     async def set_channel(self, ctx):
+        """Set the channel where the bot will listen for commands."""
         if ctx.author.guild_permissions.administrator or str(ctx.author.id in self.devs):
             if ChannelDB.read(server_id=ctx.guild.id):
                 ChannelDB.update(ctx.channel.id)
@@ -125,6 +126,7 @@ class ModCommands(commands.Cog):
 
     @commands.command("togglePoints")
     async def toggle_points(self, ctx):
+        """Enable or disable the points commands."""
         if ctx.author.guild_permissions.administrator or str(ctx.author.id in self.devs):
             if ctx.guild.id not in toggle_perServer:
                 toggle_perServer[ctx.guild.id] = {
@@ -141,6 +143,7 @@ class ModCommands(commands.Cog):
             
     @commands.command()
     async def reset(self, ctx, User: discord.Member):
+        """Reset a user from the database."""
         if str(User.id) in self.devs and Usuario.read(User.id):
             Usuario.update(User.id, 0, "")
             await create_embed_without_title(ctx, f"{User.display_name} has been reset.")

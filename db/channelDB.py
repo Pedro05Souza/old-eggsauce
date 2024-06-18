@@ -5,6 +5,7 @@ class ChannelDB:
 
     @staticmethod
     def create(server_id:int, channel_id: int):
+        """Create a channel in the database."""
         try:
             channel_data = channels_collection.find_one({"channel_id" : channel_id})
             if channel_data:
@@ -23,6 +24,7 @@ class ChannelDB:
     
     @staticmethod
     def delete(channel_id: int):
+        """Delete a channel from the database."""
         try:
             channel_data = channels_collection.find_one({"channel_id": channel_id})
             if channel_data:
@@ -36,6 +38,7 @@ class ChannelDB:
                 
     @staticmethod
     def read(channel_id: int):
+        """Read a channel from the database."""
         try:
             channel_data = channels_collection.find_one({"channel_id": channel_id})
             if channel_data:
@@ -49,6 +52,7 @@ class ChannelDB:
 
     @staticmethod
     def read(server_id: int):
+        """Read a channel from the database."""
         try:
             channel_data = channels_collection.find_one({"server_id": server_id})
             if channel_data:
@@ -63,19 +67,21 @@ class ChannelDB:
 
     @staticmethod
     def update(channel_id: int):
+        """Update a channel in the database."""
         try:
             channel_data = channels_collection.find_one({"channel_id" : channel_id})
             if channel_data:
                 channels_collection.update_one({"server_id": channel_data["server_id"]}, {"$set": {"channel_id": channel_id}})
-                print("Canal atualizado com sucesso")
+                print("Channel updated successfully.")
             else:
-                print("Canal não encontrado")
+                print("Channel not found.")
                 return None
         except Exception as e:
-            print("Erro ao atualizar o canal", e)
+            print("Something went wrong while updating the channel.", e)
     
     @staticmethod
     def readAll():
+        """Read all channels from the database."""
         try:
             channels = channels_collection.find({"channel_id": { "$exists": True } })
             return channels

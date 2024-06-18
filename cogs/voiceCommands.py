@@ -21,6 +21,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def momentOfSilence(self, ctx):
+        """Mutes all users in the voice channel of the author of the command."""
         user = ctx.author
         if user.voice.channel is not None:
             for membro in user.voice.channel.members:
@@ -33,6 +34,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def god(self, ctx):
+        """Makes the user never being able to get muted and deafened."""
         user = ctx.author
         if user not in self.gods:
             self.gods.append(ctx.author)
@@ -44,7 +46,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def radinho(self, ctx):
-        servidor = ctx.me.guild
+        """Sets the voice channel to radio quality."""
         user = ctx.author
         channel = user.voice.channel
         if user.voice.channel is not None: 
@@ -56,8 +58,8 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def explode(self, ctx):
+        """Disconnects all users from their voice channels."""
         user = ctx.author
-        guild = ctx.me.guild
         channel = user.voice.channel if user.voice else None
         if channel is not None:
             await channel.delete()
@@ -68,6 +70,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def mute(self, ctx, User: discord.Member = None):
+        """Mutes a user."""
         user = ctx.author
         if User is None:
             User = ctx.author
@@ -90,6 +93,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def unmute(self, ctx, User: discord.Member = None):
+        """Unmutes a user."""
         if User is None:
             User = ctx.author
         if User.voice.channel is not None and User.voice.mute == True:
@@ -105,8 +109,8 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def implode(self, ctx):
+        """Disconnects all users from their voice channels."""
         user = ctx.author
-        guild = ctx.me.guild
         channel = user.voice.channel if user.voice else None
         if channel is not None:
             for member in channel.members:
@@ -118,6 +122,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def tirarRadinho(self, ctx):
+        """Removes the radio effect from the voice channel."""
         user = ctx.author
         channel = user.voice.channel
         if user.voice.channel is not None:
@@ -129,6 +134,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def deafen(self, ctx, User: discord.Member=None):
+        """Deafens a user."""
         if User is None:
             User = ctx.author
         if User.voice.channel is not None and User.voice.deaf == False:
@@ -144,6 +150,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def undeafen(self, ctx, User: discord.Member = None):
+        """Undeafens a user."""
         if User is None:
             User = ctx.author
         if User.voice.channel is not None and User.voice.deaf == True:
@@ -159,6 +166,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def disconnect(self, ctx, User: discord.Member):
+        """Disconnects a user from their voice channel."""
         if User.voice.channel is not None:
             await User.move_to(None)
             await create_embed_without_title(ctx, f"{User.display_name} has been disconnected.")
@@ -169,6 +177,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def prison(self, ctx, User:discord.Member):
+        """Imprisons a user for 60 seconds."""
         if User.voice is None or User.voice.channel is None:
             await create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
@@ -178,12 +187,13 @@ class VoipCommands(commands.Cog):
         await self.prision_counter(ctx, User, 60)
             
     async def prision_counter(self, ctx, User: discord.Member, time: int):
-        servidor = ctx.guild
+        """Counts down the time a user is in prison."""
+        server = ctx.guild
         channel_name = "Prisão"
         channels = ctx.guild.channels
         prison_channel = discord.utils.get(channels, name=channel_name)
         if prison_channel is None:
-            prison_channel = await servidor.create_voice_channel(channel_name)
+            prison_channel = await server.create_voice_channel(channel_name)
         if User.voice and User.voice.channel:
             await User.move_to(prison_channel)
             if time > 0:
@@ -196,6 +206,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def fling(self, ctx, User: discord.Member):
+        """Throws a user to a random voice channel."""
         if User.voice is not None:
             channelVet = [channel for channel in User.guild.voice_channels if channel != User.voice.channel]
             if not channelVet:
@@ -214,6 +225,7 @@ class VoipCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def detonate(self, ctx):
+        """Disconnects all users from their voice channels."""
         for vc in ctx.author.guild.voice_channels:
             for membros in vc.members:
                 await membros.move_to(None)
@@ -222,6 +234,7 @@ class VoipCommands(commands.Cog):
     @commands.command("shuffle")
     @pricing()
     async def shuffle(self, ctx):
+        """Throws all users to random voice channels."""
         channelVet = [channel for channel in ctx.author.guild.voice_channels]
         if not channelVet:
             await create_embed_without_title(ctx, f":no_entry:sign: There are no voice channels to throw the users to.")
@@ -234,6 +247,7 @@ class VoipCommands(commands.Cog):
     @commands.command("emergency")
     @pricing()
     async def emergency(self, ctx):
+        """Throws all users to the voice channel of the author of the command."""
         for vc in ctx.author.guild.voice_channels:
             for membros in vc.members:
                 authorchannel = ctx.author.voice.channel
@@ -247,6 +261,7 @@ class VoipCommands(commands.Cog):
     @commands.command("fish")
     @pricing()
     async def fish(self, ctx, User: discord.Member):
+        """Throws a user to the voice channel of the author of the command."""
         if User.voice is not None and ctx.author.voice is not None:
             await User.move_to(ctx.author.voice.channel)
             await create_embed_without_title(ctx, f"{User.display_name} has been thrown to {ctx.author.voice.channel.name}.")

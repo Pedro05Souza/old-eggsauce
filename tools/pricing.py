@@ -161,11 +161,12 @@ async def command_cooldown(ctx, command, cooldown_period):
 
 def pricing():
     async def predicate(ctx):
+        """Check if the user has enough points to use the command."""
         cooldown_period = 3 
         if ctx.guild.id in toggle_perServer and not toggle_perServer[ctx.guild.id]['toggle']:
             if not await command_cooldown(ctx, "points", cooldown_period):
                 return False
-            await create_embed_without_title(ctx, ":warning: The points commands are disabled in this server.")
+            await create_embed_without_title(ctx, ":warning: The points commands are **disabled** in this server.")
             return False
         command = ctx.command.name       
         if command in Prices.__members__:

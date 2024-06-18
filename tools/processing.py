@@ -18,6 +18,7 @@ class Processing (Thread):
             self.exception = None
 
     def run(self):
+        """Start the AI processing."""
         if not self.check_api_connection():
             self.exception = "API connection error"
             return
@@ -37,6 +38,7 @@ class Processing (Thread):
             self.exception = "Oops! Something went wrong."
 
     def check_api_connection(self):
+         """Check if the API connection is successful."""
          try:
               response = requests.get("http://localhost:1234/v1/health", timeout=5)
               return response.status_code == 200

@@ -27,10 +27,9 @@ class PointsCommands(commands.Cog):
                         await self.count_points(member)
 
     async def update_points(self, User: discord.Member):
+        """Updates the points of the user every 10 seconds."""
         userId = User.id
-        print(f"User id: {userId}")
         if userId in self.joinTime.keys():
-                print(f"Updating points for {User.name}")
                 addPoints = (math.ceil(time.time()) - self.joinTime[userId]) // 10
                 print(math.ceil(time.time()))
                 print(addPoints)
@@ -43,6 +42,7 @@ class PointsCommands(commands.Cog):
             return
         
     async def count_points(self, User: discord.Member):
+        """Counts the points of the user every time he enters a voice channel."""
         userId = User.id
         if User.bot:
             return
@@ -54,7 +54,8 @@ class PointsCommands(commands.Cog):
     async def drop_eggbux(self):
         await asyncio.gather(*(self.drop_eggbux_for_guild(guild) for guild in self.bot.guilds))
 
-    def registrarAutomatico(self, User: discord.Member):
+    def automatic_register(self, User: discord.Member):
+        """Automatically registers the user in the database."""
         if Usuario.read(User.id) and User.bot:
             return
         else:
@@ -64,6 +65,7 @@ class PointsCommands(commands.Cog):
     @commands.command()
     @pricing()
     async def points(self, ctx, User: discord.Member = None):
+        """Shows the amount of points the user has."""
         if User is None:
             user_data = Usuario.read(ctx.author.id)
             if user_data and isinstance(user_data, dict) and "points" in user_data:
@@ -84,6 +86,7 @@ class PointsCommands(commands.Cog):
     @commands.command("shop", aliases=["store"])
     @pricing()
     async def shop(self, ctx):
+        """Shows the shop."""
         data = []
         for member in Prices.__members__:
             if Prices.__members__[member].value > 0:
@@ -94,6 +97,7 @@ class PointsCommands(commands.Cog):
     @commands.command("leaderboard", aliases=["ranking"])
     @pricing()
     async def leaderboard(self, ctx):
+        """Shows the leaderboard."""
         users = Usuario.readAll()
         users = sorted(users, key=lambda x: x['points'], reverse=True)
         guild = ctx.guild
@@ -106,6 +110,7 @@ class PointsCommands(commands.Cog):
         await view.send(ctx, title="Leaderboard", description="Eggbux's ranking", color=0x00ff00)
 
     async def drop_eggbux_for_guild(self, guild):
+        """Drops eggbux in the chat."""
         server = ChannelDB.read(server_id=guild.id)
         if server:
             channel = self.bot.get_channel(server["channel_id"])
@@ -125,6 +130,7 @@ class PointsCommands(commands.Cog):
                     await channel.send(f"The bag with {quantEgg} eggbux has been lost. :cry:")
             
     async def drop_periodically(self):
+        """Drops eggbux in the chat every 1000 seconds."""
         while True:
             await self.drop_eggbux()
             await asyncio.sleep(1000)
@@ -132,6 +138,7 @@ class PointsCommands(commands.Cog):
     @commands.command("donatePoints", aliases=["donate"])
     @pricing()
     async def donate_points(self, ctx, User:discord.Member, amount: int):
+        """Donates points to another user."""
         if Usuario.read(ctx.author.id) and Usuario.read(User.id):
             if ctx.author.id == User.id:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate to yourself.")
@@ -148,9 +155,10 @@ class PointsCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have permission to do this.")
             
-    @commands.command("cassino", aliases=["roulette", "casino", "bet"])
+    @commands.command("cassino", aliases=["roulette", "casino", "bet", "gamble"])
     @pricing()
     async def cassino(self, ctx, amount: int, cor: str):
+        """Bet on a color in the roulette."""
         cor = cor.upper()
         coresPossiveis = ["RED", "BLACK", "GREEN"]
         corEmoji = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
@@ -179,6 +187,7 @@ class PointsCommands(commands.Cog):
 
     @cassino.error
     async def cassino_error(self, ctx, error):
+        """Handles errors in the cassino command."""
         if isinstance(error, commands.MissingRequiredArgument):
             await create_embed_without_title(ctx, f"{ctx.author.display_name} Please, insert a valid amount and color.")
         elif isinstance(error, commands.BadArgument):
@@ -189,6 +198,7 @@ class PointsCommands(commands.Cog):
     @commands.command("stealPoints", aliases=["steal"])
     @pricing()
     async def steal_points(self, ctx, User: discord.Member):
+        """Steals points from another user."""
         if Usuario.read(ctx.author.id):
             chance  = randint(0, 100)
             if User.bot:
@@ -213,15 +223,15 @@ class PointsCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
 
-
     @commands.Cog.listener()
     async def on_voice_state_update(self, User: discord.Member, before, after):
+        """Listens to the voice state update event."""
         if User.bot:
             return
         if Usuario.read(User.id) and before.channel is None and after.channel is not None:
             await self.count_points(User)
         elif not Usuario.read(User.id) and before.channel is None and after.channel is not None:
-            self.registrarAutomatico(User)
+            self.automatic_register(User)
             if User.voice is not None:
                 await self.count_points(User)
         elif Usuario.read(User.id) and before.channel is not None and after.channel is None:

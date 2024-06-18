@@ -6,6 +6,7 @@ users_collection = mongo_client.db.usuario
 class Usuario:
     @staticmethod
     def create(user_id : int, points : int):
+        """Create a user in the database."""
         try:            
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
@@ -27,6 +28,7 @@ class Usuario:
         
     @staticmethod
     def delete(user_id : int):
+        """Delete a user from the database."""
         try:
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
@@ -39,10 +41,11 @@ class Usuario:
     
     @staticmethod
     def update(user_id : int, points : int, roles: str):
+        """Update a user's status in the database."""
         try:
             user_data = users_collection.find_one({"user_id" : user_id})
             if user_data:
-                if not isinstance(points, int): #fuck you my ni
+                if not isinstance(points, int): 
                     points = 0
                 users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})
         except Exception as e:
@@ -50,6 +53,7 @@ class Usuario:
         
     @staticmethod
     def read(user_id : int):
+        """Read a user from the database."""
         try:
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
@@ -61,7 +65,8 @@ class Usuario:
             return None
         
     @staticmethod
-    def readAll() -> list:
+    def readAll():
+        """Read all users from the database."""
         try:
             users = users_collection.find()
             return users
@@ -71,6 +76,7 @@ class Usuario:
 
     @staticmethod
     def deleteAll():
+        """Delete all users from the database."""
         try:
             users_collection.delete_many({})
         except Exception as e:
@@ -79,6 +85,7 @@ class Usuario:
     
     @staticmethod
     def updateAll(role : str):
+        """Update all users in the database."""
         try:
             users_collection.update_many({}, {"$set": {"roles": role}})
         except Exception as e:
