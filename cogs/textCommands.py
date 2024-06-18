@@ -202,7 +202,8 @@ class TextCommands(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have one or more of the necessary roles.")
                 await refund(ctx.author, ctx)
 
-    def salarioCargo(self, User:discord.Member):
+
+    def salary_role(self, User:discord.Member):
         salarios = {
             "T": 50,
             "B": 100,
@@ -221,7 +222,7 @@ class TextCommands(commands.Cog):
                         user_data = Usuario.read(member.id)
                         if user_data:
                             if user_data["roles"] != "":
-                                Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salarioCargo(member), Usuario.read(member.id)["roles"])
+                                Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salary_role(member), Usuario.read(member.id)["roles"])
                 await asyncio.sleep(1600)
 
     @commands.command("salary", aliases=["income"])
@@ -265,7 +266,7 @@ class TextCommands(commands.Cog):
                 break
             try:
                 message = await asyncio.wait_for(self.bot.wait_for("message", check=lambda message: message.content == "!join"), timeout=actual_time)
-                allowplay = self.checkIfTributePlay(discord.utils.get(ctx.guild.members, id=message.author.id))
+                allowplay = self.check_tribute_play(discord.utils.get(ctx.guild.members, id=message.author.id))
                 if allowplay:
                     if not any(tribute['tribute'] == message.author for tribute in tributes):
                         tributes.append({"tribute": message.author, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
@@ -279,7 +280,7 @@ class TextCommands(commands.Cog):
         if len(tributes) < min_tributes:
             await create_embed_without_title(ctx, f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is {min_tributes}.")
             Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + 100, Usuario.read(ctx.author.id)["roles"])
-            hungergames_status.remove(guild_id)
+            hungergames_status.pop(guild_id)
             return
         else:
             await create_embed_without_title(ctx, f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
@@ -291,19 +292,19 @@ class TextCommands(commands.Cog):
                 for tribute in alive_tributes:
                     if tribute['is_alive']:
                         await asyncio.sleep(3)
-                        random_tribute = self.pickRandomTribute(tribute, alive_tributes)
-                        event_possibilities = self.checkEventPossibilities(tribute, random_tribute, alive_tributes, self.lootTributeBody(tributes), guild_id)
-                        random_event = self.chooseRandomEvent(event_possibilities)
-                        await self.eventActions(ctx, tribute, random_tribute, alive_tributes, random_event)
-                        alive_tributes = self.checkAliveTributes(alive_tributes)
+                        random_tribute = self.pick_random_tribute(tribute, alive_tributes)
+                        event_possibilities = self.check_event_possibilities(tribute, random_tribute, alive_tributes, self.loot_tribute_Body(tributes), guild_id)
+                        random_event = self.choose_random_event(event_possibilities)
+                        await self.event_actions(ctx, tribute, random_tribute, alive_tributes, random_event)
+                        alive_tributes = self.check_alive_tributes(alive_tributes)
                         if len(alive_tributes) == 1:
                             break
                 fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == day]
                 if fallen_tributes:
                     await create_embed_without_title(ctx, f"**Fallen tributes:** {', '.join([tribute['tribute'].display_name for tribute in fallen_tributes])}")
-                self.increaseDaysAlive(alive_tributes)
-                self.removePlrTeamOnDeath(tributes)
-                self.updateTributeEvent(alive_tributes)
+                self.increase_days_alive(alive_tributes)
+                self.remove_plr_team_on_death(tributes)
+                self.update_tribute_event(alive_tributes)
                 day += 1
 
             winner = alive_tributes[0]
@@ -313,19 +314,19 @@ class TextCommands(commands.Cog):
             hungergames_status.pop(guild_id)
             await self.statistics(ctx, tributes)
 
-    def checkIfTributePlay(self, tribute):
+    def check_tribute_play(self, tribute):
         if Usuario.read(tribute.id) and Usuario.read(tribute.id)["points"] >= 100:
             Usuario.update(tribute.id, Usuario.read(tribute.id)["points"] - 100, Usuario.read(tribute.id)["roles"])
             return True
         else:
             return False
         
-    def increaseDaysAlive(self, tributes):
+    def increase_days_alive(self, tributes):
         for tribute in tributes:
             if tribute['is_alive']:
                 tribute['days_alive'] += 1
      
-    def checkAliveTributes(self, tributes):
+    def check_alive_tributes(self, tributes):
         alive_tributes = []
         for tribute in tributes:
             if tribute['is_alive']:
@@ -365,14 +366,14 @@ class TextCommands(commands.Cog):
         }
         return events
 
-    def chooseRandomEvent(self, events):
+    def choose_random_event(self, events):
         return random.choice(events)
     
-    def updateTributeEvent(self, tributes):
+    def update_tribute_event(self, tributes):
         for tribute in tributes:
             tribute['has_event'] = False
 
-    def pickRandomTribute(self, tribute1, tributes):
+    def pick_random_tribute(self, tribute1, tributes):
         aux_tributes = tributes.copy()
         aux_tributes.remove(tribute1)
         if aux_tributes:
@@ -380,7 +381,7 @@ class TextCommands(commands.Cog):
         else:
             return None
     
-    async def eventActions(self, ctx, tribute1, tribute2, tributes, chosen_event):
+    async def event_actions(self, ctx, tribute1, tribute2, tributes, chosen_event):
         events = self.events()
         print(f"Chosen event: {chosen_event}")
         if not tribute1['has_event']:
@@ -391,13 +392,13 @@ class TextCommands(commands.Cog):
                     tribute1['Killed_by'] = "Bear"
                     await create_embed_without_title(ctx, f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
                 case 1:
-                    team = self.createTeam(tribute1, tribute2, tributes)
+                    team = self.create_team(tribute1, tribute2, tributes)
                     await create_embed_without_title(ctx, f":people_hugging: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}** creating team **{team}**!")
                 case 2:
                     tribute1['inventory'].append("knife")
                     await create_embed_without_title(ctx, f":dagger: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
                 case 3:
-                    item = self.stealItem(tribute1, tribute2)
+                    item = self.steal_item(tribute1, tribute2)
                     await create_embed_without_title(ctx, f":crossed_swords: **{tribute1['tribute'].display_name}** {events[chosen_event]} {item} from **{tribute2['tribute'].display_name}**!")
                 case 4:
                     tribute1['is_alive'] = False
@@ -445,8 +446,8 @@ class TextCommands(commands.Cog):
                     await create_embed_without_title(ctx, f":warning: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}** running in the distance!")
                 case 20:
                     dead_tribute = hungergames_status[ctx.guild.id]['dead_tribute']
-                    item = self.stealItem(tribute1, dead_tribute)
-                    await create_embed_without_title(ctx, f":ninja: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{dead_tribute['tribute'].display_name}** stealing a {item} in the progress!")
+                    item = self.steal_item(tribute1, dead_tribute)
+                    await create_embed_without_title(ctx, f":ninja: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{dead_tribute['tribute'].display_name}** stealing a {item} in the process!")
                 case 21:
                     await create_embed_without_title(ctx, f":broken_heart: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**!")
                     tribute1['team'] = None
@@ -455,7 +456,7 @@ class TextCommands(commands.Cog):
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
                     tribute2['kills'] += 1
                 case 22:
-                    disbanded_team = self.getTributeTeam(tribute1, tributes)
+                    disbanded_team = self.get_Tribute_Team(tribute1, tributes)
                     await create_embed_without_title(ctx, f":broken_heart: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{disbanded_team}**!")
                     for tribute in tributes:
                         if tribute['team'] == disbanded_team:
@@ -481,7 +482,7 @@ class TextCommands(commands.Cog):
                     tribute1['kills'] += 2
                     await create_embed_without_title(ctx, f":zap: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['team']}**!")
                 case 25:
-                    team = self.getTributeTeam(tribute1, tributes)
+                    team = self.get_Tribute_Team(tribute1, tributes)
                     await create_embed_without_title(ctx, f":bear: {events[chosen_event]} **{team}** has managed to kill the bear, disabling that for the rest of the game.")
                     hungergames_status[ctx.guild.id]['bear_disabled'] = True
                 case 26:
@@ -501,7 +502,7 @@ class TextCommands(commands.Cog):
                     await create_embed_without_title(ctx, f"**{tribute1['tribute'].display_name}** {events[chosen_event]}")
 
 
-    def checkEventPossibilities(self, tribute1, tribute2, tributes, dead_tributes, guild_id):
+    def check_event_possibilities(self, tribute1, tribute2, tributes, dead_tributes, guild_id):
         global hungergames_status
         list_events = list(range(20))
 
@@ -560,13 +561,13 @@ class TextCommands(commands.Cog):
             if len(tributes) == 2 and tribute1['team'] == tribute2['team'] and tribute1['team'] is not None and tribute2['team'] is not None:
                 list_events = [21, 22]
 
-            existing_teams = self.checkExistingTeams(tributes)
+            existing_teams = self.check_existing_teams(tributes)
 
             if len(existing_teams) >= 2 and tribute2['team'] is not None and tribute1['team'] is not None and tribute1['team'] != tribute2['team']:
                 list_events = [event for event in list_events]
                 list_events.append(23)
 
-            if len(existing_teams) >= 1 and tribute2['team'] is not None and tribute1['team'] is None:
+            if len(existing_teams) >= 1 and tribute2['team'] is not None and tribute1['team'] is None and len(tribute1['inventory']) >= 1:
                 list_events = [event for event in list_events]
                 list_events.append(24)
 
@@ -586,7 +587,7 @@ class TextCommands(commands.Cog):
         print(f"List of events: {list_events}")
         return list_events
 
-    def removePlrTeamOnDeath(self, tributes):
+    def remove_plr_team_on_death(self, tributes):
         teams_to_remove = set()
 
         for tribute in tributes:
@@ -597,13 +598,13 @@ class TextCommands(commands.Cog):
             if tribute['team'] in teams_to_remove and tribute['is_alive']:
                 tribute['team'] = None
 
-    def stealItem(self, tribute1, tribute2):
+    def steal_item(self, tribute1, tribute2):
         item = random.choice(tribute2['inventory'])
         tribute1['inventory'].append(item)
         tribute2['inventory'].remove(item)
         return item
     
-    def lootTributeBody(self, tributes):
+    def loot_tribute_Body(self, tributes):
         dead_tributes = [dead_tribute for dead_tribute in tributes if not dead_tribute['is_alive'] and len(dead_tribute['inventory']) > 0]
         if len(dead_tributes) >= 1:
             return dead_tributes
@@ -614,7 +615,7 @@ class TextCommands(commands.Cog):
         data = []
         for tribute in tributes:
             data.append(
-            {"title": ":medal: " + tribute['tribute'].display_name if self.getWinner(tributes) == tribute else ":skull_crossbones: " + tribute['tribute'].display_name, 
+            {"title": ":medal: " + tribute['tribute'].display_name if self.get_winner(tributes) == tribute else ":skull_crossbones: " + tribute['tribute'].display_name, 
             "value": (
                 f"Kills: {str(tribute['kills'])}" 
                 + f"\n Days survived: {str(tribute['days_alive'])}" 
@@ -628,26 +629,26 @@ class TextCommands(commands.Cog):
         await view.send(ctx, title="Match results:", description="Match statistics for each tribute:", color=0xff0000)
         
     
-    def createTeam(self, tribute1, tribute2, tributes):
-        teams = self.checkExistingTeams(tributes)
+    def create_team(self, tribute1, tribute2, tributes):
+        teams = self.check_existing_teams(tributes)
         teamNumber = randint(1, 100)
         if teamNumber not in teams.keys():
             tribute1['team'] = teamNumber
             tribute2['team'] = teamNumber
             return teamNumber
         else:
-            self.createTeam(tribute1, tribute2, tributes)
+            self.create_team(tribute1, tribute2, tributes)
 
-    def checkExistingTeams(self, tributes):
+    def check_existing_teams(self, tributes):
         teams = Counter([tribute['team'] for tribute in tributes if tribute['team'] is not None])
         return teams
     
-    def getTributeTeam(self, tribute1, tributes):
+    def get_tribute_team(self, tribute1, tributes):
         for tribute in tributes:
             if tribute1['team'] == tribute['team']:
                 return tribute1['team']
     
-    def getWinner(self, tributes):
+    def get_winner(self, tributes):
         highestdayAlive = 0
         for tribute in tributes:
             if tribute['days_alive'] > highestdayAlive:

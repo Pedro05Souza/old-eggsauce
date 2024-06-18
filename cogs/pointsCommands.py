@@ -131,7 +131,7 @@ class PointsCommands(commands.Cog):
 
     @commands.command("donatePoints", aliases=["donate"])
     @pricing()
-    async def donatePoints(self, ctx, User:discord.Member, amount: int):
+    async def donate_points(self, ctx, User:discord.Member, amount: int):
         if Usuario.read(ctx.author.id) and Usuario.read(User.id):
             if ctx.author.id == User.id:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate to yourself.")
@@ -188,7 +188,7 @@ class PointsCommands(commands.Cog):
 
     @commands.command("stealPoints", aliases=["steal"])
     @pricing()
-    async def stealPoints(self, ctx, User: discord.Member):
+    async def steal_points(self, ctx, User: discord.Member):
         if Usuario.read(ctx.author.id):
             chance  = randint(0, 100)
             if User.bot:

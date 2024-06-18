@@ -14,8 +14,8 @@ class ModCommands(commands.Cog):
         self.devs = os.getenv("DEVS").split(",")
         self.bot = bot
 
-    @commands.command() 
-    async def addPoints(self, ctx, amount: int, User: discord.Member = None):
+    @commands.command("addPoints") 
+    async def add_points(self, ctx, amount: int, User: discord.Member = None):
         """Add points to a user. If no user is specified, the author of the command will receive the points."""
         if User is None:
             User = ctx.author
@@ -34,8 +34,8 @@ class ModCommands(commands.Cog):
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
 
-    @commands.command()
-    async def removePoints(self, ctx, amount: int, User: discord.Member = None):
+    @commands.command("removePoints")
+    async def remove_points(self, ctx, amount: int, User: discord.Member = None):
         """Remove points from a user. If no user is specified, the author of the command will lose the points."""
         if User is None:
             User = ctx.author
@@ -54,8 +54,8 @@ class ModCommands(commands.Cog):
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
 
-    @commands.command()
-    async def deleteDB(self, ctx,  User: discord.Member):
+    @commands.command("deleteDB")
+    async def delete_db(self, ctx,  User: discord.Member):
         """Delete a user from the database."""
         User = User.id
         if Usuario.read(User):
@@ -67,8 +67,8 @@ class ModCommands(commands.Cog):
         else:
                 await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
 
-    @commands.command()
-    async def removeRole(self, ctx ,User:discord.Member, role: str):
+    @commands.command("removeRole")
+    async def remove_role(self, ctx ,User:discord.Member, role: str):
         """Remove one one of the custom roles created by the bot."""
         possibleRoles = {"T": "Low wage worker", "B" : "Peasant", "M" : "Brokie who thinks they are rich", "A" : "Magnate"}
         if str(ctx.author.id) in self.devs:
@@ -90,8 +90,8 @@ class ModCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
             
-    @commands.command()
-    async def removeAllRoles(self, ctx, User: discord.Member):
+    @commands.command("removeAllRoles")
+    async def remove_all_roles(self, ctx, User: discord.Member):
         """Remove all custom roles created by the bot."""
         if str(ctx.author.id) in self.devs:
             user_data = Usuario.read(User.id)
@@ -108,8 +108,8 @@ class ModCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
 
-    @commands.command()
-    async def setChannel(self, ctx):
+    @commands.command("setChannel")
+    async def set_channel(self, ctx):
         if ctx.author.guild_permissions.administrator or str(ctx.author.id in self.devs):
             if ChannelDB.read(server_id=ctx.guild.id):
                 ChannelDB.update(ctx.channel.id)
