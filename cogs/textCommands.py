@@ -120,7 +120,9 @@ class TextCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} is not banned.")
             await refund(ctx.author, ctx)
-            
+
+
+    # refatorar essa bosta de roles   
     @commands.command()
     @pricing()
     async def lowWageRole(self, ctx):
@@ -214,6 +216,17 @@ class TextCommands(commands.Cog):
              else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have one or more of the necessary roles.")
                 await refund(ctx.author, ctx)
+
+    @commands.command("pointsRoles")
+    async def points_roles(self, ctx):
+        roles = {
+            "T" : "Low wage worker",
+            "B" : "Peasant",
+            "M" : "Brokie who thinks they are rich",
+            "A" : "Magnate"
+        }
+        await create_embed_with_title(ctx, "Custom roles:", f":poop: **{roles['T']}** income: 50 eggbux \n:farmer: **{roles['B']}** income: 100 eggbux \n:red_car: **{roles['M']}** income: 200 eggbux \n:coin: **{roles['A']}** income: 300 eggbux")
+
 
     def salary_role(self, User:discord.Member):
         """Returns the salary of a user based on their roles."""

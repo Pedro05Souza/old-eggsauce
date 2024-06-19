@@ -114,8 +114,7 @@ class ModCommands(commands.Cog):
         """Set the channel where the bot will listen for commands."""
         if ctx.author.guild_permissions.administrator or str(ctx.author.id in self.devs):
             if ChannelDB.read(server_id=ctx.guild.id):
-                ChannelDB.update(ctx.channel.id)
-                print(f"Channel updated for guild {ctx.guild.name}")
+                ChannelDB.update(ctx.guild.id ,ctx.channel.id)
                 await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been updated.")
             else:
                 ChannelDB.create(ctx.guild.id, ctx.channel.id)

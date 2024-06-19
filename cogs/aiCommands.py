@@ -1,7 +1,7 @@
 import discord
 import asyncio
 from discord.ext import commands
-from tools.pricing import pricing
+from tools.pricing import pricing, refund
 from db.userDB import Usuario
 from tools.embed import create_embed_without_title
 from tools.processing import Processing
@@ -34,10 +34,12 @@ class AICommands(commands.Cog):
                             await create_embed_without_title(ctx, ":no_entry_sign: Error! AI didn't generate content.")
                 else:
                     await create_embed_without_title(ctx, ":no_entry_sign: Api connection failed. Probably due to the AI model being deactivated. Try again later.")
+                    await refund(ctx.author, ctx)
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: You are not registered in the database.")
         except Exception:
             await create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
+            await refund(ctx.author, ctx)
 
     @commands.command()
     @pricing()

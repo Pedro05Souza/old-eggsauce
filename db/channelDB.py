@@ -9,7 +9,7 @@ class ChannelDB:
         try:
             channel_data = channels_collection.find_one({"channel_id" : channel_id})
             if channel_data:
-                print("This cannel already exists.")
+                print("This channel already exists.")
                 return None
             else:
                 channel = {
@@ -35,21 +35,6 @@ class ChannelDB:
         except Exception as e:
                 print("Error encountered while deleting a channel.", e)
 
-                
-    @staticmethod
-    def read(channel_id: int):
-        """Read a channel from the database."""
-        try:
-            channel_data = channels_collection.find_one({"channel_id": channel_id})
-            if channel_data:
-                return channel_data
-            else:
-                print("Channel not found.")
-                return None
-        except Exception as e:
-            print("Error encountered while reading a channel.", e)
-            return None
-
     @staticmethod
     def read(server_id: int):
         """Read a channel from the database."""
@@ -63,13 +48,13 @@ class ChannelDB:
         except Exception as e:
             print("Error encountered while reading a guild.", e)
             return None
-        
 
     @staticmethod
-    def update(channel_id: int):
+    def update(server_id: int,channel_id: int):
         """Update a channel in the database."""
+        print(f"balls: {channel_id}")
         try:
-            channel_data = channels_collection.find_one({"channel_id" : channel_id})
+            channel_data = channels_collection.find_one({"server_id" : server_id})
             if channel_data:
                 channels_collection.update_one({"server_id": channel_data["server_id"]}, {"$set": {"channel_id": channel_id}})
                 print("Channel updated successfully.")
