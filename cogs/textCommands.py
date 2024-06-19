@@ -7,11 +7,12 @@ from random import randint
 from discord.ext import commands
 import discord
 from db.userDB import Usuario
+from db.toggleDB import ToggleDB
 from tools.embed import create_embed_without_title, create_embed_with_title
 import os
 import random
 from tools.pagination import PaginationView
-from tools.pricing import pricing, refund, toggle_perServer
+from tools.pricing import pricing, refund
 hungergames_status = {}
 
 # This class is responsible for handling the text commands.
@@ -30,9 +31,7 @@ class TextCommands(commands.Cog):
     @commands.command("pointsStatus")
     async def points_status(self, ctx):
         """Check if the points commands are enabled or disabled in the server."""
-        await create_embed_without_title(ctx, f":warning: The points commands are {'**enabled**' if toggle_perServer[ctx.guild.id]['toggle'] else '**disabled**'} in this server.")
-
-
+        await create_embed_without_title(ctx, f":warning: The points commands are {'**enabled**' if ToggleDB.read[ctx.guild.id]['toggle'] else '**disabled**'} in this server.")
 
     @commands.command()
     @pricing()
@@ -93,9 +92,9 @@ class TextCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry_sign: I don't have permission to do that.")
             await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.command("changeNickname")
     @pricing()
-    async def changeNickname(self, ctx, User: discord.Member, *apelido: str):
+    async def change_nickname(self, ctx, User: discord.Member, *apelido: str):
         """Changes a user's nickname."""
         if User.top_role.position <= ctx.guild.me.top_role.position:
             if User.id == ctx.me.id:
@@ -482,7 +481,7 @@ class TextCommands(commands.Cog):
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
                     tribute2['kills'] += 1
                 case 22:
-                    disbanded_team = self.get_Tribute_Team(tribute1, tributes)
+                    disbanded_team = self.get_tribute_team(tribute1, tributes)
                     await create_embed_without_title(ctx, f":broken_heart: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{disbanded_team}**!")
                     for tribute in tributes:
                         if tribute['team'] == disbanded_team:
@@ -508,7 +507,7 @@ class TextCommands(commands.Cog):
                     tribute1['kills'] += 2
                     await create_embed_without_title(ctx, f":zap: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['team']}**!")
                 case 25:
-                    team = self.get_Tribute_Team(tribute1, tributes)
+                    team = self.get_tribute_team(tribute1, tributes)
                     await create_embed_without_title(ctx, f":bear: {events[chosen_event]} **{team}** has managed to kill the bear, disabling that for the rest of the game.")
                     hungergames_status[ctx.guild.id]['bear_disabled'] = True
                 case 26:

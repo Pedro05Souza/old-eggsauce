@@ -2,7 +2,7 @@ import os
 import discord
 from discord.ext import commands
 from db.userDB import Usuario
-from tools.pricing import toggle_perServer
+from db.toggleDB import ToggleDB
 from tools.embed import create_embed_without_title
 from db.channelDB import ChannelDB
 from dotenv import load_dotenv
@@ -127,16 +127,14 @@ class ModCommands(commands.Cog):
     @commands.command("togglePoints")
     async def toggle_points(self, ctx):
         """Enable or disable the points commands."""
-        if ctx.author.guild_permissions.administrator or str(ctx.author.id in self.devs):
-            if ctx.guild.id not in toggle_perServer:
-                toggle_perServer[ctx.guild.id] = {
-                    "toggle": True
-                }
-            if toggle_perServer[ctx.guild.id]['toggle']:
-                toggle_perServer[ctx.guild.id]["toggle"] = False
+        if ctx.guild.owner_id == ctx.author.id or str(ctx.author.id) in self.devs:
+            if not ToggleDB.read(ctx.guild.id):
+                ToggleDB.create(ctx.guild.id, True)
+            if ToggleDB.read(ctx.guild.id)["toggle"]:
+                ToggleDB.update(ctx.guild.id, False)
                 await create_embed_without_title(ctx, ":warning: Points commands are now disabled.")
             else:
-                toggle_perServer[ctx.guild.id]["toggle"] = True
+                ToggleDB.update(ctx.guild.id, True)
                 await create_embed_without_title(ctx, ":white_check_mark: Points commands are now enabled.")
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you do not have permission to do this.")

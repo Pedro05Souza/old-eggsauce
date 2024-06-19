@@ -18,9 +18,9 @@ class VoipCommands(commands.Cog):
         self.prisioner = {}
 
     
-    @commands.command()
+    @commands.command("momentOfSilence")
     @pricing()
-    async def momentOfSilence(self, ctx):
+    async def moment_of_silence(self, ctx):
         """Mutes all users in the voice channel of the author of the command."""
         user = ctx.author
         if user.voice.channel is not None:

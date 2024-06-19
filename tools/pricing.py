@@ -1,6 +1,7 @@
 from enum import Enum
 from db.userDB import Usuario
 import discord
+from db.toggleDB import ToggleDB
 import inspect
 from discord.ext import commands
 from tools.embed import create_embed_without_title
@@ -9,7 +10,6 @@ import time
 
 # This class is responsible for handling the prices of the commands.
 cooldown_tracker = {}
-toggle_perServer = {}
 class Prices(Enum):
     points = 0
     leaderboard = 0
@@ -163,7 +163,7 @@ def pricing():
     async def predicate(ctx):
         """Check if the user has enough points to use the command."""
         cooldown_period = 3 
-        if ctx.guild.id in toggle_perServer and not toggle_perServer[ctx.guild.id]['toggle']:
+        if ToggleDB.read(ctx.guild.id) and not ToggleDB.read(ctx.guild.id)['toggle']:
             if not await command_cooldown(ctx, "points", cooldown_period):
                 return False
             await create_embed_without_title(ctx, ":warning: The points commands are **disabled** in this server.")
