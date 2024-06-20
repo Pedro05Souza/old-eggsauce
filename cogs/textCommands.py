@@ -277,7 +277,7 @@ class TextCommands(commands.Cog):
         if guild_id in hungergames_status:
             await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
             return
-        wait_time = 30
+        wait_time = 60
         if args and args[0].isdigit():
             args = [int(arg) for arg in args] 
             if ctx.guild.owner.id == ctx.author.id:
@@ -293,7 +293,7 @@ class TextCommands(commands.Cog):
         tributes = []
         min_tributes = 4
         end_time = time.time() + wait_time
-        messageHg = await create_embed_without_title(ctx, f":hourglass: The hunger games will start in {wait_time} seconds. React with ✅ to join.")
+        messageHg = await create_embed_without_title(ctx, f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
         await messageHg.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
@@ -314,7 +314,7 @@ class TextCommands(commands.Cog):
             except asyncio.TimeoutError:
                 break
         if len(tributes) < min_tributes:
-            await create_embed_without_title(ctx, f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is {min_tributes}.")
+            await create_embed_without_title(ctx, f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is **{min_tributes}**.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
                     Usuario.update(tribute['tribute'].id, Usuario.read(tribute['tribute'].id)["points"] + 100, Usuario.read(tribute['tribute'].id)["roles"])

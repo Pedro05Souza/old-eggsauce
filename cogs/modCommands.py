@@ -128,8 +128,6 @@ class ModCommands(commands.Cog):
     async def toggle_points(self, ctx):
         """Enable or disable the points commands."""
         if ctx.guild.owner_id == ctx.author.id or str(ctx.author.id) in self.devs:
-            if not ToggleDB.read(ctx.guild.id):
-                ToggleDB.create(ctx.guild.id, True)
             if ToggleDB.read(ctx.guild.id)["toggle"]:
                 ToggleDB.update(ctx.guild.id, False)
                 await create_embed_without_title(ctx, ":warning: Points commands are now disabled.")
@@ -185,6 +183,12 @@ class ModCommands(commands.Cog):
             Usuario.update(member.id, Usuario.read(member.id)["roles"], "")
         else:
             print("User not found in the database.")
+    
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        if not ToggleDB.read(guild.id):
+            ToggleDB.create(guild.id, True)
+        print(f"Joined guild {guild.name}")
 
 async def setup(bot):
      await bot.add_cog(ModCommands(bot))

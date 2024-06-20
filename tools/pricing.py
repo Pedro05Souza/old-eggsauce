@@ -2,6 +2,7 @@ from enum import Enum
 from db.userDB import Usuario
 import discord
 from db.toggleDB import ToggleDB
+from db.channelDB import ChannelDB
 import inspect
 from discord.ext import commands
 from tools.embed import create_embed_without_title
@@ -96,7 +97,8 @@ async def treat_exceptions(ctx, comando):
         channels.append(channel)
     
     if ctx.channel not in channels:
-        await create_embed_without_title(ctx, ":no_entry_sign: This command can only be used in the commands channel.")
+        commands_channel = ctx.bot.get_channel(ChannelDB.read(ctx.guild.id)["channel_id"])
+        await create_embed_without_title(ctx, f":no_entry_sign: This command can only be used in the **{commands_channel.name}** channel.")
         return False
     
     i = 0
