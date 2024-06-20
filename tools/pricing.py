@@ -16,7 +16,9 @@ class Prices(Enum):
     leaderboard = 0
     cassino = 0
     speak = 0
+    checkTitle = 0
     donatePoints = 0
+    pointsTitles = 0
     shop = 0
     salary = 0
     hungergames = 0
@@ -38,18 +40,14 @@ class Prices(Enum):
     emergency = 500
     tirarRadinho = 500
     momentOfSilence = 500
-    lowWageRole = 650
     implode = 750
     explode = 850
     kick = 850
     detonate = 880
     shuffle = 900
     prison = 900
-    lowClassRole = 920
     ban = 950
     god = 1000
-    middleClassRole = 1200
-    highClassRole = 1600
     nuke = 50000
 
 def verify_points(User: discord.Member, comando):

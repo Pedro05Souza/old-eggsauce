@@ -67,21 +67,16 @@ class PointsCommands(commands.Cog):
     async def points(self, ctx, User: discord.Member = None):
         """Shows the amount of points the user has."""
         if User is None:
-            user_data = Usuario.read(ctx.author.id)
-            if user_data and isinstance(user_data, dict) and "points" in user_data:
-                points = await self.update_points(ctx.author)
-                if points is None:
-                    points = user_data["points"]
-                await create_embed_without_title(ctx, f":coin: {ctx.author.display_name} has {points} eggbux.")
-            else:
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} has no eggbux :cry:")
+            User = ctx.author
+        user_data = Usuario.read(User.id)
+        if user_data and isinstance(user_data, dict) and "points" in user_data:
+            points = await self.update_points(User)
+            if points is None:
+                points = user_data["points"]
+            await create_embed_without_title(ctx, f":coin: {User.display_name} has {points} eggbux.")
         else:
-            user_data = Usuario.read(User.id)
-            if user_data and isinstance(user_data, dict) and "points" in user_data:
-                await self.update_points(User)
-                await create_embed_without_title(ctx, f":coin: {User.display_name} has {user_data['points']} eggbux.")
-            else:
-                await create_embed_without_title(ctx, f"{User.display_name} has no eggbux :cry:")
+            await create_embed_without_title(ctx, f"{User.display_name} has no eggbux :cry:")
+
         
     @commands.command("shop", aliases=["store"])
     @pricing()

@@ -75,10 +75,10 @@ class Usuario:
             return None
 
     @staticmethod
-    def deleteAll():
-        """Delete all users from the database."""
+    def resetAll():
+        """Resets all users from the database."""
         try:
-            users_collection.delete_many({})
+            users_collection.update_many({}, {"$set": {"points": 0, "roles": ""}})
         except Exception as e:
             print("Error encountered while deleting users.", e)
             return None

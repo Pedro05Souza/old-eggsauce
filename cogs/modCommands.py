@@ -91,24 +91,6 @@ class ModCommands(commands.Cog):
                 await create_embed_without_title(ctx, f"{User.display_name} is not registered in the database!")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
-            
-    @commands.command("removeAllRoles")
-    async def remove_all_roles(self, ctx, User: discord.Member):
-        """Remove all custom roles created by the bot."""
-        if str(ctx.author.id) in self.devs:
-            user_data = Usuario.read(User.id)
-            if user_data:
-                roles = user_data["roles"]
-                for role in roles:
-                    roleRemove = discord.utils.get(ctx.guild.roles, name=role)
-                    if roleRemove:
-                        await User.remove_roles(roleRemove)
-                Usuario.update(User.id, Usuario.read(User.id)["points"], "")
-                await create_embed_without_title(ctx, f"{User.display_name} lost all custom roles.")
-            else:
-                await create_embed_without_title(ctx, f"{User.display_name} is not registered in the database!")
-        else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
 
     @commands.command("setChannel")
     async def set_channel(self, ctx):
@@ -147,42 +129,6 @@ class ModCommands(commands.Cog):
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
 
     # Event listeners; these functions are called when the event they are listening for is triggered
-
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        if before.roles != after.roles:
-            roles = ""
-            role_order = ["Low wage worker", "Peasant", "Brokie who thinks they are rich", "Magnate"]
-            role_letters = {"Low wage worker": "T", "Peasant": "B", "Brokie who thinks they are rich": "M", "Magnate": "A"}
-            lost_role = None
-            for role in before.roles:
-                if role not in after.roles:
-                    lost_role = role
-                    break
-            if lost_role:
-                if lost_role.name in role_order:
-                    Usuario.update(after.id, Usuario.read(after.id)["points"], Usuario.read(after.id)["roles"].replace(role_letters[lost_role.name], ""))
-                    print("removed role: " + lost_role.name)
-                for role_name in role_order[role_order.index(lost_role.name):]:
-                    role = discord.utils.get(after.guild.roles, name=role_name)
-                    if role in after.roles:
-                        await after.remove_roles(role)
-                        if role_letters[role_name] in Usuario.read(after.id)["roles"]:
-                            Usuario.update(after.id, Usuario.read(after.id)["points"], Usuario.read(after.id)["roles"].replace(role_letters[role_name], ""))
-                            print("removed role: " + role_name)
-            else:
-                for role_name in role_order:
-                    if any(role.name == role_name for role in after.roles):
-                        roles += role_letters[role_name]
-                Usuario.update(after.id, Usuario.read(after.id)["points"], roles)
-                print("added roles: " + roles)
-
-    @commands.Cog.listener()
-    async def on_member_remove(self, member):
-        if Usuario.read(member.id):
-            Usuario.update(member.id, Usuario.read(member.id)["roles"], "")
-        else:
-            print("User not found in the database.")
     
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

@@ -120,137 +120,103 @@ class TextCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} is not banned.")
             await refund(ctx.author, ctx)
-
-
-    # refatorar essa bosta de roles   
-    @commands.command()
+    
+    @commands.command("checkTitle", aliases=["title"])
     @pricing()
-    async def lowWageRole(self, ctx):
-         if Usuario.read(ctx.author.id):    
-            permissions = discord.Permissions(
-                move_members = True,
-            )
-            role = discord.utils.get(ctx.guild.roles, name="Low wage worker")
-            if role is None:
-                role = await ctx.guild.create_role(name="Low wage worker", permissions=permissions, color=discord.Color.from_rgb(165, 42, 42))
-                await role.edit(position=9, hoist=True, mentionable=True)
-            if ctx.author in role.members:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have this role.")
-                return
-            if Usuario.read(ctx.author.id)["roles"] == "":
-                await ctx.author.add_roles(role)
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} received the low wage worker role.")
+    async def check_title(self, ctx, User: discord.Member = None):
+        """Check the title of a user."""
+        if User is None:
+            User = ctx.author
+        if Usuario.read(User.id):
+            await create_embed_without_title(ctx, f"{User.display_name} has the title of **{self.get_user_title(User)}**.")
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} isn't registered in the database.")
 
-
-    @commands.command()
+    @commands.command("pointsTitles")
     @pricing()
-    async def lowClassRole(self, ctx):
-        if Usuario.read(ctx.author.id):    
-             permissions = discord.Permissions(
-                 move_members = True,
-                 mute_members = True,
-                 deafen_members = True
-             )
-             role = discord.utils.get(ctx.guild.roles, name="Peasant")
-             if role is None:
-                    role = await ctx.guild.create_role(name="Peasant", permissions=permissions, color=discord.Color.from_rgb(255, 0, 0))
-                    await role.edit(position=8, hoist=True, mentionable=True)
-             if ctx.author in role.members:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have this role.")
-                    await refund(ctx.author, ctx)
-                    return
-             if Usuario.read(ctx.author.id)["roles"] == "T":
-                await ctx.author.add_roles(role)
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} received the low class role.")
-             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have one or more of the necessary roles.")
-                await refund(ctx.author, ctx)   
-
-    @commands.command()
-    @pricing()
-    async def middleClassRole(self, ctx):
-        if Usuario.read(ctx.author.id):    
-             permissions = discord.Permissions(
-                 move_members = True,
-                 mute_members = True,
-                 deafen_members = True,
-                 manage_messages = True
-             )
-             role = discord.utils.get(ctx.guild.roles, name="Brokie who thinks they are rich")
-             if role is None:
-                    role = await ctx.guild.create_role(name="Brokie who thinks they are rich", permissions=permissions, color=discord.Color.from_rgb(0, 0, 255))
-                    await role.edit(position=7, hoist=True, mentionable=True)
-             if ctx.author in role.members:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have this role.")
-                    await refund(ctx.author, ctx)
-                    return
-             if Usuario.read(ctx.author.id)["roles"] == "TB":
-                await ctx.author.add_roles(role)
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} received the middle class role.")
-             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have one or more of the necessary roles.")
-                await refund(ctx.author, ctx)
-                    
-    @commands.command()
-    @pricing()
-    async def highClassRole(self, ctx):
-         if Usuario.read(ctx.author.id):    
-             permissions = discord.Permissions(
-                 move_members = True,
-                 mute_members = True,
-                 deafen_members = True,
-                 manage_messages = True,
-                 manage_channels = True
-             )
-             role = discord.utils.get(ctx.guild.roles, name="Magnate")
-             if role is None:
-                    role = await ctx.guild.create_role(name="Magnate", permissions=permissions, color=discord.Color.from_rgb(0, 0, 0))
-                    await role.edit(position=6, hoist=True, mentionable=True)
-             if ctx.author in role.members:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have this role.")
-                    await refund(ctx.author, ctx)
-                    return
-             if Usuario.read(ctx.author.id)["roles"] == "TBM":
-                await ctx.author.add_roles(role)
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} received the high class role.")
-             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have one or more of the necessary roles.")
-                await refund(ctx.author, ctx)
-
-    @commands.command("pointsRoles")
-    async def points_roles(self, ctx):
+    async def points_Titles(self, ctx):
+        end_time = time.time() + 60
         roles = {
-            "T" : "Low wage worker",
-            "B" : "Peasant",
-            "M" : "Brokie who thinks they are rich",
-            "A" : "Magnate"
+            "T" : "Low egg worker",
+            "L" : "Peasant",
+            "M" : "Egg wizard",
+            "H" : "Egg magnate",
         }
-        await create_embed_with_title(ctx, "Custom roles:", f":poop: **{roles['T']}** income: 50 eggbux \n:farmer: **{roles['B']}** income: 100 eggbux \n:red_car: **{roles['M']}** income: 200 eggbux \n:coin: **{roles['A']}** income: 300 eggbux")
 
+        rolePrices = {
+            "T" : 600,
+            "L" : 800,
+            "M" : 1200,
+            "H" : 1800
+        }
+        message = await create_embed_with_title(ctx, "Custom roles:", f":poop: **{roles['T']}**\nIncome: 50 eggbux. :money_bag: \nPrice: 600 eggbux.\n :farmer: **{roles['L']}** \nIncome: 100 eggbux. :money_bag:\n Price: 800 eggbux. \n:man_mage: **{roles['M']}** \n Income: 1200 eggbux. :money_bag:\n Price: 1500 eggbux. \n:coin: **{roles['H']}** \n Income: 300 eggbux. :money_bag:\n Price: 1800 eggbux. \nReact with ✅ to buy a title.")
+        await message.add_reaction("✅")
+        while True:
+            actual_time = end_time - time.time()
+            if actual_time <= 0:
+                await message.clear_reactions()
+                break
+            check = lambda reaction, user: reaction.emoji == "✅" and reaction.message.id == message.id
+            reaction, user = await self.bot.wait_for("reaction_add", check=check)
+            if reaction.emoji == "✅":
+                if Usuario.read(user.id):
+                    if Usuario.read(user.id)["roles"] == "":
+                        await self.buy_roles(ctx, user, rolePrices["T"], "T", roles["T"])
+                    elif Usuario.read(user.id)["roles"][-1] == "T":
+                        await self.buy_roles(ctx, user, rolePrices["L"], "L", roles["L"])
+                    elif Usuario.read(user.id)["roles"][-1] == "L":
+                        await self.buy_roles(ctx, user, rolePrices["M"], "M", roles["M"])
+                    elif Usuario.read(user.id)["roles"][-1] == "M":
+                        await self.buy_roles(ctx, user, rolePrices["H"], "H", roles["H"])
+                else:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} isn't registered in the database.")
+
+    async def buy_roles(self, ctx, User: discord.Member, roleValue, roleChar, roleName):
+        """Buy roles."""
+        if Usuario.read(User.id)["points"] >= roleValue and roleChar not in Usuario.read(User.id)["roles"]:
+            Usuario.update(User.id, Usuario.read(User.id)["points"] - roleValue, Usuario.read(User.id)["roles"] + roleChar)
+            await create_embed_without_title(ctx, f":white_check_mark: {User.display_name} has bought the role **{roleName}**.")
+        elif Usuario.read(User.id)["points"] < roleValue:
+            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, you don't have enough eggbux to buy the role **{roleName}**.")
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} already has the role **{roleName}**.")
 
     def salary_role(self, User:discord.Member):
         """Returns the salary of a user based on their roles."""
         salarios = {
             "T": 50,
-            "B": 100,
+            "L": 100,
             "M": 200,
-            "A": 300
+            "H": 300
         }
         if Usuario.read(User.id):
             return salarios[Usuario.read(User.id)["roles"] [-1]]
         else:
             return 0
         
+    def get_user_title(self, User: discord.Member):
+        userRoles = {
+            "T" : "Low egg worker",
+            "L" : "Peasant",
+            "M" : "Egg wizard",
+            "H" : "Egg magnate",
+        }
+        if Usuario.read(User.id):
+            if Usuario.read(User.id)["roles"] == "":
+                return "Unemployed"
+            return userRoles[Usuario.read(User.id)["roles"][-1]]
+        
     async def work_periodically(self):
         """Periodically updates the salary of users with roles."""
         while True:
             for guild in self.bot.guilds:
+                await asyncio.sleep(1600)
                 for member in guild.members:
                         user_data = Usuario.read(member.id)
                         if user_data:
                             if user_data["roles"] != "":
                                 Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salary_role(member), Usuario.read(member.id)["roles"])
-                await asyncio.sleep(1600)
+                                print(f"Updated {member.display_name}'s salary.")
 
     @commands.command("salary", aliases=["income"])
     @pricing()
@@ -261,7 +227,7 @@ class TextCommands(commands.Cog):
         user_data = Usuario.read(User.id)
         if user_data:
             if user_data["roles"] != "":
-                await create_embed_without_title(ctx, f":moneybag: {User.display_name} has a salary of {self.salarioCargo(User)} eggbux.")
+                await create_embed_without_title(ctx, f":moneybag: {User.display_name} has the title of **{self.get_user_title(User)}** and earns {self.salary_role(User)} eggbux..")
                 return   
             await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} doesn't have a job.")
         else:
@@ -277,7 +243,7 @@ class TextCommands(commands.Cog):
         if guild_id in hungergames_status:
             await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
             return
-        wait_time = 60
+        wait_time = 10
         if args and args[0].isdigit():
             args = [int(arg) for arg in args] 
             if ctx.guild.owner.id == ctx.author.id:
@@ -291,7 +257,7 @@ class TextCommands(commands.Cog):
         }
         day = 1
         tributes = []
-        min_tributes = 4
+        min_tributes = 2
         end_time = time.time() + wait_time
         messageHg = await create_embed_without_title(ctx, f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
         await messageHg.add_reaction("✅")
@@ -714,8 +680,8 @@ class TextCommands(commands.Cog):
     @pricing()
     async def nuke(self, ctx):
         """Nuke the database."""
-        await Usuario.deleteAll()
-        await create_embed_without_title(ctx, ":radioactive: Database has been nuked.")
+        Usuario.resetAll()
+        await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")
               
 async def setup(bot):
     await bot.add_cog(TextCommands(bot))
