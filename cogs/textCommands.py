@@ -270,9 +270,12 @@ class TextCommands(commands.Cog):
 
     @commands.command(aliases=["hg"])
     @pricing()
-    async def hungergames(self, ctx):
+    async def hungergames(self, ctx, *args : int):
         """Starts a hunger games event."""
-        global hungergames_status     
+        global hungergames_status  
+        wait_time = 10
+        if args:
+            wait_time = args[0] * 60  
         guild_id = ctx.guild.id
         if guild_id in hungergames_status:
             await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
@@ -284,7 +287,6 @@ class TextCommands(commands.Cog):
         }
         day = 1
         tributes = []
-        wait_time = 10
         min_tributes = 4
         end_time = time.time() + wait_time
         for member in ctx.guild.members:

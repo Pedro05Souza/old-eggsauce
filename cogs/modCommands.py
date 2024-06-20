@@ -14,6 +14,7 @@ class ModCommands(commands.Cog):
         load_dotenv()
         self.devs = os.getenv("DEVS").split(",")
         self.bot = bot
+        self.logs = []
 
     @commands.command("addPoints") 
     async def add_points(self, ctx, amount: int, User: discord.Member = None):
@@ -146,7 +147,6 @@ class ModCommands(commands.Cog):
             await create_embed_without_title(ctx, f"{User.display_name} has been reset.")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
-
 
     # Event listeners; these functions are called when the event they are listening for is triggered
 
