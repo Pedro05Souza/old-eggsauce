@@ -277,7 +277,7 @@ class TextCommands(commands.Cog):
         if guild_id in hungergames_status:
             await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
             return
-        wait_time = 60
+        wait_time = 30
         if args and args[0].isdigit():
             args = [int(arg) for arg in args] 
             if ctx.guild.owner.id == ctx.author.id:
@@ -293,30 +293,31 @@ class TextCommands(commands.Cog):
         tributes = []
         min_tributes = 4
         end_time = time.time() + wait_time
-        for member in ctx.guild.members:
-                tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 1, "Killed_by": None})
-        await create_embed_without_title(ctx, f"Type !join to join the hunger games. The game will start in {wait_time} seconds.")
+        messageHg = await create_embed_without_title(ctx, f":hourglass: The hunger games will start in {wait_time} seconds. React with ✅ to join.")
+        await messageHg.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
             if actual_time <= 0:
                 break
             try:
-                message = await asyncio.wait_for(self.bot.wait_for("message", check=lambda message: message.content == "!join"), timeout=actual_time)
-                allowplay = self.check_tribute_play(discord.utils.get(ctx.guild.members, id=message.author.id))
-                if allowplay:
-                    if not any(tribute['tribute'] == message.author for tribute in tributes):
-                        tributes.append({"tribute": message.author, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
-                        await create_embed_without_title(ctx, f":white_check_mark: {message.author.display_name} has joined the hunger games.")
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=actual_time)
+                if reaction.emoji == "✅":
+                    allowplay = self.check_tribute_play(discord.utils.get(ctx.guild.members, id=user.id))
+                    if allowplay:
+                        if not any(tribute['tribute'] == user for tribute in tributes):
+                            tributes.append({"tribute": user, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
+                            await create_embed_without_title(ctx, f":white_check_mark: {user.display_name} has joined the hunger games.")
+                        else:
+                            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} is already in the hunger games.")
                     else:
-                        await create_embed_without_title(ctx, f":no_entry_sign: {message.author.display_name} is already in the hunger games.")
-                else:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {message.author.display_name}, you don't have enough eggbux to join the hunger games.")
+                        await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have enough eggbux to join the hunger games.")
             except asyncio.TimeoutError:
                 break
         if len(tributes) < min_tributes:
             await create_embed_without_title(ctx, f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is {min_tributes}.")
-            Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + 100, Usuario.read(ctx.author.id)["roles"])
             hungergames_status.pop(guild_id)
+            for tribute in tributes:
+                    Usuario.update(tribute['tribute'].id, Usuario.read(tribute['tribute'].id)["points"] + 100, Usuario.read(tribute['tribute'].id)["roles"])
             return
         else:
             await create_embed_without_title(ctx, f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
