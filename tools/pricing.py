@@ -17,6 +17,9 @@ class Prices(Enum):
     cassino = 0
     speak = 0
     checkTitle = 0
+    withdraw = 0
+    balance = 0
+    deposit = 0
     donatePoints = 0
     pointsTitles = 0
     shop = 0
