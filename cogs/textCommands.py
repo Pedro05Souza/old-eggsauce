@@ -270,16 +270,20 @@ class TextCommands(commands.Cog):
 
     @commands.command(aliases=["hg"])
     @pricing()
-    async def hungergames(self, ctx, *args : int):
+    async def hungergames(self, ctx, *args):
         """Starts a hunger games event."""
-        global hungergames_status  
-        wait_time = 10
-        if args:
-            wait_time = args[0] * 60  
+        global hungergames_status
         guild_id = ctx.guild.id
         if guild_id in hungergames_status:
             await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
             return
+        wait_time = 60
+        if args and args[0].isdigit():
+            args = [int(arg) for arg in args] 
+            if ctx.guild.owner.id == ctx.author.id:
+                wait_time = args[0] * 60  
+            else:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have permission to set a custom time for the hunger games. The default time is 60 seconds.")
         hungergames_status[guild_id] = {
         "game_Start": False,
         "dead_tribute": None,
