@@ -48,6 +48,7 @@ class TextCommands(commands.Cog):
             await ctx.send(f"{User.mention} bye bye 🤫🧏‍♂️")
 
     @commands.command()
+    @commands.has_permissions(manage_messages=True)
     @pricing()
     async def purge(self, ctx, amount: int):
         """Deletes a certain amount of messages."""
@@ -58,6 +59,7 @@ class TextCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command()
+    @commands.has_permissions(kick_members=True)
     @pricing()
     async def kick(self, ctx, User: discord.Member):
         """Kicks a user."""
@@ -65,15 +67,11 @@ class TextCommands(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't kick yourself.")
                 await refund(ctx.author, ctx) 
                 return
-        try:
-            await User.kick()
-            await create_embed_without_title(ctx, f"{User.display_name} was kicked.")
-        except discord.errors.Forbidden:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i don't have permission to do that.")
-            await refund(ctx.author, ctx)
-            return
+        await User.kick()
+        await create_embed_without_title(ctx, f"{User.display_name} was kicked.")
      
     @commands.command()
+    @commands.has_permissions(ban_members=True)
     @pricing()
     async def ban(self, ctx, User: discord.Member):
         """Bans a user."""
@@ -81,18 +79,11 @@ class TextCommands(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't ban yourself.")
                 await refund(ctx.author, ctx)
                 return
-        try:
-            await User.ban()
-            await create_embed_without_title(ctx, f"{User.display_name} was banned.")
-        except discord.errors.Forbidden:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i don't have permission to do that.")
-            await refund(ctx.author, ctx)
-            return
-        else:
-            await create_embed_without_title(ctx, f":no_entry_sign: I don't have permission to do that.")
-            await refund(ctx.author, ctx)
+        await User.ban()
+        await create_embed_without_title(ctx, f"{User.display_name} was banned.")
 
     @commands.command("changeNickname")
+    @commands.has_permissions(manage_nicknames=True)
     @pricing()
     async def change_nickname(self, ctx, User: discord.Member, *apelido: str):
         """Changes a user's nickname."""
@@ -110,6 +101,7 @@ class TextCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i don't have permission to do that.")
 
     @commands.command()
+    @commands.has_permissions(ban_members=True)
     @pricing()
     async def pardon(self, ctx, id: str):
         """Unbans a user."""
@@ -682,6 +674,14 @@ class TextCommands(commands.Cog):
         """Nuke the database."""
         Usuario.resetAll()
         await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")
+
+    # Event listeners
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.BotMissingPermissions):
+            await create_embed_without_title(ctx, f":no_entry_sign: I don't have the necessary permissions to do this.")
+            await refund(ctx.author, ctx)
               
 async def setup(bot):
     await bot.add_cog(TextCommands(bot))

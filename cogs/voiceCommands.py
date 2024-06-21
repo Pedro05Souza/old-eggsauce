@@ -19,6 +19,7 @@ class VoipCommands(commands.Cog):
 
     
     @commands.command("momentOfSilence")
+    @commands.bot_has_permissions(mute_members=True)
     @pricing()
     async def moment_of_silence(self, ctx):
         """Mutes all users in the voice channel of the author of the command."""
@@ -32,6 +33,7 @@ class VoipCommands(commands.Cog):
             
 
     @commands.command()
+    @commands.bot_has_permissions(mute_members=True, deafen_members=True)
     @pricing()
     async def god(self, ctx):
         """Makes the user never being able to get muted and deafened."""
@@ -44,6 +46,7 @@ class VoipCommands(commands.Cog):
             await refund(user, ctx)
             
     @commands.command()
+    @commands.bot_has_permissions(manage_channels=True)
     @pricing()
     async def radinho(self, ctx):
         """Sets the voice channel to radio quality."""
@@ -56,6 +59,7 @@ class VoipCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(manage_channels=True)
     @pricing()
     async def explode(self, ctx):
         """Disconnects all users from their voice channels."""
@@ -68,6 +72,7 @@ class VoipCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(mute_members=True)
     @pricing()
     async def mute(self, ctx, User: discord.Member = None):
         """Mutes a user."""
@@ -91,6 +96,7 @@ class VoipCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(mute_members=True)
     @pricing()
     async def unmute(self, ctx, User: discord.Member = None):
         """Unmutes a user."""
@@ -107,6 +113,7 @@ class VoipCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def implode(self, ctx):
         """Disconnects all users from their voice channels."""
@@ -120,6 +127,7 @@ class VoipCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(manage_channels=True)
     @pricing()
     async def tirarRadinho(self, ctx):
         """Removes the radio effect from the voice channel."""
@@ -132,6 +140,7 @@ class VoipCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(deafen_members=True)
     @pricing()
     async def deafen(self, ctx, User: discord.Member=None):
         """Deafens a user."""
@@ -148,6 +157,7 @@ class VoipCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(deafen_members=True)
     @pricing()
     async def undeafen(self, ctx, User: discord.Member = None):
         """Undeafens a user."""
@@ -164,6 +174,7 @@ class VoipCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def disconnect(self, ctx, User: discord.Member):
         """Disconnects a user from their voice channel."""
@@ -175,6 +186,7 @@ class VoipCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def prison(self, ctx, User:discord.Member):
         """Imprisons a user for 60 seconds."""
@@ -204,6 +216,7 @@ class VoipCommands(commands.Cog):
                 await prison_channel.delete()
                 
     @commands.command()
+    @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def fling(self, ctx, User: discord.Member):
         """Throws a user to a random voice channel."""
@@ -223,6 +236,7 @@ class VoipCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command()
+    @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def detonate(self, ctx):
         """Disconnects all users from their voice channels."""
@@ -232,6 +246,7 @@ class VoipCommands(commands.Cog):
         await create_embed_without_title(ctx, f"All users have been disconnected from their voice channels.")
 
     @commands.command("shuffle")
+    @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def shuffle(self, ctx):
         """Throws all users to random voice channels."""
@@ -245,6 +260,7 @@ class VoipCommands(commands.Cog):
         await create_embed_without_title(ctx, f"All users have been thrown to random voice channels.")
     
     @commands.command("emergency")
+    @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def emergency(self, ctx):
         """Throws all users to the voice channel of the author of the command."""
@@ -259,6 +275,7 @@ class VoipCommands(commands.Cog):
         await create_embed_without_title(ctx, f"All users have been thrown to {ctx.author.voice.channel.name}.")
     
     @commands.command("fish")
+    @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def fish(self, ctx, User: discord.Member):
         """Throws a user to the voice channel of the author of the command."""
@@ -282,6 +299,12 @@ class VoipCommands(commands.Cog):
         if member in self.gods and not before.deaf and after.deaf:
             await member.edit(deafen=False)
             print(f"{member.name} was deafened, but was an undeafener and was undeafened")
+    
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.BotMissingPermissions):
+            await create_embed_without_title(ctx, f":no_entry_sign: I don't have the necessary permissions to do this.")
+            await refund(ctx.author, ctx)
         
 
 async def setup(bot):
