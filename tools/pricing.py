@@ -15,7 +15,12 @@ class Prices(Enum):
     points = 0
     leaderboard = 0
     cassino = 0
+    market = 0
+    createFarm = 0
+    sellChicken = 0
     speak = 0
+    farm = 0
+    renameFarm = 0
     checkTitle = 0
     withdraw = 0
     balance = 0
@@ -132,12 +137,6 @@ async def treat_exceptions(ctx, comando):
         except commands.errors.BadArgument:
             await create_embed_without_title(ctx, ":no_entry_sign: Invalid arguments.")
             return False
-        except commands.errors.MissingPermissions:
-            await create_embed_without_title(ctx, ":no_entry_sign: insufficient permissions.")
-            return False
-        except commands.errors.BotMissingPermissions:
-            await create_embed_without_title(ctx, ":no_entry_sign: insufficient permissions.")
-            return False
         except commands.errors.CommandInvokeError:
             await create_embed_without_title(ctx, ":no_entry_sign: An error occurred while executing the command.")
             return False
@@ -166,21 +165,24 @@ def pricing():
     async def predicate(ctx):
         """Check if the user has enough points to use the command."""
         cooldown_period = 3 
+        result = True
         if ToggleDB.read(ctx.guild.id) and not ToggleDB.read(ctx.guild.id)['toggle']:
             if not await command_cooldown(ctx, "points", cooldown_period):
-                return False
+                result = False
             await create_embed_without_title(ctx, ":warning: The points commands are **disabled** in this server.")
-            return False
+            result = False
+            return
         command = ctx.command.name       
         if command in Prices.__members__:
             if not await command_cooldown(ctx, command, cooldown_period):
-                return False
+                result = False
             if verify_points(ctx.author, command):
-                return await treat_exceptions(ctx,command)
+                result = await treat_exceptions(ctx,command)
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: You do not have enough points to use this command.")
-                return False 
+                result = False 
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: Unknown command.")
-            return False
+        ctx.predicate_result = result
+        return result
     return commands.check(predicate)

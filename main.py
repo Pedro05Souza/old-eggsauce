@@ -3,9 +3,9 @@ from discord import Intents
 from dotenv import load_dotenv
 import discord
 import os   
-import asyncio
+import asyncio  
 load_dotenv()   
-TOKEN = os.getenv("DISCORD_TOKEN")
+TOKEN = os.getenv("DISCORD_TOKEN")  
 bot = commands.Bot(command_prefix="!", intents=Intents.all(), case_insensitive=True) # set the command prefix according to your liking.
 
 

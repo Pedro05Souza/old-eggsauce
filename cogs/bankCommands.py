@@ -25,17 +25,18 @@ class BankCommands(commands.Cog):
                     return
                 currentAmount = Bank.read(ctx.author.id)['bank']
                 currentAmount += amount
-                if currentAmount >= 1000:
-                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't have more than 1000 eggbux in the bank.")
+                maxAmount = 5000
+                if currentAmount > maxAmount:
+                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't have more than {maxAmount} eggbux in the bank.")
                 else:
-                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You deposited {amount} eggbux in the bank.")
+                    await create_embed_without_title(ctx, f":dollar: {ctx.author.display_name} You deposited {amount} eggbux in the bank.")
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
-                    Bank.update(ctx.author.id, currentAmount + amount)
+                    Bank.update(ctx.author.id, currentAmount)
             else:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
                 await self.register_bank(ctx.author)
         else:
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have permission to do this.")
 
     @commands.command("withdraw", aliases=["with"])
     @pricing()
@@ -44,7 +45,7 @@ class BankCommands(commands.Cog):
         if Bank.read(ctx.author.id):
             currentAmount = Bank.read(ctx.author.id)['bank']
             if currentAmount >= amount:
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} You withdrew {amount} eggbux from the bank.")
+                await create_embed_without_title(ctx, f":dollar: {ctx.author.display_name} You withdrew {amount} eggbux from the bank.")
                 Bank.update(ctx.author.id, currentAmount - amount)
                 Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
             else:
@@ -53,7 +54,7 @@ class BankCommands(commands.Cog):
             await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
             await self.register_bank(ctx.author)
 
-    @commands.command("balance", aliases=["bal"])
+    @commands.command("balance", aliases=["bal", "bank"])
     @pricing()
     async def balance(self, ctx, User: discord.Member = None):
         if User is None:
@@ -61,7 +62,7 @@ class BankCommands(commands.Cog):
         if Bank.read(User.id):
             await create_embed_without_title(ctx, f":bank: {User.display_name} has {Bank.read(User.id)['bank']} eggbux in the bank.")
         else:
-            await create_embed_without_title(ctx, f"{User.display_name} doesn't have a bank account.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} doesn't have a bank account.")
 
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

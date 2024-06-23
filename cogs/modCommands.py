@@ -1,8 +1,11 @@
+import asyncio
 import os
 import discord
 from discord.ext import commands
 from db.userDB import Usuario
 from db.toggleDB import ToggleDB
+from db.bankDB import Bank
+from tools.pricing import Prices, refund, pricing
 from tools.embed import create_embed_without_title
 from db.channelDB import ChannelDB
 from dotenv import load_dotenv
@@ -123,6 +126,8 @@ class ModCommands(commands.Cog):
     async def reset(self, ctx, User: discord.Member):
         """Reset a user from the database."""
         if str(User.id) in self.devs and Usuario.read(User.id):
+            if Bank.read(User.id):
+                Bank.update(User.id, 0)
             Usuario.update(User.id, 0, "")
             await create_embed_without_title(ctx, f"{User.display_name} has been reset.")
         else:
@@ -136,5 +141,24 @@ class ModCommands(commands.Cog):
             ToggleDB.create(guild.id, True)
         print(f"Joined guild {guild.name}")
 
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild):
+        ToggleDB.delete(guild.id)
+        ChannelDB.delete(guild.id)
+        print(f"Left guild {guild.name}")
+
+    # @commands.Cog.listener()
+    # async def on_command_error(self, ctx, error):
+    #     if ToggleDB.read(ctx.guild.id) and not ToggleDB.read(ctx.guild.id)['toggle']:
+    #         return
+    #     if isinstance(error, commands.CommandError):
+    #         if ctx is not None:
+    #             if hasattr(ctx, "predicate_result") and ctx.predicate_result:
+    #                 enumPricing = Prices.__members__
+    #                 if ctx.command.name in enumPricing:
+    #                     if enumPricing[ctx.command.name].value > 0:
+    #                         await create_embed_without_title(ctx, f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
+    #                         await refund(ctx.author, ctx)
+    #     print(error)
 async def setup(bot):
      await bot.add_cog(ModCommands(bot))

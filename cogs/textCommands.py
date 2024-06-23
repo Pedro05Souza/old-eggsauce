@@ -85,20 +85,16 @@ class TextCommands(commands.Cog):
     @commands.command("changeNickname")
     @commands.has_permissions(manage_nicknames=True)
     @pricing()
-    async def change_nickname(self, ctx, User: discord.Member, *apelido: str):
+    async def change_nickname(self, ctx, User: discord.Member, *nickname: str):
         """Changes a user's nickname."""
-        if User.top_role.position <= ctx.guild.me.top_role.position:
-            if User.id == ctx.me.id:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i can't change my own nickname.")
-                await refund(ctx.author, ctx)
-                return
-            else:
-                apelido = " ".join(apelido)
-                await User.edit(nick=apelido)
-                await create_embed_without_title(ctx, f"{User.display_name}'s nickname has been changed to {apelido}.")  
-        else:
+        if User.id == ctx.me.id:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i can't change my own nickname.")
             await refund(ctx.author, ctx)
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i don't have permission to do that.")
+            return
+        else:
+            nickname = " ".join(nickname)
+            await User.edit(nick=nickname)
+            await create_embed_without_title(ctx, f"{User.display_name}'s nickname has been changed to {nickname}.")  
 
     @commands.command()
     @commands.has_permissions(ban_members=True)
@@ -112,27 +108,16 @@ class TextCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} is not banned.")
             await refund(ctx.author, ctx)
-    
-    @commands.command("checkTitle", aliases=["title"])
-    @pricing()
-    async def check_title(self, ctx, User: discord.Member = None):
-        """Check the title of a user."""
-        if User is None:
-            User = ctx.author
-        if Usuario.read(User.id):
-            await create_embed_without_title(ctx, f"{User.display_name} has the title of **{self.get_user_title(User)}**.")
-        else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} isn't registered in the database.")
 
-    @commands.command("pointsTitles")
+    @commands.command("pointsTitles", aliases=["titles"])
     @pricing()
     async def points_Titles(self, ctx):
         end_time = time.time() + 60
         roles = {
-            "T" : "Low egg worker",
-            "L" : "Peasant",
+            "T" : "Egg Novice",
+            "L" : "Egg Apprentice",
             "M" : "Egg wizard",
-            "H" : "Egg magnate",
+            "H" : "Egg King",
         }
 
         rolePrices = {
@@ -141,7 +126,7 @@ class TextCommands(commands.Cog):
             "M" : 1200,
             "H" : 1800
         }
-        message = await create_embed_with_title(ctx, "Custom roles:", f":poop: **{roles['T']}**\nIncome: 50 eggbux. :money_bag: \nPrice: 600 eggbux.\n :farmer: **{roles['L']}** \nIncome: 100 eggbux. :money_bag:\n Price: 800 eggbux. \n:man_mage: **{roles['M']}** \n Income: 1200 eggbux. :money_bag:\n Price: 1500 eggbux. \n:coin: **{roles['H']}** \n Income: 300 eggbux. :money_bag:\n Price: 1800 eggbux. \nReact with ✅ to buy a title.")
+        message = await create_embed_with_title(ctx, "Custom Titles:", f":poop: **{roles['T']}**\nIncome: 50 eggbux. :money_bag: \nPrice: 600 eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 100 eggbux. :money_bag:\n Price: 800 eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 200 eggbux. :money_bag:\n Price: 1200 eggbux. \n\n:crown: **{roles['H']}** \n Income: 300 eggbux. :money_bag:\n Price: 1800 eggbux. \nReact with ✅ to buy a title.")
         await message.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
@@ -188,10 +173,10 @@ class TextCommands(commands.Cog):
         
     def get_user_title(self, User: discord.Member):
         userRoles = {
-            "T" : "Low egg worker",
-            "L" : "Peasant",
+            "T" : "Egg Novice",
+            "L" : "Egg Apprentice",
             "M" : "Egg wizard",
-            "H" : "Egg magnate",
+            "H" : "Egg King",
         }
         if Usuario.read(User.id):
             if Usuario.read(User.id)["roles"] == "":
@@ -210,7 +195,7 @@ class TextCommands(commands.Cog):
                                 Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salary_role(member), Usuario.read(member.id)["roles"])
                                 print(f"Updated {member.display_name}'s salary.")
 
-    @commands.command("salary", aliases=["income"])
+    @commands.command("title", aliases=["income", "salary"])
     @pricing()
     async def salary(self, ctx, User: discord.Member = None):
         """Check the salary of a user."""
@@ -221,7 +206,7 @@ class TextCommands(commands.Cog):
             if user_data["roles"] != "":
                 await create_embed_without_title(ctx, f":moneybag: {User.display_name} has the title of **{self.get_user_title(User)}** and earns {self.salary_role(User)} eggbux..")
                 return   
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} doesn't have a job.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} doesn't have a title.")
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} isn't registered in the database.")
             await refund(ctx.author, ctx)
@@ -252,6 +237,8 @@ class TextCommands(commands.Cog):
         min_tributes = 2
         end_time = time.time() + wait_time
         messageHg = await create_embed_without_title(ctx, f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
+        for member in ctx.guild.members:
+            tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
         await messageHg.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
@@ -311,8 +298,8 @@ class TextCommands(commands.Cog):
 
     def check_tribute_play(self, tribute):
         """Check if the tribute has enough points to play."""
-        if Usuario.read(tribute.id) and Usuario.read(tribute.id)["points"] >= 100:
-            Usuario.update(tribute.id, Usuario.read(tribute.id)["points"] - 100, Usuario.read(tribute.id)["roles"])
+        if Usuario.read(tribute.id) and Usuario.read(tribute.id)["points"] >= 50:
+            Usuario.update(tribute.id, Usuario.read(tribute.id)["points"] - 50, Usuario.read(tribute.id)["roles"])
             return True
         else:
             return False
@@ -674,14 +661,6 @@ class TextCommands(commands.Cog):
         """Nuke the database."""
         Usuario.resetAll()
         await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")
-
-    # Event listeners
-
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.BotMissingPermissions):
-            await create_embed_without_title(ctx, f":no_entry_sign: I don't have the necessary permissions to do this.")
-            await refund(ctx.author, ctx)
               
 async def setup(bot):
     await bot.add_cog(TextCommands(bot))

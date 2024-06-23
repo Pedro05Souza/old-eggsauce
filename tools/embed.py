@@ -1,18 +1,22 @@
 
 import discord
-from discord import Message
-from db.userDB import Usuario
 
-async def create_embed_without_title(ctx, description):
+async def create_embed_without_title(ctx, description, **kwargs):
     """Create an embed without a title."""
     embed = discord.Embed(description=description)
-    message = await ctx.send(embed=embed)
+    if isinstance(ctx, discord.Interaction):
+        message = await ctx.response.send_message(embed=embed, **kwargs)
+    else:
+        message = await ctx.send(embed=embed, **kwargs)
     return message
 
-async def create_embed_with_title(ctx, title, description):
+async def create_embed_with_title(ctx, title, description, **kwargs):
     """Create an embed with a title."""
     embed = discord.Embed(title=title, description=description)
-    message = await ctx.send(embed=embed)
+    if isinstance(ctx, discord.Interaction):
+        message = await ctx.response.send_message(embed=embed, **kwargs)
+    else:
+        message = await ctx.send(embed=embed)
     return message
 
             

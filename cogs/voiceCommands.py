@@ -300,11 +300,6 @@ class VoipCommands(commands.Cog):
             await member.edit(deafen=False)
             print(f"{member.name} was deafened, but was an undeafener and was undeafened")
     
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.BotMissingPermissions):
-            await create_embed_without_title(ctx, f":no_entry_sign: I don't have the necessary permissions to do this.")
-            await refund(ctx.author, ctx)
         
 
 async def setup(bot):
