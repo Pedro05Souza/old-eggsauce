@@ -5,7 +5,8 @@ from db.farmDB import Farm
 from time import time
 from tools.sharedEnums import ChickenRarity, ChickenUpkeep
 from db.userDB import Usuario
-from tools.ChickenSelection import ChickenSelectView
+from tools.chickenSelection import ChickenSelectView
+from tools.chickenInfo import rollRates, defineRarityEmojis
 from random import uniform, randint
 import discord
 from tools.pricing import pricing
@@ -52,20 +53,6 @@ class ChickenCommands(commands.Cog):
   
     def roll_rates_sum(self):
         """Roll the sum of the rates of the chicken rarities"""
-        rollRates = {
-            "COMMON": 4500,
-            "UNCOMMON": 3000,
-            "RARE": 1300,
-           "EXCEPTIONAL": 500,
-            "EPIC": 350,
-            "ULTIMATE": 100,
-            "COSMIC": 75,
-            "DIVINE": 25,
-            "INFINITY": 9,
-            "OMINOUS": 1,
-            "CELESTIAL": 0.4,
-            "IMMORTAL": 0.1
-        }
         return sum(rollRates.values()), rollRates
     
     def generate_chickens(self, rollRatesSum, rollRates, quant):
@@ -87,23 +74,6 @@ class ChickenCommands(commands.Cog):
         return generated_chickens
     
     def get_rarity_emoji(self, rarity):
-        defineRarityEmojis = {
-            "COMMON": ":brown_circle:",
-            "UNCOMMON": ":green_circle:",
-            "RARE": ":blue_circle:",
-            "EXCEPTIONAL": ":purple_circle:",
-            "EPIC": ":orange_circle:",
-            "LEGENDARY": ":red_circle:",
-            "MYTHICAL": ":yellow_circle:",
-            "ULTIMATE": ":black_circle:",
-            "COSMIC": ":white_circle:",
-            "DIVINE": ":sparkles:",
-            "INFINITY": ":milky_way:",
-            "OMINOUS": ":boom:",
-            "CELESTIAL": ":star2:",
-            "IMMORTAL": ":comet:"
-        }
-
         return defineRarityEmojis[rarity.split()[0]]
     
     async def reset_periodically(self):
@@ -198,6 +168,9 @@ class ChickenCommands(commands.Cog):
             farm_data = Farm.read(ctx.author.id)
             if not farm_data['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+                return
+            if User.id == ctx.author.id:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't trade with yourself.")
                 return
             trade_cooldown = time() + 20
             await create_embed_without_title(ctx, f":chicken: {ctx.author.display_name} has sent a trade request to {User.display_name}. You have 20 seconds to type **accept** or **decline**.")
@@ -319,15 +292,13 @@ class ChickenCommands(commands.Cog):
         user_data = Farm.read(User.id)
         authorEmbed = self.get_usr_farm(ctx.author)
         userEmbed = self.get_usr_farm(User)
-        trade_data = [authorEmbed, userEmbed]
+        trade_data = [author_data['chickens'], user_data['chickens']]
         members_data = [ctx.author.id, User.id]
-        chickens_data = {
-            "author": author_data['chickens'],
-            "user": user_data['chickens']
-        }
-        view = ChickenSelectView(chickens=chickens_data, author_id=members_data, action="T", message=trade_data, chicken_emoji=self.get_rarity_emoji)
-        for embed in trade_data:
-            await ctx.send(embed=embed, view=view)
+        embeds = [authorEmbed, userEmbed]
+        view_author = ChickenSelectView(chickens=trade_data, author_id=members_data, action="T", message=embeds, chicken_emoji=self.get_rarity_emoji, role="author")
+        view_user = ChickenSelectView(chickens=trade_data, author_id=members_data, action="T", message=embeds, chicken_emoji=self.get_rarity_emoji, role="user")
+        await ctx.send(embed=authorEmbed, view=view_author)
+        await ctx.send(embed=userEmbed, view=view_user)
 
     def get_usr_farm(self, User: discord.Member):
         """Get the user's farm"""
@@ -341,21 +312,7 @@ class ChickenCommands(commands.Cog):
     @commands.command("chickenRarities", aliases=["cr"])
     async def check_chicken_rarities(self, ctx):
         """Check the rarities of the chickens"""
-        rollRates = {
-            "COMMON": 4500,
-            "UNCOMMON": 3000,
-            "RARE": 1300,
-           "EXCEPTIONAL": 500,
-            "EPIC": 350,
-            "ULTIMATE": 100,
-            "COSMIC": 75,
-            "DIVINE": 25,
-            "INFINITY": 9,
-            "OMINOUS": 1,
-            "CELESTIAL": 0.4,
-            "IMMORTAL": 0.1
-        }
-        rarity_info = "\n".join([f"{self.get_rarity_emoji(rarity)} **{rarity}**: {rate/100}%" for rarity, rate in rollRates.items()])
+        rarity_info = "\n".join([f"{self.get_rarity_emoji(rarity)} **{rarity}**: {round(rate/100, 4)}%" for rarity, rate in rollRates.items()])
         await create_embed_with_title(ctx, "Chicken Rarities:", rarity_info)
 
     async def devolve_chicken(self, chicken):
