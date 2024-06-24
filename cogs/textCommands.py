@@ -27,7 +27,6 @@ class TextCommands(commands.Cog):
     async def on_ready(self):
         asyncio.create_task(self.work_periodically())
 
-
     @commands.command("pointsStatus")
     async def points_status(self, ctx):
         """Check if the points commands are enabled or disabled in the server."""
@@ -186,14 +185,10 @@ class TextCommands(commands.Cog):
     async def work_periodically(self):
         """Periodically updates the salary of users with roles."""
         while True:
-            for guild in self.bot.guilds:
-                await asyncio.sleep(1600)
-                for member in guild.members:
-                        user_data = Usuario.read(member.id)
-                        if user_data:
-                            if user_data["roles"] != "":
-                                Usuario.update(member.id, Usuario.read(member.id)["points"] + self.salary_role(member), Usuario.read(member.id)["roles"])
-                                print(f"Updated {member.display_name}'s salary.")
+            await asyncio.sleep(1600)
+            for user in Usuario.read_all_members_with_role():
+                Usuario.update(user["user_id"], user["points"] + self.salary_role(discord.utils.get(self.bot.get_all_members(), id=user["user_id"])), user["roles"])
+                print(f"Updated {user['user_id']} salary.")
 
     @commands.command("title", aliases=["income", "salary"])
     @pricing()
@@ -234,7 +229,7 @@ class TextCommands(commands.Cog):
         }
         day = 1
         tributes = []
-        min_tributes = 2
+        min_tributes = 4
         end_time = time.time() + wait_time
         messageHg = await create_embed_without_title(ctx, f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
         for member in ctx.guild.members:

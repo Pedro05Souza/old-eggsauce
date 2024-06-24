@@ -82,6 +82,16 @@ class Usuario:
         except Exception as e:
             print("Error encountered while deleting users.", e)
             return None
+        
+    @staticmethod
+    def read_all_members_with_role():
+        """Read all users from the database."""
+        try:
+            users = users_collection.find({"roles": {"$ne": ""}})
+            return users
+        except Exception as e:
+            print("Error encountered while reading users.", e)
+            return None
     
     @staticmethod
     def updateAll(role : str):

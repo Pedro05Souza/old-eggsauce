@@ -15,6 +15,7 @@ class Prices(Enum):
     points = 0
     leaderboard = 0
     cassino = 0
+    title = 0
     market = 0
     createFarm = 0
     sellChicken = 0
@@ -30,7 +31,11 @@ class Prices(Enum):
     shop = 0
     salary = 0
     hungergames = 0
+    tradeChicken = 0
+    renameChicken = 0
     balls = 50
+    feedChicken = 0
+    feedAllChickens = 0
     love = 75
     mog = 100
     mute = 150

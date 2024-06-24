@@ -2,42 +2,31 @@ import asyncio
 from enum import Enum
 from discord.ext import commands
 from db.farmDB import Farm
+from time import time
+from tools.sharedEnums import ChickenRarity, ChickenUpkeep
 from db.userDB import Usuario
 from tools.ChickenSelection import ChickenSelectView
-from random import randint
+from random import uniform, randint
 import discord
 from tools.pricing import pricing
 from tools.embed import create_embed_without_title, create_embed_with_title
 roll_limit = {}
-class ChickenRarity(Enum):
-        COMMON = 1
-        UNCOMMON = 2
-        RARE = 3
-        EXCEPTIONAL = 4
-        EPIC = 5
-        LEGENDARY = 6
-        MYTHICAL = 7
-        ULTIMATE = 8
-        COSMIC = 9
-        DIVINE = 10
-        INFINITY = 14
-        OMINOUS = 20
 
 class ChickenCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
 
-
     @commands.command("createFarm", aliases=["cf"])
     @pricing()
     async def create_farm(self, ctx):
         """Farm some eggs"""
-        if Farm.read(ctx.author.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You already have a farm.")
         if Usuario.read(ctx.author.id):
-            Farm.create(ctx.author.id, ctx)
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} You have created a farm.")
+            if Farm.read(ctx.author.id):
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You already have a farm.")
+            else:
+                Farm.create(ctx.author.id, ctx)
+                await create_embed_without_title(ctx, f"{ctx.author.display_name} You have created a farm.")
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You are not registered in the database.")
 
@@ -51,7 +40,7 @@ class ChickenCommands(commands.Cog):
                 "chickens": []
             }
 
-        if roll_limit[ctx.author.id]['limit'] >= 10:
+        if roll_limit[ctx.author.id]['limit'] >= 20:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You have reached the limit of chickens you can buy today.")
             return
         roll_limit[ctx.author.id]['limit'] += 1
@@ -64,16 +53,18 @@ class ChickenCommands(commands.Cog):
     def roll_rates_sum(self):
         """Roll the sum of the rates of the chicken rarities"""
         rollRates = {
-            "COMMON": 5000,
+            "COMMON": 4500,
             "UNCOMMON": 3000,
-            "RARE": 1500,
-           "EXCEPTIONAL": 200,
-            "EPIC": 150,
+            "RARE": 1300,
+           "EXCEPTIONAL": 500,
+            "EPIC": 350,
             "ULTIMATE": 100,
-            "COSMIC": 25,
-            "DIVINE": 15,
+            "COSMIC": 75,
+            "DIVINE": 25,
             "INFINITY": 9,
-            "OMINOUS": 1
+            "OMINOUS": 1,
+            "CELESTIAL": 0.4,
+            "IMMORTAL": 0.1
         }
         return sum(rollRates.values()), rollRates
     
@@ -82,7 +73,8 @@ class ChickenCommands(commands.Cog):
         default_value = 175
         generated_chickens = []
         for _ in range(quant):
-            randomRoll = randint(1, rollRatesSum)
+            randomRoll = uniform(0, rollRatesSum)
+            print(randomRoll)
             for rarity, rate in rollRates.items():
                 if randomRoll <= rate:
                     generated_chickens.append({
@@ -107,7 +99,9 @@ class ChickenCommands(commands.Cog):
             "COSMIC": ":white_circle:",
             "DIVINE": ":sparkles:",
             "INFINITY": ":milky_way:",
-            "Ominous": ":boom:"
+            "OMINOUS": ":boom:",
+            "CELESTIAL": ":star2:",
+            "IMMORTAL": ":comet:"
         }
 
         return defineRarityEmojis[rarity.split()[0]]
@@ -126,16 +120,11 @@ class ChickenCommands(commands.Cog):
         if User is None:
             User = ctx.author
         if Farm.read(User.id):
-            farm_data = Farm.read(User.id)
-            showFarm = farm_data['farm_name']
-            if "_" in showFarm:
-                showFarm = showFarm.replace("_", " ")
-            await create_embed_with_title(ctx, f"{showFarm}\n", "\n".join([f"{self.get_rarity_emoji(chicken['Name'])}  **{index + 1}.** {chicken['Name']}" for index, chicken in enumerate(farm_data['chickens'])]))
+            await ctx.send(embed=self.get_usr_farm(User))
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, doesn't have a farm.")
 
-
-    @commands.command("sellChicken", aliases=["sellc"])
+    @commands.command("sellChicken", aliases=["sc"])
     @pricing()
     async def sell_chicken(self, ctx):
         """Deletes a chicken from the farm"""
@@ -144,36 +133,288 @@ class ChickenCommands(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
                 return
             farm_data = Farm.read(ctx.author.id)
-            message = discord.Embed(title=f":chicken: {farm_data['farm_name']}", description="\n".join([f"{self.get_rarity_emoji(chicken['Name'])} **{index + 1}.** {chicken['Name']}" for index, chicken in enumerate(farm_data['chickens'])]))
+            message = self.get_usr_farm(ctx.author)
             view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author_id=ctx.author.id, action="D", chicken_emoji=self.get_rarity_emoji)
             await ctx.send(embed=message,view=view)
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You do not have a farm.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you do not have a farm.")
 
     @commands.command("renameFarm", aliases=["rf"])
     @pricing()
-    async def rename_farm(self, ctx, *nickname: str):
+    async def rename_farm(self, ctx, nickname):
         """Rename the farm"""
         if Farm.read(ctx.author.id):
             farm_data = Farm.read(ctx.author.id)
-            nickname = " ".join(nickname)
             if len(nickname) > 20:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} The farm name must have a maximum of 20 characters.")
                 return
             farm_data['Name'] = nickname
-            Farm.update(ctx.author.id, nickname, farm_data['chickens'], farm_data['eggs'], farm_data['eggs_generated'])
+            Farm.update(ctx.author.id, nickname, farm_data['chickens'], farm_data['eggs_generated'])
             await create_embed_without_title(ctx, f"{ctx.author.display_name} Your farm has been renamed to {nickname}.")
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You do not have a farm.")
 
+    @commands.command("showUpkeep", aliases=["su"])
+    async def show_chicken_upkeep(self, ctx):
+        """Show the upkeep of the chickens"""
+        upkeep_info = "\n".join([f"{self.get_rarity_emoji(rarity)} **{rarity}**: {ChickenUpkeep[rarity].value}x" for rarity in ChickenRarity.__members__])
+        await create_embed_with_title(ctx, "Chicken Upkeep multiplier per rarity:", upkeep_info)
+
     @commands.command("renameChicken", aliases=["rc"])
-    async def rename_chicken(self, ctx, *nickname: str):
+    @pricing()
+    async def rename_chicken(self, ctx, index: int, nickname):
         """Rename a chicken in the farm"""
-        pass
+        index -= 1
+        if Farm.read(ctx.author.id):
+            farm_data = Farm.read(ctx.author.id)
+            if not farm_data['chickens']:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+                    return
+            if len(nickname) > 10:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken name must have a maximum of 10 characters.")
+                    return
+            if index > len(farm_data['chickens']) or index < 0:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                    return
+            check_nickname = nickname.upper()
+            if check_nickname in ChickenRarity.__members__:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't rename a chicken with a rarity name.")
+            chicken_arr = farm_data['chickens']
+            for i, chicken in enumerate(chicken_arr):
+                if index == i:
+                    chicken_arr[i]['Name'] = chicken['Name'].replace(chicken['Name'].split()[1], nickname)
+                    break
+            farm_data['chickens'] = chicken_arr
+            Farm.update(ctx.author.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
+            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, the chicken has been renamed to {nickname}.")
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+
+    @commands.command("tradeChicken", aliases=["trade"])
+    @pricing()
+    async def trade_chicken(self, ctx, User: discord.Member):
+        """Trade a chicken(s) with another user"""
+        if Farm.read(ctx.author.id) and Farm.read(User.id):
+            farm_data = Farm.read(ctx.author.id)
+            if not farm_data['chickens']:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+                return
+            trade_cooldown = time() + 20
+            await create_embed_without_title(ctx, f":chicken: {ctx.author.display_name} has sent a trade request to {User.display_name}. You have 20 seconds to type **accept** or **decline**.")
+            while True:
+                if trade_cooldown - time() <= 0:
+                    break
+                try:
+                    message = await self.bot.wait_for("message", check=lambda message: message.author == User, timeout=20)
+                    if message.content.lower() == "accept":
+                        await self.trade_chickens(ctx, User)
+                        return
+                    elif message.content.lower() == "decline":
+                        await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} has declined the trade request.")
+                        return
+                except asyncio.TimeoutError:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} has not responded to the trade request.")
+                    return
+                
+    @commands.command("feedChicken", aliases=["fc"])
+    @pricing()
+    async def feed_chicken(self, ctx, index: int):
+        """Feed a chicken"""
+        index -= 1
+        if Usuario.read(ctx.author.id):
+            if Farm.read(ctx.author.id):
+                baseUpkeep = 1
+                farm_data = Farm.read(ctx.author.id)
+                if not farm_data['chickens']:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+                    return
+                if index > len(farm_data['chickens']) or index < 0:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                    return
+                baseUpkeep = baseUpkeep * ChickenUpkeep[farm_data['chickens'][index]['Name'].split()[0]].value
+                chicken_arr = farm_data['chickens']
+                if Usuario.read(ctx.author.id)['points'] > baseUpkeep:
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)['points'] - baseUpkeep, Usuario.read(ctx.author.id)['roles'])
+                    for i, chicken in enumerate(chicken_arr):
+                        if index == i:
+                            if chicken['Happiness'] == 100:
+                                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken is already at maximum happiness.")
+                                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)['points'] + baseUpkeep, Usuario.read(ctx.author.id)['roles'])
+                                return
+                            generated_happines = randint(20, 60)
+                            cHappiness = chicken['Happiness'] + generated_happines
+                            if cHappiness > 100:
+                                cHappiness = 100
+                            chicken_arr[i]['Happiness'] = cHappiness
+                            break
+                    farm_data['chickens'] = chicken_arr
+                    Farm.update(ctx.author.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
+                    await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, the chicken has been fed and its happiness is now **{cHappiness}%**. The upkeep cost was **{baseUpkeep}** :money_with_wings:.")
+            else:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you are not registered in the database.")
+
+    @commands.command("farmProfit", aliases=["fp"])
+    async def farm_profit(self, ctx, User: discord.Member = None):
+        """Check the farm profit"""
+        if User is None:
+            User = ctx.author
+        if Farm.read(User.id):
+            farm_data = Farm.read(User.id)
+            totalProfit = 0
+            totalLoss = 0
+            if len(farm_data['chickens']) == 0:
+                await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, you don't have any chickens.")
+                return
+            for chicken in farm_data['chickens']:
+                totalProfit += (chicken['Egg_value'] * chicken['Happiness']) // 100
+                totalLoss += chicken['Upkeep_multiplier']
+            result = totalProfit - totalLoss
+            if result > 0:
+                await create_embed_without_title(ctx, f":white_check_mark: {User.display_name}, your farm is expected to generate a profit of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Profit: **{totalProfit}**")
+            elif result < 0:
+                await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, your farm is expected to generate a loss of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Profit: **{totalProfit}**")
+            else:
+                await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, your farm is expected to generate neither profit nor loss.")
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, you don't have a farm.")
+
+    @commands.command("feedAllChickens", aliases=["fac"])
+    @pricing()
+    async def feed_all_chickens(self, ctx):
+        """Feed all the chickens in the user's inventory"""
+        if Farm.read(ctx.author.id):
+            baseUpkeep = 1
+            farm_data = Farm.read(ctx.author.id)
+            if not farm_data['chickens']:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+                return
+            totalUpkeep = 0
+            for chiken in farm_data['chickens']:
+                baseUpkeep = baseUpkeep * ChickenUpkeep[chiken['Name'].split()[0]].value
+                totalUpkeep += baseUpkeep
+            if Usuario.read(ctx.author.id)['points'] > totalUpkeep:
+                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)['points'] - totalUpkeep, Usuario.read(ctx.author.id)['roles'])
+                for chicken in farm_data['chickens']:
+                    if all(chicken['Happiness'] == 100 for chicken in farm_data['chickens']):
+                        await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, all the chickens are already at maximum happiness.")
+                        Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)['points'] + totalUpkeep, Usuario.read(ctx.author.id)['roles'])
+                        return
+                    if chicken['Happiness'] == 100:
+                        continue
+                    generated_happines = randint(20, 60)
+                    cHappiness = chicken['Happiness'] + generated_happines
+                    if cHappiness > 100:
+                        cHappiness = 100
+                    chicken['Happiness'] = cHappiness
+                Farm.update(ctx.author.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
+                await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, all the chickens have been fed. The upkeep cost was **{totalUpkeep}** :money_with_wings:.")
+            else:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to feed all the chickens.")
+
+    async def trade_chickens(self, ctx, User: discord.Member):
+        """Trade the chickens"""
+        author_data = Farm.read(ctx.author.id)
+        user_data = Farm.read(User.id)
+        authorEmbed = self.get_usr_farm(ctx.author)
+        userEmbed = self.get_usr_farm(User)
+        trade_data = [authorEmbed, userEmbed]
+        members_data = [ctx.author.id, User.id]
+        chickens_data = {
+            "author": author_data['chickens'],
+            "user": user_data['chickens']
+        }
+        view = ChickenSelectView(chickens=chickens_data, author_id=members_data, action="T", message=trade_data, chicken_emoji=self.get_rarity_emoji)
+        for embed in trade_data:
+            await ctx.send(embed=embed, view=view)
+
+    def get_usr_farm(self, User: discord.Member):
+        """Get the user's farm"""
+        if Farm.read(User.id):
+            user_data = Farm.read(User.id)
+            msg = discord.Embed(title=f":chicken: {user_data['farm_name']}\n:egg: **Eggs generated**: {user_data['eggs_generated']}", description="\n".join([f"{self.get_rarity_emoji(chicken['Name'])}  **{index + 1}.** **{chicken['Name']}** \n:partying_face: Happiness: **{chicken['Happiness']}%**" for index, chicken in enumerate(user_data['chickens'])]))
+            return msg
+        else:
+            return None
+
+    @commands.command("chickenRarities", aliases=["cr"])
+    async def check_chicken_rarities(self, ctx):
+        """Check the rarities of the chickens"""
+        rollRates = {
+            "COMMON": 4500,
+            "UNCOMMON": 3000,
+            "RARE": 1300,
+           "EXCEPTIONAL": 500,
+            "EPIC": 350,
+            "ULTIMATE": 100,
+            "COSMIC": 75,
+            "DIVINE": 25,
+            "INFINITY": 9,
+            "OMINOUS": 1,
+            "CELESTIAL": 0.4,
+            "IMMORTAL": 0.1
+        }
+        rarity_info = "\n".join([f"{self.get_rarity_emoji(rarity)} **{rarity}**: {rate/100}%" for rarity, rate in rollRates.items()])
+        await create_embed_with_title(ctx, "Chicken Rarities:", rarity_info)
+
+    async def devolve_chicken(self, chicken):
+        """Devolve a chicken if its happiness is 0"""
+        devolveChance = randint(1, 3)
+        aux = chicken['Name'].split()[0]
+        aux2 = chicken['Name'].split()[1]
+        if aux in ChickenRarity.__members__ and aux != 'COMMON':
+            if devolveChance == 1 and chicken['Happiness'] <= 0:
+                rarity_list = list(ChickenRarity)
+                index = rarity_list.index(ChickenRarity[aux])
+                devolded_rarity = rarity_list[index - 1].name
+                chicken['Name'] = f"{rarity_list[index - 1].name} {aux2}"
+                chicken['Happiness'] = 100
+                chicken['Egg_value'] = ChickenRarity[devolded_rarity].value
+                chicken['Price'] = f"{175 * ChickenRarity[devolded_rarity].value} eggbux."
+                chicken['Upkeep_multiplier'] = ChickenUpkeep[devolded_rarity].value
+                return
+        elif aux == 'COMMON' and chicken['Happiness'] <= 0 and devolveChance == 1:
+            chicken['Name'] = f"DEAD {aux2}"
+            chicken['Happiness'] = 0
+            chicken['Egg_value'] = 0
+            chicken['Price'] = "0 eggbux."
+            chicken['Upkeep_multiplier'] = 0
+            return
+                
+    async def drop_eggs(self):
+        """Drop eggs periodically"""
+        plrDict = {}
+        for player in Farm.readAll():
+            if len(player['chickens']) > 0:
+                player_id = player['user_id']
+                plrDict[player_id] = {
+                    "chicken_list" : player['chickens']
+                }
+        totalEggs = 0
+        for chicken in plrDict[player_id]['chicken_list']:
+            await self.devolve_chicken(chicken)
+            totalEggs += (chicken['Egg_value'] * chicken['Happiness']) // 100
+            if chicken['Happiness'] > 0:
+                chicken['Happiness'] -= randint(0, 10)
+            if chicken['Happiness'] < 0:
+                chicken['Happiness'] = 0
+        Farm.update(player_id, player['farm_name'], plrDict[player_id]['chicken_list'], player['eggs_generated'] + totalEggs)
+        if totalEggs > 0:
+            Usuario.update(player_id, Usuario.read(player_id)['points'] + totalEggs, Usuario.read(player_id)['roles'])
+
+
+    async def make_eggs_periodically(self):
+        """Make eggs periodically"""
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            await asyncio.sleep(3600)
+            await self.drop_eggs()
     
     @commands.Cog.listener()
     async def on_ready(self):
         self.bot.loop.create_task(self.reset_periodically())
+        self.bot.loop.create_task(self.make_eggs_periodically())
 
 async def setup(bot):
     await bot.add_cog(ChickenCommands(bot))

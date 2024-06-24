@@ -1,7 +1,9 @@
 from discord import SelectOption, ui
 from db.userDB import Usuario
 import discord
+from random import randint
 from db.farmDB import Farm
+from tools.sharedEnums import ChickenRarity, ChickenUpkeep, ChickenMultiplier
 
 class ChickenSelectView(ui.View):
     """View for selecting chickens from the market or farm to buy or delete them."""
@@ -11,6 +13,9 @@ class ChickenSelectView(ui.View):
             menu = ChickenMarketMenu(chickens, author_id, message, chicken_emoji)
         elif action == "D":
             menu = ChickenDeleteMenu(chickens, author_id, message, chicken_emoji)
+        elif action == "T":
+            menu = ChickenTradeMenu(chickens, author_id, message, chicken_emoji)
+
         self.add_item(menu)
 
 class ChickenMarketMenu(ui.Select):
@@ -29,7 +34,7 @@ class ChickenMarketMenu(ui.Select):
     async def callback(self, interaction):
         """Callback for the chicken market menu"""
         if interaction.user.id != self.author_id:
-            await interaction.response.send_message("You can't interact with this menu.", ephemeral=True)
+            await interaction.response.send_message("You can't steal chickens from other players.", ephemeral=True)
             return
         index = self.values[0]
         chicken_selected = self.chickens[int(index)]
@@ -48,8 +53,12 @@ class ChickenMarketMenu(ui.Select):
             await interaction.response.send_message("This chicken has already been bought.", ephemeral=True)
             return
         farm_data = Farm.read(interaction.user.id)
+        chicken_selected['Happiness'] = randint(60, 100)
+        chicken_selected['Egg_value'] = ChickenMultiplier[chicken_selected['Name'].split(" ")[0]].value
+        chicken_selected['Eggs_generated'] = 0
+        chicken_selected['Upkeep_multiplier'] = ChickenUpkeep[chicken_selected['Name'].split(" ")[0]].value
         farm_data['chickens'].append(chicken_selected)
-        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs'], farm_data['eggs_generated'])
+        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
         Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] - int(arr[1]), Usuario.read(interaction.user.id)["roles"])
         chicken_selected['Bought'] = True
         embed = discord.Embed(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: {chicken_selected['Name']} Price: {chicken_selected['Price']} :money_with_wings:")
@@ -86,10 +95,11 @@ class ChickenDeleteMenu(ui.Select):
         index = self.values[0]
         chicken_selected = self.chickens[int(index)]
         arr = chicken_selected['Price'].split(" ")
+        print(arr)
         arr[1] = int(arr[1])
         farm_data = Farm.read(interaction.user.id)
         farm_data['chickens'].remove(chicken_selected)
-        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs'], farm_data['eggs_generated'])
+        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
         Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] + (arr[1]//2), Usuario.read(interaction.user.id)["roles"])
         chicken_selected['Deleted'] = chicken_selected.get('Deleted', True)
         embed = discord.Embed(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: {chicken_selected['Name']} Price: {arr[1]//2} :money_with_wings:")
@@ -100,7 +110,41 @@ class ChickenDeleteMenu(ui.Select):
         self.message = updated_message
         await interaction.message.edit(view=updated_view, embed=updated_message)
         return
-
+    
+class ChickenTradeMenu:
+    """Menu to trade chickens with other players"""
+    def __init__(self, chickens, author_id, message, chicken_emoji):
+        options = [
+            SelectOption(label=chicken['Name'], description=f"{chicken['Price']} :money_with_wings:", value=str(index))
+            for index, chicken in enumerate(chickens)
+        ]
+        self.chickens = chickens
+        self.author_id = author_id
+        self.message = message
+        self.chicken_emoji = chicken_emoji
+        super().__init__(min_values=1, max_values=1, options=options)
+    
+    async def callback(self, interaction):
+        author_id = self.author_id[0]
+        author_trade = []
+        user_id = self.author_id[1]
+        user_trade = []
+        if interaction.user.id == author_id:
+            index = self.values[0]
+            chicken_selected = self.chickens[int(index)]
+            author_trade.append(chicken_selected)
+            await interaction.response.send_message(f"{interaction.user.display_name} has selected the chicken: {chicken_selected['Name']} to add into the trade.")
+        if interaction.user.id == user_id:
+            index = self.values[0]
+            chicken_selected = self.chickens[int(index)]
+            user_trade.append(chicken_selected)
+            await interaction.response.send_message(f"{interaction.user.display_name} has selected the chicken: {chicken_selected['Name']} to add into the trade.")
+        if len(author_trade) >= 1 or len(user_trade) >= 1:
+            await interaction.followup.send("Trade has been initiated. Please wait for the other player to respond.")
+        
+        
+        
+    
 
         
 

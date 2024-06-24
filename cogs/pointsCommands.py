@@ -111,25 +111,30 @@ class PointsCommands(commands.Cog):
         if server:
             channel = self.bot.get_channel(server["channel_id"])
             chance = randint(0, 100)
-            if chance <= 8:  # 8% de chance de dropar
-                quantEgg = randint(1, 750) 
-                await channel.send(f"A bag with {quantEgg} eggbux has been dropped in the chat! :money_with_wings:. Type !claim to get it. Remember you only have 5 minutes to claim it.")
+            minutesToClaim = 5
+            if chance <= 8:  # 8% drop chance
+                quantEgg = randint(1, 750)
+                embed = discord.Embed(description=f":moneybag: A bag with **{quantEgg}** eggbux has been dropped in the chat!. Type **claim** to get it. Remember you only have **{minutesToClaim} minutes** to claim it.") 
+                await channel.send(embed=embed)
                 try:
-                    Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "!claim" and message.channel == channel), timeout=300)
+                    Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "claim" and message.channel == channel), timeout=60*minutesToClaim)
                     if Usuario.read(Message.author.id):
                         Usuario.update(Message.author.id, Usuario.read(Message.author.id)["points"] + quantEgg, Usuario.read(Message.author.id)["roles"])
-                        await channel.send(f"{Message.author.mention} claimed {quantEgg} eggbux")
+                        embedClaim = discord.Embed(description=f"{Message.author.display_name} claimed {quantEgg} eggbux")
+                        await channel.send(embed=embedClaim)
                     else:
                         Usuario.create(Message.author.id, quantEgg)
-                        await channel.send(f"{Message.author.mention} claimed {quantEgg} eggbux")
+                        embedClaim2 = discord.Embed(description=f"{Message.author.display_name} claimed {quantEgg} eggbux")
+                        await channel.send(embed=embedClaim2)
                 except asyncio.TimeoutError:
-                    await channel.send(f"The bag with {quantEgg} eggbux has been lost. :cry:")
+                    embedTimeout = discord.Embed(description=f"The bag with {quantEgg} eggbux has expired.")
+                    await channel.send(embed=embedTimeout)
             
     async def drop_periodically(self):
         """Drops eggbux in the chat every 1000 seconds."""
         while True:
             await self.drop_eggbux()
-            await asyncio.sleep(1000)
+            await asyncio.sleep(1800)
 
     @commands.command("donatePoints", aliases=["donate"])
     @pricing()
@@ -208,7 +213,7 @@ class PointsCommands(commands.Cog):
                     await refund(ctx.author, ctx)
                 elif chance >= 10: # 10% de chance de falhar
                     quantUser = Usuario.read(User.id)["points"]
-                    randomInteiro = randint(0, int(quantUser/2)) # 50% do total de pontos do usuário
+                    randomInteiro = randint(1, int(quantUser/2)) # 50% do total de pontos do usuário
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
                     Usuario.update(User.id, Usuario.read(User.id)["points"] - randomInteiro, Usuario.read(User.id)["roles"])
                     await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {User.display_name}")
