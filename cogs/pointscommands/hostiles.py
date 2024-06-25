@@ -92,7 +92,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.hybrid_command(name="implode", aliases=["disconnectAll", "dcAll", "dcall"], brief="Disconnects all users from their voice channels.", usage="implode", description="Disconnects all users from their voice channels.")
     @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def implode(self, ctx):
@@ -119,18 +119,18 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
-    @commands.command()
+    @commands.hybrid_command(name="deafen", brief="Deafens the specified user.", usage="[user]", description="Unmutes all users in the voice channel of the author of the command.")
     @commands.bot_has_permissions(deafen_members=True)
     @pricing()
-    async def deafen(self, ctx, User: discord.Member=None):
+    async def deafen(self, ctx, user: discord.Member=None):
         """Deafens a user."""
-        if User is None:
-            User = ctx.author
-        if User.voice.channel is not None and User.voice.deaf == False:
-            await User.edit(deafen=True)
-            await create_embed_without_title(ctx, f"{User.display_name} has been deafened.")
-        elif User.voice.deaf == True:
-            await create_embed_without_title(ctx, f"{User.display_name} is already deafened.")
+        if user is None:
+            user = ctx.author
+        if user.voice.channel is not None and user.voice.deaf == False:
+            await user.edit(deafen=True)
+            await create_embed_without_title(ctx, f"{user.display_name} has been deafened.")
+        elif user.voice.deaf == True:
+            await create_embed_without_title(ctx, f"{user.display_name} is already deafened.")
             await refund(ctx.author, ctx)
         else:
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
@@ -351,6 +351,7 @@ class HostileCommands(commands.Cog):
             
     @commands.Cog.listener()
     async def on_ready(self):
+        await self.bot.tree.sync()
         print("Hostile commands are ready!")
 
 async def setup(bot):

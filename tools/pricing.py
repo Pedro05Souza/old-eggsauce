@@ -1,4 +1,5 @@
 from enum import Enum
+from multiprocessing.context import BaseContext
 from db.userDB import Usuario
 import discord
 from db.botConfigDB import BotConfig
@@ -77,13 +78,16 @@ async def refund(User: discord.Member, ctx):
         print("Error encountered while refunding the money.", e)
 
 async def treat_exceptions(ctx, comando):
-        
+    is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
+    if is_slash_command:
+        return True
+    
     message_content = ctx.message.content
     command_args = message_content.split()[1:]  
         
     command_func = ctx.command.callback
     parameters = list(inspect.signature(command_func).parameters.values())
-    parameters = parameters[2:]  
+    parameters = parameters[2:]
     
     optional_params_indices = [i for i, param in enumerate(parameters) if param.default != inspect.Parameter.empty]
     varargs_index = next((i for i, param in enumerate(parameters) if param.kind == param.VAR_POSITIONAL), None)
@@ -91,7 +95,8 @@ async def treat_exceptions(ctx, comando):
     expected_args_count = len(parameters) - len(optional_params_indices)
     if varargs_index is not None:
         expected_args_count -= 1 
-    
+    print(command_args)
+    print(expected_args_count)
     if len(command_args) < expected_args_count:
         await create_embed_without_title(ctx, ":no_entry_sign: Insufficient amount of arguments.")
         return False
