@@ -1,23 +1,17 @@
-# Description: Cog that contains commands that affect in some way the voice channels
 from discord.ext import commands
-import asyncio
-import discord
-import os
-import random
-from dotenv import load_dotenv
-from tools.embed import create_embed_without_title
 from tools.pricing import pricing, refund
+from tools.embed import create_embed_without_title
+import discord
+from db.userDB import Usuario
+from random import choice
+import asyncio
 
-# This class is responsible for handling the voice commands.
-class VoipCommands(commands.Cog):
+class HostileCommands(commands.Cog):
     def __init__(self, bot):
-        load_dotenv()
         self.bot = bot
-        self.gods = []
-        self.devs = os.getenv("DEVS").split(",")
         self.prisioner = {}
+        self.gods = []
 
-    
     @commands.command("momentOfSilence")
     @commands.bot_has_permissions(mute_members=True)
     @pricing()
@@ -30,21 +24,7 @@ class VoipCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name}is not in a voice channel.")
             await refund(user, ctx)
-            
 
-    @commands.command()
-    @commands.bot_has_permissions(mute_members=True, deafen_members=True)
-    @pricing()
-    async def god(self, ctx):
-        """Makes the user never being able to get muted and deafened."""
-        user = ctx.author
-        if user not in self.gods:
-            self.gods.append(ctx.author)
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} has been added to the divine beings.")
-        elif user in self.gods:
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} is already a divine being.")
-            await refund(user, ctx)
-            
     @commands.command()
     @commands.bot_has_permissions(manage_channels=True)
     @pricing()
@@ -225,7 +205,7 @@ class VoipCommands(commands.Cog):
             if not channelVet:
                 await create_embed_without_title(ctx, f":no_entry:sign: There are no voice channels to throw the user to.")
             else:
-                channel = random.choice(channelVet)
+                channel = choice(channelVet)
                 if channel == User.voice.channel:
                     self.fling(ctx, User)
                 else:
@@ -256,7 +236,7 @@ class VoipCommands(commands.Cog):
         else:
             for vc in channelVet:
                 for membros in vc.members:
-                    await membros.move_to(random.choice(channelVet))
+                    await membros.move_to(choice(channelVet))
         await create_embed_without_title(ctx, f"All users have been thrown to random voice channels.")
     
     @commands.command("emergency")
@@ -286,6 +266,75 @@ class VoipCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} or {ctx.author.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
 
+    @commands.command()
+    @commands.has_permissions(kick_members=True)
+    @pricing()
+    async def kick(self, ctx, User: discord.Member):
+        """Kicks a user."""
+        if User.id == ctx.author.id:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't kick yourself.")
+                await refund(ctx.author, ctx) 
+                return
+        await User.kick()
+        await create_embed_without_title(ctx, f"{User.display_name} was kicked.")
+     
+    @commands.command()
+    @commands.has_permissions(ban_members=True)
+    @pricing()
+    async def ban(self, ctx, User: discord.Member):
+        """Bans a user."""
+        if User.id == ctx.author.id:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't ban yourself.")
+                await refund(ctx.author, ctx)
+                return
+        await User.ban()
+        await create_embed_without_title(ctx, f"{User.display_name} was banned.")
+
+    @commands.command("changeNickname")
+    @commands.has_permissions(manage_nicknames=True)
+    @pricing()
+    async def change_nickname(self, ctx, User: discord.Member, *nickname: str):
+        """Changes a user's nickname."""
+        if User.id == ctx.me.id:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i can't change my own nickname.")
+            await refund(ctx.author, ctx)
+            return
+        else:
+            nickname = " ".join(nickname)
+            await User.edit(nick=nickname)
+            await create_embed_without_title(ctx, f"{User.display_name}'s nickname has been changed to {nickname}.")
+
+    @commands.command()
+    @pricing()
+    async def nuke(self, ctx):
+        """Nuke the database."""
+        Usuario.resetAll()
+        await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")
+
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    @pricing()
+    async def purge(self, ctx, amount: int):
+        """Deletes a certain amount of messages."""
+        if amount > 0 and amount <= 25:
+            await ctx.channel.purge(limit=amount + 1)
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, please enter a number between 1 and 25.", "")
+            await refund(ctx.author, ctx)  
+
+    @commands.command()
+    @commands.bot_has_permissions(mute_members=True, deafen_members=True)
+    @pricing()
+    async def god(self, ctx):
+        """Makes the user never being able to get muted and deafened."""
+        user = ctx.author
+        if user not in self.gods:
+            self.gods.append(ctx.author)
+            await create_embed_without_title(ctx, f"{ctx.author.display_name} has been added to the divine beings.")
+        elif user in self.gods:
+            await create_embed_without_title(ctx, f"{ctx.author.display_name} is already a divine being.")
+            await refund(user, ctx)
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if self.prisioner.get(member.id, 0) > 0:
@@ -299,8 +348,10 @@ class VoipCommands(commands.Cog):
         if member in self.gods and not before.deaf and after.deaf:
             await member.edit(deafen=False)
             print(f"{member.name} was deafened, but was an undeafener and was undeafened")
-    
-        
+            
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print("Hostile commands are ready!")
 
 async def setup(bot):
-    await bot.add_cog(VoipCommands(bot))
+    await bot.add_cog(HostileCommands(bot))

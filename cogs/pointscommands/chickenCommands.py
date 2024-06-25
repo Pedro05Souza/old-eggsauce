@@ -1,9 +1,8 @@
 import asyncio
-from enum import Enum
 from discord.ext import commands
 from db.farmDB import Farm
 from time import time
-from tools.chickenInfo import ChickenRarity, ChickenUpkeep, TradeData
+from tools.chickenInfo import ChickenRarity, ChickenUpkeep
 from db.userDB import Usuario
 from tools.chickenSelection import ChickenSelectView
 from tools.chickenInfo import rollRates, defineRarityEmojis
@@ -140,8 +139,8 @@ class ChickenCommands(commands.Cog):
             if not farm_data['chickens']:
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                     return
-            if len(nickname) > 10:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken name must have a maximum of 10 characters.")
+            if len(nickname) > 15:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken name must have a maximum of 15 characters.")
                     return
             if index > len(farm_data['chickens']) or index < 0:
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
@@ -350,7 +349,6 @@ class ChickenCommands(commands.Cog):
                     "totalEggs" : 0
                 }
             for chicken in plrDict[player_id]['chicken_list']:
-                print(plrDict[player_id]['chicken_list'])
                 if chicken['Name'].split()[0] == 'DEAD':
                     continue
                 plrDict[player_id]['totalEggs'] += (chicken['Egg_value'] * chicken['Happiness']) // 100
@@ -363,23 +361,23 @@ class ChickenCommands(commands.Cog):
                     await self.devolve_chicken(chicken)
         for player_id, player in plrDict.items():
             Farm.update(player_id, Farm.read(player_id)['farm_name'], player['chicken_list'], Farm.read(player_id)['eggs_generated'] + player['totalEggs'])
-            print(f"updating for {player_id}")
-            print(player['totalEggs'])
             if player['totalEggs'] > 0:
                 Usuario.update(player_id, Usuario.read(player_id)['points'] + player['totalEggs'], Usuario.read(player_id)['roles'])
+        print("Eggs dropped!")
 
 
     async def make_eggs_periodically(self):
         """Make eggs periodically"""
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            await asyncio.sleep(10)
+            await asyncio.sleep(3600)
             await self.drop_eggs()
     
     @commands.Cog.listener()
     async def on_ready(self):
         self.bot.loop.create_task(self.reset_periodically())
         self.bot.loop.create_task(self.make_eggs_periodically())
+        print("Chicken commands are ready!")
 
 async def setup(bot):
     await bot.add_cog(ChickenCommands(bot))

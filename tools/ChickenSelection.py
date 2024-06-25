@@ -1,4 +1,3 @@
-import asyncio
 from discord import SelectOption, ui
 from db.userDB import Usuario
 import discord
@@ -36,7 +35,7 @@ class ChickenMarketMenu(ui.Select):
     """Menu to buy chickens from the market"""
     def __init__(self, chickens, author_id, message, chicken_emoji):
         options = [
-            SelectOption(label=chicken['Name'], description=f"{chicken['Price']} :money_with_wings:", value=str(index))
+            SelectOption(label=chicken['Name'], description=f"{chicken['Price']}", value=str(index))
             for index, chicken in enumerate(chickens)
         ]
         self.chickens = chickens
@@ -88,7 +87,7 @@ class ChickenDeleteMenu(ui.Select):
     """Menu to delete chickens from the farm"""
     def __init__(self, chickens, author_id, message, chicken_emoji):
         options = [
-            SelectOption(label=chicken['Name'], description=f"{chicken['Price']} :money_with_wings:", value=str(index))
+            SelectOption(label=chicken['Name'], description=f"{chicken['Price']}", value=str(index))
             for index, chicken in enumerate(chickens)
         ]
         self.chickens = chickens
@@ -143,7 +142,7 @@ class ChickenAuthorTradeMenu(ui.Select):
             return
         index = self.values[0]
         chicken_selected = self.chickens[int(index)]
-        if chicken_selected in self.tradeItemsAuth[interaction.user.id].values():
+        if chicken_selected in self.tradeData[interaction.user.id].values():
             await interaction.response.send_message("This chicken has already been selected to trade.", ephemeral=True)
             return
         await interaction.response.send_message(f"{interaction.user.display_name} selected the chicken: {chicken_selected['Name']} to trade.")
@@ -192,8 +191,8 @@ class ChickenAuthorTradeMenu(ui.Select):
         async def trade(self, interaction, tradeItems, user_id):
             user1 = tradeItems[user_id]
             user2 = [tradeItems if tradeItems.keys() != user_id else None]
-            usersEmbed = discord.Embed(title="Trade Confirmation", description=f"{user1.display_name} has selected the following chickens to trade: {'\n'.join([chicken['Name'] for chicken in tradeItems[user1]])}, while {user2.display_name} has selected the following chickens to trade: {'\n'.join([chicken['Name'] for chicken in tradeItems[user2]])}\nReact with ✅ to accept the trade. React with ❌ to decline the trade.")
-            await interaction.followup.send(embed=usersEmbed)
+            #usersEmbed = discord.Embed(title="Trade Confirmation", description=f"{user1.display_name} has selected the following chickens to trade: {'\n'.join([chicken['Name'] for chicken in tradeItems[user1]])}, while {user2.display_name} has selected the following chickens to trade: {'\n'.join([chicken['Name'] for chicken in tradeItems[user2]])}\nReact with ✅ to accept the trade. React with ❌ to decline the trade.")
+           # await interaction.followup.send(embed=usersEmbed)
             await interaction.followup.message.add_reaction("✅")
             await interaction.followup.message.add_reaction("❌")
             reaction, user = await interaction.followup.message.wait_for("reaction_add", check=lambda reaction, user: user.id == user1.id and user.id == user2.id, timeout=30)

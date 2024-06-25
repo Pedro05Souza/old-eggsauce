@@ -1,112 +1,142 @@
-# Description: cog that contains administration and fun commands
-import asyncio
-import time
-import discord.message
-from collections import Counter
-from random import randint
 from discord.ext import commands
-import discord
-from db.userDB import Usuario
-from db.toggleDB import ToggleDB
-from tools.embed import create_embed_without_title, create_embed_with_title
-import os
-import random
-from tools.pagination import PaginationView
+from db.botConfigDB import BotConfig
 from tools.pricing import pricing, refund
+from tools.embed import create_embed_without_title, create_embed_with_title
+from db.userDB import Usuario
+from collections import Counter
+import time
+import asyncio
+from tools.pagination import PaginationView
+import discord
+from random import randint, sample, choice
 hungergames_status = {}
-
-# This class is responsible for handling the text commands.
-class TextCommands(commands.Cog):
-
-
+class InteractiveCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.remove_command('help')
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        asyncio.create_task(self.work_periodically())
+    async def drop_eggbux(self):
+        await asyncio.gather(*(self.drop_eggbux_for_guild(guild) for guild in self.bot.guilds))
 
-    @commands.command("pointsStatus")
-    async def points_status(self, ctx):
-        """Check if the points commands are enabled or disabled in the server."""
-        await create_embed_without_title(ctx, f":warning: The points commands are {'**enabled**' if ToggleDB.read[ctx.guild.id]['toggle'] else '**disabled**'} in this server.")
+    async def drop_eggbux_for_guild(self, guild):
+        """Drops eggbux in the chat."""
+        server = BotConfig.read(server_id=guild.id)
+        if server:
+            channel = self.bot.get_channel(server["channel_id"])
+            chance = randint(0, 100)
+            minutesToClaim = 5
+            if chance <= 8:  # 8% drop chance
+                quantEgg = randint(1, 750)
+                embed = discord.Embed(description=f":moneybag: A bag with **{quantEgg}** eggbux has been dropped in the chat!. Type **claim** to get it. Remember you only have **{minutesToClaim} minutes** to claim it.") 
+                await channel.send(embed=embed)
+                try:
+                    Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "claim" and message.channel == channel), timeout=60*minutesToClaim)
+                    if Usuario.read(Message.author.id):
+                        Usuario.update(Message.author.id, Usuario.read(Message.author.id)["points"] + quantEgg, Usuario.read(Message.author.id)["roles"])
+                        embedClaim = discord.Embed(description=f"{Message.author.display_name} claimed {quantEgg} eggbux")
+                        await channel.send(embed=embedClaim)
+                    else:
+                        Usuario.create(Message.author.id, quantEgg)
+                        embedClaim2 = discord.Embed(description=f"{Message.author.display_name} claimed {quantEgg} eggbux")
+                        await channel.send(embed=embedClaim2)
+                except asyncio.TimeoutError:
+                    embedTimeout = discord.Embed(description=f"The bag with {quantEgg} eggbux has expired.")
+                    await channel.send(embed=embedTimeout)
+            
+    async def drop_periodically(self):
+        """Drops eggbux in the chat every 1000 seconds."""
+        while True:
+            await self.drop_eggbux()
+            await asyncio.sleep(1800)
 
-    @commands.command()
+    @commands.command("donatePoints", aliases=["donate"])
     @pricing()
-    async def balls(self, ctx):
-        """Bot sends balls."""
-        await create_embed_without_title(ctx, f":soccer: balls")
-
-    @commands.command()
-    @pricing()
-    async def mog(self, ctx, User: discord.Member):
-            """Mog a user."""
-            path = random.choice(os.listdir("images/mogged/"))
-            await ctx.send(file=discord.File("images/mogged/"+path))
-            await ctx.send(f"{User.mention} bye bye 🤫🧏‍♂️")
-
-    @commands.command()
-    @commands.has_permissions(manage_messages=True)
-    @pricing()
-    async def purge(self, ctx, amount: int):
-        """Deletes a certain amount of messages."""
-        if amount > 0 and amount <= 25:
-            await ctx.channel.purge(limit=amount + 1)
+    async def donate_points(self, ctx, User:discord.Member, amount: int):
+        """Donates points to another user."""
+        if Usuario.read(ctx.author.id) and Usuario.read(User.id):
+            if ctx.author.id == User.id:
+                await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate to yourself.")
+            elif Usuario.read(ctx.author.id)["points"] >= amount:
+                if amount <= 0:
+                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate 0 or negative eggbux.")
+                    return
+                else:
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
+                    Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
+                    await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {User.display_name}")
+            else:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, please enter a number between 1 and 25.", "")
-            await refund(ctx.author, ctx)
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have permission to do this.")
+            
+    @commands.command("cassino", aliases=["roulette", "casino", "bet", "gamble"])
+    @pricing()
+    async def cassino(self, ctx, amount: int, cor: str):
+        """Bet on a color in the roulette."""
+        cor = cor.upper()
+        coresPossiveis = ["RED", "BLACK", "GREEN"]
+        corEmoji = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
+        vermelhos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+        roleta = {i : "RED" if i in vermelhos else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
+        if Usuario.read(ctx.author.id) and cor in coresPossiveis:
+            if Usuario.read(ctx.author.id)["points"] >= amount and amount >= 50:
+                cassino = randint(0, 36)
+                corSorteada = roleta[cassino]
+                if corSorteada == "GREEN" and cor == "GREEN":
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
+                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has won!")
+                elif corSorteada == cor:
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
+                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has won!")
+                else:                  
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
+                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has lost! The selected color was {corSorteada} {corEmoji[corSorteada]}")
+                    return
+            else:
+                await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} You don't have enough eggbux or the amount is less than 50.")
+                return  
+        else:
+            await create_embed_with_title(ctx, ":slot_machine:" ,f"{ctx.author.display_name} You don't have permission to do this.")
+            return
 
-    @commands.command()
-    @commands.has_permissions(kick_members=True)
+    @cassino.error
+    async def cassino_error(self, ctx, error):
+        """Handles errors in the cassino command."""
+        if isinstance(error, commands.MissingRequiredArgument):
+            await create_embed_without_title(ctx, f"{ctx.author.display_name} Please, insert a valid amount and color.")
+        elif isinstance(error, commands.BadArgument):
+            await create_embed_without_title(ctx, f"{ctx.author.display_name} Please, insert a valid amount.")
+        else:
+            await create_embed_without_title(ctx, f"{ctx.author.display_name} An unexpected error occurred.")
+            print(error)
+
+    @commands.command("stealPoints", aliases=["steal"])
     @pricing()
-    async def kick(self, ctx, User: discord.Member):
-        """Kicks a user."""
-        if User.id == ctx.author.id:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't kick yourself.")
-                await refund(ctx.author, ctx) 
-                return
-        await User.kick()
-        await create_embed_without_title(ctx, f"{User.display_name} was kicked.")
-     
-    @commands.command()
-    @commands.has_permissions(ban_members=True)
-    @pricing()
-    async def ban(self, ctx, User: discord.Member):
-        """Bans a user."""
-        if User.id == ctx.author.id:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't ban yourself.")
+    async def steal_points(self, ctx, User: discord.Member):
+        """Steals points from another user."""
+        if Usuario.read(ctx.author.id):
+            chance  = randint(0, 100)
+            if User.bot:
+                await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a bot.")
                 await refund(ctx.author, ctx)
                 return
-        await User.ban()
-        await create_embed_without_title(ctx, f"{User.display_name} was banned.")
-
-    @commands.command("changeNickname")
-    @commands.has_permissions(manage_nicknames=True)
-    @pricing()
-    async def change_nickname(self, ctx, User: discord.Member, *nickname: str):
-        """Changes a user's nickname."""
-        if User.id == ctx.me.id:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i can't change my own nickname.")
-            await refund(ctx.author, ctx)
-            return
+            if Usuario.read(User.id):
+                if ctx.author.id == User.id:
+                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from yourself.")
+                    await refund(ctx.author, ctx)
+                elif chance >= 10: # 10% de chance de falhar
+                    quantUser = Usuario.read(User.id)["points"]
+                    randomInteiro = randint(1, int(quantUser/2)) # 50% do total de pontos do usuário
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
+                    Usuario.update(User.id, Usuario.read(User.id)["points"] - randomInteiro, Usuario.read(User.id)["roles"])
+                    await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {User.display_name}")
+                else:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} failed to steal from {User.display_name}")
+            else:
+                await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
+                await refund(ctx.author, ctx)
         else:
-            nickname = " ".join(nickname)
-            await User.edit(nick=nickname)
-            await create_embed_without_title(ctx, f"{User.display_name}'s nickname has been changed to {nickname}.")  
-
-    @commands.command()
-    @commands.has_permissions(ban_members=True)
-    @pricing()
-    async def pardon(self, ctx, id: str):
-        """Unbans a user."""
-        User = await self.bot.fetch_user(id)
-        if await ctx.guild.fetch_ban(User):
-            await ctx.guild.unban(User)
-            await create_embed_without_title(ctx, f"{User.display_name} was unbanned.")
-        else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} is not banned.")
-            await refund(ctx.author, ctx)
+            await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
 
     @commands.command("pointsTitles", aliases=["titles"])
     @pricing()
@@ -263,7 +293,7 @@ class TextCommands(commands.Cog):
             await create_embed_without_title(ctx, f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
             alive_tributes = tributes
             while len(alive_tributes) > 1:
-                shuffle_tributes = random.sample(alive_tributes, len(alive_tributes))
+                shuffle_tributes = sample(alive_tributes, len(alive_tributes))
                 alive_tributes = shuffle_tributes
                 await create_embed_with_title(ctx, f"Day {day}", f"**Tributes remaining: {len(alive_tributes)}**")
                 for tribute in alive_tributes:
@@ -349,7 +379,7 @@ class TextCommands(commands.Cog):
 
     def choose_random_event(self, events):
         """Choose a random event from the list of events."""
-        return random.choice(events)
+        return  choice(events)
     
     def update_tribute_event(self, tributes):
         """Update the tribute event."""
@@ -471,13 +501,13 @@ class TextCommands(commands.Cog):
                     await create_embed_without_title(ctx, f":bear: {events[chosen_event]} **{team}** has managed to kill the bear, disabling that for the rest of the game.")
                     hungergames_status[ctx.guild.id]['bear_disabled'] = True
                 case 26:
-                    tribute1Item = random.choice(tribute1['inventory'])
+                    tribute1Item = choice(tribute1['inventory'])
                     tribute2['inventory'].append(tribute1Item)
                     tribute1['inventory'].remove(tribute1Item)
                     await create_embed_without_title(ctx, f":gift: **{tribute1['tribute'].display_name}** {events[chosen_event]} {tribute1Item} to **{tribute2['tribute'].display_name}**!")
                 case 27:
-                    tribute1Item = random.choice(tribute1['inventory'])
-                    tribute2Item = random.choice(tribute2['inventory'])
+                    tribute1Item = choice(tribute1['inventory'])
+                    tribute2Item = choice(tribute2['inventory'])
                     tribute1['inventory'].append(tribute2Item)
                     tribute2['inventory'].append(tribute1Item)
                     tribute1['inventory'].remove(tribute1Item)
@@ -501,7 +531,7 @@ class TextCommands(commands.Cog):
         list_events = [event for event in list_events if event not in collect_requirements.keys() or collect_requirements[event] not in tribute1['inventory']]
         
         if dead_tributes:
-            dead_tribute = hungergames_status[guild_id]['dead_tribute'] = random.choice(dead_tributes)
+            dead_tribute = hungergames_status[guild_id]['dead_tribute'] = choice(dead_tributes)
             if dead_tribute and not any(item for item in tribute1['inventory'] if item in dead_tribute['inventory']):
                 list_events.append(20)
 
@@ -587,7 +617,7 @@ class TextCommands(commands.Cog):
 
     def steal_item(self, tribute1, tribute2):
         """Steal an item from a tribute."""
-        item = random.choice(tribute2['inventory'])
+        item = choice(tribute2['inventory'])
         tribute1['inventory'].append(item)
         tribute2['inventory'].remove(item)
         return item
@@ -650,13 +680,11 @@ class TextCommands(commands.Cog):
                 winner = tribute
         return winner
     
-    @commands.command()
-    @pricing()
-    async def nuke(self, ctx):
-        """Nuke the database."""
-        Usuario.resetAll()
-        await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")
-              
-async def setup(bot):
-    await bot.add_cog(TextCommands(bot))
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.bot.loop.create_task(self.drop_periodically())
+        self.bot.loop.create_task(self.work_periodically())
+        print("Interactive commands are ready.")
 
+async def setup(bot):
+    await bot.add_cog(InteractiveCommands(bot))

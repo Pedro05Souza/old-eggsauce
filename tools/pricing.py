@@ -1,12 +1,10 @@
 from enum import Enum
 from db.userDB import Usuario
 import discord
-from db.toggleDB import ToggleDB
-from db.channelDB import ChannelDB
+from db.botConfigDB import BotConfig
 import inspect
 from discord.ext import commands
 from tools.embed import create_embed_without_title
-from db.channelDB import ChannelDB
 import time
 
 # This class is responsible for handling the prices of the commands.
@@ -101,17 +99,15 @@ async def treat_exceptions(ctx, comando):
         await create_embed_without_title(ctx, ":no_entry_sign: Excessive amount of arguments.")
         return False
     
-    channel_list = ChannelDB.readAll() 
-    channels = []
-    for channel_dic in channel_list:
-        channel = ctx.bot.get_channel(channel_dic["channel_id"])
-        channels.append(channel)
-    
-    if ctx.channel not in channels:
-        commands_channel = ctx.bot.get_channel(ChannelDB.read(ctx.guild.id)["channel_id"])
-        await create_embed_without_title(ctx, f":no_entry_sign: This command can only be used in the **{commands_channel.name}** channel.")
+    channel = BotConfig.read(ctx.guild.id)
+    if not channel['channel_id']:
+        await create_embed_without_title(ctx, ":no_entry_sign: The bot has not been configured properly. Type **!setChannel** in the desired channel.")
         return False
-    
+    if ctx.channel.id != channel['channel_id']:
+        commands_object = ctx.bot.get_channel(BotConfig.read(ctx.guild.id)['channel_id'])
+        commands_channel = commands_object.name
+        await create_embed_without_title(ctx, f":no_entry_sign: This command can only be used in the **{commands_channel}** channel.")
+        return False
     i = 0
     for index, param in enumerate(parameters):
         param_type = param.annotation
@@ -171,7 +167,7 @@ def pricing():
         """Check if the user has enough points to use the command."""
         cooldown_period = 3 
         result = True
-        if ToggleDB.read(ctx.guild.id) and not ToggleDB.read(ctx.guild.id)['toggle']:
+        if not BotConfig.read(ctx.guild.id)['toggle']:
             if not await command_cooldown(ctx, "points", cooldown_period):
                 result = False
             await create_embed_without_title(ctx, ":warning: The points commands are **disabled** in this server.")

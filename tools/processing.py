@@ -10,10 +10,7 @@ class Processing (Thread):
     def __init__(self, data):
             self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lmstudio")
             Thread.__init__(self)
-            promptPath = "./codebase/codebase.txt"
-            with open(promptPath, "r") as file:
-                prompt = file.read()
-            self.data = [{"role": "system", "content": prompt}, data]
+            self.data = [{"role": "system", "content": data}]
             self.future = concurrent.futures.Future()
             self.exception = None
 
