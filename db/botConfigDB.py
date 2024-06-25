@@ -1,5 +1,5 @@
 from db.dbConfig import mongo_client
-toggle_collection = mongo_client.db.botcfg
+config_collection = mongo_client.db.botcfg
 
 class BotConfig:
 
@@ -7,9 +7,9 @@ class BotConfig:
     def create(server_id: int, toggle_value: bool, channel_id: int):
         """Create a toggle in the database."""
         try:
-            toggle_data = toggle_collection.find_one({"server_id" : toggle_value})
+            toggle_data = config_collection.find_one({"server_id" : toggle_value})
             if toggle_data:
-                print("This toggle already exists.")
+                print("This channel already exists.")
                 return None
             else:
                 toggle = {
@@ -17,18 +17,17 @@ class BotConfig:
                     "toggle": toggle_value,
                     "channel_id": channel_id,
                 }
-                toggle_collection.insert_one(toggle)
+                config_collection.insert_one(toggle)
                 print("Server created successfully.")
         except Exception as e:
             print("Error encountered while creating a server.", e)
             return None
         
-
     @staticmethod
     def create_toggle(server_id:int, toggle_value: bool):
         """Create a toggle in the database."""
         try:
-            toggle_data = toggle_collection.find_one({"server_id": server_id})
+            toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
                 print("This toggle already exists.")
                 return None
@@ -37,7 +36,7 @@ class BotConfig:
                     "server_id": server_id,
                     "toggle": toggle_value,
                 }
-                toggle_collection.insert_one(toggle)
+                config_collection.insert_one(toggle)
                 print("Toggle created successfully.")
         except Exception as e:
             print("Error encountered while creating a toggle.", e)
@@ -47,7 +46,7 @@ class BotConfig:
     def create_channel(server_id:int, channel_id: int):
         """Create a channel in the database."""
         try:
-            toggle_data = toggle_collection.find_one({"server_id": server_id, "channel_id": channel_id})
+            toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
                 print("This channel already exists.")
                 return None
@@ -56,7 +55,7 @@ class BotConfig:
                     "server_id": server_id,
                     "channel_id": channel_id,
                 }
-                toggle_collection.insert_one(toggle)
+                config_collection.insert_one(toggle)
                 print("Channel created successfully.")
         except Exception as e:
             print("Error encountered while creating a channel.", e)
@@ -66,9 +65,9 @@ class BotConfig:
     def update_toggle_value(server_id: int, toggle_value: bool):
         """Update a toggle in the database."""
         try:
-            toggle_data = toggle_collection.find_one({"server_id": server_id})
+            toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
-                toggle_collection.update_one({"server_id": server_id}, {"$set": {"toggle": toggle_value}})
+                config_collection.update_one({"server_id": server_id}, {"$set": {"toggle": toggle_value}})
                 print("Toggle updated successfully.")
             else:
                 print("Toggle not found.")
@@ -79,10 +78,10 @@ class BotConfig:
     def update_channel_id(server_id: int, channel_id: int):
         """Update a channel in the database."""
         try:
-            toggle_data = toggle_collection.find_one({"server_id" : server_id})
+            toggle_data = config_collection.find_one({"server_id" : server_id})
             print(toggle_data)
             if toggle_data:
-                toggle_collection.update_one({"server_id": toggle_data["server_id"]}, {"$set": {"channel_id": channel_id}})
+                config_collection.update_one({"server_id": toggle_data["server_id"]}, {"$set": {"channel_id": channel_id}})
                 print("Channel updated successfully.")
             else:
                 print("Channel not found.")
@@ -93,9 +92,9 @@ class BotConfig:
     def delete(server_id: int):
         """Delete a toggle from the database."""
         try:
-            config_data = toggle_collection.find_one({"server_id": server_id})
+            config_data = config_collection.find_one({"server_id": server_id})
             if config_data:
-                toggle_collection.delete_one({"server_id" : server_id})
+                config_collection.delete_one({"server_id" : server_id})
                 print("Server config has been deleted successfully.")
             else:
                 print("Server not found.")
@@ -106,7 +105,7 @@ class BotConfig:
     def read_all_channels():
         """Read all channels from the database."""
         try:
-            channels = toggle_collection.find()
+            channels = config_collection.find()
             return channels
         except Exception as e:
             print("Error encountered while reading channels.", e)
@@ -116,7 +115,7 @@ class BotConfig:
     def read(server_id: int):
         """Read a server from the database."""
         try:
-            config_data = toggle_collection.find_one({"server_id": server_id})
+            config_data = config_collection.find_one({"server_id": server_id})
             if config_data:
                 return config_data
             else:

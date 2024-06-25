@@ -195,7 +195,6 @@ class ChickenCommands(commands.Cog):
         index -= 1
         if Usuario.read(ctx.author.id):
             if Farm.read(ctx.author.id):
-                baseUpkeep = 1
                 farm_data = Farm.read(ctx.author.id)
                 if not farm_data['chickens']:
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
@@ -203,7 +202,7 @@ class ChickenCommands(commands.Cog):
                 if index > len(farm_data['chickens']) or index < 0:
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
                     return
-                baseUpkeep = baseUpkeep * ChickenUpkeep[farm_data['chickens'][index]['Name'].split()[0]].value
+                baseUpkeep = ChickenUpkeep[farm_data['chickens'][index]['Name'].split()[0]].value
                 chicken_arr = farm_data['chickens']
                 if Usuario.read(ctx.author.id)['points'] > baseUpkeep:
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)['points'] - baseUpkeep, Usuario.read(ctx.author.id)['roles'])
@@ -257,25 +256,23 @@ class ChickenCommands(commands.Cog):
     async def feed_all_chickens(self, ctx):
         """Feed all the chickens in the user's inventory"""
         if Farm.read(ctx.author.id):
-            baseUpkeep = 1
             farm_data = Farm.read(ctx.author.id)
             if not farm_data['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                 return
             totalUpkeep = 0
             for chiken in farm_data['chickens']:
-                baseUpkeep = baseUpkeep * ChickenUpkeep[chiken['Name'].split()[0]].value
-                totalUpkeep += baseUpkeep
+                totalUpkeep = ChickenUpkeep[chiken['Name'].split()[0]].value
             if Usuario.read(ctx.author.id)['points'] > totalUpkeep:
                 Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)['points'] - totalUpkeep, Usuario.read(ctx.author.id)['roles'])
+                if all(c['Happiness'] == 100 for c in farm_data['chickens']):
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, all the chickens are already at maximum happiness.")
+                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)['points'] + totalUpkeep, Usuario.read(ctx.author.id)['roles'])
+                    return
                 for chicken in farm_data['chickens']:
-                    if all(chicken['Happiness'] == 100 for chicken in farm_data['chickens']):
-                        await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, all the chickens are already at maximum happiness.")
-                        Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)['points'] + totalUpkeep, Usuario.read(ctx.author.id)['roles'])
-                        return
                     if chicken['Happiness'] == 100:
                         continue
-                    generated_happines = randint(20, 60)
+                    generated_happines = randint(20, 40)
                     cHappiness = chicken['Happiness'] + generated_happines
                     if cHappiness > 100:
                         cHappiness = 100

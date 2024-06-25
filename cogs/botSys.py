@@ -72,7 +72,7 @@ class BotSys(commands.Cog):
     @commands.command("modules")
     async def modules(self, ctx):
         """Displays a list of commands available to the user."""
-        Embed = discord.Embed(title="**MODULES:**", description=":egg: **Points**: Fun and interactive economy system, has sub-Modules.\n:tools: **Utility**: Useful commands for everyday use.\nSelect one of the modules to see the commands available and a better explanation of each one.")
+        Embed = discord.Embed(title="**MODULES:**", description=":egg: **Points**: Fun and unique economy system, has sub-Modules.\n:tools: **Utility**: Useful commands for everyday use.\nSelect one of the modules to see the commands available and a better explanation of each one.")
         view = SelectModule()
         await ctx.send(embed=Embed, view=view)
 
@@ -95,18 +95,33 @@ class BotSys(commands.Cog):
             BotConfig.update(channel.guild.id, BotConfig.read(channel.guild.id)['toggle'], 0)
             print(f"Channel {channel.name} has been deleted")
 
+    @commands.command("togglePoints")
+    async def toggle_points(self, ctx):
+        """Enable or disable the points commands."""
+        if BotConfig.read(ctx.guild.id):
+            if ctx.guild.owner_id == ctx.author.id:
+                if BotConfig.read(ctx.guild.id)['toggle']:
+                    BotConfig.update_toggle_value(ctx.guild.id, False)
+                    await create_embed_without_title(ctx, ":warning: Points commands are now disabled.")
+                else:
+                    BotConfig.update_toggle_value(ctx.guild.id, True)
+                    await create_embed_without_title(ctx, ":white_check_mark: Points commands are now enabled.")
+            else:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you do not have permission to do this.")
+        else:
+            BotConfig.create(ctx.guild.id, True, None)
+            await create_embed_without_title(ctx, ":white_check_mark: Points commands are now enabled.")
+
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx):
         """Set the channel where the bot will listen for commands."""
+        print(BotConfig.read(ctx.guild.id))
         if BotConfig.read(ctx.guild.id):
             if ctx.guild.owner_id == ctx.author.id:
-                if BotConfig.read(ctx.guild.id)['channel_id']:
-                    BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
-                    await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been set.")
-                else:
-                    BotConfig.create_channel(ctx.guild.id, ctx.channel.id)
-                    await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been set.")
+                BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
+                await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been set.")
         else:
+            print("Creating bot config")
             BotConfig.create(ctx.guild.id, True, ctx.channel.id)
             await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been set.")
     

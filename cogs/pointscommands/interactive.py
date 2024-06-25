@@ -49,12 +49,12 @@ class InteractiveCommands(commands.Cog):
             await self.drop_eggbux()
             await asyncio.sleep(1800)
 
-    @commands.command("donatePoints", aliases=["donate"])
+    @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
     @pricing()
-    async def donate_points(self, ctx, User:discord.Member, amount: int):
+    async def donate_points(self, ctx, user:discord.Member, amount: int):
         """Donates points to another user."""
-        if Usuario.read(ctx.author.id) and Usuario.read(User.id):
-            if ctx.author.id == User.id:
+        if Usuario.read(ctx.author.id) and Usuario.read(user.id):
+            if ctx.author.id == user.id:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate to yourself.")
             elif Usuario.read(ctx.author.id)["points"] >= amount:
                 if amount <= 0:
@@ -62,14 +62,14 @@ class InteractiveCommands(commands.Cog):
                     return
                 else:
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
-                    Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                    await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {User.display_name}")
+                    Usuario.update(user.id, Usuario.read(user.id)["points"] + amount, Usuario.read(user.id)["roles"])
+                    await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {user.display_name}")
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have permission to do this.")
-            
-    @commands.command("cassino", aliases=["roulette", "casino", "bet", "gamble"])
+             
+    @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
     @pricing()
     async def cassino(self, ctx, amount: int, cor: str):
         """Bet on a color in the roulette."""
@@ -110,35 +110,35 @@ class InteractiveCommands(commands.Cog):
             await create_embed_without_title(ctx, f"{ctx.author.display_name} An unexpected error occurred.")
             print(error)
 
-    @commands.command("stealPoints", aliases=["steal"])
+    @commands.hybrid_command(name="stealpoints", aliases=["steal", "rob"], brief="Steal points from another user.", usage="stealPoints [user]", description="Steal points from another user.")
     @pricing()
-    async def steal_points(self, ctx, User: discord.Member):
+    async def steal_points(self, ctx, user: discord.Member):
         """Steals points from another user."""
         if Usuario.read(ctx.author.id):
             chance  = randint(0, 100)
-            if User.bot:
+            if user.bot:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a bot.")
                 await refund(ctx.author, ctx)
                 return
-            if Usuario.read(User.id):
-                if ctx.author.id == User.id:
+            if Usuario.read(user.id):
+                if ctx.author.id == user.id:
                     await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from yourself.")
                     await refund(ctx.author, ctx)
                 elif chance >= 10: # 10% de chance de falhar
-                    quantUser = Usuario.read(User.id)["points"]
+                    quantUser = Usuario.read(user.id)["points"]
                     randomInteiro = randint(1, int(quantUser/2)) # 50% do total de pontos do usuário
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
-                    Usuario.update(User.id, Usuario.read(User.id)["points"] - randomInteiro, Usuario.read(User.id)["roles"])
-                    await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {User.display_name}")
+                    Usuario.update(user.id, Usuario.read(user.id)["points"] - randomInteiro, Usuario.read(user.id)["roles"])
+                    await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {user.display_name}")
                 else:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} failed to steal from {User.display_name}")
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} failed to steal from {user.display_name}")
             else:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
                 await refund(ctx.author, ctx)
         else:
             await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
 
-    @commands.command("pointsTitles", aliases=["titles"])
+    @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
     @pricing()
     async def points_Titles(self, ctx):
         end_time = time.time() + 60
@@ -220,20 +220,20 @@ class InteractiveCommands(commands.Cog):
                 Usuario.update(user["user_id"], user["points"] + self.salary_role(discord.utils.get(self.bot.get_all_members(), id=user["user_id"])), user["roles"])
                 print(f"Updated {user['user_id']} salary.")
 
-    @commands.command("title", aliases=["income", "salary"])
+    @commands.hybrid_command(name="salary", aliases=["sal"], brief="Check the salary of a user.", usage="salary OPTIONAL [user]", description="Check the salary of a user. If not user, shows author's salary.")
     @pricing()
-    async def salary(self, ctx, User: discord.Member = None):
+    async def salary(self, ctx, user: discord.Member = None):
         """Check the salary of a user."""
-        if User is None:
-            User = ctx.author
-        user_data = Usuario.read(User.id)
+        if user is None:
+            user = ctx.author
+        user_data = Usuario.read(user.id)
         if user_data:
             if user_data["roles"] != "":
-                await create_embed_without_title(ctx, f":moneybag: {User.display_name} has the title of **{self.get_user_title(User)}** and earns {self.salary_role(User)} eggbux..")
+                await create_embed_without_title(ctx, f":moneybag: {user.display_name} has the title of **{self.get_user_title(user)}** and earns {self.salary_role(user)} eggbux..")
                 return   
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} doesn't have a title.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} doesn't have a title.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} isn't registered in the database.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} isn't registered in the database.")
             await refund(ctx.author, ctx)
 
     @commands.command(aliases=["hg"])
@@ -682,6 +682,7 @@ class InteractiveCommands(commands.Cog):
     
     @commands.Cog.listener()
     async def on_ready(self):
+        await self.bot.tree.sync()
         self.bot.loop.create_task(self.drop_periodically())
         self.bot.loop.create_task(self.work_periodically())
         print("Interactive commands are ready.")

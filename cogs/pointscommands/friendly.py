@@ -13,11 +13,6 @@ class FriendlyCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command("pointsStatus")
-    async def points_status(self, ctx):
-        """Check if the points commands are enabled or disabled in the server."""
-        await create_embed_without_title(ctx, f":warning: The points commands are {'**enabled**' if BotConfig.read[ctx.guild.id]['toggle'] else '**disabled**'} in this server.")
-
     @commands.command()
     @pricing()
     async def balls(self, ctx):

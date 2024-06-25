@@ -12,7 +12,7 @@ cooldown_tracker = {}
 class Prices(Enum):
     points = 0
     leaderboard = 0
-    cassino = 0
+    casino = 0
     title = 0
     market = 0
     createFarm = 0
@@ -24,7 +24,7 @@ class Prices(Enum):
     withdraw = 0
     balance = 0
     deposit = 0
-    donatePoints = 0
+    donatepoints = 0
     pointsTitles = 0
     shop = 0
     salary = 0
@@ -46,7 +46,7 @@ class Prices(Enum):
     purge = 250
     radinho = 325
     fish = 325
-    stealPoints = 350
+    stealpoints = 350
     pardon = 500
     emergency = 500
     tirarRadinho = 500
