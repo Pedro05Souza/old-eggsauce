@@ -3,7 +3,7 @@ from enum import Enum
 from discord.ext import commands
 from db.farmDB import Farm
 from time import time
-from tools.sharedEnums import ChickenRarity, ChickenUpkeep
+from tools.chickenInfo import ChickenRarity, ChickenUpkeep, TradeData
 from db.userDB import Usuario
 from tools.chickenSelection import ChickenSelectView
 from tools.chickenInfo import rollRates, defineRarityEmojis
@@ -166,8 +166,8 @@ class ChickenCommands(commands.Cog):
         """Trade a chicken(s) with another user"""
         if Farm.read(ctx.author.id) and Farm.read(User.id):
             farm_data = Farm.read(ctx.author.id)
-            if not farm_data['chickens']:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+            if not farm_data['chickens'] and not Farm.read(User.id)['chickens']:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, {User.display_name} doesn't have any chickens.")
                 return
             if User.id == ctx.author.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't trade with yourself.")
@@ -293,7 +293,7 @@ class ChickenCommands(commands.Cog):
         authorEmbed = self.get_usr_farm(ctx.author)
         userEmbed = self.get_usr_farm(User)
         trade_data = [author_data['chickens'], user_data['chickens']]
-        members_data = [ctx.author.id, User.id]
+        members_data = [ctx.author, User]
         embeds = [authorEmbed, userEmbed]
         view_author = ChickenSelectView(chickens=trade_data, author_id=members_data, action="T", message=embeds, chicken_emoji=self.get_rarity_emoji, role="author")
         view_user = ChickenSelectView(chickens=trade_data, author_id=members_data, action="T", message=embeds, chicken_emoji=self.get_rarity_emoji, role="user")
@@ -346,26 +346,34 @@ class ChickenCommands(commands.Cog):
             if len(player['chickens']) > 0:
                 player_id = player['user_id']
                 plrDict[player_id] = {
-                    "chicken_list" : player['chickens']
+                    "chicken_list" : player['chickens'],
+                    "totalEggs" : 0
                 }
-        totalEggs = 0
-        for chicken in plrDict[player_id]['chicken_list']:
-            await self.devolve_chicken(chicken)
-            totalEggs += (chicken['Egg_value'] * chicken['Happiness']) // 100
-            if chicken['Happiness'] > 0:
-                chicken['Happiness'] -= randint(0, 10)
-            if chicken['Happiness'] < 0:
-                chicken['Happiness'] = 0
-        Farm.update(player_id, player['farm_name'], plrDict[player_id]['chicken_list'], player['eggs_generated'] + totalEggs)
-        if totalEggs > 0:
-            Usuario.update(player_id, Usuario.read(player_id)['points'] + totalEggs, Usuario.read(player_id)['roles'])
+            for chicken in plrDict[player_id]['chicken_list']:
+                print(plrDict[player_id]['chicken_list'])
+                if chicken['Name'].split()[0] == 'DEAD':
+                    continue
+                plrDict[player_id]['totalEggs'] += (chicken['Egg_value'] * chicken['Happiness']) // 100
+                print(chicken)
+                if chicken['Happiness'] > 0:
+                    chicken['Happiness'] -= randint(0, 10)
+                if chicken['Happiness'] < 0:
+                    chicken['Happiness'] = 0
+                if chicken['Happiness'] == 0:
+                    await self.devolve_chicken(chicken)
+        for player_id, player in plrDict.items():
+            Farm.update(player_id, Farm.read(player_id)['farm_name'], player['chicken_list'], Farm.read(player_id)['eggs_generated'] + player['totalEggs'])
+            print(f"updating for {player_id}")
+            print(player['totalEggs'])
+            if player['totalEggs'] > 0:
+                Usuario.update(player_id, Usuario.read(player_id)['points'] + player['totalEggs'], Usuario.read(player_id)['roles'])
 
 
     async def make_eggs_periodically(self):
         """Make eggs periodically"""
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            await asyncio.sleep(3600)
+            await asyncio.sleep(10)
             await self.drop_eggs()
     
     @commands.Cog.listener()

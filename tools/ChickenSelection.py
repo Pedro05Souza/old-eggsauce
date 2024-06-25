@@ -5,7 +5,7 @@ import discord
 from time import time
 from random import randint
 from db.farmDB import Farm
-from tools.sharedEnums import ChickenUpkeep, ChickenMultiplier
+from tools.chickenInfo import ChickenUpkeep, ChickenMultiplier, TradeData
 
 class ChickenSelectView(ui.View):
     """View for selecting chickens from the market or farm to buy or delete them."""
@@ -18,16 +18,17 @@ class ChickenSelectView(ui.View):
         elif action == "D":
             menu = ChickenDeleteMenu(chickens, author_id, message, chicken_emoji)
         elif action == "T":
+            tradeData = TradeData()
             if role == "author":
                 trader_id = author_id[0]
                 trader_message = message[0]
                 trader_chickens = chickens[0]
-                menu = ChickenAuthorTradeMenu(trader_chickens, trader_id, trader_message, chicken_emoji)
+                menu = ChickenAuthorTradeMenu(trader_chickens, trader_id, trader_message, chicken_emoji, tradeData)
             elif role == "user":
                 user_message = message[1]
                 user_chickens = chickens[1]
                 user_id = author_id[1]
-                menu = ChickenAuthorTradeMenu.ChickenUserTradeMenu(user_chickens, user_id, user_message, chicken_emoji)
+                menu = ChickenAuthorTradeMenu.ChickenUserTradeMenu(user_chickens, user_id, user_message, chicken_emoji, tradeData)
 
         self.add_item(menu)
 
@@ -122,64 +123,77 @@ class ChickenDeleteMenu(ui.Select):
         self.message = updated_message
         await interaction.message.edit(view=updated_view, embed=updated_message)
         return
-
-tradeItems = {}   
 class ChickenAuthorTradeMenu(ui.Select):
     """Menu to trade chickens with other players"""
-    def __init__(self, chickens, author_id, message, chicken_emoji):
+    def __init__(self, chickens, author, message, chicken_emoji, tradeData):
         options = [
             SelectOption(label=chicken['Name'], description=f"{chicken['Price']} :money_with_wings:", value=str(index))
             for index, chicken in enumerate(chickens)
         ]
+        self.tradeData = tradeData
         self.chickens = chickens
-        self.author_id = author_id
+        self.author = author
         self.message = message
         self.chicken_emoji = chicken_emoji
         super().__init__(min_values=1, max_values=1, options=options)
     
     async def callback(self, interaction):
-        global tradeItems
-        if interaction.user.id != self.author_id:
+        if interaction.user.id != self.author.id:
             await interaction.response.send_message("You can't steal chickens from other players's inventory.", ephemeral=True)
             return
         index = self.values[0]
         chicken_selected = self.chickens[int(index)]
+        if chicken_selected in self.tradeItemsAuth[interaction.user.id].values():
+            await interaction.response.send_message("This chicken has already been selected to trade.", ephemeral=True)
+            return
         await interaction.response.send_message(f"{interaction.user.display_name} selected the chicken: {chicken_selected['Name']} to trade.")
-        tradeItems[interaction.user.id] = chicken_selected
+        self.tradeData[interaction.user].append(chicken_selected)
 
-        
+    @staticmethod
+    async def check_if_two_players_reacted(interaction, user1, user2, message):
+        await message.add_reaction("✅")
+        await message.add_reaction("❌")
+        reaction, user = await interaction.followup.message.wait_for("reaction_add", check=lambda reaction, user: user.id == user1.id and user.id == user2.id, timeout=30)
+        if reaction.emoji == "✅" and user:
+            return True
+        elif reaction.emoji == "❌" and any(user.id == user1.id or user.id == user2.id):
+            return False
     class ChickenUserTradeMenu(ui.Select):
         """Menu of the user to accept or decline the trade"""
-        global tradeItems
-        def __init__(self, chickens, author_id, message, chicken_emoji):
+        def __init__(self, chickens, user, message, chicken_emoji, tradeData):
             options = [
                 SelectOption(label=chicken['Name'], description=f"{chicken['Price']} :money_with_wings:", value=str(index))
                 for index, chicken in enumerate(chickens)
             ]
-            self.author_id = author_id
+            self.tradeData = tradeData
+            self.user = user
             self.chickens = chickens
             self.message = message
             self.chicken_emoji = chicken_emoji
             super().__init__(min_values=1, max_values=1, options=options)
 
         async def callback(self, interaction):
-            if interaction.user.id != self.author_id:
+            if interaction.user.id != self.user.id:
                 await interaction.response.send_message("You can't steal chickens from other player's inventory.", ephemeral=True)
                 return
-            index = self.values[0]
-            chicken_selected = self.chickens[int(index)]
-            await interaction.response.send_message(f"{interaction.user.display_name} selected the chicken: {chicken_selected['Name']} to trade.")
-            tradeItems[interaction.user.id] = chicken_selected
-            await self.trade(interaction)
+            keepSelecting = True
+            while keepSelecting:
+                index = self.values[0]
+                chicken_selected = self.chickens[int(index)]
+                if chicken_selected in self.tradeData[interaction.user.id].values():
+                    await interaction.response.send_message("This chicken has already been selected to trade.", ephemeral=True)
+                    return
+                reactionMsg = await interaction.response.send_message(f"{interaction.user.display_name} selected the chicken: {chicken_selected['Name']} to trade. React with ✅ to continue selecting more chickens to trade. React ❌ to stop and trade.")
+                self.tradeData[interaction.user].append(chicken_selected)
+                keepSelecting = ChickenAuthorTradeMenu.check_if_two_players_reacted(interaction, self.user, self.user, reactionMsg, self.tradeData)
+                self.values = []
+            await self.trade(interaction, self.tradeData, self.user.id)
 
-        async def trade(self, interaction):
-            global tradeItems
-            if len(tradeItems) != 2:
-                return
-            user1 = self.trade.keys()[0]
-            user2 = self.trade.keys()[1]
-            embed = discord.Embed(description=f"{user1.display_name} and {user2.display_name} have selected {self.trade[user1]['Name']} and {self.trade[user2]['Name']} to trade. React with ✅ to accept the trade or ❌ to decline it. Or ignore this message to add more chickens to the trade.")
-            await interaction.followup.send(embed=embed)
+        async def trade(self, interaction, tradeItems, user_id):
+            user1 = tradeItems[user_id]
+            user2 = [tradeItems if tradeItems.keys() != user_id else None]
+            usersEmbed = discord.Embed(title="Trade Confirmation", description=f"{user1.display_name} has selected the following chickens to trade: {'\n'.join([chicken['Name'] for chicken in tradeItems[user1]])}, while {user2.display_name} has selected the following chickens to trade: {'\n'.join([chicken['Name'] for chicken in tradeItems[user2]])}\nReact with ✅ to accept the trade. React with ❌ to decline the trade.")
+            await interaction.followup.send(embed=usersEmbed)
             await interaction.followup.message.add_reaction("✅")
             await interaction.followup.message.add_reaction("❌")
             reaction, user = await interaction.followup.message.wait_for("reaction_add", check=lambda reaction, user: user.id == user1.id and user.id == user2.id, timeout=30)

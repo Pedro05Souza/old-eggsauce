@@ -1,5 +1,7 @@
 import asyncio
 import os
+import sys
+import signal
 import discord
 from discord.ext import commands
 from db.userDB import Usuario
@@ -133,6 +135,30 @@ class ModCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
 
+    async def restart_client(self):
+        try:
+            print("Attempting to restart the bot.")
+            await self.bot.close()
+            command = [sys.executable, 'main.py'] + sys.argv[1:]
+            await asyncio.sleep(5)
+            print("Bot has been restarted.")
+            os.execv(sys.executable, command)
+        except Exception as e:
+            print(e)
+
+    @commands.command("r", aliases=["restart"])
+    async def force_restart(self, ctx):
+        """Restart the bot."""
+        if str(ctx.author.id) in self.devs:
+            await create_embed_without_title(ctx, ":warning: Restarting...")
+            await self.restart_client()
+
+    async def restart_every_week(self):
+        while True:
+            await asyncio.sleep(604800)
+            command = [sys.executable, 'main.py'] + sys.argv[1:]
+            os.execv(sys.executable, command)
+
     # Event listeners; these functions are called when the event they are listening for is triggered
     
     @commands.Cog.listener()
@@ -146,6 +172,10 @@ class ModCommands(commands.Cog):
         ToggleDB.delete(guild.id)
         ChannelDB.delete(guild.id)
         print(f"Left guild {guild.name}")
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.bot.loop.create_task(self.restart_every_week())
 
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
