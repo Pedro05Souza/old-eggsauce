@@ -14,7 +14,7 @@ class BankCommands(commands.Cog):
         """Registers the user in the bank database."""
         Bank.create(User.id, 0)
 
-    @commands.command("deposit", aliases=["dep"])
+    @commands.hybrid_command("deposit", aliases=["dep"], brief="Deposits points in the bank", parameters=["amount: int"], examples=["deposit 1000"], description="Deposits points in the bank. You can't have more than 5000 eggbux in the bank.")
     @pricing()
     async def deposit(self, ctx, amount: int):
         """Deposits points in the bank"""
@@ -38,7 +38,7 @@ class BankCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have permission to do this.")
 
-    @commands.command("withdraw", aliases=["with"])
+    @commands.hybrid_command("withdraw", aliases=["with"], brief="Withdraws eggubux from the bank", parameters=["amount: int"], examples=["withdraw 1000"], description="Withdraws points from the bank.")
     @pricing()
     async def withdraw(self, ctx, amount: int):
         """Withdraws points from the bank"""
@@ -54,15 +54,15 @@ class BankCommands(commands.Cog):
             await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
             await self.register_bank(ctx.author)
 
-    @commands.command("balance", aliases=["bal", "bank"])
+    @commands.hybrid_command("balance", aliases=["bal"], brief="Shows the balance of the bank account", parameters=["user: discord.Member"], examples=["balance @user"], description="Shows the balance of the bank account.")
     @pricing()
-    async def balance(self, ctx, User: discord.Member = None):
-        if User is None:
-            User = ctx.author
-        if Bank.read(User.id):
-            await create_embed_without_title(ctx, f":bank: {User.display_name} has {Bank.read(User.id)['bank']} eggbux in the bank.")
+    async def balance(self, ctx, user: discord.Member = None):
+        if user is None:
+            user = ctx.author
+        if Bank.read(user.id):
+            await create_embed_without_title(ctx, f":bank: {user.display_name} has {Bank.read(user.id)['bank']} eggbux in the bank.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} doesn't have a bank account.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} doesn't have a bank account.")
     
     @commands.Cog.listener()
     async def on_ready(self):

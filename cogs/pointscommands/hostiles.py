@@ -12,7 +12,7 @@ class HostileCommands(commands.Cog):
         self.prisioner = {}
         self.gods = []
 
-    @commands.command("momentOfSilence")
+    @commands.command("momentofsilence" , aliases=["mos"])
     @commands.bot_has_permissions(mute_members=True)
     @pricing()
     async def moment_of_silence(self, ctx):
@@ -25,7 +25,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name}is not in a voice channel.")
             await refund(user, ctx)
 
-    @commands.command()
+    @commands.command("radio")
     @commands.bot_has_permissions(manage_channels=True)
     @pricing()
     async def radinho(self, ctx):
@@ -38,7 +38,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
-    @commands.command()
+    @commands.command(name="explode")
     @commands.bot_has_permissions(manage_channels=True)
     @pricing()
     async def explode(self, ctx):
@@ -51,7 +51,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
-    @commands.command()
+    @commands.command(name="mute")
     @commands.bot_has_permissions(mute_members=True)
     @pricing()
     async def mute(self, ctx, User: discord.Member = None):
@@ -75,7 +75,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(user, ctx)
 
-    @commands.command()
+    @commands.command(name="unmute")
     @commands.bot_has_permissions(mute_members=True)
     @pricing()
     async def unmute(self, ctx, User: discord.Member = None):
@@ -92,7 +92,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
-    @commands.hybrid_command(name="implode", aliases=["disconnectAll", "dcAll", "dcall"], brief="Disconnects all users from their voice channels.", usage="implode", description="Disconnects all users from their voice channels.")
+    @commands.command(name="implode")
     @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def implode(self, ctx):
@@ -106,7 +106,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
-    @commands.command()
+    @commands.command(name="tirarradinho")
     @commands.bot_has_permissions(manage_channels=True)
     @pricing()
     async def tirarRadinho(self, ctx):
@@ -119,7 +119,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
-    @commands.hybrid_command(name="deafen", brief="Deafens the specified user.", usage="[user]", description="Unmutes all users in the voice channel of the author of the command.")
+    @commands.command(name="deafen")
     @commands.bot_has_permissions(deafen_members=True)
     @pricing()
     async def deafen(self, ctx, user: discord.Member=None):
@@ -136,7 +136,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.command(name="undeafen")
     @commands.bot_has_permissions(deafen_members=True)
     @pricing()
     async def undeafen(self, ctx, User: discord.Member = None):
@@ -153,7 +153,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.command(name="disconnect", aliases=['dc'])
     @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def disconnect(self, ctx, User: discord.Member):
@@ -165,7 +165,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.command(name="prison", aliases=["jail"])
     @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def prison(self, ctx, User:discord.Member):
@@ -195,7 +195,7 @@ class HostileCommands(commands.Cog):
             else:
                 await prison_channel.delete()
                 
-    @commands.command()
+    @commands.command(name="fling")
     @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def fling(self, ctx, User: discord.Member):
@@ -215,7 +215,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.command(name="detonate")
     @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def detonate(self, ctx):
@@ -225,7 +225,7 @@ class HostileCommands(commands.Cog):
                 await membros.move_to(None)
         await create_embed_without_title(ctx, f"All users have been disconnected from their voice channels.")
 
-    @commands.command("shuffle")
+    @commands.command(name="shuffle")
     @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def shuffle(self, ctx):
@@ -239,7 +239,7 @@ class HostileCommands(commands.Cog):
                     await membros.move_to(choice(channelVet))
         await create_embed_without_title(ctx, f"All users have been thrown to random voice channels.")
     
-    @commands.command("emergency")
+    @commands.command(name="emergency")
     @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def emergency(self, ctx):
@@ -254,7 +254,7 @@ class HostileCommands(commands.Cog):
                     await create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
         await create_embed_without_title(ctx, f"All users have been thrown to {ctx.author.voice.channel.name}.")
     
-    @commands.command("fish")
+    @commands.command(name="fish")
     @commands.bot_has_permissions(move_members=True)
     @pricing()
     async def fish(self, ctx, User: discord.Member):
@@ -266,7 +266,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} or {ctx.author.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
 
-    @commands.command()
+    @commands.command(name="kick")
     @commands.has_permissions(kick_members=True)
     @pricing()
     async def kick(self, ctx, User: discord.Member):
@@ -278,7 +278,7 @@ class HostileCommands(commands.Cog):
         await User.kick()
         await create_embed_without_title(ctx, f"{User.display_name} was kicked.")
      
-    @commands.command()
+    @commands.command(name="ban")
     @commands.has_permissions(ban_members=True)
     @pricing()
     async def ban(self, ctx, User: discord.Member):
@@ -290,7 +290,7 @@ class HostileCommands(commands.Cog):
         await User.ban()
         await create_embed_without_title(ctx, f"{User.display_name} was banned.")
 
-    @commands.command("changeNickname")
+    @commands.command(name="changenickname", aliases=["nick"])
     @commands.has_permissions(manage_nicknames=True)
     @pricing()
     async def change_nickname(self, ctx, User: discord.Member, *nickname: str):
@@ -304,14 +304,14 @@ class HostileCommands(commands.Cog):
             await User.edit(nick=nickname)
             await create_embed_without_title(ctx, f"{User.display_name}'s nickname has been changed to {nickname}.")
 
-    @commands.command()
+    @commands.command(name="nuke")
     @pricing()
     async def nuke(self, ctx):
         """Nuke the database."""
         Usuario.resetAll()
         await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")
 
-    @commands.command()
+    @commands.command(name="purge")
     @commands.has_permissions(manage_messages=True)
     @pricing()
     async def purge(self, ctx, amount: int):
@@ -322,7 +322,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, please enter a number between 1 and 25.", "")
             await refund(ctx.author, ctx)  
 
-    @commands.command()
+    @commands.command(name="god")
     @commands.bot_has_permissions(mute_members=True, deafen_members=True)
     @pricing()
     async def god(self, ctx):

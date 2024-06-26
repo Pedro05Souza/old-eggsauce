@@ -17,7 +17,7 @@ class ChickenCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command("createFarm", aliases=["cf"])
+    @commands.hybrid_command(name="createfarm", aliases=["cf"], usage="createFarm", description="Create a farm to start farming eggs.")
     @pricing()
     async def create_farm(self, ctx):
         """Farm some eggs"""
@@ -30,7 +30,7 @@ class ChickenCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You are not registered in the database.")
 
-    @commands.command("market", aliases=["m"])
+    @commands.hybrid_command(name="market", aliases=["m"], usage="market", description="Market that generates 10 random chickens to buy.")
     @pricing()
     async def market(self, ctx):
         """Market to buy chickens"""
@@ -82,18 +82,18 @@ class ChickenCommands(commands.Cog):
             roll_limit.clear()
             await asyncio.sleep(86400)
     
-    @commands.command("farm", aliases=["f"])
+    @commands.hybrid_command(name="farm", aliases=["f"], usage="farm OPTIONAL [user]", description="Check the chickens in the farm.")
     @pricing()
-    async def farm(self, ctx, User: discord.Member = None):
+    async def farm(self, ctx, user: discord.Member = None):
         """Check the chickens in the farm"""
-        if User is None:
-            User = ctx.author
-        if Farm.read(User.id):
-            await ctx.send(embed=self.get_usr_farm(User))
+        if user is None:
+            user = ctx.author
+        if Farm.read(user.id):
+            await ctx.send(embed=self.get_usr_farm(user))
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, doesn't have a farm.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, doesn't have a farm.")
 
-    @commands.command("sellChicken", aliases=["sc"])
+    @commands.hybrid_command(name="sellchicken", aliases=["sc"], usage="sellChicken", description="Deletes a chicken from the farm.")
     @pricing()
     async def sell_chicken(self, ctx):
         """Deletes a chicken from the farm"""
@@ -108,9 +108,9 @@ class ChickenCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you do not have a farm.")
 
-    @commands.command("renameFarm", aliases=["rf"])
+    @commands.hybrid_command(name="renamefarm", aliases=["rf"], usage="renameFarm <nickname>", description="Rename the farm.")
     @pricing()
-    async def rename_farm(self, ctx, nickname):
+    async def rename_farm(self, ctx, nickname: str):
         """Rename the farm"""
         if Farm.read(ctx.author.id):
             farm_data = Farm.read(ctx.author.id)
@@ -123,15 +123,15 @@ class ChickenCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You do not have a farm.")
 
-    @commands.command("showUpkeep", aliases=["su"])
+    @commands.hybrid_command(name="showchickenupkeep", aliases=["su"], usage="showChickenUpkeep", description="Show the upkeep of chickens per rarity.")
     async def show_chicken_upkeep(self, ctx):
         """Show the upkeep of the chickens"""
         upkeep_info = "\n".join([f"{self.get_rarity_emoji(rarity)} **{rarity}**: {ChickenUpkeep[rarity].value}x" for rarity in ChickenRarity.__members__])
         await create_embed_with_title(ctx, "Chicken Upkeep multiplier per rarity:", upkeep_info)
 
-    @commands.command("renameChicken", aliases=["rc"])
+    @commands.hybrid_command(name="renamechicken", aliases=["rc"], usage="renameChicken <index> <nickname>", description="Rename a chicken in the farm.")
     @pricing()
-    async def rename_chicken(self, ctx, index: int, nickname):
+    async def rename_chicken(self, ctx, index: int, nickname: str):
         """Rename a chicken in the farm"""
         index -= 1
         if Farm.read(ctx.author.id):
@@ -188,7 +188,7 @@ class ChickenCommands(commands.Cog):
                     await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} has not responded to the trade request.")
                     return
                 
-    @commands.command("feedChicken", aliases=["fc"])
+    @commands.hybrid_command(name="feedchicken", aliases=["fc"], usage="feedChicken <index>", description="Feed a chicken in the farm.")
     @pricing()
     async def feed_chicken(self, ctx, index: int):
         """Feed a chicken"""
@@ -226,32 +226,32 @@ class ChickenCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you are not registered in the database.")
 
-    @commands.command("farmProfit", aliases=["fp"])
-    async def farm_profit(self, ctx, User: discord.Member = None):
+    @commands.hybrid_command(name="farmprofit", aliases=["fp"], usage="farmProfit OPTIONAL [user]", description="Check the farm profit.")
+    async def farm_profit(self, ctx, user: discord.Member = None):
         """Check the farm profit"""
-        if User is None:
-            User = ctx.author
-        if Farm.read(User.id):
-            farm_data = Farm.read(User.id)
+        if user is None:
+            user = ctx.author
+        if Farm.read(user.id):
+            farm_data = Farm.read(user.id)
             totalProfit = 0
             totalLoss = 0
             if len(farm_data['chickens']) == 0:
-                await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, you don't have any chickens.")
+                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have any chickens.")
                 return
             for chicken in farm_data['chickens']:
                 totalProfit += (chicken['Egg_value'] * chicken['Happiness']) // 100
                 totalLoss += chicken['Upkeep_multiplier']
             result = totalProfit - totalLoss
             if result > 0:
-                await create_embed_without_title(ctx, f":white_check_mark: {User.display_name}, your farm is expected to generate a profit of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Profit: **{totalProfit}**")
+                await create_embed_without_title(ctx, f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Profit: **{totalProfit}**")
             elif result < 0:
-                await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, your farm is expected to generate a loss of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Profit: **{totalProfit}**")
+                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, your farm is expected to generate a loss of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Profit: **{totalProfit}**")
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, your farm is expected to generate neither profit nor loss.")
+                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, you don't have a farm.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have a farm.")
 
-    @commands.command("feedAllChickens", aliases=["fac"])
+    @commands.hybrid_command(name="feedallchickens", aliases=["fac"], usage="feedAllChickens", description="Feed all the chickens in the user's farm.")
     @pricing()
     async def feed_all_chickens(self, ctx):
         """Feed all the chickens in the user's inventory"""
@@ -305,7 +305,7 @@ class ChickenCommands(commands.Cog):
         else:
             return None
 
-    @commands.command("chickenRarities", aliases=["cr"])
+    @commands.hybrid_command(name="chickenrarities", aliases=["cr"], usage="chickenRarities", description="Check the rarities of the chickens.")
     async def check_chicken_rarities(self, ctx):
         """Check the rarities of the chickens"""
         rarity_info = "\n".join([f"{self.get_rarity_emoji(rarity)} **{rarity}**: {round(rate/100, 4)}%" for rarity, rate in rollRates.items()])
@@ -361,7 +361,6 @@ class ChickenCommands(commands.Cog):
             if player['totalEggs'] > 0:
                 Usuario.update(player_id, Usuario.read(player_id)['points'] + player['totalEggs'], Usuario.read(player_id)['roles'])
         print("Eggs dropped!")
-
 
     async def make_eggs_periodically(self):
         """Make eggs periodically"""

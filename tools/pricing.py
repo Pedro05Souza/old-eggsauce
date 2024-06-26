@@ -17,7 +17,7 @@ class Prices(Enum):
     title = 0
     market = 0
     createFarm = 0
-    sellChicken = 0
+    sellchicken = 0
     speak = 0
     farm = 0
     renameFarm = 0
@@ -26,15 +26,15 @@ class Prices(Enum):
     balance = 0
     deposit = 0
     donatepoints = 0
-    pointsTitles = 0
+    pointstitles = 0
     shop = 0
     salary = 0
     hungergames = 0
-    tradeChicken = 0
-    renameChicken = 0
+    tradechicken = 0
+    renamechicken = 0
     balls = 50
     feedChicken = 0
-    feedAllChickens = 0
+    feedallchickens = 0
     love = 75
     mog = 100
     mute = 150
@@ -42,16 +42,16 @@ class Prices(Enum):
     deafen = 150
     undeafen = 150
     disconnect = 175
-    changeNickname = 200
+    changenickname = 200
     fling = 200
     purge = 250
-    radinho = 325
+    radio = 325
     fish = 325
     stealpoints = 350
     pardon = 500
     emergency = 500
     tirarRadinho = 500
-    momentOfSilence = 500
+    momentofsilence = 500
     implode = 750
     explode = 850
     kick = 850
@@ -61,6 +61,9 @@ class Prices(Enum):
     ban = 950
     god = 1000
     nuke = 50000
+
+
+#def verify_submodule(ctx, submodule):
 
 def verify_points(User: discord.Member, comando):
     price = Prices[comando].value

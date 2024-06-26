@@ -19,15 +19,15 @@ class FriendlyCommands(commands.Cog):
         """Bot sends balls."""
         await create_embed_without_title(ctx, f":soccer: balls")
 
-    @commands.command()
+    @commands.hybrid_command("mog", brief="Mog a user", parameters=["User: discord.Member"], examples=["mog @user"], description="Mog a user.")
     @pricing()
-    async def mog(self, ctx, User: discord.Member):
+    async def mog(self, ctx, user: discord.Member):
             """Mog a user."""
             path = choice(os.listdir("images/mogged/"))
             await ctx.send(file=discord.File("images/mogged/"+path))
-            await ctx.send(f"{User.mention} bye bye 🤫🧏‍♂️")
+            await ctx.send(f"{user.mention} bye bye 🤫🧏‍♂️")
     
-    @commands.command("shop", aliases=["store"])
+    @commands.hybrid_command(name="shop", brief="Shows the shop.", description="Shows all the points commands and their prices.", usage="shop")
     @pricing()
     async def shop(self, ctx):
         """Shows the shop."""
@@ -38,7 +38,7 @@ class FriendlyCommands(commands.Cog):
         view = PaginationView(data)
         await view.send(ctx, title="Shop", description="Buy commands with your eggbux:", color=0x00ff00)
 
-    @commands.command("leaderboard", aliases=["ranking"])
+    @commands.hybrid_command(name="leaderboard", brief="Shows the leaderboard.", description="Shows the leaderboard..", usage="leaderboard")
     @pricing()
     async def leaderboard(self, ctx):
         """Shows the leaderboard."""
