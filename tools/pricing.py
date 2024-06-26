@@ -68,7 +68,7 @@ async def set_points_commands_submodules(ctx, command):
         return False
     activate_module = BotConfig.read(ctx.guild.id)['toggled_modules']
     friendly_cogs = ["BankCommands", "PointsConfig", "HostilesCommands", "FriendlyCommands", "ChickenCommands", "InteractiveCommands", "AICommands"]
-    hostile_cog = ["HostilesCommands"]
+    hostile_cog = ["HostileCommands"]
     if activate_module == "F":
         for cog_name in friendly_cogs:
             cog = ctx.bot.get_cog(cog_name)
