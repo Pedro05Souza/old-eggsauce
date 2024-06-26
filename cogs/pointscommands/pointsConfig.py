@@ -3,6 +3,7 @@ from db.botConfigDB import BotConfig
 from tools.embed import create_embed_without_title
 from db.userDB import Usuario
 from tools.pricing import pricing
+from db.botConfigDB import BotConfig
 import math
 import time
 import discord
@@ -72,18 +73,19 @@ class PointsConfig(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, User: discord.Member, before, after):
         """Listens to the voice state update event."""
-        if User.bot:
-            return
-        if Usuario.read(User.id) and before.channel is None and after.channel is not None:
-            await self.count_points(User)
-        elif not Usuario.read(User.id) and before.channel is None and after.channel is not None:
-            self.automatic_register(User)
-            await self.count_points(User)
-        elif Usuario.read(User.id) and before.channel is not None and after.channel is None:
-            await self.update_points(User)
-        elif not Usuario.read(User.id) and before.channel is not None and after.channel is None:
-            self.automatic_register(User)
-            await self.update_points(User)
+        if not BotConfig.read(User.guild.id)['toggled_modules'] == "N":
+            if User.bot:
+                return
+            if Usuario.read(User.id) and before.channel is None and after.channel is not None:
+                await self.count_points(User)
+            elif not Usuario.read(User.id) and before.channel is None and after.channel is not None:
+                self.automatic_register(User)
+                await self.count_points(User)
+            elif Usuario.read(User.id) and before.channel is not None and after.channel is None:
+                await self.update_points(User)
+            elif not Usuario.read(User.id) and before.channel is not None and after.channel is None:
+                self.automatic_register(User)
+                await self.update_points(User)
 
 
 async def setup(bot):
