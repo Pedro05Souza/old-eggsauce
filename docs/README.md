@@ -1,4 +1,4 @@
-# BOT Ovomaltine:
+# Eggsauce BOT:
 
 ![alt text](image-2.png)
 
