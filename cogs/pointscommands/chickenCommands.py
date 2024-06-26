@@ -163,6 +163,15 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def trade_chicken(self, ctx, User: discord.Member):
         """Trade a chicken(s) with another user"""
+        author_involved_in_trade = TradeData.read(ctx.author.id)
+        target_involved_in_trade = TradeData.read(User.id)
+        if author_involved_in_trade:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have a trade in progress.")
+            return
+        if target_involved_in_trade:
+            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} already has a trade request in progress.")
+            return
+        
         if Farm.read(ctx.author.id) and Farm.read(User.id):
             farm_data = Farm.read(ctx.author.id)
             if not farm_data['chickens'] and not Farm.read(User.id)['chickens']:
@@ -171,22 +180,19 @@ class ChickenCommands(commands.Cog):
             if User.id == ctx.author.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't trade with yourself.")
                 return
-            trade_cooldown = time() + 20
-            await create_embed_without_title(ctx, f":chicken: {ctx.author.display_name} has sent a trade request to {User.display_name}. You have 20 seconds to type **accept** or **decline**.")
-            while True:
-                if trade_cooldown - time() <= 0:
-                    break
-                try:
-                    message = await self.bot.wait_for("message", check=lambda message: message.author == User, timeout=20)
-                    if message.content.lower() == "accept":
-                        await self.trade_chickens(ctx, User)
-                        return
-                    elif message.content.lower() == "decline":
-                        await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} has declined the trade request.")
-                        return
-                except asyncio.TimeoutError:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} has not responded to the trade request.")
-                    return
+            t = TradeData()
+            t.identifier = [ctx.author.id, User.id]
+            msg = await create_embed_without_title(ctx, f":chicken: {ctx.author.display_name} has sent a trade request to {User.display_name}. You have 20 seconds to react with ✅ to accept or ❌ to decline.")
+            await msg.add_reaction("✅")
+            await msg.add_reaction("❌")
+            reaction, usr = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == User and reaction.message == msg, timeout=40)
+            if reaction.emoji == "✅":
+                if not author_involved_in_trade and not target_involved_in_trade:
+                    await self.trade_chickens(ctx, User, t)
+            elif reaction.emoji == "❌":
+                await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} has declined the trade request.")
+                TradeData.remove(t)
+                return
                 
     @commands.hybrid_command(name="feedchicken", aliases=["fc"], usage="feedChicken <index>", description="Feed a chicken in the farm.")
     @pricing()
@@ -282,7 +288,7 @@ class ChickenCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have a farm.")
 
-    async def trade_chickens(self, ctx, User: discord.Member):
+    async def trade_chickens(self, ctx, User: discord.Member, t):
         """Trade the chickens"""
         author_data = Farm.read(ctx.author.id)
         user_data = Farm.read(User.id)
@@ -291,7 +297,6 @@ class ChickenCommands(commands.Cog):
         trade_data = [author_data['chickens'], user_data['chickens']]
         members_data = [ctx.author, User]
         embeds = [authorEmbed, userEmbed]
-        t = TradeData()
         view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, chicken_emoji=self.get_rarity_emoji, role="author", trade_data=t)
         view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, chicken_emoji=self.get_rarity_emoji, role="user", trade_data=t, instance_bot = self.bot)
         await ctx.send(embed=authorEmbed, view=view_author)

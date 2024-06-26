@@ -1,10 +1,9 @@
 import asyncio
 from discord import SelectOption, ui
 from db.userDB import Usuario
-import discord
 from random import randint
 from db.farmDB import Farm
-from tools.chickenInfo import ChickenUpkeep, ChickenMultiplier
+from tools.chickenInfo import ChickenUpkeep, ChickenMultiplier, TradeData
 from tools.embed import make_embed_object
 class ChickenSelectView(ui.View):
     """View for selecting chickens from the market or farm to buy or delete them."""
@@ -152,7 +151,6 @@ class ChickenAuthorTradeMenu(ui.Select):
         self.td.author = {
             self.author.id: selected_chickens
         }
-        print(self.td)
         embed = await make_embed_object(description=f":white_check_mark: {self.author.display_name} have selected the chickens to trade.")
         await interaction.response.send_message(embed=embed)
         
@@ -209,6 +207,7 @@ class ChickenUserTradeMenu(ui.Select):
         if len(users_reacted) == 2:
             msg = await trade_handler(interaction, self.td, self.target)
             await interaction.followup.send(embed=msg)
+            TradeData.remove(self.td)
             return
 
 

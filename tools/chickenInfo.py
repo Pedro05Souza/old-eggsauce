@@ -95,6 +95,41 @@ class ChickenUpkeep(Enum):
         ASCENDED = 40
 
 class TradeData():
+        obj_list = []
+
         def __init__ (self):
             self.author = {}
             self.target = {}
+            self.identifier = []
+            TradeData.obj_list.append(self)
+
+        @staticmethod
+        def get(identifier):
+            for obj in TradeData.obj_list:
+                if obj.identifier == identifier:
+                    return obj
+            return None
+        @staticmethod
+        def remove(obj):
+            try:
+                TradeData.obj_list.remove(obj)
+            except Exception as e:
+                print("Error removing object from list.", e)
+
+        @staticmethod
+        def get_all():
+            return TradeData.obj_list
+        
+        @staticmethod
+        def clear():
+            TradeData.obj_list.clear()
+
+        @staticmethod
+        def read(author):
+            for obj in TradeData.obj_list:
+                for id in obj.identifier:
+                    if id == author:
+                        return True
+            return None
+
+        
