@@ -199,10 +199,12 @@ class ChickenUserTradeMenu(ui.Select):
                 elif reaction.emoji == "❌":
                     embed = await make_embed_object(description="Trade has been cancelled.")
                     await msg.edit(embed=embed)
+                    TradeData.remove(self.td)
                     break
             except asyncio.TimeoutError:
                 embed = await make_embed_object(description="Trade confirmation has timed out.")
                 await msg.edit(embed=embed)
+                TradeData.remove(self.td)
                 break
         if len(users_reacted) == 2:
             msg = await trade_handler(interaction, self.td, self.target)

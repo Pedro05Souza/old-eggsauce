@@ -159,40 +159,44 @@ class ChickenCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
 
-    @commands.command("tradechicken", aliases=["trade"])
+    @commands.hybrid_command(name="tradechicken", aliases=["tc", "trade"], usage="tradeChicken <user>", description="Trade a chicken(s) with another user.")
     @pricing()
-    async def trade_chicken(self, ctx, User: discord.Member):
+    async def trade_chicken(self, ctx, user: discord.Member):
         """Trade a chicken(s) with another user"""
         author_involved_in_trade = TradeData.read(ctx.author.id)
-        target_involved_in_trade = TradeData.read(User.id)
+        target_involved_in_trade = TradeData.read(user.id)
         if author_involved_in_trade:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have a trade in progress.")
             return
         if target_involved_in_trade:
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} already has a trade request in progress.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} already has a trade request in progress.")
             return
         
-        if Farm.read(ctx.author.id) and Farm.read(User.id):
+        if Farm.read(ctx.author.id) and Farm.read(user.id):
             farm_data = Farm.read(ctx.author.id)
-            if not farm_data['chickens'] and not Farm.read(User.id)['chickens']:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, {User.display_name} doesn't have any chickens.")
+            if not farm_data['chickens'] and not Farm.read(user.id)['chickens']:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, {user.display_name} doesn't have any chickens.")
                 return
-            if User.id == ctx.author.id:
+            if user.id == ctx.author.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't trade with yourself.")
                 return
             t = TradeData()
-            t.identifier = [ctx.author.id, User.id]
-            msg = await create_embed_without_title(ctx, f":chicken: {ctx.author.display_name} has sent a trade request to {User.display_name}. You have 20 seconds to react with ✅ to accept or ❌ to decline.")
+            t.identifier = [ctx.author.id, user.id]
+            msg = await create_embed_without_title(ctx, f":chicken: {ctx.author.display_name} has sent a trade request to {user.display_name}. You have 20 seconds to react with ✅ to accept or ❌ to decline.")
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
-            reaction, usr = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == User and reaction.message == msg, timeout=40)
-            if reaction.emoji == "✅":
-                if not author_involved_in_trade and not target_involved_in_trade:
-                    await self.trade_chickens(ctx, User, t)
-            elif reaction.emoji == "❌":
-                await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} has declined the trade request.")
+            try:
+                reaction, usr = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == user and reaction.message == msg, timeout=40)
+                if reaction.emoji == "✅":
+                    if not author_involved_in_trade and not target_involved_in_trade:
+                        await self.trade_chickens(ctx, user, t)
+                elif reaction.emoji == "❌":
+                    await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has declined the trade request.")
+                    TradeData.remove(t)
+                    return
+            except asyncio.TimeoutError:
+                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has not responded to the trade request.")
                 TradeData.remove(t)
-                return
                 
     @commands.hybrid_command(name="feedchicken", aliases=["fc"], usage="feedChicken <index>", description="Feed a chicken in the farm.")
     @pricing()

@@ -5,6 +5,8 @@ from db.botConfigDB import BotConfig
 async def create_embed_without_title(ctx, description, **kwargs):
     """Create an embed without a title."""
     if not BotConfig.read(ctx.guild.id)['channel_id'] == ctx.channel.id:
+        channel = discord.utils.get(ctx.guild.text_channels, id=BotConfig.read(ctx.guild.id)['channel_id'])
+        await ctx.author.send(f"Please use the commands channel: {channel.mention}")
         return
     embed = discord.Embed(description=description)
     if isinstance(ctx, discord.Interaction):
@@ -16,6 +18,8 @@ async def create_embed_without_title(ctx, description, **kwargs):
 async def create_embed_with_title(ctx, title, description, **kwargs):
     """Create an embed with a title."""
     if not BotConfig.read(ctx.guild.id)['channel_id'] == ctx.channel.id:
+        channel = discord.utils.get(ctx.guild.text_channels, id=BotConfig.read(ctx.guild.id)['channel_id'])
+        await ctx.author.send(f"Please use the commands channel: {channel.mention}")
         return
     embed = discord.Embed(title=title, description=description)
     if isinstance(ctx, discord.Interaction):

@@ -140,8 +140,8 @@ async def treat_exceptions(ctx, comando):
         return False
     if ctx.channel.id != channel['channel_id']:
         commands_object = ctx.bot.get_channel(BotConfig.read(ctx.guild.id)['channel_id'])
-        commands_channel = commands_object.name
-        embed = await make_embed_object(title=":no_entry_sign: Invalid channel", description=f"Please use the commands channel: **{commands_channel}**")
+        channel_mention = commands_object.mention
+        embed = await make_embed_object(title=":no_entry_sign: Invalid channel", description=f"Please use the commands channel: **{channel_mention}**")
         await ctx.author.send(embed=embed)
         return False
     i = 0
