@@ -126,7 +126,7 @@ class InteractiveCommands(commands.Cog):
                     await refund(ctx.author, ctx)
                 elif chance >= 10: # 10% de chance de falhar
                     quantUser = Usuario.read(user.id)["points"]
-                    randomInteiro = randint(1, int(quantUser/2)) # 50% do total de pontos do usuário
+                    randomInteiro = randint(1, int(quantUser//2)) # 50% do total de pontos do usuário
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
                     Usuario.update(user.id, Usuario.read(user.id)["points"] - randomInteiro, Usuario.read(user.id)["roles"])
                     await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {user.display_name}")
@@ -682,10 +682,8 @@ class InteractiveCommands(commands.Cog):
     
     @commands.Cog.listener()
     async def on_ready(self):
-        await self.bot.tree.sync()
         self.bot.loop.create_task(self.drop_periodically())
         self.bot.loop.create_task(self.work_periodically())
-        print("Interactive commands are ready.")
 
 async def setup(bot):
     await bot.add_cog(InteractiveCommands(bot))

@@ -42,7 +42,6 @@ class AICommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command()
-    @pricing()
     async def speak(self, ctx, *content):
         """Make the AI say something."""
         try:
@@ -66,9 +65,6 @@ class AICommands(commands.Cog):
            await create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
            print(e)
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print("AI commands are ready!")
         
 async def setup(bot):
     await bot.add_cog(AICommands(bot))

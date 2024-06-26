@@ -4,17 +4,17 @@ config_collection = mongo_client.db.botcfg
 class BotConfig:
 
     @staticmethod
-    def create(server_id: int, toggle_value: bool, channel_id: int):
+    def create(server_id: int, toggled_modules: list = None, channel_id: int = None):
         """Create a toggle in the database."""
         try:
-            toggle_data = config_collection.find_one({"server_id" : toggle_value})
+            toggle_data = config_collection.find_one({"server_id" : toggled_modules})
             if toggle_data:
                 print("This channel already exists.")
                 return None
             else:
                 toggle = {
                     "server_id": server_id,
-                    "toggle": toggle_value,
+                    "toggled_modules": toggled_modules,
                     "channel_id": channel_id,
                 }
                 config_collection.insert_one(toggle)
@@ -24,7 +24,7 @@ class BotConfig:
             return None
         
     @staticmethod
-    def create_toggle(server_id:int, toggle_value: bool):
+    def create_toggle(server_id:int, toggled_modules: list):
         """Create a toggle in the database."""
         try:
             toggle_data = config_collection.find_one({"server_id": server_id})
@@ -34,7 +34,7 @@ class BotConfig:
             else:
                 toggle = {
                     "server_id": server_id,
-                    "toggle": toggle_value,
+                    "toggle_modules": toggled_modules,
                 }
                 config_collection.insert_one(toggle)
                 print("Toggle created successfully.")
@@ -62,12 +62,12 @@ class BotConfig:
             return
         
     @staticmethod
-    def update_toggle_value(server_id: int, toggle_value: bool):
+    def update_toggled_modules(server_id: int, toggled_modules: list):
         """Update a toggle in the database."""
         try:
             toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
-                config_collection.update_one({"server_id": server_id}, {"$set": {"toggle": toggle_value}})
+                config_collection.update_one({"server_id": server_id}, {"$set": {"toggled_modules": toggled_modules}})
                 print("Toggle updated successfully.")
             else:
                 print("Toggle not found.")

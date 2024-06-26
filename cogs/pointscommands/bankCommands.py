@@ -64,9 +64,6 @@ class BankCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} doesn't have a bank account.")
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print("Bank commands are ready!")
 
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

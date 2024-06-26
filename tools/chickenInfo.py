@@ -1,4 +1,6 @@
 
+from enum import Enum
+
 rollRates = {
             "COMMON": 5000,
             "UNCOMMON": 2500,
@@ -38,8 +40,6 @@ defineRarityEmojis = {
             "ASCENDED": ":stars:",
         }
 
-from enum import Enum
-
 class ChickenRarity(Enum):
         COMMON = 1
         UNCOMMON = 2
@@ -69,12 +69,12 @@ class ChickenMultiplier(Enum):
         ULTIMATE = 16
         COSMIC = 17
         DIVINE = 19
-        INFINITY = 21
-        OMINOUS = 24
+        INFINITY = 25
+        OMINOUS = 35
         CELESTIAL = 40
         IMMORTAL = 80
-        CHOSEN = 85
-        ASCENDED = 100
+        CHOSEN = 120
+        ASCENDED = 160
 
 class ChickenUpkeep(Enum):
         COMMON = 3
@@ -88,7 +88,7 @@ class ChickenUpkeep(Enum):
         COSMIC = 10
         DIVINE = 11
         INFINITY = 8
-        OMINOUS = 10
+        OMINOUS = 12
         CELESTIAL = 15
         IMMORTAL = 30
         CHOSEN = 35
@@ -96,4 +96,5 @@ class ChickenUpkeep(Enum):
 
 class TradeData():
         def __init__ (self):
-            self.tradeData = {}
+            self.author = {}
+            self.target = {}

@@ -9,7 +9,8 @@ import discord
 class PointsConfig(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.joinTime = {}
+        self.join_time = {}
+        self.init_time = math.ceil(time.time())
 
     @commands.hybrid_command(name="points_toggle", aliases=["ptoggle"], brief="Check the status of ptscmds.", usage="points_toggle", description="Check if the points commands are enabled or disabled in the server.")
     async def points_status(self, ctx):
@@ -19,25 +20,29 @@ class PointsConfig(commands.Cog):
     async def update_points(self, User: discord.Member):
         """Updates the points of the user every 10 seconds."""
         userId = User.id
-        if userId in self.joinTime.keys():
-                addPoints = (math.ceil(time.time()) - self.joinTime[userId]) // 10
-                print(math.ceil(time.time()))
-                print(addPoints)
-                totalPoints = Usuario.read(userId)["points"] + addPoints
-                Usuario.update(userId, totalPoints, Usuario.read(userId)["roles"])
-                self.joinTime[userId] = math.ceil(time.time())
-                return totalPoints
-        else:
-            print(f"{User.name} not found in dict")
-            return
+        if userId in self.join_time.keys():
+            add_points = (math.ceil(time.time()) - self.join_time[userId]) // 10
+            total_points = Usuario.read(userId)["points"] + add_points
+            Usuario.update(userId, total_points, Usuario.read(userId)["roles"])
+            self.join_time[userId] = math.ceil(time.time())
+            return total_points
         
+        if userId not in self.join_time.keys() and User.voice is not None:
+           add_points = (math.ceil(time.time()) - self.init_time) // 10
+           print(Usuario.read(userId)["points"])
+           print(add_points)
+           total_points = Usuario.read(userId)["points"] + add_points
+           Usuario.update(userId, total_points, Usuario.read(userId)["roles"])
+           self.join_time[userId] = math.ceil(time.time())
+           return total_points
+
     async def count_points(self, User: discord.Member):
         """Counts the points of the user every time he enters a voice channel."""
         userId = User.id
         if User.bot:
             return
-        if userId not in self.joinTime.keys():
-            self.joinTime[userId] = math.ceil(time.time())
+        if userId not in self.join_time.keys():
+            self.join_time[userId] = math.ceil(time.time())
         else:
             return
 
@@ -73,20 +78,13 @@ class PointsConfig(commands.Cog):
             await self.count_points(User)
         elif not Usuario.read(User.id) and before.channel is None and after.channel is not None:
             self.automatic_register(User)
-            if User.voice is not None:
-                await self.count_points(User)
+            await self.count_points(User)
         elif Usuario.read(User.id) and before.channel is not None and after.channel is None:
             await self.update_points(User)
+        elif not Usuario.read(User.id) and before.channel is not None and after.channel is None:
+            self.automatic_register(User)
+            await self.update_points(User)
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print("Points commands are ready!")
-        await self.bot.tree.sync()
-        for guild in self.bot.guilds:
-            for vc in guild.voice_channels:
-                for member in vc.members:
-                    if member.voice is not None:
-                        await self.count_points(member)
 
 async def setup(bot):
     await bot.add_cog(PointsConfig(bot))

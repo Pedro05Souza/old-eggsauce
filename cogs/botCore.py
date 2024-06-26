@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 import discord
 import asyncio
 import sys
-from tools.embed import create_embed_without_title, create_embed_with_title
+from tools.embed import create_embed_without_title, create_embed_with_title, make_embed_object
 from db.botConfigDB import BotConfig
-from tools.helpSelect import SelectModule
+from tools.helpSelect import SelectModule, ShowPointsModules
 
-class BotSys(commands.Cog):
+class BotCore(commands.Cog):
     def __init__(self, bot):
         load_dotenv()
         self.bot = bot
@@ -34,12 +34,9 @@ class BotSys(commands.Cog):
 
     async def cancel_all_async_tasks(self):
         """Cancel all running async tasks."""
-        for task in asyncio.all_tasks():
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+        tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+        [task.cancel() for task in tasks]
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     @commands.command("r", aliases=["restart"])
     async def force_restart(self, ctx):
@@ -47,6 +44,8 @@ class BotSys(commands.Cog):
         if str(ctx.author.id) in self.devs:
             await create_embed_without_title(ctx, ":warning: Restarting...")
             await self.restart_client()
+        else:
+            await create_embed_without_title(ctx, ":skull: Hell naw.")
 
     async def restart_every_day(self):
         while True:
@@ -55,50 +54,44 @@ class BotSys(commands.Cog):
     
     async def tutorial(self, target):
         """Sends a tutorial message to the user."""
-        message = "Hello! I'm Eggsauce, a bot that has multiple functionalities and is highly customizable. I come with different modules that can be enabled or disabled according to your needs. To get started, type **!cfg** to configure me."
+        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. To configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Have fun! :tada:")
         for channel in target.text_channels:
             if channel.permissions_for(target.me).send_messages:
-                await channel.send(message)
+                await channel.send(embed=embed)
                 break
 
     @commands.command("cfg")
     async def config(self, ctx):
         """Configures the bot for the server."""
-        if BotConfig.read(ctx.guild.id)['channel_id'] == 0:
-            await create_embed_with_title(ctx, title="Bot config:", description="To configure me, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!togglePoints** to enable or disable sub-modules. You can see the available sub-modules by typing **!modules**.\n3. Type **!cfg** to see this message again.")
+        if not BotConfig.read(ctx.guild.id)['channel_id'] or not BotConfig.read(ctx.guild.id)['toggled_modules']:
+            await create_embed_with_title(ctx, title=":gear: Bot config:", description="To configure me, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available.\n3.Type **!setmodule** to pick the option that most fits you. \n4. Have fun! :tada:")
+        return
 
-    @commands.Cog.listener()
-    async def on_guild_join(self, guild):
-        if not BotConfig.read(guild.id):
-            await self.tutorial(guild) 
-        BotConfig.create(guild.id, True, None)
-        self.bot.remove_command("ignore")
-        print(f"Joined guild {guild.name}")
-
-    @commands.command("modules")
+    @commands.hybrid_command("modules", brief="Displays the modules available to the user.", usage="modules")
     async def modules(self, ctx):
         """Displays a list of commands available to the user."""
-        Embed = discord.Embed(title="**MODULES:**", description=":egg: **Points**: Fun and unique economy system, has sub-Modules.\n:tools: **Utility**: Useful commands for everyday use.\nSelect one of the modules to see the commands available and a better explanation of each one.")
-        view = SelectModule()
-        await ctx.send(embed=Embed, view=view)
+        if ctx.author.guild_permissions.administrator:
+            Embed = await make_embed_object(title="**:gear: BOT MODULES:**", description=":egg: **Points**: Fun and unique economy system, has sub-Modules.\n:tools: **Utility**: Useful commands for everyday use.\nSelect one of the modules to see a better description.")
+            view = SelectModule(ctx.author.id)
+            await ctx.send(embed=Embed, view=view)
+        else:
+            embed = await make_embed_object(":no_entry_sign: You don't have the necessary permissions to use this command.")
+            await ctx.author.send(embed=embed)
     
-    @commands.command("togglePoints")
-    async def toggle_points(self, ctx):
-        """Enable or disable the points commands."""
+    @commands.command("setModule", aliases=["setM"])
+    async def set_module(self, ctx):
+        """Set the module where the bot will pick commands from."""
         if BotConfig.read(ctx.guild.id):
             if ctx.author.guild_permissions.administrator:
-                if BotConfig.read(ctx.guild.id)['toggle']:
-                    BotConfig.update_toggle_value(ctx.guild.id, False)
-                    await create_embed_without_title(ctx, ":warning: Points commands are now disabled.")
-                else:
-                    BotConfig.update_toggle_value(ctx.guild.id, True)
-                    await create_embed_without_title(ctx, ":white_check_mark: Points commands are now enabled.")
+                embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. :star: **Friendly**\n3. :gun: **Hostiles**\n4. :x: **None**\n\nSelect one of the modules to enable/disable it.")
+                view = ShowPointsModules(ctx.author.id)
+                await ctx.send(embed=embed, view=view)
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you do not have permission to do this.")
+                embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
+                await ctx.author.send(embed=embed)
         else:
-            BotConfig.create(ctx.guild.id, True, BotConfig.read(ctx.guild.id)['channel_id'])
-            await create_embed_without_title(ctx, ":white_check_mark: Points commands are now enabled.")
-
+            BotConfig.create(ctx.guild.id)
+            
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx):
         """Set the channel where the bot will listen for commands."""
@@ -106,16 +99,18 @@ class BotSys(commands.Cog):
             if ctx.author.guild_permissions.administrator:
                 BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
                 await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been set.")
+            else:
+                embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
+                await ctx.author.send(embed=embed)
         else:
-            BotConfig.create(ctx.guild.id, BotConfig.read(ctx.guild.id)['toggle'], ctx.channel.id)
+            BotConfig.create(ctx.guild.id, None, ctx.channel.id)
             await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been set.")
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        if not BotConfig.read(guild.id):
-            await self.tutorial(guild)
-            BotConfig.create(guild.id, None, None)
-            self.bot.remove_command("ignore")
+        await self.tutorial(guild)
+        BotConfig.create(guild.id)
+        self.bot.remove_command("ignore")
         print(f"Joined guild {guild.name}")
 
     @commands.Cog.listener()
@@ -131,8 +126,8 @@ class BotSys(commands.Cog):
     
     @commands.Cog.listener()
     async def on_ready(self):
-        print("bot sys commands are ready!")
-        self.bot.loop.create_task(self.restart_every_day())
+        await self.bot.tree.sync()
+        await self.bot.loop.create_task(self.restart_every_day())
 
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
@@ -147,5 +142,6 @@ class BotSys(commands.Cog):
     #                         await create_embed_without_title(ctx, f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
     #                         await refund(ctx.author, ctx)
     #     print(error)
+
 async def setup(bot):
-    await bot.add_cog(BotSys(bot))
+    await bot.add_cog(BotCore(bot))

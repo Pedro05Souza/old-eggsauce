@@ -2,7 +2,6 @@ from discord.ext import commands
 import discord
 from tools.embed import create_embed_without_title
 import os
-from db.botConfigDB import BotConfig
 from db.userDB import Usuario
 from tools.pagination import PaginationView
 from tools.pricing import Prices
@@ -53,9 +52,6 @@ class FriendlyCommands(commands.Cog):
         view = PaginationView(data)
         await view.send(ctx, title="Leaderboard", description="Eggbux's ranking", color=0x00ff00)
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print("Friendly commands are ready!")
 
 async def setup(bot):
     await bot.add_cog(FriendlyCommands(bot))

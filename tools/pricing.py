@@ -5,7 +5,7 @@ import discord
 from db.botConfigDB import BotConfig
 import inspect
 from discord.ext import commands
-from tools.embed import create_embed_without_title
+from tools.embed import create_embed_without_title, make_embed_object
 import time
 
 # This class is responsible for handling the prices of the commands.
@@ -16,24 +16,24 @@ class Prices(Enum):
     casino = 0
     title = 0
     market = 0
-    createFarm = 0
+    createfarm = 0
+    farmprofit = 0
     sellchicken = 0
-    speak = 0
     farm = 0
-    renameFarm = 0
+    renamefarm = 0
     checkTitle = 0
     withdraw = 0
     balance = 0
     deposit = 0
     donatepoints = 0
-    pointstitles = 0
+    buytitles = 0
     shop = 0
     salary = 0
     hungergames = 0
     tradechicken = 0
     renamechicken = 0
     balls = 50
-    feedChicken = 0
+    feedchicken = 0
     feedallchickens = 0
     love = 75
     mog = 100
@@ -62,8 +62,37 @@ class Prices(Enum):
     god = 1000
     nuke = 50000
 
-
-#def verify_submodule(ctx, submodule):
+async def set_points_commands_submodules(ctx, command):
+    if not BotConfig.read(ctx.guild.id)['toggled_modules']:
+        await create_embed_without_title(ctx, ":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
+        return False
+    activate_module = BotConfig.read(ctx.guild.id)['toggled_modules']
+    friendly_cogs = ["BankCommands", "PointsConfig", "HostilesCommands", "FriendlyCommands", "ChickenCommands", "InteractiveCommands", "AICommands"]
+    hostile_cog = ["HostilesCommands"]
+    if activate_module == "F":
+        for cog_name in friendly_cogs:
+            cog = ctx.bot.get_cog(cog_name)
+            if cog:
+                for cmd in cog.get_commands():
+                    if cmd.name == command:
+                        return True            
+        await create_embed_without_title(ctx, ":no_entry_sign: The command is not available in the current module.")
+        return False
+    elif activate_module == "H":
+        for cog_name in hostile_cog:
+            cog = ctx.bot.get_cog(cog_name)
+            if cog:
+                for cmd in cog.get_commands():
+                    if cmd.name == command:
+                        return True
+                    
+        await create_embed_without_title(ctx, ":no_entry_sign: The command is not available in the current module.")
+        return False
+    elif activate_module == "T":
+        return True
+    else:
+        await create_embed_without_title(ctx, ":no_entry_sign: The command is not available in the current module.")
+        return False
 
 def verify_points(User: discord.Member, comando):
     price = Prices[comando].value
@@ -86,7 +115,7 @@ async def treat_exceptions(ctx, comando):
         return True
     
     message_content = ctx.message.content
-    command_args = message_content.split()[1:]  
+    command_args = message_content.split()[1:] 
         
     command_func = ctx.command.callback
     parameters = list(inspect.signature(command_func).parameters.values())
@@ -98,8 +127,6 @@ async def treat_exceptions(ctx, comando):
     expected_args_count = len(parameters) - len(optional_params_indices)
     if varargs_index is not None:
         expected_args_count -= 1 
-    print(command_args)
-    print(expected_args_count)
     if len(command_args) < expected_args_count:
         await create_embed_without_title(ctx, ":no_entry_sign: Insufficient amount of arguments.")
         return False
@@ -114,7 +141,8 @@ async def treat_exceptions(ctx, comando):
     if ctx.channel.id != channel['channel_id']:
         commands_object = ctx.bot.get_channel(BotConfig.read(ctx.guild.id)['channel_id'])
         commands_channel = commands_object.name
-        await create_embed_without_title(ctx, f":no_entry_sign: This command can only be used in the **{commands_channel}** channel.")
+        embed = await make_embed_object(title=":no_entry_sign: Invalid channel", description=f"Please use the commands channel: **{commands_channel}**")
+        await ctx.author.send(embed=embed)
         return False
     i = 0
     for index, param in enumerate(parameters):
@@ -175,7 +203,7 @@ def pricing():
         """Check if the user has enough points to use the command."""
         cooldown_period = 3 
         result = True
-        if not BotConfig.read(ctx.guild.id)['toggle']:
+        if BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
             if not await command_cooldown(ctx, "points", cooldown_period):
                 result = False
             await create_embed_without_title(ctx, ":warning: The points commands are **disabled** in this server.")
@@ -190,8 +218,14 @@ def pricing():
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: You do not have enough points to use this command.")
                 result = False 
+            if not await set_points_commands_submodules(ctx, command):
+                result = False
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: Unknown command.")
         ctx.predicate_result = result
         return result
-    return commands.check(predicate)
+    try:
+        return commands.check(predicate)
+    except Exception as e:
+        print("Error encountered while checking the predicate.", e)
+        return False

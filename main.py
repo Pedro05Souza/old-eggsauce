@@ -14,6 +14,7 @@ async def load_cogs():
     cogs_dir = Path('./cogs')
     for filepath in cogs_dir.rglob('*.py'):
         module_path = filepath.relative_to(cogs_dir).with_suffix('').as_posix().replace('/', '.')
+        print(f'Loading {module_path}...')
         await bot.load_extension(f'cogs.{module_path}')
 
 asyncio.run(load_cogs())

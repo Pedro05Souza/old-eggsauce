@@ -348,11 +348,7 @@ class HostileCommands(commands.Cog):
         if member in self.gods and not before.deaf and after.deaf:
             await member.edit(deafen=False)
             print(f"{member.name} was deafened, but was an undeafener and was undeafened")
-            
-    @commands.Cog.listener()
-    async def on_ready(self):
-        await self.bot.tree.sync()
-        print("Hostile commands are ready!")
+
 
 async def setup(bot):
     await bot.add_cog(HostileCommands(bot))
