@@ -1,6 +1,7 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
-from tools.embed import create_embed_without_title
+from tools.embed import create_embed_without_title, create_embed_with_title
+from db.bankDB import Bank
 from db.userDB import Usuario
 from tools.pricing import pricing
 from db.botConfigDB import BotConfig
@@ -13,7 +14,7 @@ class PointsConfig(commands.Cog):
         self.join_time = {}
         self.init_time = math.ceil(time.time())
 
-    @commands.hybrid_command(name="points_toggle", aliases=["ptoggle"], brief="Check the status of ptscmds.", usage="points_toggle", description="Check if the points commands are enabled or disabled in the server.")
+    @commands.hybrid_command(name="pointstoggled", aliases=["pstatus"], brief="Check the status of ptscmds.", usage="points_toggle", description="Check if the points commands are enabled or disabled in the server.")
     async def points_status(self, ctx):
         """Check if the points commands are enabled or disabled in the server."""
         await create_embed_without_title(ctx, f":warning: The points commands are {'**enabled**' if BotConfig.read[ctx.guild.id]['toggle'] else '**disabled**'} in this server.")
@@ -30,8 +31,6 @@ class PointsConfig(commands.Cog):
         
         if userId not in self.join_time.keys() and User.voice is not None:
            add_points = (math.ceil(time.time()) - self.init_time) // 10
-           print(Usuario.read(userId)["points"])
-           print(add_points)
            total_points = Usuario.read(userId)["points"] + add_points
            Usuario.update(userId, total_points, Usuario.read(userId)["roles"])
            self.join_time[userId] = math.ceil(time.time())
@@ -64,7 +63,7 @@ class PointsConfig(commands.Cog):
             Usuario.create(ctx.author.id, 0)
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} has been registered.")
  
-    @commands.hybrid_command(name="points", aliases=["pts", "eggbux"], brief="Shows the amount of points the user has.", usage="points OPTIONAL [user]", description="Shows the amount of points a usr has. If not usr, shows author's points.")
+    @commands.hybrid_command(name="points", aliases=["pts", "eggbux", "p"], brief="Shows the amount of points the user has.", usage="points OPTIONAL [user]", description="Shows the amount of points a usr has. If not usr, shows author's points.")
     @pricing()
     async def points(self, ctx, user: discord.Member = None):
         """Shows the amount of points the user has."""
@@ -75,7 +74,9 @@ class PointsConfig(commands.Cog):
             points = await self.update_points(user)
             if points is None:
                 points = user_data["points"]
-            await create_embed_without_title(ctx, f":coin: {user.display_name} has {points} eggbux.")
+                bank_data = Bank.read(user.id)
+                bank_amount = bank_data['bank'] if bank_data and 'bank' in bank_data and bank_data['bank'] is not None else "User has no bank account."
+            await create_embed_with_title(ctx, f":egg: {user.display_name}'s eggbux", f":briefcase: Wallet: {points} eggbux.\n :bank: Bank: {bank_amount} eggbux")
         else:
             await create_embed_without_title(ctx, f"{user.display_name} has no eggbux :cry:")
 

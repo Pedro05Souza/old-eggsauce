@@ -126,7 +126,7 @@ class ChickenDeleteMenu(ui.Select):
         await interaction.response.send_message(embed=embed)
         available_chickens = [chicken for chicken in self.chickens if not chicken.get('Deleted', False)]
         updated_view = ChickenSelectView(available_chickens, self.author_id, "D", self.message, self.chicken_emoji)
-        updated_message = await make_embed_object(title=f":chicken: {farm_data['farm_name']}", description="\n".join([f"{self.chicken_emoji(chicken['Name'])} **{index + 1}.** {chicken['Name']}" for index, chicken in enumerate(farm_data['chickens']) if not chicken.get('Deleted', False)]))
+        updated_message = await make_embed_object(title=f":chicken: {farm_data['farm_name']}\n:egg: **Eggs generated**: {farm_data['eggs_generated']}", description="\n".join([f"{self.chicken_emoji(chicken['Name'])}  **{index + 1}.** **{chicken['Name']}** \n:partying_face: Happiness: **{chicken['Happiness']}%**\n Eggs generated: **{chicken['Eggs_generated']}**\n" for index, chicken in enumerate(farm_data['chickens'])]))
         self.message = updated_message
         await interaction.message.edit(view=updated_view, embed=updated_message)
         return

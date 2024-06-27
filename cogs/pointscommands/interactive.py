@@ -257,8 +257,8 @@ class InteractiveCommands(commands.Cog):
         min_tributes = 4
         end_time = time.time() + wait_time
         messageHg = await create_embed_without_title(ctx, f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
-        for member in ctx.guild.members:
-            tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
+        # for member in ctx.guild.members:
+        #     tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
         await messageHg.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()

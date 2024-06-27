@@ -8,7 +8,7 @@ async def create_embed_without_title(ctx, description, **kwargs):
         channel = discord.utils.get(ctx.guild.text_channels, id=BotConfig.read(ctx.guild.id)['channel_id'])
         await ctx.author.send(f"Please use the commands channel: {channel.mention}")
         return
-    embed = discord.Embed(description=description)
+    embed = discord.Embed(description=description, color=discord.Color.yellow())
     if isinstance(ctx, discord.Interaction):
         message = await ctx.response.send_message(embed=embed, **kwargs)
     else:
@@ -21,7 +21,7 @@ async def create_embed_with_title(ctx, title, description, **kwargs):
         channel = discord.utils.get(ctx.guild.text_channels, id=BotConfig.read(ctx.guild.id)['channel_id'])
         await ctx.author.send(f"Please use the commands channel: {channel.mention}")
         return
-    embed = discord.Embed(title=title, description=description)
+    embed = discord.Embed(title=title, description=description, color=discord.Color.yellow())
     if isinstance(ctx, discord.Interaction):
         message = await ctx.response.send_message(embed=embed, **kwargs)
     else:
@@ -30,7 +30,7 @@ async def create_embed_with_title(ctx, title, description, **kwargs):
 
 async def make_embed_object(**kwargs):
     """Create an embed with a title."""
-    embed = discord.Embed(**kwargs)
+    embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     return embed
 
 

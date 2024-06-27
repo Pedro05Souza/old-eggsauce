@@ -72,14 +72,7 @@ class BotCore(commands.Cog):
             if channel.permissions_for(target.me).send_messages:
                 await channel.send(embed=embed)
                 break
-
-    @commands.command("cfg")
-    async def config(self, ctx):
-        """Configures the bot for the server."""
-        if not BotConfig.read(ctx.guild.id)['channel_id'] or not BotConfig.read(ctx.guild.id)['toggled_modules']:
-            await create_embed_with_title(ctx, title=":gear: Bot config:", description="To configure me, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available.\n3.Type **!setmodule** to pick the option that most fits you. \n4. Have fun! :tada:")
-        return
-
+            
     @commands.hybrid_command("modules", brief="Displays the modules available to the user.", usage="modules")
     async def modules(self, ctx):
         """Displays a list of commands available to the user."""

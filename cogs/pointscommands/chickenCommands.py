@@ -9,7 +9,7 @@ from tools.chickenInfo import rollRates, defineRarityEmojis
 from random import uniform, randint
 import discord
 from tools.pricing import pricing
-from tools.embed import create_embed_without_title, create_embed_with_title
+from tools.embed import create_embed_without_title, create_embed_with_title, make_embed_object
 class RollLimit:
     obj_list = []
     def __init__(self, user_id, current, chickens=None):
@@ -64,7 +64,7 @@ class ChickenCommands(commands.Cog):
         plrObj.current -= 1
         generated_chickens = self.generate_chickens(*self.roll_rates_sum(), 10, ctx)
         plrObj.chickens = generated_chickens
-        message = discord.Embed(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.get_rarity_emoji(chicken['Name'])} **{index + 1}.** **{chicken['Name']}**: {chicken['Price']}" for index, chicken in enumerate(generated_chickens)]))
+        message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.get_rarity_emoji(chicken['Name'])} **{index + 1}.** **{chicken['Name']}**: {chicken['Price']}" for index, chicken in enumerate(generated_chickens)]))
         view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message, chicken_emoji=self.get_rarity_emoji)
         await ctx.send(embed=message, view=view)
 
@@ -80,7 +80,7 @@ class ChickenCommands(commands.Cog):
             "**:pound: Tier 4:** Increases the rate of generating rarer chickens by 40%.\n**Price:** 9000 eggbux :money_with_wings:"
         ]
         description = "\n\n".join(tierDescriptions) + "\n\n React with the corresponding emoji to purchase the tier."
-        msg = await create_embed_with_title(ctx, title=":egg: Increase the rarity of the chickens generated in the market.", description=description)
+        msg = await create_embed_with_title(ctx, title=":egg: Increase the rarity of the chickens generated in the market.\n", description=f"Note: You need at least 1250 eggs generated at your farm to buy the upgrades.\n {description}")
         emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"]
         for emoji in emojis:
             await msg.add_reaction(emoji)
@@ -88,7 +88,7 @@ class ChickenCommands(commands.Cog):
         farm_data = Farm.read(user.id)
         user_data = Usuario.read(user.id)
         emoji_to_tier = dict(zip(emojis, tierPrice))
-        min_eggs = 1000
+        min_eggs = 1250
         if reaction.emoji in emoji_to_tier:
             if farm_data['eggs_generated'] < min_eggs:
                 await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you need to generate at least {min_eggs} eggs to purchase a tier.")
@@ -149,7 +149,7 @@ class ChickenCommands(commands.Cog):
         if user is None:
             user = ctx.author
         if Farm.read(user.id):
-            await ctx.send(embed=self.get_usr_farm(user))
+            await ctx.send(embed=await self.get_usr_farm(user))
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, doesn't have a farm.")
 
@@ -162,7 +162,7 @@ class ChickenCommands(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
                 return
             farm_data = Farm.read(ctx.author.id)
-            message = self.get_usr_farm(ctx.author)
+            message = await self.get_usr_farm(ctx.author)
             view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author.id, action="D", chicken_emoji=self.get_rarity_emoji)
             await ctx.send(embed=message,view=view)
         else:
@@ -354,8 +354,8 @@ class ChickenCommands(commands.Cog):
         """Trade the chickens"""
         author_data = Farm.read(ctx.author.id)
         user_data = Farm.read(User.id)
-        authorEmbed = self.get_usr_farm(ctx.author)
-        userEmbed = self.get_usr_farm(User)
+        authorEmbed = await self.get_usr_farm(ctx.author)
+        userEmbed = await self.get_usr_farm(User)
         trade_data = [author_data['chickens'], user_data['chickens']]
         members_data = [ctx.author, User]
         embeds = [authorEmbed, userEmbed]
@@ -364,11 +364,11 @@ class ChickenCommands(commands.Cog):
         await ctx.send(embed=authorEmbed, view=view_author)
         await ctx.send(embed=userEmbed, view=view_user)
 
-    def get_usr_farm(self, User: discord.Member):
+    async def get_usr_farm(self, User: discord.Member):
         """Get the user's farm"""
         if Farm.read(User.id):
             user_data = Farm.read(User.id)
-            msg = discord.Embed(title=f":chicken: {user_data['farm_name']}\n:egg: **Eggs generated**: {user_data['eggs_generated']}", description="\n".join([f"{self.get_rarity_emoji(chicken['Name'])}  **{index + 1}.** **{chicken['Name']}** \n:partying_face: Happiness: **{chicken['Happiness']}%**\n Eggs generated: **{chicken['Eggs_generated']}**\n" for index, chicken in enumerate(user_data['chickens'])]))
+            msg = await make_embed_object(title=f":chicken: {user_data['farm_name']}\n:egg: **Eggs generated**: {user_data['eggs_generated']}", description="\n".join([f"{self.get_rarity_emoji(chicken['Name'])}  **{index + 1}.** **{chicken['Name']}** \n:partying_face: Happiness: **{chicken['Happiness']}%**\n Eggs generated: **{chicken['Eggs_generated']}**\n" for index, chicken in enumerate(user_data['chickens'])]))
             return msg
         else:
             return None
@@ -398,7 +398,8 @@ class ChickenCommands(commands.Cog):
             if len(user_data['chickens']) >= self.get_max_chicken_limit():
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, {user.display_name} already has the maximum amount of chickens.")
                 return
-            msg = await create_embed_without_title(ctx, f":gift: {user.display_name} has 20 seconds to react with ✅ to accept or ❌ to decline the gift request.")
+            gifted_chicken = author_data['chickens'][index]
+            msg = await create_embed_without_title(ctx, f":gift: {user.display_name}, {ctx.author.display_name} wants to gift you a {gifted_chicken['Name']}. You have 20 seconds to react with ✅ to accept or ❌ to decline the gift request.")
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
             try:
