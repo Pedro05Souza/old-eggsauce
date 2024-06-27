@@ -46,14 +46,14 @@ class InteractiveCommands(commands.Cog):
     async def drop_periodically(self):
         """Drops eggbux in the chat every 1000 seconds."""
         while True:
+            await asyncio.sleep(1000)
             await self.drop_eggbux()
-            await asyncio.sleep(1800)
 
     @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
     @pricing()
     async def donate_points(self, ctx, user:discord.Member, amount: int):
         """Donates points to another user."""
-        if Usuario.read(ctx.author.id) and Usuario.read(user.id):
+        if Usuario.read(user.id):
             if ctx.author.id == user.id:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate to yourself.")
             elif Usuario.read(ctx.author.id)["points"] >= amount:
@@ -67,7 +67,7 @@ class InteractiveCommands(commands.Cog):
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have permission to do this.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} isn't registered in the database.")
              
     @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
     @pricing()
@@ -78,19 +78,19 @@ class InteractiveCommands(commands.Cog):
         corEmoji = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
         vermelhos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
         roleta = {i : "RED" if i in vermelhos else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
-        if Usuario.read(ctx.author.id) and cor in coresPossiveis:
+        if cor in coresPossiveis:
             if Usuario.read(ctx.author.id)["points"] >= amount and amount >= 50:
                 cassino = randint(0, 36)
                 corSorteada = roleta[cassino]
                 if corSorteada == "GREEN" and cor == "GREEN":
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
-                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has won!")
+                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {corSorteada} {corEmoji[corSorteada]}")
                 elif corSorteada == cor:
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
-                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has won!")
+                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has **won** {amount} eggbux!")
                 else:                  
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
-                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has lost! The selected color was {corSorteada} {corEmoji[corSorteada]}")
+                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has **lost!** The selected color was {corSorteada} {corEmoji[corSorteada]}")
                     return
             else:
                 await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} You don't have enough eggbux or the amount is less than 50.")
@@ -114,29 +114,27 @@ class InteractiveCommands(commands.Cog):
     @pricing()
     async def steal_points(self, ctx, user: discord.Member):
         """Steals points from another user."""
-        if Usuario.read(ctx.author.id):
-            chance  = randint(0, 100)
-            if user.bot:
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a bot.")
+        chance  = randint(0, 100)
+        if user.bot:
+            await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a bot.")
+            await refund(ctx.author, ctx)
+            return
+        if Usuario.read(user.id):
+            if ctx.author.id == user.id:
+                await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from yourself.")
                 await refund(ctx.author, ctx)
-                return
-            if Usuario.read(user.id):
-                if ctx.author.id == user.id:
-                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from yourself.")
-                    await refund(ctx.author, ctx)
-                elif chance >= 10: # 10% de chance de falhar
-                    quantUser = Usuario.read(user.id)["points"]
-                    randomInteiro = randint(1, int(quantUser//2)) # 50% do total de pontos do usuário
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
-                    Usuario.update(user.id, Usuario.read(user.id)["points"] - randomInteiro, Usuario.read(user.id)["roles"])
-                    await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {user.display_name}")
-                else:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} failed to steal from {user.display_name}")
+            elif chance >= 10: # 10% de chance de falhar
+                quantUser = Usuario.read(user.id)["points"]
+                randomInteiro = randint(1, int(quantUser//2)) # 50% do total de pontos do usuário
+                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
+                Usuario.update(user.id, Usuario.read(user.id)["points"] - randomInteiro, Usuario.read(user.id)["roles"])
+                await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {user.display_name}")
             else:
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
-                await refund(ctx.author, ctx)
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} failed to steal from {user.display_name}")
         else:
             await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
+            await refund(ctx.author, ctx)
+        
 
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
     @pricing()
@@ -165,17 +163,14 @@ class InteractiveCommands(commands.Cog):
             check = lambda reaction, user: reaction.emoji == "✅" and reaction.message.id == message.id
             reaction, user = await self.bot.wait_for("reaction_add", check=check)
             if reaction.emoji == "✅":
-                if Usuario.read(user.id):
-                    if Usuario.read(user.id)["roles"] == "":
-                        await self.buy_roles(ctx, user, rolePrices["T"], "T", roles["T"])
-                    elif Usuario.read(user.id)["roles"][-1] == "T":
-                        await self.buy_roles(ctx, user, rolePrices["L"], "L", roles["L"])
-                    elif Usuario.read(user.id)["roles"][-1] == "L":
-                        await self.buy_roles(ctx, user, rolePrices["M"], "M", roles["M"])
-                    elif Usuario.read(user.id)["roles"][-1] == "M":
-                        await self.buy_roles(ctx, user, rolePrices["H"], "H", roles["H"])
-                else:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} isn't registered in the database.")
+                if Usuario.read(user.id)["roles"] == "":
+                    await self.buy_roles(ctx, user, rolePrices["T"], "T", roles["T"])
+                elif Usuario.read(user.id)["roles"][-1] == "T":
+                    await self.buy_roles(ctx, user, rolePrices["L"], "L", roles["L"])
+                elif Usuario.read(user.id)["roles"][-1] == "L":
+                    await self.buy_roles(ctx, user, rolePrices["M"], "M", roles["M"])
+                elif Usuario.read(user.id)["roles"][-1] == "M":
+                    await self.buy_roles(ctx, user, rolePrices["H"], "H", roles["H"])
 
     async def buy_roles(self, ctx, User: discord.Member, roleValue, roleChar, roleName):
         """Buy roles."""

@@ -4,7 +4,7 @@ config_collection = mongo_client.db.botcfg
 class BotConfig:
 
     @staticmethod
-    def create(server_id: int, toggled_modules: list = None, channel_id: int = None):
+    def create(server_id: int, toggled_modules: list = None, channel_id: int = None, prefix: str = None):
         """Create a toggle in the database."""
         try:
             toggle_data = config_collection.find_one({"server_id" : toggled_modules})
@@ -16,6 +16,7 @@ class BotConfig:
                     "server_id": server_id,
                     "toggled_modules": toggled_modules,
                     "channel_id": channel_id,
+                    "prefix": prefix,
                 }
                 config_collection.insert_one(toggle)
                 print("Server created successfully.")
@@ -60,6 +61,37 @@ class BotConfig:
         except Exception as e:
             print("Error encountered while creating a channel.", e)
             return
+        
+    @staticmethod
+    def create_prefix(server: int, prefix: str):
+        try:
+            prefix_data = config_collection.find_one({"server_id": server})
+            if prefix_data:
+                print("This prefix already exists.")
+                return None
+            else:
+                prefix = {
+                    "server_id": server,
+                    "prefix": prefix,
+                }
+                config_collection.insert_one(prefix)
+                print("Prefix created successfully.")
+        except Exception as e:
+            print("Error encountered while creating a prefix.", e)
+            return None
+        
+    @staticmethod
+    def update_prefix(server_id: int, prefix: str):
+        """Update a prefix in the database."""
+        try:
+            prefix_data = config_collection.find_one({"server_id": server_id})
+            if prefix_data:
+                config_collection.update_one({"server_id": server_id}, {"$set": {"prefix": prefix}})
+                print("Prefix updated successfully.")
+            else:
+                print("Prefix not found.")
+        except Exception as e:
+            print("Error encountered while updating a prefix.", e)
         
     @staticmethod
     def update_toggled_modules(server_id: int, toggled_modules: list):

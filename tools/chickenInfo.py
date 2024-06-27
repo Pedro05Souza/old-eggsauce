@@ -40,6 +40,7 @@ defineRarityEmojis = {
             "ASCENDED": ":stars:",
         }
 
+
 class ChickenRarity(Enum):
         COMMON = 1
         UNCOMMON = 2

@@ -83,7 +83,7 @@ class DevCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
     
-    @commands.command()
+    @commands.command("giveRolls")
     async def give_rolls(self, ctx, rolls : int, User: discord.Member):
         """Add more chicken roles to a user."""
         userObj = RollLimit.read(User.id)
@@ -92,10 +92,7 @@ class DevCommands(commands.Cog):
             await create_embed_without_title(ctx, f"{User.display_name} received {rolls} rolls.")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: User didn't roll chickens in the market yet.")
-
     
-    
-        
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))
 

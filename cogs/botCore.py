@@ -64,11 +64,10 @@ class BotCore(commands.Cog):
     async def cmds(self, ctx):
         """Displays a list of commands available to the user."""
         embed = await make_embed_object(title="**:gear: COMMANDS:***", description="Select a module to display the commands available.")
-
     
     async def tutorial(self, target):
         """Sends a tutorial message to the user."""
-        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!commands** to visualize every command i have to offer. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Have fun! :tada:")
+        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!commands** to visualize every command i have to offer. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Type **!setPrefix** to select the prefix of the bot.\n5. Have fun! :tada:")
         for channel in target.text_channels:
             if channel.permissions_for(target.me).send_messages:
                 await channel.send(embed=embed)
@@ -105,6 +104,24 @@ class BotCore(commands.Cog):
                 await ctx.author.send(embed=embed)
         else:
             BotConfig.create(ctx.guild.id)
+            await create_embed_without_title(ctx, ":warning: The bot wasn't registered in this server. Try again.")
+
+    @commands.command("setPrefix", aliases=["setP"])
+    async def set_prefix(self, ctx, prefix: str):
+        """Set the prefix for the bot."""
+        if BotConfig.read(ctx.guild.id):
+            if ctx.author.guild_permissions.administrator:
+                if len(prefix) > 1:
+                    await create_embed_without_title(ctx, ":no_entry_sign: The prefix can't have more than one character.")
+                    return
+                BotConfig.update_prefix(ctx.guild.id, prefix)
+                await create_embed_without_title(ctx, f":white_check_mark: Prefix has been set to **{prefix}**.")
+            else:
+                embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
+                await ctx.author.send(embed=embed)
+        else:
+            BotConfig.create(ctx.guild.id, prefix=prefix)
+            await create_embed_without_title(ctx, f":white_check_mark: Prefix has been set to **{prefix}**.")
             
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx):

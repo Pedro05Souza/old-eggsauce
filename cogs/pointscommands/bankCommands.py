@@ -18,7 +18,7 @@ class BankCommands(commands.Cog):
     @pricing()
     async def deposit(self, ctx, amount: int):
         """Deposits points in the bank"""
-        if Usuario.read(ctx.author.id) and amount > 0:
+        if amount > 0:
             if Bank.read(ctx.author.id):
                 if amount > Usuario.read(ctx.author.id)["points"]:
                     await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have enough eggbux.")
@@ -35,8 +35,6 @@ class BankCommands(commands.Cog):
             else:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
                 await self.register_bank(ctx.author)
-        else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have permission to do this.")
 
     @commands.hybrid_command("withdraw", aliases=["with"], brief="Withdraws eggubux from the bank", parameters=["amount: int"], examples=["withdraw 1000"], description="Withdraws points from the bank.")
     @pricing()

@@ -15,7 +15,8 @@ class Farm:
                     "user_id": user_id,
                     "farm_name": f"{ctx.author.display_name}'s Farm",
                     "chickens": [],
-                    "eggs_generated": 0
+                    "eggs_generated": 0,
+                    "upgrades": 0
                 }
                 farm_collection.insert_one(farm)
                 print("Farm has been created successfully.")
@@ -37,12 +38,12 @@ class Farm:
             print("Error encountered while deleting the farm.", e)
 
     @staticmethod
-    def update(user_id:int, farm_name:str, chickens: list, eggs_generated: int):
+    def update(user_id:int, farm_name:str, chickens: list, eggs_generated: int, upgrades: int):
         """Update a farm's status in the database."""
         try:
             farm_data = farm_collection.find_one({"user_id": user_id})
             if farm_data:
-                farm_collection.update_one({"user_id": user_id}, {"$set": {"chickens": chickens,"farm_name": farm_name,"eggs_generated": eggs_generated}})
+                farm_collection.update_one({"user_id": user_id}, {"$set": {"chickens": chickens,"farm_name": farm_name,"eggs_generated": eggs_generated, "upgrades": upgrades}})
         except Exception as e:
             print("Error encountered while trying to update farm's status.", e)
 

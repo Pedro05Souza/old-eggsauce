@@ -1,14 +1,25 @@
 from discord.ext import commands
 from discord import Intents
 from dotenv import load_dotenv
+from db.botConfigDB import BotConfig
 from pathlib import Path
 import discord
 import os   
 import asyncio 
 load_dotenv()   
-TOKEN = os.getenv("DISCORD_TOKEN")  
-bot = commands.Bot(command_prefix="!", intents=Intents.all(), case_insensitive=True) # set the command prefix according to your liking.
+TOKEN = os.getenv("DISCORD_TOKEN")
 
+
+def get_prefix_for_guild(bot, message):
+    """Get the prefix for the guild."""
+    if message:
+        guild_id = message.guild.id
+        prefix = BotConfig.read(guild_id)['prefix']
+        if prefix is not None:
+            return prefix
+        return "!"
+
+bot = commands.Bot(command_prefix=get_prefix_for_guild, intents=Intents.all(), case_insensitive=True)
 async def load_cogs():
     """Load all cogs in the cogs directory and its subdirectories."""
     cogs_dir = Path('./cogs')

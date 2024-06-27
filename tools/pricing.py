@@ -34,6 +34,7 @@ class Prices(Enum):
     renamechicken = 0
     balls = 50
     feedchicken = 0
+    increaserarity = 0
     feedallchickens = 0
     love = 75
     mog = 100
@@ -67,10 +68,12 @@ async def set_points_commands_submodules(ctx, command):
         await create_embed_without_title(ctx, ":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
     activate_module = BotConfig.read(ctx.guild.id)['toggled_modules']
+    shared_cogs = ["PointsConfig", "BankCommands"]
     friendly_cogs = ["FriendlyCommands", "ChickenCommands", "InteractiveCommands", "AICommands"]
     hostile_cog = ["HostileCommands"]
     if activate_module == "F":
-        for cog_name in friendly_cogs:
+        friendly_cogs.extend(shared_cogs)
+        for cog_name in friendly_cogs or shared_cogs:
             cog = ctx.bot.get_cog(cog_name)
             if cog:
                 for cmd in cog.get_commands():
@@ -79,6 +82,7 @@ async def set_points_commands_submodules(ctx, command):
         await create_embed_without_title(ctx, ":no_entry_sign: The command is not available in the current module.")
         return False
     elif activate_module == "H":
+        hostile_cog.extend(shared_cogs)
         for cog_name in hostile_cog:
             cog = ctx.bot.get_cog(cog_name)
             if cog:
@@ -101,7 +105,7 @@ def verify_points(User: discord.Member, comando):
         return user_data["points"] >= price
     else:
         return False
-
+    
 async def refund(User: discord.Member, ctx):
     try:
         price = Prices[ctx.command.name].value
@@ -201,27 +205,37 @@ async def command_cooldown(ctx, command, cooldown_period):
 def pricing():
     async def predicate(ctx):
         """Check if the user has enough points to use the command."""
+        command = ctx.command.name 
         cooldown_period = 3 
         result = True
         if BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
-            if not await command_cooldown(ctx, "points", cooldown_period):
-                result = False
-            await create_embed_without_title(ctx, ":warning: The points commands are **disabled** in this server.")
+            embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
+            await ctx.author.send(embed=embed)
             result = False
-            return
-        command = ctx.command.name       
+            return result    
         if command in Prices.__members__:
+            if not Usuario.read(ctx.author.id):
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
+                result = False
+                return result
             if not await command_cooldown(ctx, command, cooldown_period):
                 result = False
-            if verify_points(ctx.author, command):
-                result = await treat_exceptions(ctx,command)
-            else:
-                await create_embed_without_title(ctx, ":no_entry_sign: You do not have enough points to use this command.")
-                result = False 
+                return result
             if not await set_points_commands_submodules(ctx, command):
                 result = False
+                return result
+            if verify_points(ctx.author, command):
+                result = await treat_exceptions(ctx,command)
+                return result
+            if not await command_cooldown(ctx, "points", cooldown_period):
+                result = False
+                return result 
+            else:
+                await create_embed_without_title(ctx, ":no_entry_sign: You do not have enough points to use this command.")
+                result = False
+                return result
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: Unknown command.")
+            await create_embed_without_title(ctx, ":no_entry_sign: Unknown points command.")
         ctx.predicate_result = result
         return result
     try:

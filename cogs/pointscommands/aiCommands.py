@@ -18,25 +18,22 @@ class AICommands(commands.Cog):
     async def love(self, ctx, User: discord.Member, User2: discord.Member):
         """Make a short love story between two users."""
         try:
-            if Usuario.read(ctx.author.id):
-                data = {"role": "user", "content":f"Make a short love story between {User.display_name} and {User2.display_name}. Don't write incomplete stories, Use a maximum of 100 tokens."}
-                processing = Processing(data)
-                processing.start()
-                await asyncio.sleep(5)
-                if processing.exception is None:
-                    async with ctx.typing():
-                        loop = asyncio.get_event_loop()
-                        history = await loop.run_in_executor(None, processing.future.result)
-                        content = "".join(chunk.choices[0].delta.content for chunk in history if chunk.choices[0].delta.content is not None)
-                        if(len(content) > 0):
-                            await ctx.send(content)
-                        else:
-                            await create_embed_without_title(ctx, ":no_entry_sign: Error! AI didn't generate content.")
-                else:
-                    await create_embed_without_title(ctx, ":no_entry_sign: Api connection failed. Probably due to the AI model being deactivated. Try again later.")
-                    await refund(ctx.author, ctx)
+            data = {"role": "user", "content":f"Make a short love story between {User.display_name} and {User2.display_name}. Don't write incomplete stories, Use a maximum of 100 tokens."}
+            processing = Processing(data)
+            processing.start()
+            await asyncio.sleep(5)
+            if processing.exception is None:
+                async with ctx.typing():
+                    loop = asyncio.get_event_loop()
+                    history = await loop.run_in_executor(None, processing.future.result)
+                    content = "".join(chunk.choices[0].delta.content for chunk in history if chunk.choices[0].delta.content is not None)
+                    if(len(content) > 0):
+                        await ctx.send(content)
+                    else:
+                        await create_embed_without_title(ctx, ":no_entry_sign: Error! AI didn't generate content.")
             else:
-                await create_embed_without_title(ctx, ":no_entry_sign: You are not registered in the database.")
+                await create_embed_without_title(ctx, ":no_entry_sign: Api connection failed. Probably due to the AI model being deactivated. Try again later.")
+                await refund(ctx.author, ctx)
         except Exception:
             await create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
             await refund(ctx.author, ctx)

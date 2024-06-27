@@ -5,6 +5,8 @@ from random import randint
 from db.farmDB import Farm
 from tools.chickenInfo import ChickenUpkeep, ChickenMultiplier, TradeData
 from tools.embed import make_embed_object
+
+
 class ChickenSelectView(ui.View):
     """View for selecting chickens from the market or farm to buy or delete them."""
     def __init__(self, chickens, author, action, message, chicken_emoji, *args, **kwargs):
@@ -77,7 +79,7 @@ class ChickenMarketMenu(ui.Select):
         chicken_selected['Eggs_generated'] = 0
         chicken_selected['Upkeep_multiplier'] = ChickenUpkeep[chicken_selected['Name'].split(" ")[0]].value
         farm_data['chickens'].append(chicken_selected)
-        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
+        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'], farm_data['upgrades'])
         Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] - int(arr[1]), Usuario.read(interaction.user.id)["roles"])
         chicken_selected['Bought'] = True
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: {chicken_selected['Name']} Price: {chicken_selected['Price']} :money_with_wings:")
@@ -117,7 +119,7 @@ class ChickenDeleteMenu(ui.Select):
         arr[1] = int(arr[1])
         farm_data = Farm.read(interaction.user.id)
         farm_data['chickens'].remove(chicken_selected)
-        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
+        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'], farm_data['upgrades'])
         Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] + (arr[1]//2), Usuario.read(interaction.user.id)["roles"])
         chicken_selected['Deleted'] = chicken_selected.get('Deleted', True)
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: {chicken_selected['Name']} Price: {arr[1]//2} :money_with_wings:")
@@ -193,7 +195,7 @@ class ChickenUserTradeMenu(ui.Select):
         users_reacted = set()
         while len(users_reacted) < 2:
             try:
-                reaction, reactUsr = await self.instance_bot.wait_for("reaction_add", check=lambda reaction, user: user.id == self.author.id or user.id == self.target.id, timeout=60)
+                reaction, reactUsr = await self.instance_bot.wait_for("reaction_add", check=lambda reaction, user: user.id == self.author.id or user.id == self.target.id, timeout=40)
                 if reaction.emoji == "✅":
                     users_reacted.add(reactUsr.id)
                 elif reaction.emoji == "❌":
@@ -223,8 +225,8 @@ async def trade_handler(ctx, td, target):
         user_farm['chickens'] = [chicken for chicken in user_farm['chickens'] if chicken not in user_chickens]
         author_farm['chickens'].extend(user_chickens)
         user_farm['chickens'].extend(author_chickens)
-        Farm.update(ctx.user.id, author_farm['farm_name'], author_farm['chickens'], author_farm['eggs_generated'])
-        Farm.update(target.id, user_farm['farm_name'], user_farm['chickens'], user_farm['eggs_generated'])
+        Farm.update(ctx.user.id, author_farm['farm_name'], author_farm['chickens'], author_farm['eggs_generated'], author_farm['upgrades'])
+        Farm.update(target.id, user_farm['farm_name'], user_farm['chickens'], user_farm['eggs_generated'], user_farm['upgrades'])
         embed = await make_embed_object(description=f":white_check_mark: {ctx.user.display_name} and {target.display_name} have traded chickens.")
         return embed
 

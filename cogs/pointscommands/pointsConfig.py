@@ -54,6 +54,15 @@ class PointsConfig(commands.Cog):
         else:
             Usuario.create(User.id, 0)
             print(f"User created: {User.name}")
+
+    @commands.hybrid_command(name="register", aliases=["reg"], brief="Registers the user in the database.", usage="register", description="Registers the user in the database.")
+    async def register(self, ctx):
+        """Registers the user in the database."""
+        if Usuario.read(ctx.author.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} is already registered.")
+        else:
+            Usuario.create(ctx.author.id, 0)
+            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} has been registered.")
  
     @commands.hybrid_command(name="points", aliases=["pts", "eggbux"], brief="Shows the amount of points the user has.", usage="points OPTIONAL [user]", description="Shows the amount of points a usr has. If not usr, shows author's points.")
     @pricing()
