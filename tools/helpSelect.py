@@ -61,3 +61,21 @@ class ShowPointsModules(View):
                 embed = await make_embed_object(description=f":white_check_mark: Module {possibleOptions[moduleSelected]} selected")
                 await interaction.response.send_message(embed=embed)
                 BotConfig.update_toggled_modules(interaction.guild_id, moduleSelected)
+
+class ShowAllModules(View):
+    def __init__(self, author_id, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        select = Select(placeholder="Choose a module to display its commands...",
+                        min_values=1,  
+                        max_values=1,  
+                        options=[
+                            SelectOption(label="Chicken Commands", value="P", description="Select this option to view chicken commands.", emoji="🐔"),
+                            SelectOption(label="Interactive Commands", value="U", description="Select this option to view interactive commands.", emoji="🔧"),
+                            SelectOption(label="AI Commands", value="U", description="Select this option to view AI commands.", emoji="🤖"),
+                            SelectOption(label="Bank Commands", value="U", description="Select this option to view bank commands.", emoji="💰"),
+                            SelectOption(label="Hostile Commands", value="U", description="Select this option to view hostile commands.", emoji="🔫"),
+                            SelectOption(label="Friendly Commands", value="U", description="Select this option to view friendly commands.", emoji="🌟")
+                        ])
+        select.callback = self.callback
+        self.add_item(select)
+        self.author_id = author_id

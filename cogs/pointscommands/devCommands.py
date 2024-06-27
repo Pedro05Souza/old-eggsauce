@@ -53,6 +53,12 @@ class DevCommands(commands.Cog):
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
 
+    @commands.command("latency")
+    async def latency(self, ctx):
+        """Check the bot's latency."""
+        if str(ctx.author.id) in self.devs:
+            await create_embed_without_title(ctx, f":ping_pong: {round(self.bot.latency * 1000)}ms")
+
     @commands.command("deleteDB")
     async def delete_db(self, ctx,  User: discord.Member):
         """Delete a user from the database."""

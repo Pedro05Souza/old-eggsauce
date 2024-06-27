@@ -17,11 +17,11 @@ class BotCore(commands.Cog):
     async def restart_client(self):
         try:
             print("Attempting to restart the bot...")
-            await self.close_aiohttp_sessions()
             await self.cancel_all_async_tasks()
+            await self.close_aiohttp_sessions()
             await self.bot.close()
             command = [sys.executable, 'main.py'] + sys.argv[1:]
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
             print("Bot has been restarted.")
             os.execv(sys.executable, command)
         except Exception as e:
@@ -31,12 +31,20 @@ class BotCore(commands.Cog):
         """Close all aiohttp ClientSession instances."""
         if hasattr(self.bot, "http_session"):
             await self.bot.http_session.close()
+            print("Aiohttp sessions closed: OK")
 
     async def cancel_all_async_tasks(self):
         """Cancel all running async tasks."""
         tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
-        [task.cancel() for task in tasks]
-        await asyncio.gather(*tasks, return_exceptions=True)
+        for task in tasks:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                print(e)
+        print("Async taks cancelled: OK")
 
     @commands.command("r", aliases=["restart"])
     async def force_restart(self, ctx):
@@ -51,10 +59,16 @@ class BotCore(commands.Cog):
         while True:
             await asyncio.sleep(86400)
             await self.restart_client()
+
+    @commands.hybrid_command("commands", brief="Displays the commands available to the user.", usage="commands")
+    async def cmds(self, ctx):
+        """Displays a list of commands available to the user."""
+        embed = await make_embed_object(title="**:gear: COMMANDS:***", description="Select a module to display the commands available.")
+
     
     async def tutorial(self, target):
         """Sends a tutorial message to the user."""
-        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. To configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Have fun! :tada:")
+        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!commands** to visualize every command i have to offer. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Have fun! :tada:")
         for channel in target.text_channels:
             if channel.permissions_for(target.me).send_messages:
                 await channel.send(embed=embed)
@@ -75,7 +89,7 @@ class BotCore(commands.Cog):
             view = SelectModule(ctx.author.id)
             await ctx.send(embed=Embed, view=view)
         else:
-            embed = await make_embed_object(":no_entry_sign: You don't have the necessary permissions to use this command.")
+            embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
             await ctx.author.send(embed=embed)
     
     @commands.command("setModule", aliases=["setM"])
@@ -83,7 +97,7 @@ class BotCore(commands.Cog):
         """Set the module where the bot will pick commands from."""
         if BotConfig.read(ctx.guild.id):
             if ctx.author.guild_permissions.administrator:
-                embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. :star: **Friendly**\n3. :gun: **Hostiles**\n4. :x: **None**\n\nSelect one of the modules to enable/disable it.")
+                embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. :star: **Friendly**\n3. :gun: **Hostiles**\n4. :x: **None**\n**Important note**: \nFriendly module contains Chicken commands, bank commands, interactive commands, AI commands and friendly commands and activates users gaining one currency every 10 seconds during call-time.\nHostile module contains hostile commands, bank commands and activates users gaining one currency every 10 seconds during call-time.\n\nSelect one of the modules to enable/disable it.")
                 view = ShowPointsModules(ctx.author.id)
                 await ctx.send(embed=embed, view=view)
             else:
