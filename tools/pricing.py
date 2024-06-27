@@ -67,7 +67,7 @@ async def set_points_commands_submodules(ctx, command):
         await create_embed_without_title(ctx, ":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
     activate_module = BotConfig.read(ctx.guild.id)['toggled_modules']
-    friendly_cogs = ["BankCommands", "HostilesCommands", "FriendlyCommands", "ChickenCommands", "InteractiveCommands", "AICommands"]
+    friendly_cogs = ["FriendlyCommands", "ChickenCommands", "InteractiveCommands", "AICommands"]
     hostile_cog = ["HostileCommands"]
     if activate_module == "F":
         for cog_name in friendly_cogs:
