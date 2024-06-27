@@ -10,7 +10,32 @@ from random import uniform, randint
 import discord
 from tools.pricing import pricing
 from tools.embed import create_embed_without_title, create_embed_with_title
-roll_limit = {}
+class RollLimit:
+    obj_list = []
+    def __init__(self, user_id, limit, chickens=None):
+        RollLimit.obj_list.append(self)
+        self.user_id = user_id
+        self.limit = limit
+        self.current = 0
+        self.chickens = chickens
+
+    @staticmethod
+    def read(user_id):
+        for obj in RollLimit.obj_list:
+            if obj.user_id == user_id:
+                return obj
+        return None
+    
+    @staticmethod
+    def remove(obj):
+        try:
+            RollLimit.obj_list.remove(obj)
+        except Exception as e:
+            print("Error removing object from list.", e)
+    
+    @staticmethod
+    def removeAll():
+        RollLimit.obj_list.clear()
 
 class ChickenCommands(commands.Cog):
 
@@ -34,18 +59,16 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def market(self, ctx):
         """Market to buy chickens"""
-        if ctx.author.id not in roll_limit:
-            roll_limit[ctx.author.id] = {
-                "limit": 0,
-                "chickens": []
-            }
-
-        if roll_limit[ctx.author.id]['limit'] >= 20:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You have reached the limit of chickens you can buy today.")
+        limit = 20
+        plrObj = RollLimit.read(ctx.author.id)
+        if not plrObj:
+            plrObj = RollLimit(ctx.author.id, limit)
+        if plrObj.current >= plrObj.limit:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today.")
             return
-        roll_limit[ctx.author.id]['limit'] += 1
+        plrObj.current += 1
         generated_chickens = self.generate_chickens(*self.roll_rates_sum(), 10)
-        roll_limit[ctx.author.id]['chickens'] = generated_chickens
+        plrObj.chickens = generated_chickens
         message = discord.Embed(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.get_rarity_emoji(chicken['Name'])} **{index + 1}.** **{chicken['Name']}**: {chicken['Price']}" for index, chicken in enumerate(generated_chickens)]))
         view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message, chicken_emoji=self.get_rarity_emoji)
         await ctx.send(embed=message, view=view)
@@ -79,8 +102,8 @@ class ChickenCommands(commands.Cog):
         """Reset the roll limit every 24 hours"""
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            roll_limit.clear()
             await asyncio.sleep(86400)
+            RollLimit.removeAll()
     
     @commands.hybrid_command(name="farm", aliases=["f"], usage="farm OPTIONAL [user]", description="Check the chickens in the farm.")
     @pricing()
@@ -310,7 +333,7 @@ class ChickenCommands(commands.Cog):
         """Get the user's farm"""
         if Farm.read(User.id):
             user_data = Farm.read(User.id)
-            msg = discord.Embed(title=f":chicken: {user_data['farm_name']}\n:egg: **Eggs generated**: {user_data['eggs_generated']}", description="\n".join([f"{self.get_rarity_emoji(chicken['Name'])}  **{index + 1}.** **{chicken['Name']}** \n:partying_face: Happiness: **{chicken['Happiness']}%**" for index, chicken in enumerate(user_data['chickens'])]))
+            msg = discord.Embed(title=f":chicken: {user_data['farm_name']}\n:egg: **Eggs generated**: {user_data['eggs_generated']}", description="\n".join([f"{self.get_rarity_emoji(chicken['Name'])}  **{index + 1}.** **{chicken['Name']}** \n:partying_face: Happiness: **{chicken['Happiness']}%**\n Eggs generated: **{chicken['Eggs_generated']}**\n" for index, chicken in enumerate(user_data['chickens'])]))
             return msg
         else:
             return None
@@ -320,6 +343,45 @@ class ChickenCommands(commands.Cog):
         """Check the rarities of the chickens"""
         rarity_info = "\n".join([f"{self.get_rarity_emoji(rarity)} **{rarity}**: {round(rate/100, 4)}%" for rarity, rate in rollRates.items()])
         await create_embed_with_title(ctx, "Chicken Rarities:", rarity_info)
+
+    @commands.hybrid_command(name="giftchicken", aliases=["gc"], usage="giftChicken <index> <user>", description="Gift a chicken to another user.")
+    async def gift_chicken(self, ctx, index: int, user: discord.Member):
+        """Gift a chicken to another user"""
+        index -= 1
+        if Farm.read(ctx.author.id) and Farm.read(user.id):
+            author_data = Farm.read(ctx.author.id)
+            user_data = Farm.read(user.id)
+            if not author_data['chickens']:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+                return
+            if index > len(author_data['chickens']) or index < 0:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                return
+            if user.id == ctx.author.id:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't gift a chicken to yourself.")
+                return
+            if len(user_data['chickens']) >= self.get_max_chicken_limit():
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, {user.display_name} already has the maximum amount of chickens.")
+                return
+            msg = await create_embed_without_title(ctx, f":gift: {user.display_name} has 20 seconds to react with ✅ to accept or ❌ to decline the gift request.")
+            await msg.add_reaction("✅")
+            await msg.add_reaction("❌")
+            try:
+                reaction, usr = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == user and reaction.message == msg, timeout=40)
+                if reaction.emoji == "✅":
+                    chicken = author_data['chickens'][index]
+                    user_data['chickens'].append(chicken)
+                    author_data['chickens'].remove(chicken)
+                    Farm.update(ctx.author.id, author_data['farm_name'], author_data['chickens'], author_data['eggs_generated'])
+                    Farm.update(user.id, user_data['farm_name'], user_data['chickens'], user_data['eggs_generated'])
+                    await create_embed_without_title(ctx, f":gift: {ctx.author.display_name}, the chicken has been gifted to {user.display_name}.")
+                elif reaction.emoji == "❌":
+                    await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has declined the gift request.")
+                    return
+            except asyncio.TimeoutError:
+                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has not responded to the gift request.")
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} don't have a farm.")
 
     async def devolve_chicken(self, chicken):
         """Devolve a chicken if its happiness is 0"""
@@ -344,7 +406,11 @@ class ChickenCommands(commands.Cog):
             chicken['Price'] = "0 eggbux."
             chicken['Upkeep_multiplier'] = 0
             return
-                
+
+    def get_max_chicken_limit(self):
+        """Get the maximum chicken limit"""
+        return 10
+                    
     async def drop_eggs(self):
         """Drop eggs periodically"""
         plrDict = {}
@@ -365,6 +431,7 @@ class ChickenCommands(commands.Cog):
                     chicken['Happiness'] = 0
                 if chicken['Happiness'] == 0:
                     await self.devolve_chicken(chicken)
+                chicken['Eggs_generated'] = (chicken['Egg_value'] * chicken['Happiness']) // 100
         for player_id, player in plrDict.items():
             Farm.update(player_id, Farm.read(player_id)['farm_name'], player['chicken_list'], Farm.read(player_id)['eggs_generated'] + player['totalEggs'])
             if player['totalEggs'] > 0:

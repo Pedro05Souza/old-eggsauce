@@ -114,11 +114,11 @@ class ChickenDeleteMenu(ui.Select):
         chicken_selected = self.chickens[int(index)]
         arr = chicken_selected['Price'].split(" ")
         print(arr)
-        arr[0] = int(arr[0])
+        arr[1] = int(arr[1])
         farm_data = Farm.read(interaction.user.id)
         farm_data['chickens'].remove(chicken_selected)
         Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
-        Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] + (arr[0]//2), Usuario.read(interaction.user.id)["roles"])
+        Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] + (arr[1]//2), Usuario.read(interaction.user.id)["roles"])
         chicken_selected['Deleted'] = chicken_selected.get('Deleted', True)
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: {chicken_selected['Name']} Price: {arr[1]//2} :money_with_wings:")
         await interaction.response.send_message(embed=embed)

@@ -5,6 +5,7 @@ from db.userDB import Usuario
 from tools.embed import create_embed_without_title
 from db.bankDB import Bank
 from dotenv import load_dotenv
+from cogs.pointscommands.chickenCommands import RollLimit
 
 class DevCommands(commands.Cog):
     def __init__(self, bot):
@@ -75,6 +76,18 @@ class DevCommands(commands.Cog):
             await create_embed_without_title(ctx, f"{User.display_name} has been reset.")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+    
+    @commands.command()
+    async def give_rolls(self, ctx, rolls : int, User: discord.Member):
+        """Add more chicken roles to a user."""
+        userObj = RollLimit.read(User.id)
+        if userObj:
+            userObj.current += rolls
+            await create_embed_without_title(ctx, f"{User.display_name} received {rolls} rolls.")
+        else:
+            await create_embed_without_title(ctx, ":no_entry_sign: User didn't roll chickens in the market yet.")
+
+    
     
         
 async def setup(bot):
