@@ -14,9 +14,8 @@ def get_prefix_for_guild(bot, message):
     """Get the prefix for the guild."""
     if message:
         guild_id = message.guild.id
-        prefix = BotConfig.read(guild_id)['prefix']
-        if prefix is not None:
-            return prefix
+        if BotConfig.read(guild_id)['prefix']:
+            return BotConfig.read(guild_id)['prefix']
         return "!"
 
 bot = commands.Bot(command_prefix=get_prefix_for_guild, intents=Intents.all(), case_insensitive=True)

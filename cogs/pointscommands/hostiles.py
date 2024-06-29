@@ -28,7 +28,7 @@ class HostileCommands(commands.Cog):
     @commands.command("radio")
     @commands.bot_has_permissions(manage_channels=True)
     @pricing()
-    async def radio (self, ctx):
+    async def radio(self, ctx):
         """Sets the voice channel to radio quality."""
         user = ctx.author
         channel = user.voice.channel

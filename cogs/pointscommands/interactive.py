@@ -71,8 +71,12 @@ class InteractiveCommands(commands.Cog):
              
     @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
     @pricing()
-    async def cassino(self, ctx, amount: int, cor: str):
+    async def cassino(self, ctx, amount, cor: str):
         """Bet on a color in the roulette."""
+        if amount.upper() == "ALL":
+            amount = Usuario.read(ctx.author.id)["points"]
+        else:
+            amount = int(amount)
         cor = cor.upper()
         coresPossiveis = ["RED", "BLACK", "GREEN"]
         corEmoji = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
@@ -153,7 +157,7 @@ class InteractiveCommands(commands.Cog):
             "M" : 1200,
             "H" : 1800
         }
-        message = await create_embed_with_title(ctx, "Custom Titles:", f":poop: **{roles['T']}**\nIncome: 50 eggbux. :money_bag: \nPrice: 600 eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 100 eggbux. :money_bag:\n Price: 800 eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 200 eggbux. :money_bag:\n Price: 1200 eggbux. \n\n:crown: **{roles['H']}** \n Income: 300 eggbux. :money_bag:\n Price: 1800 eggbux. \nReact with ✅ to buy a title.")
+        message = await create_embed_with_title(ctx, "Custom Titles:", f":poop: **{roles['T']}**\nIncome: 50 eggbux. :money_bag: \nPrice: 600 eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 75 eggbux. :money_bag:\n Price: 800 eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 100 eggbux. :money_bag:\n Price: 1200 eggbux. \n\n:crown: **{roles['H']}** \n Income: 150 eggbux. :money_bag:\n Price: 1800 eggbux. \n**The titles are bought sequentially.**\nReact with ✅ to buy a title.")
         await message.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
@@ -186,9 +190,9 @@ class InteractiveCommands(commands.Cog):
         """Returns the salary of a user based on their roles."""
         salarios = {
             "T": 50,
-            "L": 100,
-            "M": 200,
-            "H": 300
+            "L": 75,
+            "M": 100,
+            "H": 150
         }
         if Usuario.read(User.id):
             return salarios[Usuario.read(User.id)["roles"] [-1]]
@@ -312,7 +316,7 @@ class InteractiveCommands(commands.Cog):
             winner = alive_tributes[0]
             prizeMultiplier = len(tributes) * 50
             await create_embed_without_title(ctx, f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
-            #Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
+            Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
             hungergames_status.pop(guild_id)
             await self.statistics(ctx, tributes)
 

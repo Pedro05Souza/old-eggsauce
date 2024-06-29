@@ -16,8 +16,12 @@ class BankCommands(commands.Cog):
 
     @commands.hybrid_command("deposit", aliases=["dep"], brief="Deposits points in the bank", parameters=["amount: int"], examples=["deposit 1000"], description="Deposits points in the bank. You can't have more than 5000 eggbux in the bank.")
     @pricing()
-    async def deposit(self, ctx, amount: int):
+    async def deposit(self, ctx, amount):
         """Deposits points in the bank"""
+        if amount.upper() == "ALL":
+            amount = Usuario.read(ctx.author.id)["points"]
+        else:
+            amount = int(amount)
         if amount > 0:
             if Bank.read(ctx.author.id):
                 if amount > Usuario.read(ctx.author.id)["points"]:
@@ -27,7 +31,9 @@ class BankCommands(commands.Cog):
                 currentAmount += amount
                 maxAmount = 5000
                 if currentAmount > maxAmount:
-                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't have more than {maxAmount} eggbux in the bank.")
+                    amount = maxAmount - currentAmount
+                if amount <= 0:
+                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't have more than 5000 eggbux in the bank.")
                 else:
                     await create_embed_without_title(ctx, f":dollar: {ctx.author.display_name} You deposited {amount} eggbux in the bank.")
                     Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
@@ -38,8 +44,12 @@ class BankCommands(commands.Cog):
 
     @commands.hybrid_command("withdraw", aliases=["with"], brief="Withdraws eggubux from the bank", parameters=["amount: int"], examples=["withdraw 1000"], description="Withdraws points from the bank.")
     @pricing()
-    async def withdraw(self, ctx, amount: int):
+    async def withdraw(self, ctx, amount):
         """Withdraws points from the bank"""
+        if amount.upper() == "ALL":
+            amount = Bank.read(ctx.author.id)['bank']
+        else:
+            amount = int(amount)
         if Bank.read(ctx.author.id):
             currentAmount = Bank.read(ctx.author.id)['bank']
             if currentAmount >= amount:
@@ -51,17 +61,6 @@ class BankCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
             await self.register_bank(ctx.author)
-
-    @commands.hybrid_command("balance", aliases=["bal"], brief="Shows the balance of the bank account", parameters=["user: discord.Member"], examples=["balance @user"], description="Shows the balance of the bank account.")
-    @pricing()
-    async def balance(self, ctx, user: discord.Member = None):
-        if user is None:
-            user = ctx.author
-        if Bank.read(user.id):
-            await create_embed_without_title(ctx, f":bank: {user.display_name} has {Bank.read(user.id)['bank']} eggbux in the bank.")
-        else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} doesn't have a bank account.")
-    
 
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

@@ -119,10 +119,14 @@ class ChickenDeleteMenu(ui.Select):
         arr[1] = int(arr[1])
         farm_data = Farm.read(interaction.user.id)
         farm_data['chickens'].remove(chicken_selected)
+        refund_price = 0
+        if farm_data['upgrades'][0]['Farmer'] == 'Economist Farmer':
+            refund_price = arr[1]
+        refund_price = arr[1]//2
         Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'], farm_data['upgrades'])
-        Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] + (arr[1]//2), Usuario.read(interaction.user.id)["roles"])
+        Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] + (refund_price), Usuario.read(interaction.user.id)["roles"])
         chicken_selected['Deleted'] = chicken_selected.get('Deleted', True)
-        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: {chicken_selected['Name']} Price: {arr[1]//2} :money_with_wings:")
+        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: {chicken_selected['Name']} Price: {refund_price} :money_with_wings:")
         await interaction.response.send_message(embed=embed)
         available_chickens = [chicken for chicken in self.chickens if not chicken.get('Deleted', False)]
         updated_view = ChickenSelectView(available_chickens, self.author_id, "D", self.message, self.chicken_emoji)

@@ -132,5 +132,6 @@ class TradeData():
                     if id == author:
                         return True
             return None
+        
 
         

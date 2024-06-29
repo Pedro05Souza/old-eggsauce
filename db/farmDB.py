@@ -16,7 +16,10 @@ class Farm:
                     "farm_name": f"{ctx.author.display_name}'s Farm",
                     "chickens": [],
                     "eggs_generated": 0,
-                    "upgrades": 0
+                    "upgrades": [{
+                        "chicken_rarity": 0,
+                        "Farmer": None
+                    }]
                 }
                 farm_collection.insert_one(farm)
                 print("Farm has been created successfully.")
@@ -75,3 +78,4 @@ class Farm:
         except Exception as e:
             print("Error encountered while reading all farms.", e)
             return None
+    

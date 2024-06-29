@@ -29,7 +29,7 @@ class PointsConfig(commands.Cog):
             self.join_time[userId] = math.ceil(time.time())
             return total_points
         
-        if userId not in self.join_time.keys() and User.voice is not None:
+        if userId not in self.join_time.keys() and User.voice:
            add_points = (math.ceil(time.time()) - self.init_time) // 10
            total_points = Usuario.read(userId)["points"] + add_points
            Usuario.update(userId, total_points, Usuario.read(userId)["roles"])
@@ -72,11 +72,12 @@ class PointsConfig(commands.Cog):
         user_data = Usuario.read(user.id)
         if user_data and isinstance(user_data, dict) and "points" in user_data:
             points = await self.update_points(user)
-            if points is None:
-                points = user_data["points"]
-                bank_data = Bank.read(user.id)
-                bank_amount = bank_data['bank'] if bank_data and 'bank' in bank_data and bank_data['bank'] is not None else "User has no bank account."
-            await create_embed_with_title(ctx, f":egg: {user.display_name}'s eggbux", f":briefcase: Wallet: {points} eggbux.\n :bank: Bank: {bank_amount} eggbux")
+            if points is not None:
+                user_data['points'] = points
+            if Bank.read(user.id):
+                await create_embed_with_title(ctx, f":egg: {user.display_name}'s eggbux", f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {Bank.read(user.id)['bank']}")
+            else:
+                await create_embed_with_title(ctx, f":egg: {user.display_name}'s eggbux", f":briefcase: Wallet: {user_data['points']}")
         else:
             await create_embed_without_title(ctx, f"{user.display_name} has no eggbux :cry:")
 
@@ -96,6 +97,7 @@ class PointsConfig(commands.Cog):
             elif not Usuario.read(User.id) and before.channel is not None and after.channel is None:
                 self.automatic_register(User)
                 await self.update_points(User)
+
 
 
 async def setup(bot):
