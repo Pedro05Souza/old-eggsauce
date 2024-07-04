@@ -40,8 +40,8 @@ defineRarityEmojis = {
             "ASCENDED": ":stars:",
         }
 
-
 class ChickenRarity(Enum):
+        DEAD = 0
         COMMON = 1
         UNCOMMON = 2
         RARE = 3
@@ -70,7 +70,7 @@ class ChickenMultiplier(Enum):
         ULTIMATE = 16
         COSMIC = 17
         DIVINE = 19
-        INFINITY = 25
+        INFINITY = 27
         OMINOUS = 35
         CELESTIAL = 40
         IMMORTAL = 80
@@ -88,13 +88,30 @@ class ChickenUpkeep(Enum):
         ULTIMATE = 10
         COSMIC = 10
         DIVINE = 11
-        INFINITY = 8
+        INFINITY = 12
         OMINOUS = 12
         CELESTIAL = 15
         IMMORTAL = 30
         CHOSEN = 35
         ASCENDED = 40
-
+class ChickenFood(Enum):
+        DEAD = 0
+        COMMON = 2
+        UNCOMMON = 4
+        RARE = 6
+        EXCEPTIONAL = 8
+        EPIC = 10
+        LEGENDARY = 12
+        MYTHICAL = 14
+        ULTIMATE = 16
+        COSMIC = 18
+        DIVINE = 20
+        INFINITY = 22
+        OMINOUS = 24
+        CELESTIAL = 32
+        IMMORTAL = 36
+        CHOSEN = 40
+        ASCENDED = 45
 class TradeData():
         obj_list = []
 

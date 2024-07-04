@@ -127,19 +127,25 @@ class InteractiveCommands(commands.Cog):
             if ctx.author.id == user.id:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from yourself.")
                 await refund(ctx.author, ctx)
-            elif chance >= 10: # 10% de chance de falhar
-                quantUser = Usuario.read(user.id)["points"]
-                randomInteiro = randint(1, int(quantUser//2)) # 50% do total de pontos do usuário
+                return
+            quantUser = Usuario.read(user.id)["points"]
+            if quantUser <= 150:
+                await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a user with less than 150 eggbux.")
+                await refund(ctx.author, ctx)
+                return
+            elif chance >= 10:
+                randomInteiro = randint(1, int(quantUser//2))
                 Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
                 Usuario.update(user.id, Usuario.read(user.id)["points"] - randomInteiro, Usuario.read(user.id)["roles"])
                 await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {user.display_name}")
+                return
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} failed to steal from {user.display_name}")
+                return
         else:
             await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
-            await refund(ctx.author, ctx)
+            return
         
-
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
     @pricing()
     async def points_Titles(self, ctx):
@@ -195,7 +201,7 @@ class InteractiveCommands(commands.Cog):
             "H": 150
         }
         if Usuario.read(User.id):
-            return salarios[Usuario.read(User.id)["roles"] [-1]]
+            return salarios[Usuario.read(User.id)["roles"][-1]]
         else:
             return 0
         
@@ -244,7 +250,7 @@ class InteractiveCommands(commands.Cog):
         if guild_id in hungergames_status:
             await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
             return
-        wait_time = 10
+        wait_time = 15
         if args and args[0].isdigit():
             args = [int(arg) for arg in args] 
             if ctx.guild.owner.id == ctx.author.id:

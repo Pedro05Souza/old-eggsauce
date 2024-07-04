@@ -64,4 +64,15 @@ class Bank:
         except Exception as e:
             print("Error encountered while trying to read user's status.", e)
             return None
+    
+    @staticmethod
+    def readAll():
+        """Read all users from the database."""
+        try:
+            user_data = bank_collection.find()
+            if user_data:
+                return user_data
+        except Exception as e:
+            print("Error encountered while trying to read all users.", e)
+            return None
         

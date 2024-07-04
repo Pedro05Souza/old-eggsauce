@@ -1,4 +1,5 @@
 import os
+import ast
 from discord.ext import commands
 import discord
 from db.userDB import Usuario
@@ -54,7 +55,7 @@ class DevCommands(commands.Cog):
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
 
-    @commands.command("latency")
+    @commands.command("latency", aliases=["ping"])
     async def latency(self, ctx):
         """Check the bot's latency."""
         if str(ctx.author.id) in self.devs:
@@ -88,11 +89,40 @@ class DevCommands(commands.Cog):
     async def give_rolls(self, ctx, rolls : int, User: discord.Member):
         """Add more chicken roles to a user."""
         userObj = RollLimit.read(User.id)
-        if userObj:
-            userObj.current += rolls
-            await create_embed_without_title(ctx, f"{User.display_name} received {rolls} rolls.")
+        if str(ctx.author.id) in self.devs:
+            if userObj:
+                userObj.current += rolls
+                await create_embed_without_title(ctx, f"{User.display_name} received {rolls} rolls.")
+            else:
+                await create_embed_without_title(ctx, ":no_entry_sign: User didn't roll chickens in the market yet.")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: User didn't roll chickens in the market yet.")
+            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+
+    @commands.command("checkbotServers", aliases=["cbs"])
+    async def check_bot_servers(self, ctx):
+        """Check the servers the bot is in."""
+        if str(ctx.author.id) in self.devs:
+            servers = self.bot.guilds
+            total_servers = len(servers)
+
+            await create_embed_without_title(ctx, f"```The bot is currently in: {total_servers} servers```")
+        else:
+            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+    
+    @commands.command("totalUsers")
+    async def total_users(self, ctx):
+        """Check the total number of users in the database."""
+        if str(ctx.author.id) in self.devs:
+            users = Usuario.readAll()
+            total_users = len(list(users))
+            farms_created = Farm.readAll()
+            total_farms = len(list(farms_created))
+            banks_created = Bank.readAll()
+            total_banks = len(list(banks_created))
+            await create_embed_without_title(ctx, f"```The bot has {total_users} users, {total_farms} farms and {total_banks} banks accounts registered.```")
+        else:
+            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+    
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

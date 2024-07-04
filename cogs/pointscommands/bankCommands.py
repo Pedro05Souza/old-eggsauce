@@ -21,23 +21,30 @@ class BankCommands(commands.Cog):
         if amount.upper() == "ALL":
             amount = Usuario.read(ctx.author.id)["points"]
         else:
-            amount = int(amount)
+            try:
+                amount = int(amount)
+            except ValueError:
+                await create_embed_without_title(ctx, f"{ctx.author.display_name}, please enter a valid amount.")
+                return
         if amount > 0:
             if Bank.read(ctx.author.id):
                 if amount > Usuario.read(ctx.author.id)["points"]:
-                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have enough eggbux.")
+                    await create_embed_without_title(ctx, f"{ctx.author.display_name}, you don't have enough eggbux.")
                     return
-                currentAmount = Bank.read(ctx.author.id)['bank']
-                currentAmount += amount
-                maxAmount = 5000
-                if currentAmount > maxAmount:
-                    amount = maxAmount - currentAmount
-                if amount <= 0:
-                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't have more than 5000 eggbux in the bank.")
-                else:
-                    await create_embed_without_title(ctx, f":dollar: {ctx.author.display_name} You deposited {amount} eggbux in the bank.")
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
-                    Bank.update(ctx.author.id, currentAmount)
+                bankAmount = Bank.read(ctx.author.id)['bank']
+                maxAmount = 10000
+                if bankAmount >= maxAmount: 
+                    await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you can't have more than 10000 eggbux in the bank.")
+                    return
+                if bankAmount + amount > maxAmount:
+                    amount = maxAmount - bankAmount
+                    if amount <= 0:
+                        await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you can't have more than 10000 eggbux in the bank.")
+                        return
+                Bank.update(ctx.author.id, bankAmount + amount)
+                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
+                await create_embed_without_title(ctx, f":dollar: {ctx.author.display_name}, you deposited {amount} eggbux in the bank.")
+                return
             else:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
                 await self.register_bank(ctx.author)
@@ -49,7 +56,11 @@ class BankCommands(commands.Cog):
         if amount.upper() == "ALL":
             amount = Bank.read(ctx.author.id)['bank']
         else:
-            amount = int(amount)
+            try:
+                amount = int(amount)
+            except ValueError:
+                await create_embed_without_title(ctx, f"{ctx.author.display_name}, please enter a valid amount.")
+                return
         if Bank.read(ctx.author.id):
             currentAmount = Bank.read(ctx.author.id)['bank']
             if currentAmount >= amount:
@@ -61,6 +72,11 @@ class BankCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
             await self.register_bank(ctx.author)
+    
+    @commands.hybrid_command("passiveincome", aliases=["pi"], description="Upgrades your passive income.")
+    @pricing()
+    async def passive_income(self, ctx):
+        pass
 
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

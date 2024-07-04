@@ -9,7 +9,6 @@ import asyncio
 load_dotenv()   
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-
 def get_prefix_for_guild(bot, message):
     """Get the prefix for the guild."""
     if message:

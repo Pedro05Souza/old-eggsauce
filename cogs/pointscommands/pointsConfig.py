@@ -1,6 +1,6 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
-from tools.embed import create_embed_without_title, create_embed_with_title
+from tools.embed import create_embed_without_title, create_embed_with_title, make_embed_object
 from db.bankDB import Bank
 from db.userDB import Usuario
 from tools.pricing import pricing
@@ -19,10 +19,21 @@ class PointsConfig(commands.Cog):
         """Check if the points commands are enabled or disabled in the server."""
         await create_embed_without_title(ctx, f":warning: The points commands are {'**enabled**' if BotConfig.read[ctx.guild.id]['toggle'] else '**disabled**'} in this server.")
 
-    async def update_points(self, User: discord.Member):
+    async def update_points(self, User: discord.Member, *kwargs):
         """Updates the points of the user every 10 seconds."""
         userId = User.id
+        if kwargs:
+            left_channel = kwargs[0]
+            print("Left channel")
+            if left_channel:
+                add_points = (math.ceil(time.time()) - self.join_time[userId]) // 10
+                total_points = Usuario.read(userId)["points"] + add_points
+                Usuario.update(userId, total_points, Usuario.read(userId)["roles"])
+                self.join_time.pop(userId)
+                return total_points
+        
         if userId in self.join_time.keys():
+            print("User in join_time")
             add_points = (math.ceil(time.time()) - self.join_time[userId]) // 10
             total_points = Usuario.read(userId)["points"] + add_points
             Usuario.update(userId, total_points, Usuario.read(userId)["roles"])
@@ -30,6 +41,7 @@ class PointsConfig(commands.Cog):
             return total_points
         
         if userId not in self.join_time.keys() and User.voice:
+           print("User not in join_time")
            add_points = (math.ceil(time.time()) - self.init_time) // 10
            total_points = Usuario.read(userId)["points"] + add_points
            Usuario.update(userId, total_points, Usuario.read(userId)["roles"])
@@ -72,13 +84,19 @@ class PointsConfig(commands.Cog):
         user_data = Usuario.read(user.id)
         if user_data and isinstance(user_data, dict) and "points" in user_data:
             points = await self.update_points(user)
+            print(points)
             if points is not None:
                 user_data['points'] = points
+
             if Bank.read(user.id):
-                await create_embed_with_title(ctx, f":egg: {user.display_name}'s eggbux", f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {Bank.read(user.id)['bank']}")
+                msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {Bank.read(user.id)['bank']}")
+                msg.set_thumbnail(url=user.display_avatar)
+                await ctx.send(embed=msg)
             else:
-                await create_embed_with_title(ctx, f":egg: {user.display_name}'s eggbux", f":briefcase: Wallet: {user_data['points']}")
-        else:
+                msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}")
+                msg.set_thumbnail(url=user.display_avatar)
+                await ctx.send(embed=msg)
+        else:   
             await create_embed_without_title(ctx, f"{user.display_name} has no eggbux :cry:")
 
     @commands.Cog.listener()
@@ -93,10 +111,10 @@ class PointsConfig(commands.Cog):
                 self.automatic_register(User)
                 await self.count_points(User)
             elif Usuario.read(User.id) and before.channel is not None and after.channel is None:
-                await self.update_points(User)
+                await self.update_points(User, left_channel=True)
             elif not Usuario.read(User.id) and before.channel is not None and after.channel is None:
                 self.automatic_register(User)
-                await self.update_points(User)
+                await self.update_points(User, left_channel=True)
 
 
 

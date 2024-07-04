@@ -52,6 +52,5 @@ class FriendlyCommands(commands.Cog):
         view = PaginationView(data)
         await view.send(ctx, title="Leaderboard", description="Eggbux's ranking", color=0x00ff00)
 
-
 async def setup(bot):
     await bot.add_cog(FriendlyCommands(bot))

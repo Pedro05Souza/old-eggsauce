@@ -6,7 +6,6 @@ from db.farmDB import Farm
 from tools.chickenInfo import ChickenUpkeep, ChickenMultiplier, TradeData
 from tools.embed import make_embed_object
 
-
 class ChickenSelectView(ui.View):
     """View for selecting chickens from the market or farm to buy or delete them."""
     def __init__(self, chickens, author, action, message, chicken_emoji, *args, **kwargs):
@@ -38,7 +37,7 @@ class ChickenMarketMenu(ui.Select):
     """Menu to buy chickens from the market"""
     def __init__(self, chickens, author_id, message, chicken_emoji):
         options = [
-            SelectOption(label=chicken['Name'], description=f"{chicken['Price']}", value=str(index))
+            SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {chicken['price']}", value=str(index))
             for index, chicken in enumerate(chickens)
         ]
         self.chickens = chickens
@@ -54,12 +53,11 @@ class ChickenMarketMenu(ui.Select):
             return
         index = self.values[0]
         chicken_selected = self.chickens[int(index)]
-        arr = chicken_selected['Price'].split(" ")
-        arr[1] = int(arr[1])
-        if arr[1] > Usuario.read(interaction.user.id)['points']:
+        price = chicken_selected['price']
+        if price > Usuario.read(interaction.user.id)['points']:
             await interaction.response.send_message("You don't have enough eggbux to buy this chicken.", ephemeral=True)
             self.options = [
-                SelectOption(label=chicken['Name'], description=f"{chicken['Price']}", value=str(index))
+                SelectOption(label=chicken['name'], description=f"{chicken['price']}", value=str(index))
                 for index, chicken in enumerate(self.chickens)
             ]
             await interaction.message.edit(view=self.view)
@@ -67,27 +65,32 @@ class ChickenMarketMenu(ui.Select):
         if not Farm.read(interaction.user.id):
             await interaction.response.send_message("You don't have a farm yet. Create one to buy chickens by typing !createFarm.", ephemeral=True)
             return
-        if len(Farm.read(interaction.user.id)['chickens']) == 10:
+        if len(Farm.read(interaction.user.id)['chickens']) == 10 and Farm.read(interaction.user.id)['farmer'] != 'Warrior Farmer':
             await interaction.response.send_message("You hit the maximum limit of chickens in the farm.", ephemeral=True)
             return
-        if chicken_selected['Bought']:
-            await interaction.response.send_message("This chicken has already been bought.", ephemeral=True)
+        elif len(Farm.read(interaction.user.id)['chickens']) == 14 and Farm.read(interaction.user.id)['farmer'] == 'Warrior Farmer':
+            await interaction.response.send_message("You hit the maximum limit of chickens in the farm.", ephemeral=True)
             return
         farm_data = Farm.read(interaction.user.id)
-        chicken_selected['Happiness'] = randint(60, 100)
-        chicken_selected['Egg_value'] = ChickenMultiplier[chicken_selected['Name'].split(" ")[0]].value
-        chicken_selected['Eggs_generated'] = 0
-        chicken_selected['Upkeep_multiplier'] = ChickenUpkeep[chicken_selected['Name'].split(" ")[0]].value
+        chicken_selected['happiness'] = randint(60, 100)
+        chicken_selected['egg_value'] = ChickenMultiplier[chicken_selected['rarity']].value
+        chicken_selected['eggs_generated'] = 0
+        chicken_selected['upkeep_multiplier'] = ChickenUpkeep[chicken_selected['rarity']].value
         farm_data['chickens'].append(chicken_selected)
-        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'], farm_data['upgrades'])
-        Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] - int(arr[1]), Usuario.read(interaction.user.id)["roles"])
-        chicken_selected['Bought'] = True
-        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: {chicken_selected['Name']} Price: {chicken_selected['Price']} :money_with_wings:")
+        aux = chicken_selected.copy()
+        aux['bought'] = True
+        self.chickens[self.chickens.index(chicken_selected)] = aux
+        Farm.update_chickens(interaction.user.id, farm_data['chickens'])
+        Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] - price, Usuario.read(interaction.user.id)["roles"])
+        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: {chicken_selected['name']} Price: {chicken_selected['price']} :money_with_wings:")
         await interaction.response.send_message(embed=embed)
-        available_chickens = [chicken for chicken in self.chickens if not chicken.get('Bought', False)]
+        available_chickens = [chicken for chicken in self.chickens if not chicken.get('bought', False)]
+        if not available_chickens:
+            await interaction.message.delete()
+            return
         updated_view = ChickenSelectView(available_chickens, self.author_id, "M", self.message, self.chicken_emoji)
-        updated_message = await make_embed_object(title=f":chicken: {interaction.user.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.chicken_emoji(chicken['Name'])} **{index + 1}.** **{chicken['Name']}**: {chicken['Price']} :money_with_wings:" for index, chicken in enumerate(available_chickens)]))
-        await interaction.message.edit(view=updated_view, embed=updated_message)
+        updated_message = await make_embed_object(title=f":chicken: {interaction.user.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.chicken_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {chicken['price']}" for index, chicken in enumerate(available_chickens)]))
+        await interaction.message.edit(embed=updated_message, view=updated_view)
         self.message = updated_message
         return
    
@@ -95,7 +98,7 @@ class ChickenDeleteMenu(ui.Select):
     """Menu to delete chickens from the farm"""
     def __init__(self, chickens, author_id, message, chicken_emoji):
         options = [
-            SelectOption(label=chicken['Name'], description=f"{chicken['Price']}", value=str(index))
+            SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {chicken['price']}", value=str(index))
             for index, chicken in enumerate(chickens)
         ]
         self.chickens = chickens
@@ -109,36 +112,40 @@ class ChickenDeleteMenu(ui.Select):
         if interaction.user.id != self.author_id:
             await interaction.response.send_message("You can't interact with this menu.", ephemeral=True)
             return
-        if 'Deleted' in chicken_selected.keys():
-            await interaction.response.send_message("This chicken has already been deleted.", ephemeral=True)
-            return
         index = self.values[0]
         chicken_selected = self.chickens[int(index)]
-        arr = chicken_selected['Price'].split(" ")
-        print(arr)
-        arr[1] = int(arr[1])
+        price = chicken_selected['price']
         farm_data = Farm.read(interaction.user.id)
         farm_data['chickens'].remove(chicken_selected)
         refund_price = 0
-        if farm_data['upgrades'][0]['Farmer'] == 'Economist Farmer':
-            refund_price = arr[1]
-        refund_price = arr[1]//2
-        Farm.update(interaction.user.id, farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'], farm_data['upgrades'])
+        if farm_data['farmer'] == 'Guardian Farmer':
+            refund_price = price
+        else:
+            refund_price = price//2
+        Farm.update_chickens(interaction.user.id, farm_data['chickens'])
         Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] + (refund_price), Usuario.read(interaction.user.id)["roles"])
-        chicken_selected['Deleted'] = chicken_selected.get('Deleted', True)
-        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: {chicken_selected['Name']} Price: {refund_price} :money_with_wings:")
+        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: **{chicken_selected['rarity']} {chicken_selected['name']}** Price: {refund_price} :money_with_wings:")
         await interaction.response.send_message(embed=embed)
+        deleted_chicken = chicken_selected.copy()
+        deleted_chicken['Deleted'] = True
+        self.chickens[self.chickens.index(chicken_selected)] = deleted_chicken
         available_chickens = [chicken for chicken in self.chickens if not chicken.get('Deleted', False)]
         updated_view = ChickenSelectView(available_chickens, self.author_id, "D", self.message, self.chicken_emoji)
-        updated_message = await make_embed_object(title=f":chicken: {farm_data['farm_name']}\n:egg: **Eggs generated**: {farm_data['eggs_generated']}", description="\n".join([f"{self.chicken_emoji(chicken['Name'])}  **{index + 1}.** **{chicken['Name']}** \n:partying_face: Happiness: **{chicken['Happiness']}%**\n Eggs generated: **{chicken['Eggs_generated']}**\n" for index, chicken in enumerate(farm_data['chickens'])]))
-        self.message = updated_message
-        await interaction.message.edit(view=updated_view, embed=updated_message)
+        msg = await make_embed_object(
+        title=f":chicken: {farm_data['farm_name']}\n:egg: **Eggs generated**: {farm_data['eggs_generated']}\n:farmer: Farmer: {farm_data['farmer'] if farm_data['farmer'] else 'No Farmer.'}",
+        description="\n".join([
+        f"{self.chicken_emoji(chicken['rarity'])}  **{index + 1}.** **{chicken['rarity']} {chicken['name']}** \n:partying_face: Happiness: **{chicken['happiness']}%**\nEggs generated: **{chicken['eggs_generated']}**\n"
+        for index, chicken in enumerate(farm_data['chickens'])
+    ]))
+        msg.set_thumbnail(url=interaction.user.display_avatar)
+        self.message = msg
+        await interaction.message.edit(view=updated_view, embed=msg)
         return
     
 class ChickenAuthorTradeMenu(ui.Select):
     def __init__(self, chickens, author, message, chicken_emoji, td):
         options = [
-            SelectOption(label=chicken['Name'], description=f"{chicken['Price']}", value=str(index))
+            SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {chicken['price']}", value=str(index))
             for index, chicken in enumerate(chickens)
         ]
         self.chickens = chickens
@@ -163,7 +170,7 @@ class ChickenAuthorTradeMenu(ui.Select):
 class ChickenUserTradeMenu(ui.Select):
     def __init__(self, chickens, author, message, chicken_emoji, td, target, instance_bot):
         options = [
-            SelectOption(label=chicken['Name'], description=f"{chicken['Price']}", value=str(index))
+            SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {chicken['price']}", value=str(index))
             for index, chicken in enumerate(chickens)
         ]
         self.chickens = chickens
@@ -192,7 +199,10 @@ class ChickenUserTradeMenu(ui.Select):
                 break
         author_chickens = self.td.target[self.author.id]
         target_chickens = self.td.author[self.target.id]
-        embed = await make_embed_object(description=f":white_check_mark: {self.author.display_name} and {self.target.display_name} have selected the chickens to trade. The chickens are: \n{self.author.display_name}: {', '.join([chicken['Name'] for chicken in author_chickens])}\n{self.target.display_name}: {', '.join([chicken['Name'] for chicken in target_chickens])}\n\nReact with ✅ to confirm the trade or ❌ to cancel it.")
+        embed = await make_embed_object(description=f"{self.author.display_name} wants to trade the following chickens: " +
+        "\n".join([f"{self.chicken_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in author_chickens]) +
+        f"\n{self.target.display_name} wants to trade the following chickens: " +
+        "\n".join([f"{self.chicken_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in target_chickens]))
         msg = await interaction.followup.send(embed=embed)
         await msg.add_reaction("✅")
         await msg.add_reaction("❌")
@@ -229,8 +239,8 @@ async def trade_handler(ctx, td, target):
         user_farm['chickens'] = [chicken for chicken in user_farm['chickens'] if chicken not in user_chickens]
         author_farm['chickens'].extend(user_chickens)
         user_farm['chickens'].extend(author_chickens)
-        Farm.update(ctx.user.id, author_farm['farm_name'], author_farm['chickens'], author_farm['eggs_generated'], author_farm['upgrades'])
-        Farm.update(target.id, user_farm['farm_name'], user_farm['chickens'], user_farm['eggs_generated'], user_farm['upgrades'])
+        Farm.update_chickens(ctx.user.id, author_farm['chickens'])
+        Farm.update_chickens(target.id, user_farm['chickens'])
         embed = await make_embed_object(description=f":white_check_mark: {ctx.user.display_name} and {target.display_name} have traded chickens.")
         return embed
 

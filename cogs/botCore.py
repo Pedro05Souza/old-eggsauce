@@ -1,11 +1,11 @@
 import os
 from discord.ext import commands
 from dotenv import load_dotenv
-import discord
 import asyncio
 import sys
-from tools.embed import create_embed_without_title, create_embed_with_title, make_embed_object
+from tools.embed import create_embed_without_title, make_embed_object
 from db.botConfigDB import BotConfig
+from tools.pricing import Prices, refund
 from tools.helpSelect import SelectModule, ShowPointsModules
 
 class BotCore(commands.Cog):
@@ -155,13 +155,14 @@ class BotCore(commands.Cog):
 
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
-    #     if ToggleDB.read(ctx.guild.id) and not ToggleDB.read(ctx.guild.id)['toggle']:
+    #     if BotConfig.read(ctx.guild.id) and BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
     #         return
     #     if isinstance(error, commands.CommandError):
     #         if ctx is not None:
     #             if hasattr(ctx, "predicate_result") and ctx.predicate_result:
     #                 enumPricing = Prices.__members__
-    #                 if ctx.command.name in enumPricing:
+    #                 if ctx.command.name in enumPricing and ctx.command.name != "stealpoints":
+    #                     print("balls")
     #                     if enumPricing[ctx.command.name].value > 0:
     #                         await create_embed_without_title(ctx, f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
     #                         await refund(ctx.author, ctx)
