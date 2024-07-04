@@ -23,6 +23,7 @@ class Prices(Enum):
     renamefarm = 0
     cornfield = 0
     checkTitle = 0
+    sellcorn = 0
     withdraw = 0
     balance = 0
     deposit = 0

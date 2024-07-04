@@ -72,11 +72,6 @@ class BankCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
             await self.register_bank(ctx.author)
-    
-    @commands.hybrid_command("passiveincome", aliases=["pi"], description="Upgrades your passive income.")
-    @pricing()
-    async def passive_income(self, ctx):
-        pass
 
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

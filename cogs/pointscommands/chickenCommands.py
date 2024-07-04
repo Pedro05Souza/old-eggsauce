@@ -156,7 +156,9 @@ class ChickenCommands(commands.Cog):
                 return
             
             totalCorn = 0
-            for chicken in farm_data['chickens'] and chicken['happiness'] < 100:
+            for chicken in farm_data['chickens']:
+                if chicken['happiness'] == 100:
+                    continue
                 totalCorn += ChickenFood[chicken['rarity']].value
 
             if totalCorn > farm_data['corn']:
@@ -189,6 +191,25 @@ class ChickenCommands(commands.Cog):
             Usuario.update(ctx.author.id, user_data['points'] - corn_price, user_data['roles'])
             Farm.update_corn(ctx.author.id, farm_data['corn'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have bought {quantity} corn for {corn_price} eggbux.")
+
+    @commands.hybrid_command(name="sellcorn", aliases=["sf"], usage="sellCorn <quantity>", description="Sell corn for the chickens.")
+    @pricing()
+    async def sell_corn(self, ctx, quantity: int):
+        """Sell corn"""
+        farm_data = Farm.read(ctx.author.id)
+        user_data = Usuario.read(ctx.author.id)
+        if farm_data:
+            if quantity > farm_data['corn']:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have enough corn to sell.")
+                return
+            if quantity < 30:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the minimum amount of corn you can sell is 30.")
+                return
+            corn_price = quantity // 2
+            farm_data['corn'] -= quantity
+            Usuario.update(ctx.author.id, user_data['points'] + corn_price, user_data['roles'])
+            Farm.update_corn(ctx.author.id, farm_data['corn'])
+            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have sold {quantity} corn for {corn_price} eggbux.")
 
     @commands.hybrid_command(name="market", aliases=["m"], usage="market", description="Market that generates 10 random chickens to buy.")
     @pricing()
@@ -532,7 +553,7 @@ class ChickenCommands(commands.Cog):
                     return
                 if reaction.emoji == "💰":
                     await self.buy_farmer_upgrade(ctx, "Rich Farmer", farmer_price)
-                elif reaction.emoji == "🪞":
+                elif reaction.emoji == "🛡️":
                     await self.buy_farmer_upgrade(ctx, "Guardian Farmer", farmer_price)
                 elif reaction.emoji == "💼":
                     await self.buy_farmer_upgrade(ctx, "Executive Farmer", farmer_price)
@@ -646,16 +667,16 @@ class ChickenCommands(commands.Cog):
         for player in Farm.readAll():
             if player['farmer'] == "Sustainable Farmer":
                 for chicken in player['chickens']:
-                    if chicken['Happiness'] == 100:
+                    if chicken['happiness'] == 100:
                         continue
                     totalUpkeep = ChickenUpkeep[chicken['rarity']].value
                     if Usuario.read(player['user_id'])['points'] > totalUpkeep:
                         Usuario.update(player['user_id'], Usuario.read(player['user_id'])['points'] - totalUpkeep, Usuario.read(player['user_id'])['roles'])
                         generated_happines = randint(20, 60)
-                        cHappiness = chicken['Happiness'] + generated_happines
+                        cHappiness = chicken['happiness'] + generated_happines
                         if cHappiness > 100:
                             cHappiness = 100
-                        chicken['Happiness'] = cHappiness
+                        chicken['happiness'] = cHappiness
                 Farm.update(player['user_id'], player['farm_name'], player['chickens'], player['eggs_generated'])
         print("Chickens fed automatically!")
 

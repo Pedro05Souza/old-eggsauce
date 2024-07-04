@@ -116,8 +116,6 @@ class PointsConfig(commands.Cog):
                 self.automatic_register(User)
                 await self.update_points(User, left_channel=True)
 
-
-
 async def setup(bot):
     await bot.add_cog(PointsConfig(bot))
 

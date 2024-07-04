@@ -1,12 +1,13 @@
 import os
-import ast
 from discord.ext import commands
 import discord
+from random import randint
 from db.userDB import Usuario
 from tools.embed import create_embed_without_title
 from db.bankDB import Bank
 from dotenv import load_dotenv
 from db.farmDB import Farm
+from tools.chickenInfo import ChickenRarity, ChickenMultiplier, ChickenUpkeep, ChickenFood
 from cogs.pointscommands.chickenCommands import RollLimit
 
 class DevCommands(commands.Cog):
@@ -122,8 +123,27 @@ class DevCommands(commands.Cog):
             await create_embed_without_title(ctx, f"```The bot has {total_users} users, {total_farms} farms and {total_banks} banks accounts registered.```")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
-    
 
+    @commands.command("spawnChicken")
+    async def give_chicken(self, ctx, User: discord.Member, rarity):
+        """Add a chicken to a user."""
+        if str(ctx.author.id) in self.devs:
+            rarity = rarity.upper()
+            farm_data = Farm.read(User.id)
+            if farm_data:
+                chicken = {
+                    "rarity": rarity,
+                    "name": "Chicken",
+                    "price": ChickenMultiplier[rarity].value * 175,
+                    "happiness": randint(60, 100),
+                    "egg_value" : ChickenMultiplier[rarity].value,
+                    "eggs_generated": 0,
+                    "upkeep_multiplier": ChickenUpkeep[rarity].value
+                }
+                farm_data['chickens'].append(chicken)
+                Farm.update_chickens(User.id, farm_data['chickens'])
+                await create_embed_without_title(ctx, f"{User.display_name} received a **{rarity}** chicken.")
+            
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))
 

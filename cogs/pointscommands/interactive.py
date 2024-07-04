@@ -250,7 +250,7 @@ class InteractiveCommands(commands.Cog):
         if guild_id in hungergames_status:
             await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
             return
-        wait_time = 15
+        wait_time = 120
         if args and args[0].isdigit():
             args = [int(arg) for arg in args] 
             if ctx.guild.owner.id == ctx.author.id:
