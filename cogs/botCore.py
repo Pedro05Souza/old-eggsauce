@@ -5,7 +5,8 @@ import asyncio
 import sys
 from tools.embed import create_embed_without_title, make_embed_object
 from db.botConfigDB import BotConfig
-from tools.pricing import Prices, refund
+from tools.pricing import refund
+from tools.prices import Prices
 from tools.helpSelect import SelectModule, ShowPointsModules
 
 class BotCore(commands.Cog):

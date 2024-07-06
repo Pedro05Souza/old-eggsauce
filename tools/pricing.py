@@ -6,70 +6,12 @@ from db.botConfigDB import BotConfig
 import inspect
 from discord.ext import commands
 from tools.embed import create_embed_without_title, make_embed_object
+from tools.prices import Prices
 import time
 
 # This class is responsible for handling the prices of the commands.
 cooldown_tracker = {}
-class Prices(Enum):
-    points = 0
-    leaderboard = 0
-    casino = 0
-    title = 0
-    market = 0
-    createfarm = 0
-    farmprofit = 0
-    sellchicken = 0
-    farm = 0
-    renamefarm = 0
-    cornfield = 0
-    checkTitle = 0
-    sellcorn = 0
-    withdraw = 0
-    balance = 0
-    deposit = 0
-    buycorn = 0
-    renamecornfield = 0
-    donatepoints = 0
-    buytitles = 0
-    shop = 0
-    upgradecornlimit = 0
-    chickencorn = 0
-    salary = 0
-    hungergames = 0
-    tradechicken = 0
-    buyplot = 0
-    cornfood = 0
-    renamechicken = 0
-    feedchicken = 0
-    increaserarity = 0
-    feedallchickens = 0
-    balls = 50
-    love = 75
-    mog = 100
-    mute = 150
-    unmute = 150
-    deafen = 150
-    undeafen = 150
-    disconnect = 175
-    changenickname = 200
-    fling = 200
-    purge = 250
-    fish = 375
-    radio = 400
-    stealpoints = 475
-    pardon = 500
-    emergency = 500
-    removeradio = 500
-    momentofsilence = 500
-    antimute = 600
-    implode = 750
-    explode = 850
-    detonate = 880
-    shuffle = 900
-    prison = 900
-    kick = 1250
-    ban = 1750
-    nuke = 100000
+
 
 async def set_points_commands_submodules(ctx, command):
     if not BotConfig.read(ctx.guild.id)['toggled_modules']:
@@ -206,7 +148,7 @@ async def command_cooldown(ctx, command, cooldown_period):
     cooldown_tracker[user_command_key] = current_time
     return True
 
-def immune_cool_down():
+def immune_cooldown():
     immune_commands = ["market"]
     return immune_commands
 
@@ -223,7 +165,7 @@ def pricing():
             result = False
             return result    
         if command in Prices.__members__:
-            if command in [cmd for cmd in immune_cool_down()]:
+            if command in [cmd for cmd in immune_cooldown()]:
                 cooldown_period = 1 
             if not Usuario.read(ctx.author.id):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")

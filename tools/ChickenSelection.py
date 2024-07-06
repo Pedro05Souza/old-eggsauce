@@ -3,7 +3,7 @@ from discord import SelectOption, ui
 from db.userDB import Usuario
 from random import randint
 from db.farmDB import Farm
-from tools.chickenInfo import ChickenUpkeep, ChickenMultiplier, TradeData
+from tools.chickenInfo import ChickenMultiplier, TradeData, determine_chicken_upkeep
 from tools.embed import make_embed_object
 
 class ChickenSelectView(ui.View):
@@ -30,14 +30,13 @@ class ChickenSelectView(ui.View):
                 userMessage = message[1]
                 chickens = chickens[1]
                 menu = ChickenUserTradeMenu(chickens, user, userMessage, chicken_emoji, t, author[0], instance_bot)
-
         self.add_item(menu)
 
 class ChickenMarketMenu(ui.Select):
     """Menu to buy chickens from the market"""
     def __init__(self, chickens, author_id, message, chicken_emoji):
         options = [
-            SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {chicken['price']}", value=str(index))
+            SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {chicken['price']}", value=str(index))
             for index, chicken in enumerate(chickens)
         ]
         self.chickens = chickens
@@ -65,24 +64,24 @@ class ChickenMarketMenu(ui.Select):
         if not Farm.read(interaction.user.id):
             await interaction.response.send_message("You don't have a farm yet. Create one to buy chickens by typing !createFarm.", ephemeral=True)
             return
-        if len(Farm.read(interaction.user.id)['chickens']) == 10 and Farm.read(interaction.user.id)['farmer'] != 'Warrior Farmer':
+        if len(Farm.read(interaction.user.id)['chickens']) == 8 and Farm.read(interaction.user.id)['farmer'] != 'Warrior Farmer':
             await interaction.response.send_message("You hit the maximum limit of chickens in the farm.", ephemeral=True)
             return
-        elif len(Farm.read(interaction.user.id)['chickens']) == 14 and Farm.read(interaction.user.id)['farmer'] == 'Warrior Farmer':
+        elif len(Farm.read(interaction.user.id)['chickens']) == 11 and Farm.read(interaction.user.id)['farmer'] == 'Warrior Farmer':
             await interaction.response.send_message("You hit the maximum limit of chickens in the farm.", ephemeral=True)
             return
         farm_data = Farm.read(interaction.user.id)
         chicken_selected['happiness'] = randint(60, 100)
         chicken_selected['egg_value'] = ChickenMultiplier[chicken_selected['rarity']].value
         chicken_selected['eggs_generated'] = 0
-        chicken_selected['upkeep_multiplier'] = ChickenUpkeep[chicken_selected['rarity']].value
+        chicken_selected['upkeep_multiplier'] = determine_chicken_upkeep(chicken_selected)
         farm_data['chickens'].append(chicken_selected)
         aux = chicken_selected.copy()
         aux['bought'] = True
         self.chickens[self.chickens.index(chicken_selected)] = aux
         Farm.update_chickens(interaction.user.id, farm_data['chickens'])
         Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] - price, Usuario.read(interaction.user.id)["roles"])
-        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: {chicken_selected['name']} Price: {chicken_selected['price']} :money_with_wings:")
+        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: **{chicken_selected['rarity']}** {chicken_selected['name']} Price: {chicken_selected['price']} :money_with_wings:")
         await interaction.response.send_message(embed=embed)
         available_chickens = [chicken for chicken in self.chickens if not chicken.get('bought', False)]
         if not available_chickens:
@@ -125,7 +124,7 @@ class ChickenDeleteMenu(ui.Select):
         Farm.update_chickens(interaction.user.id, farm_data['chickens'])
         Usuario.update(interaction.user.id, Usuario.read(interaction.user.id)["points"] + (refund_price), Usuario.read(interaction.user.id)["roles"])
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: **{chicken_selected['rarity']} {chicken_selected['name']}** Price: {refund_price} :money_with_wings:")
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
         deleted_chicken = chicken_selected.copy()
         deleted_chicken['Deleted'] = True
         self.chickens[self.chickens.index(chicken_selected)] = deleted_chicken
@@ -136,7 +135,7 @@ class ChickenDeleteMenu(ui.Select):
         description="\n".join([
         f"{self.chicken_emoji(chicken['rarity'])}  **{index + 1}.** **{chicken['rarity']} {chicken['name']}** \n:partying_face: Happiness: **{chicken['happiness']}%**\nEggs generated: **{chicken['eggs_generated']}**\n"
         for index, chicken in enumerate(farm_data['chickens'])
-    ]))
+        ]))
         msg.set_thumbnail(url=interaction.user.display_avatar)
         self.message = msg
         await interaction.message.edit(view=updated_view, embed=msg)

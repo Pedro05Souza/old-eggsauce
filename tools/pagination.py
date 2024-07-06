@@ -3,7 +3,7 @@ import discord
 class PaginationView(discord.ui.View):
 
 
-    def __init__(self, data, sep : int = 5):
+    def __init__(self, data, sep : int = 5, thumbnail = None):
         """
         PaginationView constructor
         param - data: dictionary with ["title"]:["value"]
@@ -17,6 +17,7 @@ class PaginationView(discord.ui.View):
         self.description = None
         self.color = discord.Color.default()
         self.total_pages= len(self.data) // self.sep + (len(self.data) % self.sep > 0)
+        self.thumbnail = thumbnail
 
     async def send(self, ctx, title= "List Page:", description=None, color=discord.Color.default()):
         """
@@ -37,6 +38,8 @@ class PaginationView(discord.ui.View):
         embed = discord.Embed(title=f"{self.title} {self.current_page} / {self.total_pages}", description=self.description, color=self.color)
         for item in data:
             embed.add_field(name=item['title'], value=item['value'], inline=False)
+        if self.thumbnail:
+            embed.set_thumbnail(url=self.thumbnail)
         return embed
 
     async def update_message(self, data):

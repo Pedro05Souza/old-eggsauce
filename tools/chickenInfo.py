@@ -1,5 +1,6 @@
 
 from enum import Enum
+from random import randint
 
 rollRates = {
             "COMMON": 5000,
@@ -40,6 +41,7 @@ defineRarityEmojis = {
             "ASCENDED": ":stars:",
         }
 
+# multiplicador de preço
 class ChickenRarity(Enum):
         DEAD = 0
         COMMON = 1
@@ -52,48 +54,30 @@ class ChickenRarity(Enum):
         ULTIMATE = 8
         COSMIC = 9
         DIVINE = 10
-        INFINITY = 14
-        OMINOUS = 20
-        CELESTIAL = 22
-        IMMORTAL = 24
-        CHOSEN = 26
-        ASCENDED = 30
-
-class ChickenMultiplier(Enum):
-        COMMON = 2
-        UNCOMMON = 2
-        RARE = 4
-        EXCEPTIONAL = 5
-        EPIC = 8
-        LEGENDARY = 11
-        MYTHICAL = 14
-        ULTIMATE = 16
-        COSMIC = 17
-        DIVINE = 19
-        INFINITY = 27
-        OMINOUS = 35
-        CELESTIAL = 40
-        IMMORTAL = 80
-        CHOSEN = 120
-        ASCENDED = 160
-
-class ChickenUpkeep(Enum):
-        COMMON = 3
-        UNCOMMON = 2
-        RARE = 3
-        EXCEPTIONAL = 3
-        EPIC = 5
-        LEGENDARY = 7
-        MYTHICAL = 9
-        ULTIMATE = 10
-        COSMIC = 10
-        DIVINE = 11
-        INFINITY = 12
+        INFINITY = 11
         OMINOUS = 12
-        CELESTIAL = 15
-        IMMORTAL = 30
-        CHOSEN = 35
-        ASCENDED = 40
+        CELESTIAL = 13
+        IMMORTAL = 14
+        CHOSEN = 15
+        ASCENDED = 16
+class ChickenMultiplier(Enum):
+        DEAD = 0
+        COMMON = 3
+        UNCOMMON = 7
+        RARE = 9
+        EXCEPTIONAL = 11
+        EPIC = 13
+        LEGENDARY = 15
+        MYTHICAL = 18
+        ULTIMATE = 19
+        COSMIC = 27
+        DIVINE = 33
+        INFINITY = 45
+        OMINOUS = 50
+        CELESTIAL = 54
+        IMMORTAL = 63
+        CHOSEN = 69
+        ASCENDED = 77
 class ChickenFood(Enum):
         DEAD = 0
         COMMON = 2
@@ -108,10 +92,10 @@ class ChickenFood(Enum):
         DIVINE = 20
         INFINITY = 22
         OMINOUS = 24
-        CELESTIAL = 32
-        IMMORTAL = 36
-        CHOSEN = 40
-        ASCENDED = 45
+        CELESTIAL = 26
+        IMMORTAL = 28
+        CHOSEN = 30
+        ASCENDED = 32
 class TradeData():
         obj_list = []
 
@@ -150,5 +134,29 @@ class TradeData():
                         return True
             return None
         
+def determine_chicken_upkeep(chicken):
+    min_value = find_min_upkeep_value(chicken)
+    base_value = (ChickenMultiplier[chicken['rarity']].value * 2) // 5
+    if min_value == 1:
+        max_value = base_value
+    else:
+        max_value = min_value * 2
+    if min_value < max_value:
+        chicken['upkeep_multiplier'] = randint(min_value, max_value)
+    else:
+        chicken['upkeep_multiplier'] = min_value
+        
+    return chicken['upkeep_multiplier']
+        
+def find_min_upkeep_value(chicken):
+    rarity_list = list(ChickenRarity.__members__.keys())[-5:]
+    base_value = (ChickenMultiplier[chicken['rarity']].value * 2) // 5
 
+    if chicken['rarity'] in rarity_list:
+        min_value = 1
+
+    else:
+        min_value = base_value
+
+    return min_value
         

@@ -4,8 +4,6 @@ from db.bankDB import Bank
 from db.userDB import Usuario
 import discord
 from tools.pricing import pricing
-
-
 class BankCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

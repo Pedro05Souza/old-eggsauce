@@ -314,18 +314,7 @@ class HostileCommands(commands.Cog):
     async def nuke(self, ctx):
         """Nuke the database."""
         Usuario.resetAll()
-        await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")
-
-    @commands.command(name="purge")
-    @commands.has_permissions(manage_messages=True)
-    @pricing()
-    async def purge(self, ctx, amount: int):
-        """Deletes a certain amount of messages."""
-        if amount > 0 and amount <= 25:
-            await ctx.channel.purge(limit=amount + 1)
-        else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, please enter a number between 1 and 25.", "")
-            await refund(ctx.author, ctx)  
+        await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")  
 
     @commands.command(name="antimute")
     @pricing()

@@ -84,7 +84,6 @@ class PointsConfig(commands.Cog):
         user_data = Usuario.read(user.id)
         if user_data and isinstance(user_data, dict) and "points" in user_data:
             points = await self.update_points(user)
-            print(points)
             if points is not None:
                 user_data['points'] = points
 
@@ -111,10 +110,10 @@ class PointsConfig(commands.Cog):
                 self.automatic_register(User)
                 await self.count_points(User)
             elif Usuario.read(User.id) and before.channel is not None and after.channel is None:
-                await self.update_points(User, left_channel=True)
+                await self.update_points(User)
             elif not Usuario.read(User.id) and before.channel is not None and after.channel is None:
                 self.automatic_register(User)
-                await self.update_points(User, left_channel=True)
+                await self.update_points(User)
 
 async def setup(bot):
     await bot.add_cog(PointsConfig(bot))

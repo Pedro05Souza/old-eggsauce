@@ -10,6 +10,7 @@ from tools.pagination import PaginationView
 import discord
 from random import randint, sample, choice
 hungergames_status = {}
+steal_status = {}
 class InteractiveCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -118,6 +119,11 @@ class InteractiveCommands(commands.Cog):
     @pricing()
     async def steal_points(self, ctx, user: discord.Member):
         """Steals points from another user."""
+        if ctx.author.id in steal_status and steal_status[ctx.author.id] == user.id:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You can't steal from the same user twice.")
+            return
+        else:
+            steal_status[ctx.author.id] = user.id
         chance  = randint(0, 100)
         if user.bot:
             await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a bot.")
@@ -161,9 +167,9 @@ class InteractiveCommands(commands.Cog):
             "T" : 600,
             "L" : 800,
             "M" : 1200,
-            "H" : 1800
+            "H" : 1500
         }
-        message = await create_embed_with_title(ctx, "Custom Titles:", f":poop: **{roles['T']}**\nIncome: 50 eggbux. :money_bag: \nPrice: 600 eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 75 eggbux. :money_bag:\n Price: 800 eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 100 eggbux. :money_bag:\n Price: 1200 eggbux. \n\n:crown: **{roles['H']}** \n Income: 150 eggbux. :money_bag:\n Price: 1800 eggbux. \n**The titles are bought sequentially.**\nReact with ✅ to buy a title.")
+        message = await create_embed_with_title(ctx, "Custom Titles:", f":poop: **{roles['T']}**\nIncome: 25 eggbux. :money_bag: \nPrice: 600 eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 50 eggbux. :money_bag:\n Price: 800 eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 75 eggbux. :money_bag:\n Price: 1200 eggbux. \n\n:crown: **{roles['H']}** \n Income: 100 eggbux. :money_bag:\n Price: 1500 eggbux. \n**The titles are bought sequentially.**\nReact with ✅ to buy a title.")
         await message.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
@@ -195,10 +201,10 @@ class InteractiveCommands(commands.Cog):
     def salary_role(self, User:discord.Member):
         """Returns the salary of a user based on their roles."""
         salarios = {
-            "T": 50,
-            "L": 75,
-            "M": 100,
-            "H": 150
+            "T": 25,
+            "L": 50,
+            "M": 75,
+            "H": 100
         }
         if Usuario.read(User.id):
             return salarios[Usuario.read(User.id)["roles"][-1]]
