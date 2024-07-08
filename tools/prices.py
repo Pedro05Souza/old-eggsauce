@@ -49,8 +49,8 @@ class Prices(Enum):
     undeafen = 225
     disconnect = 262
     changenickname = 300
+    stealpoints = 350
     fling = 450
-    stealpoints = 475
     fish = 500
     removeradio = 500
     momentofsilence = 500

@@ -31,7 +31,7 @@ class InteractiveCommands(commands.Cog):
                 embed = discord.Embed(description=f":moneybag: A bag with **{quantEgg}** eggbux has been dropped in the chat!. Type **claim** to get it. Remember you only have **{minutesToClaim} minutes** to claim it.") 
                 await channel.send(embed=embed)
                 try:
-                    Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "claim" and message.channel == channel), timeout=60*minutesToClaim)
+                    Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "claim" or message.content == "CLAIM" and message.channel == channel), timeout=60*minutesToClaim)
                     if Usuario.read(Message.author.id):
                         Usuario.update(Message.author.id, Usuario.read(Message.author.id)["points"] + quantEgg, Usuario.read(Message.author.id)["roles"])
                         embedClaim = discord.Embed(description=f"{Message.author.display_name} claimed {quantEgg} eggbux")
@@ -47,7 +47,7 @@ class InteractiveCommands(commands.Cog):
     async def drop_periodically(self):
         """Drops eggbux in the chat every 1000 seconds."""
         while True:
-            await asyncio.sleep(1000)
+            await asyncio.sleep(1000 - time.time() % 1000)
             await self.drop_eggbux()
 
     @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
@@ -224,12 +224,23 @@ class InteractiveCommands(commands.Cog):
             return userRoles[Usuario.read(User.id)["roles"][-1]]
         
     async def work_periodically(self):
-        """Periodically updates the salary of users with roles."""
+        """Periodically updates the salary of users with titles."""
         while True:
-            await asyncio.sleep(1600)
-            for user in Usuario.read_all_members_with_role():
-                Usuario.update(user["user_id"], user["points"] + self.salary_role(discord.utils.get(self.bot.get_all_members(), id=user["user_id"])), user["roles"])
-                print(f"Updated {user['user_id']} salary.")
+            await asyncio.sleep(3600 - time.time() % 3600)
+            generator = self.members_with_titles_generator()
+            for user in generator:
+                Usuario.update(user["user_id"], user["points"], user["roles"])
+
+    def members_with_titles_generator(self):
+        """Generates a list of members with titles."""
+        for user in Usuario.read_all_members_with_role():
+            updated_points = user['points'] + self.salary_role(discord.utils.get(self.bot.get_all_members(), id=user["user_id"]))
+            updated_user = {
+                "user_id": user['user_id'],
+                "points": updated_points,
+                "roles": user['roles']
+            }
+            yield updated_user
 
     @commands.hybrid_command(name="salary", aliases=["sal"], brief="Check the salary of a user.", usage="salary OPTIONAL [user]", description="Check the salary of a user. If not user, shows author's salary.")
     @pricing()

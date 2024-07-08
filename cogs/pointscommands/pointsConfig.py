@@ -14,10 +14,17 @@ class PointsConfig(commands.Cog):
         self.join_time = {}
         self.init_time = math.ceil(time.time())
 
-    @commands.hybrid_command(name="pointstoggled", aliases=["pstatus"], brief="Check the status of ptscmds.", usage="points_toggle", description="Check if the points commands are enabled or disabled in the server.")
+    @commands.hybrid_command(name="modulestatus", aliases=["status"], brief="Check the status of ptscmds.", usage="points_toggle", description="Check if the points commands are enabled or disabled in the server.")
     async def points_status(self, ctx):
-        """Check if the points commands are enabled or disabled in the server."""
-        await create_embed_without_title(ctx, f":warning: The points commands are {'**enabled**' if BotConfig.read[ctx.guild.id]['toggle'] else '**disabled**'} in this server.")
+        """Check the current module active in the server"""
+        modules = {
+            "T": "Total",
+            "F": "Friendly",
+            "H": "Hostile",
+            "N": "None"
+        }
+        current_module = BotConfig.read(ctx.guild.id)['toggled_modules']
+        await create_embed_without_title(ctx, f":warning: Points commands are currently set to: **{modules[current_module]}**")
 
     async def update_points(self, User: discord.Member, *kwargs):
         """Updates the points of the user every 10 seconds."""

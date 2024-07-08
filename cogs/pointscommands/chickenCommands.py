@@ -6,7 +6,8 @@ from tools.chickenInfo import ChickenRarity,TradeData, ChickenMultiplier, Chicke
 from db.userDB import Usuario
 from tools.chickenSelection import ChickenSelectView
 from tools.chickenInfo import rollRates, defineRarityEmojis, find_min_upkeep_value
-from random import choice, uniform, randint
+from random import uniform, randint
+from time import time
 import discord
 from tools.pricing import pricing
 from tools.embed import create_embed_without_title, create_embed_with_title, make_embed_object
@@ -61,7 +62,7 @@ class ChickenCommands(commands.Cog):
             Farm.create(ctx.author.id, ctx)
             await create_embed_without_title(ctx, f"{ctx.author.display_name} You have created a farm.")
     
-    @commands.hybrid_command(name="cornfield", aliases=["c"], usage="chickenfood", descripton="Opens the food farm to generated food for the chickens.")
+    @commands.hybrid_command(name="cornfield", aliases=["c", "corn"], usage="chickenfood", descripton="Opens the food farm to generated food for the chickens.")
     @pricing()
     async def corn_field(self, ctx, user: discord.Member = None):
         """Displays the user's corn field."""
@@ -102,6 +103,7 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def buy_plot(self, ctx):
         """Buy a plot for corn production"""
+        end_time = time() + 60
         farm_data = Farm.read(ctx.author.id)
         user_data = Usuario.read(ctx.author.id)
         if farm_data:
@@ -114,34 +116,47 @@ class ChickenCommands(commands.Cog):
             msg = await create_embed_without_title(ctx, f":seedling: {ctx.author.display_name}, currently have {farm_data['plot']} plots. The next plot will cost {plot_price} eggbux. React with ✅ to buy the plot or ❌ to cancel.")
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
-            try:
+            while True:
+                actual_time = end_time - time()
+                if actual_time <= 0:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have not responded to the purchase request.")
+                    break
                 reaction, user = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == msg, timeout=40)
+                farm_data = Farm.read(ctx.author.id)
+                user_data = Usuario.read(ctx.author.id)
                 if reaction.emoji == "✅":
                     if user_data['points'] >= plot_price:
                         farm_data['plot'] += 1
                         Usuario.update(ctx.author.id, user_data['points'] - plot_price, user_data['roles'])
                         Farm.update_plot(ctx.author.id, farm_data['plot'])
                         await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have bought a new plot.")
+                        break
                     else:
                         await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to buy the plot.")
                 elif reaction.emoji == "❌":
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have cancelled the purchase.")
-            except asyncio.TimeoutError:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have not responded to the purchase request.")
+                    break
 
     @commands.hybrid_command(name="upgradecornlimit", aliases=["ucl"], usage="upgradeCornLimit", description="Upgrade the corn limit.")
     @pricing()
     async def upgrade_corn_limit(self, ctx):
         """Upgrades the player corn limit."""
+        end_time = time() + 60
         farm_data = Farm.read(ctx.author.id)
         user_data = Usuario.read(ctx.author.id)
-        if farm_data and user_data:
+        if farm_data:
             range_corn = int((farm_data['corn_limit'] * 50)  // 100)
             price_corn = farm_data['corn_limit'] * 2
             msg = await create_embed_without_title(ctx, f":corn: {ctx.author.display_name}, currently have a corn limit of {farm_data['corn_limit']}. The next upgrade will cost {price_corn} eggbux and it will upgrade to {farm_data['corn_limit'] + range_corn}. React with ✅ to upgrade the corn limit or ❌ to cancel.")
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
-            try:
+            while True:
+                actual_time = end_time - time()
+                if actual_time <= 0:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have not responded to the upgrade request.")
+                    break
+                farm_data = Farm.read(ctx.author.id)
+                user_data = Usuario.read(ctx.author.id)
                 reaction, user = await ctx.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == msg, timeout=40)
                 if reaction.emoji == "✅":
                     if user_data['points'] >= price_corn:
@@ -149,13 +164,13 @@ class ChickenCommands(commands.Cog):
                         Usuario.update(ctx.author.id, user_data['points'] - price_corn, user_data['roles'])
                         Farm.update_corn_limit(ctx.author.id, farm_data['corn_limit'])
                         await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have upgraded the corn limit.")
+                        break
                     else:
                         await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to upgrade the corn limit.")
                 elif reaction.emoji == "❌":
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have cancelled the upgrade.")
-            except TimeoutError:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have not responded to the upgrade request.")
-    
+                    break
+
     @commands.hybrid_command(name="feedallchicken", aliases=["fac"], usage="feedallchicken", description="Feed a chicken.")
     @pricing()
     async def feed_all_chickens(self, ctx):
@@ -165,24 +180,29 @@ class ChickenCommands(commands.Cog):
             if farm_data['corn'] == 0:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any corn.")
                 return
-            
-            totalCorn = 0
+            total_cost = 0
+            all_happiness = 0
             for chicken in farm_data['chickens']:
                 if chicken['happiness'] == 100:
+                    all_happiness += 1
                     continue
-                totalCorn += ChickenFood[chicken['rarity']].value
-
-            if totalCorn > farm_data['corn']:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have enough corn to feed all the chickens. You can buy corns by using the command **!buycorn**.")
+                cost_to_feed = ChickenFood[chicken['rarity']].value
+                if farm_data['corn'] > cost_to_feed:
+                    total_cost += cost_to_feed
+                    chicken['happiness'] = 100
+                    all_happiness += 1
+                    farm_data['corn'] -= cost_to_feed
+                else:
+                    break
+            if total_cost == 0 and all_happiness != len(farm_data['chickens']):
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't afford to feed any chickens.")
                 return
-
-            for chicken in farm_data['chickens']:
-                chicken['happiness'] = 100
-
-            farm_data['corn'] -= totalCorn
+            elif total_cost == 0 and all_happiness == len(farm_data['chickens']):
+                await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, all the chickens are already fed.")
+                return
             Farm.update_corn(ctx.author.id, farm_data['corn'])
             Farm.update_chickens(ctx.author.id, farm_data['chickens'])
-            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, all the chickens have been fed.\n:corn:The corn cost was {totalCorn}.")
+            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, all the chickens have been fed.\n:corn:The corn cost was {total_cost}.")
 
     @commands.hybrid_command(name="buycorn", aliases=["bc"], usage="buyCorn <quantity>", description="Buy corn for the chickens.")
     @pricing()
@@ -297,7 +317,7 @@ class ChickenCommands(commands.Cog):
         """Reset the roll limit every 12 hours"""
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            await asyncio.sleep(43200)
+            await asyncio.sleep(43200 - time() % 43200)
             RollLimit.removeAll()
     
     @commands.hybrid_command(name="farm", aliases=["f"], usage="farm OPTIONAL [user]", description="Check the chickens in the farm.")
@@ -726,13 +746,6 @@ class ChickenCommands(commands.Cog):
                 Usuario.update(player_id, Usuario.read(player_id)['points'] + player['totalEggs'], Usuario.read(player_id)['roles'])
             Bank.update(player_id, player['bank'])
         print("Eggs dropped!")
-
-    async def make_eggs_periodically(self):
-        """Make eggs periodically"""
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            await asyncio.sleep(3600)
-            await self.drop_eggs()
     
     async def feed_eggs_auto(self):
         """Feed the chickens automatically"""
@@ -763,18 +776,25 @@ class ChickenCommands(commands.Cog):
                 Farm.update_corn(player['user_id'], corn)
         print("Corn crops generated!")
 
+    async def make_eggs_periodically(self):
+        """Make eggs periodically"""
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            await asyncio.sleep(3600 - time() % 3600)
+            await self.drop_eggs()
+
     async def drop_corns_periodically(self):
         """Generate corn crops periodically"""
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            await asyncio.sleep(1600)
+            await asyncio.sleep(1600 - time() % 1600)
             await self.generate_corncrops()
 
     async def feed_chickens_periodically(self):
         """Feed the chickens periodically"""
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            await asyncio.sleep(14400)
+            await asyncio.sleep(14400 - time() % 14400)
             await self.feed_eggs_auto()
     
     @commands.Cog.listener()
