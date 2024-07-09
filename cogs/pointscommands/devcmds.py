@@ -8,7 +8,7 @@ from db.bankDB import Bank
 from dotenv import load_dotenv
 from db.farmDB import Farm
 from tools.chickenInfo import ChickenMultiplier, ChickenRarity, determine_chicken_upkeep
-from cogs.pointscommands.chickenCommands import RollLimit
+from cogs.pointscommands.chickencmds import RollLimit
 
 class DevCommands(commands.Cog):
     def __init__(self, bot):
@@ -134,7 +134,7 @@ class DevCommands(commands.Cog):
                 chicken = {
                     "rarity": rarity,
                     "name": "Chicken",
-                    "price": ChickenRarity[rarity].value * 175,
+                    "price": ChickenRarity[rarity].value * 150,
                     "happiness": randint(60, 100),
                     "egg_value" : ChickenMultiplier[rarity].value,
                     "eggs_generated": 0,
@@ -161,9 +161,6 @@ class DevCommands(commands.Cog):
         if str(ctx.author.id) in self.devs:
             if amount > 0 and amount <= 25:
                 await ctx.channel.purge(limit=amount + 1)
-
-            
+          
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))
-
-    

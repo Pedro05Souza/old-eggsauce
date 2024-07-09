@@ -1,6 +1,6 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
-from tools.embed import create_embed_without_title, create_embed_with_title, make_embed_object
+from tools.embed import create_embed_without_title, make_embed_object
 from db.bankDB import Bank
 from db.userDB import Usuario
 from tools.pricing import pricing
@@ -26,19 +26,9 @@ class PointsConfig(commands.Cog):
         current_module = BotConfig.read(ctx.guild.id)['toggled_modules']
         await create_embed_without_title(ctx, f":warning: Points commands are currently set to: **{modules[current_module]}**")
 
-    async def update_points(self, User: discord.Member, *kwargs):
+    async def update_points(self, User: discord.Member):
         """Updates the points of the user every 10 seconds."""
         userId = User.id
-        if kwargs:
-            left_channel = kwargs[0]
-            print("Left channel")
-            if left_channel:
-                add_points = (math.ceil(time.time()) - self.join_time[userId]) // 10
-                total_points = Usuario.read(userId)["points"] + add_points
-                Usuario.update(userId, total_points, Usuario.read(userId)["roles"])
-                self.join_time.pop(userId)
-                return total_points
-        
         if userId in self.join_time.keys():
             print("User in join_time")
             add_points = (math.ceil(time.time()) - self.join_time[userId]) // 10
@@ -124,4 +114,3 @@ class PointsConfig(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(PointsConfig(bot))
-

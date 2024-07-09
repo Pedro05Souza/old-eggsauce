@@ -1,6 +1,8 @@
 
 from enum import Enum
-from random import randint
+from random import randint, uniform
+
+chicken_default_value = 150
 
 rollRates = {
             "COMMON": 5000,
@@ -41,7 +43,14 @@ defineRarityEmojis = {
             "ASCENDED": ":stars:",
         }
 
-# multiplicador de preço
+chicken_rarities = {
+        "TERRIBLE" : 1,
+        "BAD" : 0.8,
+        "NORMAL" : 0.4,
+        "DECENT" : 0.2,
+        "GOOD" : 0.1,
+        "PERFECT" : 0
+}
 class ChickenRarity(Enum):
         DEAD = 0
         COMMON = 1
@@ -133,10 +142,35 @@ class TradeData():
                     if id == author:
                         return True
             return None
+class RollLimit:
+    obj_list = []
+    def __init__(self, user_id, current, chickens=None):
+        RollLimit.obj_list.append(self)
+        self.user_id = user_id
+        self.current = current
+        self.chickens = chickens
+
+    @staticmethod
+    def read(user_id):
+        for obj in RollLimit.obj_list:
+            if obj.user_id == user_id:
+                return obj
+        return None
+    
+    @staticmethod
+    def remove(obj):
+        try:
+            RollLimit.obj_list.remove(obj)
+        except Exception as e:
+            print("Error removing object from list.", e)
+    
+    @staticmethod
+    def removeAll():
+        RollLimit.obj_list.clear()
         
 def determine_chicken_upkeep(chicken):
     min_value = find_min_upkeep_value(chicken)
-    base_value = (ChickenMultiplier[chicken['rarity']].value * 2) // 5
+    base_value = (ChickenMultiplier[chicken['rarity']].value) // 2
     if min_value == 1:
         max_value = base_value
     else:
