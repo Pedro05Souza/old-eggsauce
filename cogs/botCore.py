@@ -3,7 +3,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import asyncio
 import sys
-from tools.embed import create_embed_without_title, make_embed_object
+from tools.sharedmethods import create_embed_without_title, make_embed_object
 from db.botConfigDB import BotConfig
 from tools.pricing import refund
 from tools.prices import Prices

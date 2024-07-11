@@ -1,6 +1,7 @@
-
+import os
 import discord
 from db.botConfigDB import BotConfig
+from dotenv import load_dotenv
 
 async def create_embed_without_title(ctx, description, **kwargs):
     """Create an embed without a title."""
@@ -32,6 +33,20 @@ async def make_embed_object(**kwargs):
     """Create an embed with a title."""
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     return embed
+
+def is_dev(ctx):
+    """Check if the user is a developer."""
+    load_dotenv()
+    devs = os.getenv("DEVS").split(",")
+    return str(ctx.author.id) in devs
+
+def dev_list():
+    """Return the list of developers."""
+    load_dotenv()
+    devs = os.getenv("DEVS").split(",")
+    return devs
+
+
 
 
             

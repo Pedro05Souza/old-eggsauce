@@ -2,15 +2,15 @@ import asyncio
 from discord.ext import commands
 from db.farmDB import Farm
 from db.bankDB import Bank
-from tools.chickenInfo import ChickenRarity,TradeData, ChickenMultiplier, ChickenFood, RollLimit, determine_chicken_upkeep, chicken_rarities, chicken_default_value
-from db.userDB import Usuario
+from tools.chickenInfo import *
+from db.userDB import User
 from tools.chickenSelection import ChickenSelectView
-from tools.chickenInfo import rollRates, defineRarityEmojis, find_min_upkeep_value
-from random import uniform, randint
+from tools.chickenInfo import rollRates, defineRarityEmojis
+from random import choice, uniform, randint
 from time import time
 import discord
 from tools.pricing import pricing
-from tools.embed import create_embed_without_title, create_embed_with_title, make_embed_object
+from tools.sharedmethods import create_embed_without_title, create_embed_with_title, make_embed_object
 
 class ChickenCommands(commands.Cog):
 
@@ -62,64 +62,52 @@ class ChickenCommands(commands.Cog):
 
     @commands.hybrid_command(name="market", aliases=["m"], usage="market", description="Market that generates 10 random chickens to buy.")
     @pricing()
-    async def market(self, ctx):
+    async def market(self, ctx, egg_pack_chickens: int = 0):
         """Market to buy chickens"""
         if Farm.read(ctx.author.id):
-            default_rolls = 15
-            chickens_generated = 8
-            plrObj = RollLimit.read(ctx.author.id)
-            if not plrObj:
-                farm_data = Farm.read(ctx.author.id)    
-                if farm_data['farmer'] == "Executive Farmer":
-                    plrObj = RollLimit(ctx.author.id, default_rolls + self.load_farmer_upgrades(ctx.author.id)[0])
-                else:
-                    plrObj = RollLimit(ctx.author.id, default_rolls)
-            if plrObj.current == 0:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today.")
-                return
-            plrObj.current -= 1
+            if egg_pack_chickens == 0:
+                default_rolls = 15
+                chickens_generated = 8
+            else:
+                chickens_generated = egg_pack_chickens
+            if egg_pack_chickens == 0:
+                plrObj = RollLimit.read(ctx.author.id)
+                if not plrObj:
+                    farm_data = Farm.read(ctx.author.id)    
+                    if farm_data['farmer'] == "Executive Farmer":
+                        plrObj = RollLimit(ctx.author.id, default_rolls + load_farmer_upgrades(ctx.author.id)[0])
+                    else:
+                        plrObj = RollLimit(ctx.author.id, default_rolls)
+                if plrObj.current == 0:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today.")
+                    return
+                plrObj.current -= 1
             if Farm.read(ctx.author.id)['farmer'] == "Generous Farmer":
-                chickens_generated += self.load_farmer_upgrades(ctx.author.id)[0]
+                chickens_generated += load_farmer_upgrades(ctx.author.id)[0]
             generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_generated, ctx)
-            plrObj.chickens = generated_chickens
-            message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {chicken['price']} eggbux." for index, chicken in enumerate(generated_chickens)]))
+            if egg_pack_chickens == 0:
+                plrObj.chickens = generated_chickens
+            message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, Farm.read(ctx.author.id))} eggbux." for index, chicken in enumerate(generated_chickens)]))
             view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message, chicken_emoji=self.get_rarity_emoji)
             await ctx.send(embed=message, view=view)
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you don't have a farm.")
                          
     def roll_rates_sum(self):
         """Roll the sum of the rates of the chicken rarities"""
         return sum(rollRates.values()), rollRates
     
-    def load_farmer_upgrades(self, player_id):
-        """Load the farmer upgrades"""
-        farmer_dict = {
-            "Rich Farmer": 10,
-            "Guardian Farmer": 4,
-            "Executive Farmer" : [8, 4],
-            "Warrior Farmer": 3,
-            "Generous Farmer": [3]
-        }
-        player_farmer = Farm.read(player_id)['farmer']
-        return farmer_dict[player_farmer]
-    
     def generate_chickens(self, rollRatesSum, rollRates, quant, ctx):
         """Generate chickens according to the roll rates"""
-        default_value = chicken_default_value
         generated_chickens = []
-        author_data = Farm.read(ctx.author.id)
         initial_range = 1
         for _ in range(quant):
             randomRoll = uniform(initial_range, rollRatesSum)
             for rarity, rate in rollRates.items():
                 if randomRoll <= rate:
-                    chicken_price = default_value * ChickenRarity[rarity].value
-                    if author_data['farmer'] == 'Executive Farmer':
-                        discount = self.load_farmer_upgrades(ctx.author.id)[1]
-                        chicken_price = ChickenRarity[rarity].value * default_value - (ChickenRarity[rarity].value * default_value * discount) // 100
                     generated_chickens.append({
                         "rarity" : rarity,
-                        "name" : "Chicken",
-                        "price" : chicken_price
+                        "name" : "Chicken"
                     })
                     break
                 randomRoll -= rate
@@ -250,33 +238,38 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def farm_profit(self, ctx, user: discord.Member = None):
         """Check the farm profit"""
-        if user is None:
+        if not user:
             user = ctx.author
         if Farm.read(user.id):
             farm_data = Farm.read(user.id)
             totalProfit = 0
             totalLoss = 0
+            current_upkeep = 0
             totalcorn = 0
             if len(farm_data['chickens']) == 0:
                 await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have any chickens.")
                 return
             for chicken in farm_data['chickens']:
                 totalcorn += ChickenFood[chicken['rarity']].value
-                totalProfit += (chicken['egg_value'] * chicken['happiness']) // 100
+                chicken_loss = int((get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))
+                chicken_profit = get_chicken_egg_value(chicken) - chicken_loss
+                totalProfit += (chicken_profit * chicken['happiness']) // 100
                 if farm_data['farmer'] == 'Guardian Farmer':
-                    to_reduce = self.load_farmer_upgrades(user.id)
-                    totalLoss += chicken['upkeep_multiplier'] - (chicken['upkeep_multiplier'] * to_reduce) // 100
+                    to_reduce = load_farmer_upgrades(user.id)
+                    current_upkeep = chicken['upkeep_multiplier'] - to_reduce
+                    totalLoss += int(get_chicken_egg_value(chicken) * current_upkeep)
                 else:
-                    totalLoss += chicken['upkeep_multiplier']
+                    current_upkeep = chicken['upkeep_multiplier']
+                    totalLoss += int(get_chicken_egg_value(chicken) * current_upkeep)
             if farm_data['farmer'] == "Rich Farmer":
-                to_add = self.load_farmer_upgrades(user.id)
+                to_add = load_farmer_upgrades(user.id)
                 added_value = (totalProfit * to_add) // 100
                 totalProfit += added_value
             result = totalProfit - totalLoss
             if result > 0:
                 await create_embed_without_title(ctx, f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**.")
             elif result < 0:
-                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, your farm is expected to generate a loss of **{result}** per hour :money_with_wings:.\n:chicken: Money expected to go woards feeding the chickens: **{totalLoss}**\n:egg: Eggs produced: **{totalProfit}**\n:corn:Corn going to the chickens: **{totalcorn}**.")
+                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, your farm is expected to generate a loss of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**.")
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss.")
         else:
@@ -296,17 +289,29 @@ class ChickenCommands(commands.Cog):
         await ctx.send(embed=authorEmbed, view=view_author)
         await ctx.send(embed=userEmbed, view=view_user)
 
-    async def get_usr_farm(self, User: discord.Member):
+    async def get_usr_farm(self, user: discord.Member):
         """Get the user's farm"""
-        if Farm.read(User.id):
-            user_data = Farm.read(User.id)
+        farm_data = Farm.read(user.id)
+        if farm_data:
+            last_drop_time = time() - farm_data['last_chicken_drop']
+            hours_passed_since_last_egg_drop = last_drop_time // 3600 if last_drop_time <= 86400 else 24
+            hours_passed_since_feed = 0
+            if farm_data['farmer'] == "Sustainable Farmer":
+                hours_passed_since_feed = last_drop_time // 14600 if last_drop_time <= 14600 else 4
+                for _ in range(int(hours_passed_since_feed)): 
+                    self.feed_eggs_auto(farm_data)
+            for _ in range(int(hours_passed_since_last_egg_drop)):
+                self.drop_egg_for_player(farm_data, Bank.read(user.id), User.read(user.id))
+            user_data = Farm.read(user.id)
             msg = await make_embed_object(
                 title=f":chicken: {user_data['farm_name']}\n\n:egg: **Eggs generated**: {user_data['eggs_generated']}\n:farmer: Farmer: {user_data['farmer'] if user_data['farmer'] else 'No Farmer.'}",
                 description="\n".join([
                 f"{self.get_rarity_emoji(chicken['rarity'])}  **{index + 1}.** **{chicken['rarity']} {chicken['name']}** \n:partying_face: Happiness: **{chicken['happiness']}%**\n :gem: Upkeep rarity: **{self.determine_upkeep_rarity(chicken)}**\n"
                 for index, chicken in enumerate(user_data['chickens'])
             ]))
-            msg.set_thumbnail(url=User.display_avatar)
+            if hours_passed_since_feed != 0 or hours_passed_since_last_egg_drop != 0:
+                Farm.update_chicken_drop(user.id)
+            msg.set_thumbnail(url=user.display_avatar)
             return msg
         else:
             return None
@@ -380,7 +385,7 @@ class ChickenCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} don't have a farm.")
     
-    @commands.hybrid_command(name="evolvechicken", aliases=["ec"], usage="evolveChicken <index> <index2>", description="Evolve a chicken if having 2 of the same rarity.")
+    @commands.hybrid_command(name="evolvechicken", aliases=["ec", "fuse"], usage="evolveChicken <index> <index2>", description="Evolve a chicken if having 2 of the same rarity.")
     @pricing()
     async def evolve_chicken(self, ctx, index: int, index2: int):
         """Evolves a chicken if having 2 of the same rarity"""
@@ -402,8 +407,6 @@ class ChickenCommands(commands.Cog):
                 return
             rarity_list = list(ChickenRarity.__members__)
             chicken_selected['rarity'] = rarity_list[rarity_list.index(chicken_selected['rarity']) + 1]
-            chicken_selected['egg_value'] = ChickenMultiplier[chicken_selected['rarity']].value
-            chicken_selected['price'] = chicken_default_value * ChickenRarity[chicken_selected['rarity']].value
             chicken_selected['upkeep_multiplier'] = determine_chicken_upkeep(chicken_selected)
             farm_data['chickens'].remove(chicken_removed)
             Farm.update_chickens(ctx.author.id, farm_data['chickens'])
@@ -411,15 +414,17 @@ class ChickenCommands(commands.Cog):
             
     @commands.hybrid_command(name="chickeninfo", aliases=["ci"], usage="chickenInfo <index>", description="Check the information of a chicken.")
     @pricing()
-    async def check_chicken_info(self, ctx, index: int):
+    async def check_chicken_info(self, ctx, index: int, user: discord.Member = None):
         """Check the information of a chicken."""
-        farm_data = Farm.read(ctx.author.id)
+        if user is None:
+            user = ctx.author
+        farm_data = Farm.read(user.id)
         if farm_data:
             if index > len(farm_data['chickens']) or index < 0:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, the chicken index is invalid.")
                 return
             chicken = farm_data['chickens'][index - 1]
-            msg = await make_embed_object(title=f":chicken: {chicken['rarity']} {chicken['name']}", description=f":partying_face: **Happiness**: {chicken['happiness']}%\n:moneybag: **Price**: {chicken['price']} eggbux\n:egg: **Egg value**: {chicken['egg_value']} \n:gem: **Upkeep rarity**: {chicken['upkeep_multiplier']}\n:coin: **Eggs generated:** {chicken['eggs_generated']}\n:corn: **Food necessary:** {ChickenFood[chicken['rarity']].value} \n:money_with_wings: **Total profit: {(chicken['egg_value'] * chicken['happiness']) // 100 - chicken['upkeep_multiplier']} eggbux.**")
+            msg = await make_embed_object(title=f":chicken: {chicken['rarity']} {chicken['name']}", description=f":partying_face: **Happiness**: {chicken['happiness']}%\n:moneybag: **Price**: {get_chicken_price(chicken)} eggbux\n:egg: **Egg value**: {get_chicken_egg_value(chicken)} \n:gem: **Upkeep rarity**: {int(get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])}\n:coin: **Eggs generated:** {chicken['eggs_generated']}\n:corn: **Food necessary:** {ChickenFood[chicken['rarity']].value} \n:money_with_wings: **Total profit: {int(((get_chicken_egg_value(chicken) * chicken['happiness']) // 100) - (get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))} eggbux.**")
             await ctx.send(embed=msg)
 
     @commands.hybrid_command(name="farmer", usage="farmer", description="The farmers helps increase the productivity of the chickens.")
@@ -442,7 +447,7 @@ class ChickenCommands(commands.Cog):
             await message.add_reaction(emoji)
         try:
             reaction, user = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == message, timeout=40)
-            if Usuario.read(user.id)['points'] >= farmer_price:
+            if User.read(user.id)['points'] >= farmer_price:
                 if Farm.read(user.id)['farmer'] == 'Warrior Farmer' and len(Farm.read(user.id)['chickens']) > 8 and reaction.emoji in emojis:
                     await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} you have a Warrior farmer, you need to sell the extra farm slots to buy another farmer.")
                     return
@@ -463,13 +468,23 @@ class ChickenCommands(commands.Cog):
         except asyncio.TimeoutError:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have not selected a farmer role.")
 
+    @commands.hybrid_command(name="eggpack", aliases=["ep"], usage="eggpack", description="Buy an egg pack.")
+    @pricing()
+    async def eggpack(self, ctx):
+        """Buy an egg pack"""
+        farm_data = Farm.read(ctx.author.id)
+        if farm_data:
+            await self.market(ctx, 6)
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+
     async def buy_farmer_upgrade(self, ctx, name, farmer_price):
         """Buy the farmer upgrade"""
-        user_data = Usuario.read(ctx.author.id)
+        user_data = User.read(ctx.author.id)
         farm_data = Farm.read(ctx.author.id)
         if user_data['points'] >= farmer_price:
             farm_data['farmer'] = name
-            Usuario.update(ctx.author.id, user_data['points'] - farmer_price, user_data['roles'])
+            User.update_points(ctx.author.id, user_data['points'] - farmer_price)
             Farm.update_farmer(ctx.author.id, name)
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have purchased the {name} farmer role.")
         else:
@@ -486,15 +501,11 @@ class ChickenCommands(commands.Cog):
                 devolded_rarity = rarity_list[index - 1].name
                 chicken['happiness'] = 100
                 chicken['rarity'] = devolded_rarity
-                chicken['egg_value'] = ChickenMultiplier[devolded_rarity].value
-                chicken['price'] = chicken_default_value * ChickenRarity[devolded_rarity].value
                 chicken['upkeep_multiplier'] = self.determine_upkeep_rarity(chicken)
                 return
         elif cr == 'COMMON' and chicken['happiness'] <= 0 and devolveChance == 1:
             chicken['rarity'] = 'DEAD'
             chicken['happiness'] = 0
-            chicken['egg_value'] = 0
-            chicken['price'] = 0
             chicken['upkeep_multiplier'] = 0
             return
 
@@ -503,102 +514,73 @@ class ChickenCommands(commands.Cog):
         return 10
 
     def determine_upkeep_rarity(self, chicken):
+        """Determine the upkeep rarity"""
         chicken_upkeep = chicken['upkeep_multiplier']
-        min_upkeep = find_min_upkeep_value(chicken)
-        if min_upkeep != 1:
-            max_upkeep = min_upkeep * 2
-        else:
-            max_upkeep = ((ChickenMultiplier[chicken['rarity']].value * 2) // 5) * 2
-        ratio = (chicken_upkeep - min_upkeep) / (max_upkeep - min_upkeep)
         for rarity, value in chicken_rarities.items():
-            if ratio >= value:
+            if chicken_upkeep >= value:
                 return rarity
-                    
-    async def drop_eggs(self):
-        """Drop eggs periodically"""
-        plrDict = {}
-        for player in Farm.readAll():
-            bank_data = Bank.read(player['user_id'])
-            bank_money = 0
-            if not bank_data:
-                bank_money = 0
+            
+    def drop_egg_for_player(self, farm_data, bank_data, user_data):
+        """Drops eggs for player"""
+        total_profit = 0
+        total_upkeep = 0
+        for chicken in farm_data['chickens']:
+            if chicken['rarity'] == 'DEAD':
+                continue
+            chicken_loss = int(get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']) 
+            total_upkeep += chicken_loss
+            chicken_profit = get_chicken_egg_value(chicken) - chicken_loss
+            total_profit += (chicken_profit * chicken['happiness']) // 100
+            chicken['happiness'] -= randint(1,4)
+            if chicken['happiness'] < 0:
+                chicken['happiness'] = 0
+            if chicken['happiness'] == 0:
+                self.devolve_chicken(chicken)
+        if farm_data['farmer'] == 'Rich Farmer':
+            to_increase = (total_profit * load_farmer_upgrades(farm_data['user_id'])) // 100
+            total_profit += to_increase
+        elif farm_data['farmer'] == 'Guardian Farmer':
+            to_discount = (total_upkeep * load_farmer_upgrades(farm_data['user_id'])) // 100
+            total_upkeep -= to_discount
+        user_networth = bank_data['bank'] + user_data['points'] 
+        if user_networth < total_upkeep:
+            delete_chicken = choice(farm_data['chickens'])
+            farm_data['chickens'].remove(delete_chicken)
+        else:
+            if user_data['points'] > total_upkeep:
+                user_data['points'] -= total_upkeep
+            elif bank_data['bank'] > total_upkeep:
+                bank_data['bank'] -= total_upkeep
             else:
-                bank_money = bank_data['bank']
-            if len(player['chickens']) > 0:
-                player_id = player['user_id']
-                plrDict[player_id] = {
-                    "chicken_list" : player['chickens'],
-                    "totalEggs" : 0,
-                    "Farmer" : player["farmer"],
-                    "bank" : bank_money, 
-                }
-                totalUpkeep = 0
-                for chicken in plrDict[player_id]['chicken_list']:
-                    if chicken['rarity'] == 'DEAD':
-                        continue
-                    totalUpkeep += chicken['upkeep_multiplier']
-                    egg_produced = (chicken['egg_value'] * chicken['happiness']) // 100
-                    if plrDict[player_id]['Farmer'] == "Rich Farmer":
-                        bonus = self.load_farmer_upgrades(player_id)
-                        egg_produced += (egg_produced * bonus) // 100
-                    plrDict[player_id]['totalEggs'] += egg_produced
-                    chicken['eggs_generated'] += egg_produced
-                    if chicken['happiness'] > 0:
-                        chicken['happiness'] -= randint(1, 5)
-                    if chicken['happiness'] < 0:
-                        chicken['happiness'] = 0
-                    if chicken['happiness'] == 0:
-                        await self.devolve_chicken(chicken)
-                if plrDict[player_id]['bank'] < totalUpkeep:
-                    plrDict[player_id]['totalEggs'] = 0
-                    devolved_chicken = randint(0, len(plrDict[player_id]['chicken_list']) - 1)
-                    await self.devolve_chicken(plrDict[player_id]['chicken_list'][devolved_chicken])
-                else:
-                    plrDict[player_id]['bank'] -= totalUpkeep
-        for player_id, player in plrDict.items():
-            Farm.update(player_id, Farm.read(player_id)['farm_name'], player['chicken_list'], Farm.read(player_id)['eggs_generated'] + player['totalEggs'])
-            if player['totalEggs'] > 0:
-                Usuario.update(player_id, Usuario.read(player_id)['points'] + player['totalEggs'], Usuario.read(player_id)['roles'])
-            Bank.update(player_id, player['bank'])
-        print("Eggs dropped!")
-    
-    async def feed_eggs_auto(self):
+                bank_data['bank'] += user_data['points']
+                user_data['points'] = 0
+                bank_data['bank'] -= total_upkeep
+            farm_data['eggs_generated'] += total_profit
+            user_data['points'] += total_profit
+        Farm.update(farm_data['user_id'], farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
+        User.update_points(user_data['user_id'], user_data['points'])
+        Bank.update(bank_data['user_id'], bank_data['bank'])
+                    
+    async def feed_eggs_auto(self, farm_data):
         """Feed the chickens automatically"""
-        for player in Farm.readAll():
-            if player['farmer'] == "Sustainable Farmer":
-                for chicken in player['chickens']:
-                    if chicken['happiness'] == 100:
-                        continue
-                    totalUpkeep = chicken['upkeep_multiplier']
-                    if Usuario.read(player['user_id'])['points'] > totalUpkeep:
-                        Usuario.update(player['user_id'], Usuario.read(player['user_id'])['points'] - totalUpkeep, Usuario.read(player['user_id'])['roles'])
-                        generated_happines = randint(20, 60)
-                        cHappiness = chicken['happiness'] + generated_happines
-                        if cHappiness > 100:
-                            cHappiness = 100
-                        chicken['happiness'] = cHappiness
-                Farm.update(player['user_id'], player['farm_name'], player['chickens'], player['eggs_generated'])
+        if farm_data['farmer'] == "Sustainable Farmer":
+            for chicken in farm_data['chickens']:
+                if chicken['happiness'] == 100:
+                    continue
+                generated_happines = randint(20, 70)
+                cHappiness = chicken['happiness'] + generated_happines
+                if cHappiness > 100:
+                    cHappiness = 100
+                chicken['happiness'] = cHappiness
+                totalUpkeep = chicken['upkeep_multiplier']
+            if Bank.read(farm_data['user_id'])['bank'] > totalUpkeep:
+                Bank.update(farm_data['user_id'], Bank.read(farm_data['user_id'])['bank'] - totalUpkeep)
+                Farm.update(farm_data['user_id'], farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
         print("Chickens fed automatically!")
-
-    async def make_eggs_periodically(self):
-        """Make eggs periodically"""
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            await asyncio.sleep(3600 - time() % 3600)
-            await self.drop_eggs()
-
-    async def feed_chickens_periodically(self):
-        """Feed the chickens periodically"""
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            await asyncio.sleep(14400 - time() % 14400)
-            await self.feed_eggs_auto()
     
     @commands.Cog.listener()
     async def on_ready(self):
         self.bot.loop.create_task(self.reset_periodically())
-        self.bot.loop.create_task(self.make_eggs_periodically())
-        self.bot.loop.create_task(self.feed_chickens_periodically())
 
 async def setup(bot):
     await bot.add_cog(ChickenCommands(bot))

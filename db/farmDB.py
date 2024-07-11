@@ -1,5 +1,6 @@
 from db.dbConfig import mongo_client
 farm_collection = mongo_client.db.farm
+from time import time
 
 class Farm:
     @staticmethod
@@ -20,7 +21,9 @@ class Farm:
                     "eggs_generated": 0,
                     "farmer": None,
                     "corn_limit": 100,
-                    "plot": 1
+                    "plot": 1,
+                    "last_chicken_drop": time(),
+                    "last_corn_drop": time(),
                 }
                 farm_collection.insert_one(farm)
                 print("Farm has been created successfully.")
@@ -148,7 +151,30 @@ class Farm:
         except Exception as e:
             print("Error encountered while deleting all farms.", e)
             return None
-    
+        
+    @staticmethod
+    def update_chicken_drop(user_id: int):
+        """Update a farm's last drop in the database."""
+        try:
+            farm_data = farm_collection.find_one({"user_id": user_id})
+            if farm_data:
+                farm_collection.update_one({"user_id": user_id}, {"$set": {"last_chicken_drop": time()}})
+        except Exception as e:
+            print("Error encountered while trying to update farm's last drop.", e)
+            return None
+        
+    @staticmethod
+    def update_corn_drop(user_id: int):
+        """Update a farm's last drop in the database."""
+        try:
+            farm_data = farm_collection.find_one({"user_id": user_id})
+            if farm_data:
+                farm_collection.update_one({"user_id": user_id}, {"$set": {"last_corn_drop": time()}})
+        except Exception as e:
+            print("Error encountered while trying to update farm's last drop.", e)
+            return None
+        
+        
         
 
     

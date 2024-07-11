@@ -1,120 +1,107 @@
-import os
+import tools
 from discord.ext import commands
 import discord
 from random import randint
-from db.userDB import Usuario
-from tools.embed import create_embed_without_title
+from db.userDB import User
+import tools.pricing
+from tools.sharedmethods import create_embed_without_title, is_dev
 from db.bankDB import Bank
-from dotenv import load_dotenv
 from db.farmDB import Farm
 from tools.chickenInfo import ChickenMultiplier, ChickenRarity, determine_chicken_upkeep
 from cogs.pointscommands.chickencmds import RollLimit
 
 class DevCommands(commands.Cog):
     def __init__(self, bot):
-        load_dotenv()
         self.bot = bot
-        self.devs = os.getenv("DEVS").split(",")
     
     @commands.command("addPoints") 
-    async def add_points(self, ctx, amount: int, User: discord.Member = None):
+    async def add_points(self, ctx, amount: int, user: discord.Member = None):
         """Add points to a user. If no user is specified, the author of the command will receive the points."""
-        if User is None:
-            User = ctx.author
-            if str(User.id) in self.devs:
-                Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                await create_embed_without_title(ctx, f"{User.display_name} received {amount} eggbux")
+        if user is None:
+            user = ctx.author
+        user_data = User.read(user.id)
+        if user_data:
+            if is_dev(ctx):
+                User.update_points(user.id, user_data["points"] + amount)
+                await create_embed_without_title(ctx, f"{user.display_name} received {amount} eggbux")
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
-            if Usuario.read(User.id):
-                if str(ctx.author.id) in self.devs:
-                    Usuario.update(User.id, Usuario.read(User.id)["points"] + amount, Usuario.read(User.id)["roles"])
-                    await create_embed_without_title(ctx, f"{User.display_name} received {amount} eggbux")
-                else:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
-            else:
-                await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
+            await create_embed_without_title(ctx, ":no_entry_sign: user not found in the database.")
 
     @commands.command("removePoints")
-    async def remove_points(self, ctx, amount: int, User: discord.Member = None):
+    async def remove_points(self, ctx, amount: int, user: discord.Member = None):
         """Remove points from a user. If no user is specified, the author of the command will lose the points."""
-        if User is None:
-            User = ctx.author
-            if str(User.id) in self.devs:
-                Usuario.update(User.id, Usuario.read(User.id)["points"] - amount, Usuario.read(User.id)["roles"])
-                await create_embed_without_title(ctx, f"{User.display_name} lost {amount} eggbux")
+        if user is None:
+            user = ctx.author
+        user_data = User.read(user.id)
+        if user_data:
+            if is_dev(ctx):
+                User.update_points(user.id, user_data["points"] - amount)
+                await create_embed_without_title(ctx, f"{user.display_name} lost {amount} eggbux")
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
-            if Usuario.read(User.id):
-                if str(ctx.author.id) in self.devs:
-                    Usuario.update(User.id, Usuario.read(User.id)["points"] - amount, Usuario.read(User.id)["roles"])
-                    await create_embed_without_title(ctx, f"{User.display_name} lost {amount} eggbux")
-                else:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
-            else:
-                await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
+            await create_embed_without_title(ctx, ":no_entry_sign: user not found in the database.")
 
     @commands.command("latency", aliases=["ping"])
     async def latency(self, ctx):
         """Check the bot's latency."""
-        if str(ctx.author.id) in self.devs:
+        if is_dev(ctx):
             await create_embed_without_title(ctx, f":ping_pong: {round(self.bot.latency * 1000)}ms")
 
     @commands.command("deleteDB")
-    async def delete_db(self, ctx,  User: discord.Member):
+    async def delete_db(self, ctx,  user: discord.Member):
         """Delete a user from the database."""
-        User = User.id
-        if Usuario.read(User):
-            if str(ctx.author.id) in self.devs:
-                Usuario.delete(User)
-                await create_embed_without_title(ctx, f":warning: {User.display_name} has been deleted from the database.")
+        user = user.id
+        if User.read(user):
+            if is_dev(ctx):
+                User.delete(user)
+                await create_embed_without_title(ctx, f":warning: {user.display_name} has been deleted from the database.")
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
-                await create_embed_without_title(ctx, ":no_entry_sign: User not found in the database.")
+                await create_embed_without_title(ctx, ":no_entry_sign: user not found in the database.")
             
     @commands.command()
-    async def reset(self, ctx, User: discord.Member):
+    async def reset(self, ctx, user: discord.Member):
         """Reset a user from the database."""
-        if str(User.id) in self.devs and Usuario.read(User.id):
-            if Bank.read(User.id):
-                Bank.update(User.id, 0)
-            Usuario.update(User.id, 0, "")
-            await create_embed_without_title(ctx, f"{User.display_name} has been reset.")
+        if is_dev(ctx) and User.read(user.id):
+            if Bank.read(user.id):
+                Bank.update(user.id, 0)
+            User.update_all(user.id, 0, "")
+            await create_embed_without_title(ctx, f"{user.display_name} has been reset.")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
     
     @commands.command("giveRolls")
-    async def give_rolls(self, ctx, rolls : int, User: discord.Member):
+    async def give_rolls(self, ctx, rolls : int, user: discord.Member):
         """Add more chicken roles to a user."""
-        userObj = RollLimit.read(User.id)
-        if str(ctx.author.id) in self.devs:
+        userObj = RollLimit.read(user.id)
+        if is_dev(ctx):
             if userObj:
                 userObj.current += rolls
-                await create_embed_without_title(ctx, f"{User.display_name} received {rolls} rolls.")
+                await create_embed_without_title(ctx, f"{user.display_name} received {rolls} rolls.")
             else:
-                await create_embed_without_title(ctx, ":no_entry_sign: User didn't roll chickens in the market yet.")
+                await create_embed_without_title(ctx, ":no_entry_sign: user didn't roll chickens in the market yet.")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
 
     @commands.command("checkbotServers", aliases=["cbs"])
     async def check_bot_servers(self, ctx):
         """Check the servers the bot is in."""
-        if str(ctx.author.id) in self.devs:
+        if is_dev(ctx):
             servers = self.bot.guilds
             total_servers = len(servers)
-
             await create_embed_without_title(ctx, f"```The bot is currently in: {total_servers} servers```")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
     
-    @commands.command("totalUsers")
+    @commands.command("totalusers")
     async def total_users(self, ctx):
         """Check the total number of users in the database."""
-        if str(ctx.author.id) in self.devs:
-            users = Usuario.readAll()
+        if is_dev(ctx):
+            users = User.readAll()
             total_users = len(list(users))
             farms_created = Farm.readAll()
             total_farms = len(list(farms_created))
@@ -125,11 +112,11 @@ class DevCommands(commands.Cog):
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
 
     @commands.command("spawnChicken")
-    async def spawn_chicken(self, ctx, User: discord.Member, rarity):
+    async def spawn_chicken(self, ctx, user: discord.Member, rarity):
         """Add a chicken to a user."""
-        if str(ctx.author.id) in self.devs:
+        if is_dev(ctx):
             rarity = rarity.upper()
-            farm_data = Farm.read(User.id)
+            farm_data = Farm.read(user.id)
             if farm_data:
                 chicken = {
                     "rarity": rarity,
@@ -142,25 +129,39 @@ class DevCommands(commands.Cog):
                 }
                 chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
                 farm_data['chickens'].append(chicken)
-                Farm.update_chickens(User.id, farm_data['chickens'])
-                await create_embed_without_title(ctx, f"{User.display_name} received a **{rarity}** chicken.")
+                Farm.update_chickens(user.id, farm_data['chickens'])
+                await create_embed_without_title(ctx, f"{user.display_name} received a **{rarity}** chicken.")
     
     @commands.command("b")
     async def update_all_chickens(self, ctx):
-        if str(ctx.author.id) in self.devs:
+        if is_dev(ctx):    
             farms = Farm.readAll()
             for user in farms:
                 for chicken in user['chickens']:
-                    chicken['egg_value'] = ChickenMultiplier[chicken['rarity']].value
                     chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
                 Farm.update_chickens(user['user_id'], user['chickens'])
 
     @commands.command(name="purge")
     async def purge(self, ctx, amount: int):
         """Deletes a certain amount of messages."""
-        if str(ctx.author.id) in self.devs:
+        if is_dev(ctx):
             if amount > 0 and amount <= 25:
                 await ctx.channel.purge(limit=amount + 1)
-          
+    
+    @commands.command(name="devMode")
+    async def developer_mode(self, ctx):
+        """Activates the developer mode in the bot."""
+        if is_dev(ctx):
+            tools.pricing.dev_mode = not tools.pricing.dev_mode
+            await create_embed_without_title(ctx, f":warning: Developer mode is now {'enabled' if tools.pricing.dev_mode else 'disabled'}.")
+
+    @commands.command(name="updt")
+    async def updt(self, ctx):
+        """Updates the bot."""
+        if is_dev(ctx):
+            Farm.add_last_chicken_drop()
+            Farm.add_last_corn_drop()
+            Farm.remove_last_drop()
+
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

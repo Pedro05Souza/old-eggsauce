@@ -15,6 +15,7 @@ class Prices(Enum):
     checkTitle = 0
     sellcorn = 0
     withdraw = 0
+    chickenrarities = 0
     balance = 0
     deposit = 0
     buycorn = 0
@@ -48,6 +49,7 @@ class Prices(Enum):
     deafen = 225
     undeafen = 225
     disconnect = 262
+    eggpack = 300
     changenickname = 300
     stealpoints = 350
     fling = 450

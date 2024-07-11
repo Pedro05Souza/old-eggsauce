@@ -3,8 +3,8 @@ from time import time
 import discord
 from discord.ext import commands
 from db.farmDB import Farm
-from db.userDB import Usuario
-from tools.embed import create_embed_without_title, make_embed_object
+from db.userDB import User
+from tools.sharedmethods import create_embed_without_title, make_embed_object
 from tools.pricing import pricing
 
 class CornCommands(commands.Cog):
@@ -35,13 +35,19 @@ class CornCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have a farm.")
 
-    async def show_plr_food_farm(self, ctx, User: discord.Member):
-        if User is None:
-            User = ctx.author
-        if Farm.read(User.id):
-            farm_data = Farm.read(User.id)
+    async def show_plr_food_farm(self, ctx, user: discord.Member):
+        """Show the player's food farm"""
+        farm_data = Farm.read(user.id)
+        if user is None:
+            user = ctx.author
+        if farm_data:
+            last_drop_time = time() - farm_data['last_corn_drop']
+            hours_passed_since_last_drop = last_drop_time // 3600 if last_drop_time <= 3600 else 10
+            for _ in range(int(hours_passed_since_last_drop)):
+                await self.generate_corncrops(user)
             food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in 30 minutes: {self.calculate_corn(farm_data)}\n:seedling: **Plots**: {farm_data['plot']}")
-            food_embed.set_thumbnail(url=User.display_avatar)
+            food_embed.set_thumbnail(url=user.display_avatar)
+            Farm.update_corn_drop(user.id)
             return food_embed
         
     def calculate_corn(self, farm_data):
@@ -54,12 +60,13 @@ class CornCommands(commands.Cog):
         """Buy a plot for corn production"""
         end_time = time() + 60
         farm_data = Farm.read(ctx.author.id)
-        user_data = Usuario.read(ctx.author.id)
+        user_data = User.read(ctx.author.id)
         if farm_data:
             actual_plot = farm_data['plot']
-            print(actual_plot)
+            if actual_plot == 8:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum number of plots.")
+                return
             plot_price = (actual_plot ** 2) * 150
-            print(plot_price)
             msg = await create_embed_without_title(ctx, f":seedling: {ctx.author.display_name}, currently have {farm_data['plot']} plots. The next plot will cost {plot_price} eggbux. React with ✅ to buy the plot or ❌ to cancel.")
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
@@ -70,11 +77,11 @@ class CornCommands(commands.Cog):
                     break
                 reaction, user = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == msg, timeout=40)
                 farm_data = Farm.read(ctx.author.id)
-                user_data = Usuario.read(ctx.author.id)
+                user_data = User.read(ctx.author.id)
                 if reaction.emoji == "✅":
                     if user_data['points'] >= plot_price:
                         farm_data['plot'] += 1
-                        Usuario.update(ctx.author.id, user_data['points'] - plot_price, user_data['roles'])
+                        User.update_points(ctx.author.id, user_data['points'] - plot_price)
                         Farm.update_plot(ctx.author.id, farm_data['plot'])
                         await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have bought a new plot.")
                         break
@@ -90,9 +97,12 @@ class CornCommands(commands.Cog):
         """Upgrades the player corn limit."""
         end_time = time() + 60
         farm_data = Farm.read(ctx.author.id)
-        user_data = Usuario.read(ctx.author.id)
+        user_data = User.read(ctx.author.id)
         if farm_data:
             range_corn = int((farm_data['corn_limit'] * 50)  // 100)
+            if farm_data['corn_limit'] == 1702:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum corn limit.")
+                return
             price_corn = farm_data['corn_limit'] * 2
             msg = await create_embed_without_title(ctx, f":corn: {ctx.author.display_name}, currently have a corn limit of {farm_data['corn_limit']}. The next upgrade will cost {price_corn} eggbux and it will upgrade to {farm_data['corn_limit'] + range_corn}. React with ✅ to upgrade the corn limit or ❌ to cancel.")
             await msg.add_reaction("✅")
@@ -103,12 +113,12 @@ class CornCommands(commands.Cog):
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have not responded to the upgrade request.")
                     break
                 farm_data = Farm.read(ctx.author.id)
-                user_data = Usuario.read(ctx.author.id)
+                user_data = User.read(ctx.author.id)
                 reaction, user = await ctx.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == msg, timeout=40)
                 if reaction.emoji == "✅":
                     if user_data['points'] >= price_corn:
                         farm_data['corn_limit'] += range_corn
-                        Usuario.update(ctx.author.id, user_data['points'] - price_corn, user_data['roles'])
+                        User.update_points(ctx.author.id, user_data['points'] - price_corn)
                         Farm.update_corn_limit(ctx.author.id, farm_data['corn_limit'])
                         await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have upgraded the corn limit.")
                         break
@@ -123,7 +133,7 @@ class CornCommands(commands.Cog):
     async def buy_corn(self, ctx, quantity: int):
         """Buy corn for the chickens"""
         farm_data = Farm.read(ctx.author.id)
-        user_data = Usuario.read(ctx.author.id)
+        user_data = User.read(ctx.author.id)
         if quantity < 30:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the minimum amount of corn you can buy is 30.")
             return
@@ -136,7 +146,7 @@ class CornCommands(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't buy more corn than your corn limit.")
                 return
             farm_data['corn'] += quantity
-            Usuario.update(ctx.author.id, user_data['points'] - corn_price, user_data['roles'])
+            User.update_points(ctx.author.id, user_data['points'] - corn_price)
             Farm.update_corn(ctx.author.id, farm_data['corn'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have bought {quantity} corn for {corn_price} eggbux.")
 
@@ -145,7 +155,7 @@ class CornCommands(commands.Cog):
     async def sell_corn(self, ctx, quantity: int):
         """Sell corn"""
         farm_data = Farm.read(ctx.author.id)
-        user_data = Usuario.read(ctx.author.id)
+        user_data = User.read(ctx.author.id)
         if farm_data:
             if quantity > farm_data['corn']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have enough corn to sell.")
@@ -155,31 +165,20 @@ class CornCommands(commands.Cog):
                 return
             corn_price = quantity // 3
             farm_data['corn'] -= quantity
-            Usuario.update(ctx.author.id, user_data['points'] + corn_price, user_data['roles'])
+            User.update_points(ctx.author.id, user_data['points'] + corn_price)
             Farm.update_corn(ctx.author.id, farm_data['corn'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have sold {quantity} corn for {corn_price} eggbux.")
 
-    async def generate_corncrops(self):
+    async def generate_corncrops(self, user: discord.member):
         """Generate corn crops"""
-        for player in Farm.readAll():
-                totalCorn = self.calculate_corn(player)
-                corn = player['corn']
-                corn += totalCorn
-                if corn > player['corn_limit']:
-                    corn = player['corn_limit']
-                Farm.update_corn(player['user_id'], corn)
-        print("Corn crops generated!")
-        
-    async def drop_corns_periodically(self):
-        """Generate corn crops periodically"""
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            await asyncio.sleep(1600 - time() % 1600)
-            await self.generate_corncrops()
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.bot.loop.create_task(self.drop_corns_periodically())
+        farm_data = Farm.read(user.id)
+        if farm_data:
+            totalCorn = self.calculate_corn(farm_data)
+            corn = farm_data['corn']
+            corn += totalCorn
+            if corn > farm_data['corn_limit']:
+                corn = farm_data['corn_limit']
+            Farm.update_corn(farm_data['user_id'], corn)
 
 async def setup(bot):
     await bot.add_cog(CornCommands(bot))

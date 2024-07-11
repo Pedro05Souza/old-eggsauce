@@ -1,6 +1,7 @@
 
 from enum import Enum
-from random import randint, uniform
+from random import uniform
+from db.farmDB import Farm
 
 chicken_default_value = 150
 
@@ -44,11 +45,13 @@ defineRarityEmojis = {
         }
 
 chicken_rarities = {
-        "TERRIBLE" : 1,
-        "BAD" : 0.8,
-        "NORMAL" : 0.4,
-        "DECENT" : 0.2,
-        "GOOD" : 0.1,
+        "TERRIBLE" : .75,
+        "AWFUL" : .6,
+        "BAD" : .45,
+        "NORMAL" : .3,
+        "DECENT" : .2,
+        "GOOD" : .1,
+        "GREAT" : .05,
         "PERFECT" : 0
 }
 class ChickenRarity(Enum):
@@ -74,19 +77,19 @@ class ChickenMultiplier(Enum):
         COMMON = 3
         UNCOMMON = 7
         RARE = 9
-        EXCEPTIONAL = 11
-        EPIC = 13
-        LEGENDARY = 15
-        MYTHICAL = 18
-        ULTIMATE = 19
-        COSMIC = 27
-        DIVINE = 33
+        EXCEPTIONAL = 10
+        EPIC = 11
+        LEGENDARY = 14
+        MYTHICAL = 17
+        ULTIMATE = 18
+        COSMIC = 25
+        DIVINE = 29
         INFINITY = 45
-        OMINOUS = 50
-        CELESTIAL = 54
-        IMMORTAL = 63
-        CHOSEN = 69
-        ASCENDED = 77
+        OMINOUS = 60
+        CELESTIAL = 70
+        IMMORTAL = 75
+        CHOSEN = 82
+        ASCENDED = 92
 class ChickenFood(Enum):
         DEAD = 0
         COMMON = 2
@@ -169,28 +172,35 @@ class RollLimit:
         RollLimit.obj_list.clear()
         
 def determine_chicken_upkeep(chicken):
-    min_value = find_min_upkeep_value(chicken)
-    base_value = (ChickenMultiplier[chicken['rarity']].value) // 2
-    if min_value == 1:
-        max_value = base_value
-    else:
-        max_value = min_value * 2
-    if min_value < max_value:
-        chicken['upkeep_multiplier'] = randint(min_value, max_value)
-    else:
-        chicken['upkeep_multiplier'] = min_value
-        
+    percentage = uniform(0, .75)
+    percentage = round(percentage, 2)
+    chicken['upkeep_multiplier'] = percentage
     return chicken['upkeep_multiplier']
-        
-def find_min_upkeep_value(chicken):
-    rarity_list = list(ChickenRarity.__members__.keys())[-5:]
-    base_value = (ChickenMultiplier[chicken['rarity']].value * 2) // 5
 
-    if chicken['rarity'] in rarity_list:
-        min_value = 1
+def get_chicken_egg_value(chicken):
+     egg_value = ChickenMultiplier[chicken['rarity']].value
+     return egg_value
 
-    else:
-        min_value = base_value
+def get_chicken_price(chicken, *args):
+     if args:   
+          farm_data = args[0]
+          if farm_data['farmer'] == 'Executive Farmer':
+               discount_value = load_farmer_upgrades(farm_data['user_id'])[1]
+               default_discount = chicken_default_value * discount_value // 100
+               chicken_discount = chicken_default_value - default_discount  
+               chicken_price = (ChickenRarity[chicken['rarity']].value * chicken_discount)
+               return chicken_price
+     return ChickenRarity[chicken['rarity']].value * chicken_default_value
 
-    return min_value
+def load_farmer_upgrades(player_id):
+        """Load the farmer upgrades"""
+        farmer_dict = {
+            "Rich Farmer": 10,
+            "Guardian Farmer": 4,
+            "Executive Farmer" : [8, 4],
+            "Warrior Farmer": 3,
+            "Generous Farmer": [3]
+        }
+        player_farmer = Farm.read(player_id)['farmer']
+        return farmer_dict[player_farmer]
         

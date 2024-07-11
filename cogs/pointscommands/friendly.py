@@ -1,8 +1,8 @@
 from discord.ext import commands
 import discord
-from tools.embed import create_embed_without_title
+from tools.sharedmethods import create_embed_without_title
 import os
-from db.userDB import Usuario
+from db.userDB import User
 from db.bankDB import Bank
 from tools.pagination import PaginationView
 from tools.prices import Prices
@@ -19,7 +19,7 @@ class FriendlyCommands(commands.Cog):
         """Bot sends balls."""
         await create_embed_without_title(ctx, f":soccer: balls")
 
-    @commands.hybrid_command("mog", brief="Mog a user", parameters=["User: discord.Member"], examples=["mog @user"], description="Mog a user.")
+    @commands.hybrid_command("mog", brief="Mog a user", parameters=["user: discord.Member"], examples=["mog @user"], description="Mog a user.")
     @pricing()
     async def mog(self, ctx, user: discord.Member):
             """Mog a user."""
@@ -42,7 +42,7 @@ class FriendlyCommands(commands.Cog):
     @pricing()
     async def leaderboard(self, ctx):
         """Shows the leaderboard."""
-        users = Usuario.readAll()
+        users = User.readAll()
         user_data = []
         for user in users:
             user_data.append({"user_id": user["user_id"], "points": user["points"]})

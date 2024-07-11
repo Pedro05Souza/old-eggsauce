@@ -1,16 +1,15 @@
-from enum import Enum
-from multiprocessing.context import BaseContext
-from db.userDB import Usuario
+from db.userDB import User
 import discord
 from db.botConfigDB import BotConfig
 import inspect
 from discord.ext import commands
-from tools.embed import create_embed_without_title, make_embed_object
+from tools.sharedmethods import create_embed_without_title, make_embed_object, is_dev
 from tools.prices import Prices
 import time
 
 # This class is responsible for handling the prices of the commands.
 cooldown_tracker = {}
+dev_mode = False
 
 
 async def set_points_commands_submodules(ctx, command):
@@ -48,26 +47,26 @@ async def set_points_commands_submodules(ctx, command):
         await create_embed_without_title(ctx, ":no_entry_sign: The command is not available in the current module.")
         return False
 
-def verify_points(User: discord.Member, comando):
+def verify_points(user: discord.Member, comando):
     price = Prices[comando].value
-    user_data = Usuario.read(User.id)   
+    user_data = User.read(user.id)   
     if user_data:
         return user_data["points"] >= price
     else:
         return False
     
-async def refund(User: discord.Member, ctx):
+async def refund(user: discord.Member, ctx):
     try:
         price = Prices[ctx.command.name].value
-        await Usuario.update(User.id, Usuario.read(User.id)["points"] + price, Usuario.read(User.id)["roles"])
+        await User.update_points(user.id, User.read(user.id)["points"] + price)
     except Exception as e:
         print("Error encountered while refunding the money.", e)
 
 async def treat_exceptions(ctx, comando):
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
     if is_slash_command:
-        new_points = Usuario.read(ctx.author.id)["points"] - Prices[comando].value
-        Usuario.update(ctx.author.id, new_points, Usuario.read(ctx.author.id)["roles"])
+        new_points = User.read(ctx.author.id)["points"] - Prices[comando].value
+        User.update_points(ctx.author.id, new_points)
         return True
     message_content = ctx.message.content
     command_args = message_content.split()[1:] 
@@ -133,9 +132,8 @@ async def treat_exceptions(ctx, comando):
             await create_embed_without_title(ctx, ":no_entry_sign: An error occurred while executing the command.")
             return False
 
-
-    new_points = Usuario.read(ctx.author.id)["points"] - Prices[comando].value
-    Usuario.update(ctx.author.id, new_points, Usuario.read(ctx.author.id)["roles"])
+    new_points = User.read(ctx.author.id)["points"] - Prices[comando].value
+    User.update_points(ctx.author.id, new_points)
     return True
 
 async def command_cooldown(ctx, command, cooldown_period):
@@ -155,10 +153,16 @@ def immune_cooldown():
 def pricing():
     async def predicate(ctx):
         """Check if the user has enough points to use the command."""
+        global dev_mode
         command = ctx.command.name 
-        cooldown_period = 2 
+        cooldown_period = 3 
         result = True
         ctx.predicate_result = result
+        if dev_mode:
+            if not is_dev(ctx):
+                await create_embed_without_title(ctx, ":warning: The bot is currently in development mode.")
+                result = False
+                return result
         if BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
             embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
             await ctx.author.send(embed=embed)
@@ -167,7 +171,7 @@ def pricing():
         if command in Prices.__members__:
             if command in [cmd for cmd in immune_cooldown()]:
                 cooldown_period = 1 
-            if not Usuario.read(ctx.author.id):
+            if not User.read(ctx.author.id):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
                 result = False
                 ctx.predicate_result = result

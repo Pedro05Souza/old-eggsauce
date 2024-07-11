@@ -1,8 +1,8 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
 from tools.pricing import pricing, refund
-from tools.embed import create_embed_without_title, create_embed_with_title
-from db.userDB import Usuario
+from tools.sharedmethods import create_embed_without_title, create_embed_with_title
+from db.userDB import User
 from collections import Counter
 import time
 import asyncio
@@ -14,7 +14,6 @@ steal_status = {}
 class InteractiveCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        bot.remove_command('help')
 
     async def drop_eggbux(self):
         await asyncio.gather(*(self.drop_eggbux_for_guild(guild) for guild in self.bot.guilds))
@@ -26,18 +25,19 @@ class InteractiveCommands(commands.Cog):
             channel = self.bot.get_channel(server["channel_id"])
             chance = randint(0, 100)
             minutesToClaim = 5
-            if chance <= 8:  # 8% drop chance
+            if chance <= 8:
                 quantEgg = randint(1, 750)
                 embed = discord.Embed(description=f":moneybag: A bag with **{quantEgg}** eggbux has been dropped in the chat!. Type **claim** to get it. Remember you only have **{minutesToClaim} minutes** to claim it.") 
                 await channel.send(embed=embed)
                 try:
                     Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "claim" or message.content == "CLAIM" and message.channel == channel), timeout=60*minutesToClaim)
-                    if Usuario.read(Message.author.id):
-                        Usuario.update(Message.author.id, Usuario.read(Message.author.id)["points"] + quantEgg, Usuario.read(Message.author.id)["roles"])
+                    user_data = User.read(Message.author.id)
+                    if user_data:
+                        User.update_points(Message.author.id, user_data["points"] + quantEgg)
                         embedClaim = discord.Embed(description=f"{Message.author.display_name} claimed {quantEgg} eggbux")
                         await channel.send(embed=embedClaim)
                     else:
-                        Usuario.create(Message.author.id, quantEgg)
+                        User.create(Message.author.id, quantEgg)
                         embedClaim2 = discord.Embed(description=f"{Message.author.display_name} claimed {quantEgg} eggbux")
                         await channel.send(embed=embedClaim2)
                 except asyncio.TimeoutError:
@@ -52,18 +52,18 @@ class InteractiveCommands(commands.Cog):
 
     @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
     @pricing()
-    async def donate_points(self, ctx, user:discord.Member, amount: int):
+    async def donate_points(self, ctx, user: discord.Member, amount: int):
         """Donates points to another user."""
-        if Usuario.read(user.id):
+        if User.read(user.id):
             if ctx.author.id == user.id:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate to yourself.")
-            elif Usuario.read(ctx.author.id)["points"] >= amount:
+            elif User.read(ctx.author.id)["points"] >= amount:
                 if amount <= 0:
                     await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate 0 or negative eggbux.")
                     return
                 else:
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
-                    Usuario.update(user.id, Usuario.read(user.id)["points"] + amount, Usuario.read(user.id)["roles"])
+                    User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] - amount)
+                    User.update_points(user.id, User.read(user.id)["points"] + amount, User.read(user.id)["roles"])
                     await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {user.display_name}")
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
@@ -75,7 +75,7 @@ class InteractiveCommands(commands.Cog):
     async def cassino(self, ctx, amount, cor: str):
         """Bet on a color in the roulette."""
         if amount.upper() == "ALL":
-            amount = Usuario.read(ctx.author.id)["points"]
+            amount = User.read(ctx.author.id)["points"]
         else:
             amount = int(amount)
         cor = cor.upper()
@@ -84,17 +84,17 @@ class InteractiveCommands(commands.Cog):
         vermelhos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
         roleta = {i : "RED" if i in vermelhos else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
         if cor in coresPossiveis:
-            if Usuario.read(ctx.author.id)["points"] >= amount and amount >= 50:
+            if User.read(ctx.author.id)["points"] >= amount and amount >= 50:
                 cassino = randint(0, 36)
                 corSorteada = roleta[cassino]
                 if corSorteada == "GREEN" and cor == "GREEN":
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + (amount * 14), Usuario.read(ctx.author.id)["roles"])
+                    User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + (amount * 14))
                     await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {corSorteada} {corEmoji[corSorteada]}")
                 elif corSorteada == cor:
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + amount, Usuario.read(ctx.author.id)["roles"])
+                    User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + amount)
                     await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has **won** {amount} eggbux!")
                 else:                  
-                    Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] - amount, Usuario.read(ctx.author.id)["roles"])
+                    User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] - amount)
                     await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has **lost!** The selected color was {corSorteada} {corEmoji[corSorteada]}")
                     return
             else:
@@ -129,21 +129,21 @@ class InteractiveCommands(commands.Cog):
             await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a bot.")
             await refund(ctx.author, ctx)
             return
-        if Usuario.read(user.id):
+        if User.read(user.id):
             if ctx.author.id == user.id:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from yourself.")
                 await refund(ctx.author, ctx)
                 return
-            quantUser = Usuario.read(user.id)["points"]
-            if quantUser <= 150:
+            user_points = User.read(user.id)["points"]
+            if user_points <= 150:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a user with less than 150 eggbux.")
                 await refund(ctx.author, ctx)
                 return
             elif chance >= 10:
-                randomInteiro = randint(1, int(quantUser//2))
-                Usuario.update(ctx.author.id, Usuario.read(ctx.author.id)["points"] + randomInteiro, Usuario.read(ctx.author.id)["roles"])
-                Usuario.update(user.id, Usuario.read(user.id)["points"] - randomInteiro, Usuario.read(user.id)["roles"])
-                await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {randomInteiro} eggbux from {user.display_name}")
+                random_integer = randint(1, int(user_points//2))
+                User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + random_integer)
+                User.update_points(user.id, User.read(user.id)["points"] - random_integer)
+                await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {random_integer} eggbux from {user.display_name}")
                 return
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} failed to steal from {user.display_name}")
@@ -152,117 +152,12 @@ class InteractiveCommands(commands.Cog):
             await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
             return
         
-    @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
-    @pricing()
-    async def points_Titles(self, ctx):
-        end_time = time.time() + 60
-        roles = {
-            "T" : "Egg Novice",
-            "L" : "Egg Apprentice",
-            "M" : "Egg wizard",
-            "H" : "Egg King",
-        }
-
-        rolePrices = {
-            "T" : 600,
-            "L" : 800,
-            "M" : 1200,
-            "H" : 1500
-        }
-        message = await create_embed_with_title(ctx, "Custom Titles:", f":poop: **{roles['T']}**\nIncome: 25 eggbux. :money_bag: \nPrice: 600 eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 50 eggbux. :money_bag:\n Price: 800 eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 75 eggbux. :money_bag:\n Price: 1200 eggbux. \n\n:crown: **{roles['H']}** \n Income: 100 eggbux. :money_bag:\n Price: 1500 eggbux. \n**The titles are bought sequentially.**\nReact with ✅ to buy a title.")
-        await message.add_reaction("✅")
-        while True:
-            actual_time = end_time - time.time()
-            if actual_time <= 0:
-                await message.clear_reactions()
-                break
-            check = lambda reaction, user: reaction.emoji == "✅" and reaction.message.id == message.id
-            reaction, user = await self.bot.wait_for("reaction_add", check=check)
-            if reaction.emoji == "✅":
-                if Usuario.read(user.id)["roles"] == "":
-                    await self.buy_roles(ctx, user, rolePrices["T"], "T", roles["T"])
-                elif Usuario.read(user.id)["roles"][-1] == "T":
-                    await self.buy_roles(ctx, user, rolePrices["L"], "L", roles["L"])
-                elif Usuario.read(user.id)["roles"][-1] == "L":
-                    await self.buy_roles(ctx, user, rolePrices["M"], "M", roles["M"])
-                elif Usuario.read(user.id)["roles"][-1] == "M":
-                    await self.buy_roles(ctx, user, rolePrices["H"], "H", roles["H"])
-
-    async def buy_roles(self, ctx, User: discord.Member, roleValue, roleChar, roleName):
-        """Buy roles."""
-        if Usuario.read(User.id)["points"] >= roleValue and roleChar not in Usuario.read(User.id)["roles"]:
-            Usuario.update(User.id, Usuario.read(User.id)["points"] - roleValue, Usuario.read(User.id)["roles"] + roleChar)
-            await create_embed_without_title(ctx, f":white_check_mark: {User.display_name} has bought the role **{roleName}**.")
-        elif Usuario.read(User.id)["points"] < roleValue:
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name}, you don't have enough eggbux to buy the role **{roleName}**.")
-        else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {User.display_name} already has the role **{roleName}**.")
-
-    def salary_role(self, User:discord.Member):
-        """Returns the salary of a user based on their roles."""
-        salarios = {
-            "T": 25,
-            "L": 50,
-            "M": 75,
-            "H": 100
-        }
-        if Usuario.read(User.id):
-            return salarios[Usuario.read(User.id)["roles"][-1]]
-        else:
-            return 0
-        
-    def get_user_title(self, User: discord.Member):
-        userRoles = {
-            "T" : "Egg Novice",
-            "L" : "Egg Apprentice",
-            "M" : "Egg wizard",
-            "H" : "Egg King",
-        }
-        if Usuario.read(User.id):
-            if Usuario.read(User.id)["roles"] == "":
-                return "Unemployed"
-            return userRoles[Usuario.read(User.id)["roles"][-1]]
-        
-    async def work_periodically(self):
-        """Periodically updates the salary of users with titles."""
-        while True:
-            await asyncio.sleep(3600 - time.time() % 3600)
-            generator = self.members_with_titles_generator()
-            for user in generator:
-                Usuario.update(user["user_id"], user["points"], user["roles"])
-
-    def members_with_titles_generator(self):
-        """Generates a list of members with titles."""
-        for user in Usuario.read_all_members_with_role():
-            updated_points = user['points'] + self.salary_role(discord.utils.get(self.bot.get_all_members(), id=user["user_id"]))
-            updated_user = {
-                "user_id": user['user_id'],
-                "points": updated_points,
-                "roles": user['roles']
-            }
-            yield updated_user
-
-    @commands.hybrid_command(name="salary", aliases=["sal"], brief="Check the salary of a user.", usage="salary OPTIONAL [user]", description="Check the salary of a user. If not user, shows author's salary.")
-    @pricing()
-    async def salary(self, ctx, user: discord.Member = None):
-        """Check the salary of a user."""
-        if user is None:
-            user = ctx.author
-        user_data = Usuario.read(user.id)
-        if user_data:
-            if user_data["roles"] != "":
-                await create_embed_without_title(ctx, f":moneybag: {user.display_name} has the title of **{self.get_user_title(user)}** and earns {self.salary_role(user)} eggbux..")
-                return   
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} doesn't have a title.")
-        else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} isn't registered in the database.")
-            await refund(ctx.author, ctx)
-
     @commands.command(aliases=["hg"])
     @pricing()
     async def hungergames(self, ctx, *args):
         """Starts a hunger games event."""
         global hungergames_status
+        default_game_value = 50
         guild_id = ctx.guild.id
         if guild_id in hungergames_status:
             await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
@@ -294,7 +189,7 @@ class InteractiveCommands(commands.Cog):
             try:
                 reaction, user = await self.bot.wait_for("reaction_add", timeout=actual_time)
                 if reaction.emoji == "✅":
-                    allowplay = self.check_tribute_play(discord.utils.get(ctx.guild.members, id=user.id))
+                    allowplay = self.check_tribute_play(discord.utils.get(ctx.guild.members, id=user.id), default_game_value)
                     if allowplay:
                         if not any(tribute['tribute'] == user for tribute in tributes):
                             tributes.append({"tribute": user, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
@@ -309,7 +204,7 @@ class InteractiveCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is **{min_tributes}**.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
-                    Usuario.update(tribute['tribute'].id, Usuario.read(tribute['tribute'].id)["points"] + 100, Usuario.read(tribute['tribute'].id)["roles"])
+                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + default_game_value)
             return
         else:
             await create_embed_without_title(ctx, f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
@@ -335,18 +230,18 @@ class InteractiveCommands(commands.Cog):
                 self.remove_plr_team_on_death(tributes)
                 self.update_tribute_event(alive_tributes)
                 day += 1
-
             winner = alive_tributes[0]
             prizeMultiplier = len(tributes) * 50
             await create_embed_without_title(ctx, f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
-            Usuario.update(winner['tribute'].id, Usuario.read(winner['tribute'].id)["points"] + 350, Usuario.read(winner['tribute'].id)["roles"])
+            User.update_points(winner['tribute'].id, User.read(winner['tribute'].id)["points"] + prizeMultiplier)
             hungergames_status.pop(guild_id)
             await self.statistics(ctx, tributes)
 
-    def check_tribute_play(self, tribute):
+    def check_tribute_play(self, tribute, default_game_value):
         """Check if the tribute has enough points to play."""
-        if Usuario.read(tribute.id) and Usuario.read(tribute.id)["points"] >= 50:
-            Usuario.update(tribute.id, Usuario.read(tribute.id)["points"] - 50, Usuario.read(tribute.id)["roles"])
+        tribute_data = User.read(tribute.id)
+        if tribute_data and tribute_data["points"] >= default_game_value:
+            User.update_points(tribute.id, tribute_data["points"] - default_game_value)
             return True
         else:
             return False
@@ -669,7 +564,6 @@ class InteractiveCommands(commands.Cog):
         sorted_data = sorted(data, key=lambda x: x['value'], reverse=True)
         view = PaginationView(sorted_data)
         await view.send(ctx, title="Match results:", description="Match statistics for each tribute:", color=0xff0000)
-        
     
     def create_team(self, tribute1, tribute2, tributes):
         """Create a team."""
@@ -705,7 +599,6 @@ class InteractiveCommands(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.bot.loop.create_task(self.drop_periodically())
-        self.bot.loop.create_task(self.work_periodically())
 
 async def setup(bot):
     await bot.add_cog(InteractiveCommands(bot))

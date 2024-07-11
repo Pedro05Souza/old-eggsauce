@@ -1,8 +1,8 @@
 from discord.ext import commands
 from tools.pricing import pricing, refund
-from tools.embed import create_embed_without_title
+from tools.sharedmethods import create_embed_without_title
 import discord
-from db.userDB import Usuario
+from db.userDB import User
 from random import choice
 import asyncio
 
@@ -13,7 +13,6 @@ class HostileCommands(commands.Cog):
         self.gods = []
 
     @commands.command("momentofsilence" , aliases=["mos"])
-    
     @pricing()
     async def moment_of_silence(self, ctx):
         """Mutes all users in the voice channel of the author of the command."""
@@ -51,22 +50,22 @@ class HostileCommands(commands.Cog):
 
     @commands.command(name="mute")
     @pricing()
-    async def mute(self, ctx, User: discord.Member = None):
+    async def mute(self, ctx, user: discord.Member = None):
         """Mutes a user."""
         user = ctx.author
-        if User is None:
-            User = ctx.author
-        if User.voice is not None:
-            channel = User.voice.channel
+        if user is None:
+            user = ctx.author
+        if user.voice is not None:
+            channel = user.voice.channel
         else:
             channel = None
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(user,ctx)
-        if channel is not None and User.voice.mute == False:
-            await User.edit(mute=True)
-            await create_embed_without_title(ctx, f"{User.display_name} has been muted.")
-        elif User.voice.mute == True:
-            await create_embed_without_title(ctx, f"{User.display_name} is already muted.")
+        if channel is not None and user.voice.mute == False:
+            await user.edit(mute=True)
+            await create_embed_without_title(ctx, f"{user.display_name} has been muted.")
+        elif user.voice.mute == True:
+            await create_embed_without_title(ctx, f"{user.display_name} is already muted.")
             await refund(user, ctx)
         else:
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
@@ -74,15 +73,15 @@ class HostileCommands(commands.Cog):
 
     @commands.command(name="unmute")
     @pricing()
-    async def unmute(self, ctx, User: discord.Member = None):
+    async def unmute(self, ctx, user: discord.Member = None):
         """Unmutes a user."""
-        if User is None:
-            User = ctx.author
-        if User.voice.channel is not None and User.voice.mute == True:
-            await User.edit(mute=False)
-            await create_embed_without_title(ctx, f"{User.display_name} has been unmuted.")
-        elif User.voice.mute == False:
-            await create_embed_without_title(ctx, f"{User.display_name} is already unmuted.")
+        if user is None:
+            user = ctx.author
+        if user.voice.channel is not None and user.voice.mute == True:
+            await user.edit(mute=False)
+            await create_embed_without_title(ctx, f"{user.display_name} has been unmuted.")
+        elif user.voice.mute == False:
+            await create_embed_without_title(ctx, f"{user.display_name} is already unmuted.")
             await refund(ctx.author, ctx)
         else:
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
@@ -146,15 +145,15 @@ class HostileCommands(commands.Cog):
 
     @commands.command(name="undeafen")
     @pricing()
-    async def undeafen(self, ctx, User: discord.Member = None):
+    async def undeafen(self, ctx, user: discord.Member = None):
         """Undeafens a user."""
-        if User is None:
-            User = ctx.author
-        if User.voice.channel is not None and User.voice.deaf == True:
-            await User.edit(deafen=False)
-            await create_embed_without_title(ctx, f"{User.display_name} has been undeafened.")
-        elif User.voice.deaf == False:
-            await create_embed_without_title(ctx, f"{User.display_name} is already undeafened.")
+        if user is None:
+            user = ctx.author
+        if user.voice.channel is not None and user.voice.deaf == True:
+            await user.edit(deafen=False)
+            await create_embed_without_title(ctx, f"{user.display_name} has been undeafened.")
+        elif user.voice.deaf == False:
+            await create_embed_without_title(ctx, f"{user.display_name} is already undeafened.")
             await refund(ctx.author, ctx)
         else:
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
@@ -163,67 +162,64 @@ class HostileCommands(commands.Cog):
     @commands.command(name="disconnect", aliases=['dc'])
     
     @pricing()
-    async def disconnect(self, ctx, User: discord.Member):
+    async def disconnect(self, ctx, user: discord.Member):
         """Disconnects a user from their voice channel."""
-        if User.voice.channel is not None:
-            await User.move_to(None)
-            await create_embed_without_title(ctx, f"{User.display_name} has been disconnected.")
+        if user.voice.channel is not None:
+            await user.move_to(None)
+            await create_embed_without_title(ctx, f"{user.display_name} has been disconnected.")
         else:
             await create_embed_without_title(ctx, f":no_entry:sign: this user is not in a voice channel.")
             await refund(ctx.author, ctx)
 
     @commands.command(name="prison", aliases=["jail"])
-    
     @pricing()
-    async def prison(self, ctx, User:discord.Member):
+    async def prison(self, ctx, user:discord.Member):
         """Imprisons a user for 60 seconds."""
-        if User.voice is None or User.voice.channel is None:
-            await create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} is not in a voice channel.")
+        if user.voice is None or user.voice.channel is None:
+            await create_embed_without_title(ctx, f":no_entry:sign: {user.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
             return
-        await create_embed_without_title(ctx, f":chains: {User.display_name} has been imprisoned for 60 seconds.")
-        self.prisioner[User.id] = 60
-        await self.prision_counter(ctx, User, 60)
+        await create_embed_without_title(ctx, f":chains: {user.display_name} has been imprisoned for 60 seconds.")
+        self.prisioner[user.id] = 60
+        await self.prision_counter(ctx, user, 60)
             
-    async def prision_counter(self, ctx, User: discord.Member, time: int):
+    async def prision_counter(self, ctx, user: discord.Member, time: int):
         """Counts down the time a user is in prison."""
         server = ctx.guild
-        channel_name = "Prisão"
+        channel_name = "Prison"
         channels = ctx.guild.channels
         prison_channel = discord.utils.get(channels, name=channel_name)
         if prison_channel is None:
             prison_channel = await server.create_voice_channel(channel_name)
-        if User.voice and User.voice.channel:
-            await User.move_to(prison_channel)
+        if user.voice and user.voice.channel:
+            await user.move_to(prison_channel)
             if time > 0:
                 await asyncio.sleep(1)
-                self.prisioner[User.id] = time - 1
-                await self.prision_counter(ctx, User, time - 1)
+                self.prisioner[user.id] = time - 1
+                await self.prision_counter(ctx, user, time - 1)
             else:
                 await prison_channel.delete()
                 
     @commands.command(name="fling")
-    
     @pricing()
-    async def fling(self, ctx, User: discord.Member):
+    async def fling(self, ctx, user: discord.Member):
         """Throws a user to a random voice channel."""
-        if User.voice is not None:
-            channelVet = [channel for channel in User.guild.voice_channels if channel != User.voice.channel]
+        if user.voice is not None:
+            channelVet = [channel for channel in user.guild.voice_channels if channel != user.voice.channel]
             if not channelVet:
                 await create_embed_without_title(ctx, f":no_entry:sign: There are no voice channels to throw the user to.")
             else:
                 channel = choice(channelVet)
-                if channel == User.voice.channel:
-                    self.fling(ctx, User)
+                if channel == user.voice.channel:
+                    self.fling(ctx, user)
                 else:
-                    await User.move_to(channel)
-                    await create_embed_without_title(ctx, f"{User.display_name} has been thrown to {channel.name}.")
+                    await user.move_to(channel)
+                    await create_embed_without_title(ctx, f"{user.display_name} has been thrown to {channel.name}.")
         else:
-            await create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} is not in a voice channel.")
+            await create_embed_without_title(ctx, f":no_entry:sign: {user.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
 
     @commands.command(name="detonate")
-    
     @pricing()
     async def detonate(self, ctx):
         """Disconnects all users from their voice channels."""
@@ -233,7 +229,6 @@ class HostileCommands(commands.Cog):
         await create_embed_without_title(ctx, f"All users have been disconnected from their voice channels.")
 
     @commands.command(name="shuffle")
-    
     @pricing()
     async def shuffle(self, ctx):
         """Throws all users to random voice channels."""
@@ -262,58 +257,57 @@ class HostileCommands(commands.Cog):
         await create_embed_without_title(ctx, f"All users have been thrown to {ctx.author.voice.channel.name}.")
     
     @commands.command(name="fish")
-    
     @pricing()
-    async def fish(self, ctx, User: discord.Member):
+    async def fish(self, ctx, user: discord.Member):
         """Throws a user to the voice channel of the author of the command."""
-        if User.voice is not None and ctx.author.voice is not None:
-            await User.move_to(ctx.author.voice.channel)
-            await create_embed_without_title(ctx, f"{User.display_name} has been thrown to {ctx.author.voice.channel.name}.")
+        if user.voice is not None and ctx.author.voice is not None:
+            await user.move_to(ctx.author.voice.channel)
+            await create_embed_without_title(ctx, f"{user.display_name} has been thrown to {ctx.author.voice.channel.name}.")
         else:
-            await create_embed_without_title(ctx, f":no_entry:sign: {User.display_name} or {ctx.author.display_name} is not in a voice channel.")
+            await create_embed_without_title(ctx, f":no_entry:sign: {user.display_name} or {ctx.author.display_name} is not in a voice channel.")
             await refund(ctx.author, ctx)
 
     @commands.command(name="kick")
     @pricing()
-    async def kick(self, ctx, User: discord.Member):
+    async def kick(self, ctx, user: discord.Member):
         """Kicks a user."""
-        if User.id == ctx.author.id:
+        if user.id == ctx.author.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't kick yourself.")
                 await refund(ctx.author, ctx) 
                 return
-        await User.kick()
-        await create_embed_without_title(ctx, f"{User.display_name} was kicked.")
+        await user.kick()
+        await create_embed_without_title(ctx, f"{user.display_name} was kicked.")
      
     @commands.command(name="ban")
     @pricing()
-    async def ban(self, ctx, User: discord.Member):
+    async def ban(self, ctx, user: discord.Member):
         """Bans a user."""
-        if User.id == ctx.author.id:
+        if user.id == ctx.author.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't ban yourself.")
                 await refund(ctx.author, ctx)
                 return
-        await User.ban()
-        await create_embed_without_title(ctx, f"{User.display_name} was banned.")
+        await user.ban()
+        await create_embed_without_title(ctx, f"{user.display_name} was banned.")
 
     @commands.command(name="changenickname", aliases=["nick"])
     @commands.has_permissions(manage_nicknames=True)
     @pricing()
-    async def change_nickname(self, ctx, User: discord.Member, *nickname: str):
+    async def change_nickname(self, ctx, user: discord.Member, *nickname: str):
         """Changes a user's nickname."""
-        if User.id == ctx.me.id:
+        if user.id == ctx.me.id:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, i can't change my own nickname.")
             await refund(ctx.author, ctx)
             return
         else:
             nickname = " ".join(nickname)
-            await User.edit(nick=nickname)
-            await create_embed_without_title(ctx, f"{User.display_name}'s nickname has been changed to {nickname}.")
+            await user.edit(nick=nickname)
+            await create_embed_without_title(ctx, f"{user.display_name}'s nickname has been changed to {nickname}.")
 
     @commands.command(name="nuke")
     @pricing()
     async def nuke(self, ctx):
         """Nuke the database."""
-        Usuario.resetAll()
+        User.resetAll()
         await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")  
 
     @commands.command(name="antimute")
@@ -331,17 +325,14 @@ class HostileCommands(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if self.prisioner.get(member.id, 0) > 0:
-            if after.channel is None or after.channel.name != "Prisão":
-                prison_channel = discord.utils.get(member.guild.channels, name="Prisão")
+            if after.channel is None or after.channel.name != "Prison":
+                prison_channel = discord.utils.get(member.guild.channels, name="Prison")
                 if prison_channel is not None:
                     await member.move_to(prison_channel)       
         if member in self.gods and not before.mute and after.mute:
             await member.edit(mute=False)
-            print(f"{member.name} was muted, but was an unmutter and was unmuted")
         if member in self.gods and not before.deaf and after.deaf:
             await member.edit(deafen=False)
-            print(f"{member.name} was deafened, but was an undeafener and was undeafened")
-
 
 async def setup(bot):
     await bot.add_cog(HostileCommands(bot))

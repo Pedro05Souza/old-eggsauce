@@ -2,8 +2,7 @@ import discord
 import asyncio
 from discord.ext import commands
 from tools.pricing import pricing, refund
-from db.userDB import Usuario
-from tools.embed import create_embed_without_title
+from tools.sharedmethods import create_embed_without_title
 from tools.processing import Processing
 
 # This class is responsible for handling the AI commands.
@@ -15,10 +14,10 @@ class AICommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def love(self, ctx, User: discord.Member, User2: discord.Member):
+    async def love(self, ctx, user: discord.Member, user2: discord.Member):
         """Make a short love story between two users."""
         try:
-            data = {"role": "user", "content":f"Make a short love story between {User.display_name} and {User2.display_name}. Don't write incomplete stories, Use a maximum of 100 tokens."}
+            data = {"role": "user", "content":f"Make a short love story between {user.display_name} and {user2.display_name}. Don't write incomplete stories, Use a maximum of 100 tokens."}
             processing = Processing(data)
             processing.start()
             await asyncio.sleep(5)
