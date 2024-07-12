@@ -2,7 +2,6 @@ from db.dbConfig import mongo_client
 from time import time
 import logging
 users_collection = mongo_client.db.usuario
-
 logger = logging.getLogger('botcore')
 
 # This class is responsible for handling user data in the database.
@@ -123,4 +122,3 @@ class User:
         except Exception as e:
             logger.error("Error encountered while trying to reset all users.", e)
             return None
-        

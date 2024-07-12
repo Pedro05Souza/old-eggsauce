@@ -12,7 +12,6 @@ from tools.shared import create_embed_without_title, create_embed_with_title, ma
 import asyncio
 import logging
 import discord
-
 logger = logging.getLogger('botcore')
 
 class ChickenCommands(commands.Cog):
@@ -36,7 +35,7 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def feed_all_chickens(self, ctx):
         """Feed all the chickens"""
-        farm_data = await update_player_corn(Farm.read(ctx.author.id), ctx.author.id)
+        farm_data = await update_player_corn(Farm.read(ctx.author.id), ctx.author)
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0
         if farm_data:

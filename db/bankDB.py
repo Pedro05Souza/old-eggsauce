@@ -1,10 +1,7 @@
 from db.dbConfig import mongo_client
 import logging
 bank_collection = mongo_client.db.bank
-
 logger = logging.getLogger('botcore')
-
-
 
 class Bank:
 
@@ -80,4 +77,3 @@ class Bank:
         except Exception as e:
             logger.error("Error encountered while trying to read all users.", e)
             return None
-        

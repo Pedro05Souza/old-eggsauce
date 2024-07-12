@@ -86,6 +86,3 @@ class PaginationView(discord.ui.View):
         """Go to the last page."""
         self.current_page = self.total_pages
         await self.update_message(self.get_current_page_data())
-
-
-    

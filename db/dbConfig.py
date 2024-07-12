@@ -22,6 +22,5 @@ def connect(uri):
         logger.critical(f"Error connecting to the database: {e}")
         return None    
 
-
 mongo_client = connect(uri)
 db = mongo_client.botDiscord

@@ -1,11 +1,11 @@
 from time import time
-import discord
 from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
 from tools.shared import create_embed_without_title, make_embed_object, regular_command_cooldown
 from tools.pointscore import pricing
 from tools.chickenshared import update_player_corn, calculate_corn
+import discord
 
 class CornCommands(commands.Cog):
     def __init__(self, bot):
@@ -167,7 +167,6 @@ class CornCommands(commands.Cog):
             User.update_points(ctx.author.id, user_data['points'] + corn_price)
             Farm.update_corn(ctx.author.id, farm_data['corn'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have sold {quantity} corn for {corn_price} eggbux.")
-
 
 async def setup(bot):
     await bot.add_cog(CornCommands(bot))

@@ -2,8 +2,8 @@ from discord.ext import commands
 from tools.shared import create_embed_without_title, regular_command_cooldown
 from db.bankDB import Bank
 from db.userDB import User
-import discord
 from tools.pointscore import pricing
+import discord
 class BankCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

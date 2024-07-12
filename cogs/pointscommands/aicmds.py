@@ -65,7 +65,6 @@ class AICommands(commands.Cog):
         except Exception as e:
            await create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
            logger.error(f"An error occurred in the server: {ctx.guild.id} in channel: {ctx.channel.id}. Error: {e}")
-    
-        
+       
 async def setup(bot):
     await bot.add_cog(AICommands(bot))

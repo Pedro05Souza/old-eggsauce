@@ -1,10 +1,10 @@
-import asyncio
 from discord import SelectOption, ui
 from db.userDB import User
 from random import randint
 from db.farmDB import Farm
 from tools.chickenshared import *
 from tools.shared import make_embed_object
+import asyncio
 
 class ChickenSelectView(ui.View):
     """View for selecting chickens from the market or farm to buy or delete them."""
@@ -240,6 +240,3 @@ async def trade_handler(ctx, td, target):
         Farm.update_chickens(target.id, user_farm['chickens'])
         embed = await make_embed_object(description=f":white_check_mark: {ctx.user.display_name} and {target.display_name} have traded chickens.")
         return embed
-
-     
-

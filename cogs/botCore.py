@@ -1,16 +1,15 @@
-import os
 from discord.ext import commands
 from dotenv import load_dotenv
-import asyncio
-import sys
 from tools.shared import create_embed_without_title, make_embed_object, is_dev
 from db.botConfigDB import BotConfig
-import logging
 from tools.pointscore import refund
 from tools.prices import Prices
 from tools.helpSelect import SelectModule, ShowPointsModules
 from colorlog import ColoredFormatter
-
+import logging
+import asyncio
+import sys
+import os
 logger = logging.getLogger('botcore')
 
 class BotCore(commands.Cog):
@@ -115,7 +114,7 @@ class BotCore(commands.Cog):
         """Set the module where the bot will pick commands from."""
         if BotConfig.read(ctx.guild.id):
             if ctx.author.guild_permissions.administrator:
-                embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. :star: **Friendly**\n3. :gun: **Hostiles**\n4. :x: **None**\n**Important note**: \nFriendly module contains Chicken commands, bank commands, interactive commands, AI commands and friendly commands and activates users gaining one currency every 10 seconds during call-time.\nHostile module contains hostile commands, bank commands and activates users gaining one currency every 10 seconds during call-time.\n\nSelect one of the modules to enable/disable it.")
+                embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. :star: **Friendly**\n3. :gun: **Hostiles**\n4. :x: **None**\n\n**Important note**: \n**Friendly module:** contains Chicken commands, bank commands, interactive commands, AI commands and friendly commands and activates users gaining one currency every 10 seconds during call-time.\n**Hostile module:** contains hostile commands, bank commands and activates users gaining one currency every 10 seconds during call-time.\n\nSelect one of the modules to enable/disable it.")
                 view = ShowPointsModules(ctx.author.id)
                 await ctx.send(embed=embed, view=view)
             else:
@@ -182,7 +181,7 @@ class BotCore(commands.Cog):
     async def on_command_error(self, ctx, error):
         if BotConfig.read(ctx.guild.id) and BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
             return
-        if isinstance(error, commands.CommandError):
+        if isinstance(error, commands.CommandError) and not isinstance(error, commands.CommandOnCooldown):
             if ctx is not None:
                 if hasattr(ctx, "predicate_result") and ctx.predicate_result:
                     enumPricing = Prices.__members__
@@ -190,7 +189,12 @@ class BotCore(commands.Cog):
                         if enumPricing[ctx.command.name].value > 0:
                             await create_embed_without_title(ctx, f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
                             await refund(ctx.author, ctx)
-        logger.error(f"An error occurred in the server: {ctx.guild.id} in channel: {ctx.channel.id}. Command: {ctx.command.name}. Error: {error}")
+                            return
+        if isinstance(error, commands.CommandOnCooldown):
+            return
+        if ctx is not None and ctx.command is not None:
+            logger.error(f"An error occurred in the server: {ctx.guild.id} in channel: {ctx.channel.id}. Command: {ctx.command.name}. Error: {error}")
+            raise error
 
 async def setup(bot):
     await bot.add_cog(BotCore(bot))

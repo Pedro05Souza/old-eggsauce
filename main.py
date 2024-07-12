@@ -42,7 +42,6 @@ def main():
         bot.run(TOKEN) #Does not use a coroutine but is a blocking function - i.e. must be the last one to run
     except asyncio.CancelledError:
         logger.critical("Bot has been cancelled.")
-        bot.loop.close()
     except Exception as e:
         logging.critical(f"Error in main: {e}")
 

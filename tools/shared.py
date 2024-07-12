@@ -1,7 +1,7 @@
-import os
-import discord
 from db.botConfigDB import BotConfig
 from dotenv import load_dotenv
+import os
+import discord
 
 spam_command_cooldown = 1.5
 regular_command_cooldown = 5

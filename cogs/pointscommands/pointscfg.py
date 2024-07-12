@@ -9,7 +9,6 @@ import math
 import time
 import discord
 import logging
-
 logger = logging.getLogger('botcore')
 class PointsConfig(commands.Cog):
     def __init__(self, bot):

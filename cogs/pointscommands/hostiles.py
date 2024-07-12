@@ -1,9 +1,9 @@
 from discord.ext import commands
 from tools.pointscore import pricing, refund
 from tools.shared import create_embed_without_title, regular_command_cooldown
-import discord
 from db.userDB import User
 from random import choice
+import discord
 import asyncio
 
 class HostileCommands(commands.Cog):

@@ -1,7 +1,6 @@
 from db.dbConfig import mongo_client
 import logging
 config_collection = mongo_client.db.botcfg
-
 logger = logging.getLogger('botcore')
 
 
@@ -158,5 +157,4 @@ class BotConfig:
                 return None
         except Exception as e:
             logger.error("Error encountered while reading a server.", e)
-            return None
-        
+            return None     

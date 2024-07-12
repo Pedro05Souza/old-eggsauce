@@ -6,11 +6,9 @@ from tools.prices import Prices
 import inspect
 import discord
 import logging
-
 logger = logging.getLogger('botcore')
 cooldown_tracker = {}
 dev_mode = False
-
 
 # This class is responsible for handling the prices of the commands.
 
@@ -18,35 +16,26 @@ async def set_points_commands_submodules(ctx, command):
     if not BotConfig.read(ctx.guild.id)['toggled_modules']:
         await create_embed_without_title(ctx, ":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
-    activate_module = BotConfig.read(ctx.guild.id)['toggled_modules']
+    active_module = BotConfig.read(ctx.guild.id)['toggled_modules']
     shared_cogs = ["PointsConfig", "BankCommands"]
     friendly_cogs = ["FriendlyCommands", "ChickenCommands", "InteractiveCommands", "AICommands", "CornCommands"]
     hostile_cog = ["HostileCommands"]
-    if activate_module == "F":
-        friendly_cogs.extend(shared_cogs)
-        for cog_name in friendly_cogs or shared_cogs:
-            cog = ctx.bot.get_cog(cog_name)
-            if cog:
-                for cmd in cog.get_commands():
-                    if cmd.name == command:
-                        return True            
-        await create_embed_without_title(ctx, ":no_entry_sign: The command is not available in the current module.")
+    module_cogs = {
+        "F": friendly_cogs + shared_cogs,
+        "H": hostile_cog + shared_cogs,
+    }
+    if active_module == "T":
+        return True
+    
+    if active_module == "N":
+        await create_embed_without_title(ctx, ":warning: The points commands are **disabled** in this server.")
         return False
-    elif activate_module == "H":
-        hostile_cog.extend(shared_cogs)
-        for cog_name in hostile_cog:
-            cog = ctx.bot.get_cog(cog_name)
-            if cog:
-                for cmd in cog.get_commands():
-                    if cmd.name == command:
-                        return True
-                    
-        await create_embed_without_title(ctx, ":no_entry_sign: The command is not available in the current module.")
-        return False
-    elif activate_module == "T":
+    
+    cogs_to_check = module_cogs.get(active_module, [])
+    if ctx.cog.qualified_name in cogs_to_check:
         return True
     else:
-        await create_embed_without_title(ctx, ":no_entry_sign: The command is not available in the current module.")
+        await create_embed_without_title(ctx, ":warning: The module is not enabled in this server.")
         return False
 
 def verify_points(user: discord.Member, comando):

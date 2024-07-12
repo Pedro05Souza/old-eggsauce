@@ -1,8 +1,8 @@
 from threading import Thread
-import concurrent.futures
-import requests
 from openai import OpenAI
 import openai
+import concurrent.futures
+import requests
 
 # This class is responsible for processing the AI requests.
 
