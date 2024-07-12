@@ -103,7 +103,7 @@ class HostileCommands(commands.Cog):
             for member in channel.members:
                 await member.move_to(None)
         else:
-            await create_embed_without_title(ctx, f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
     @commands.command(name="removeradio")

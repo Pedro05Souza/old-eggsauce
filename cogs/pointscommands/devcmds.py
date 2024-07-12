@@ -132,6 +132,22 @@ class DevCommands(commands.Cog):
                 Farm.update_chickens(user.id, farm_data['chickens'])
                 await create_embed_without_title(ctx, f"{user.display_name} received a **{rarity}** chicken.")
     
+    @commands.command("chickenlogs")
+    async def circulation_chickens(self, ctx):
+        """Check the total number of chickens in circulation."""
+        rarity_dictionary = ChickenRarity.__members__.keys()
+        rarity_dictionary = {rarity: 0 for rarity in rarity_dictionary}
+        if is_dev(ctx):
+            total_chickens = 0
+            for farm in Farm.readAll():
+                if 'chickens' in farm:
+                    for chicken in farm['chickens']:
+                        rarity_dictionary[chicken['rarity']] += 1
+                        total_chickens += 1
+            await create_embed_without_title(ctx, f"```Total chickens in circulation: {total_chickens}```\n Rarities: \n{' '.join([f'{rarity}: {count}' for rarity, count in rarity_dictionary.items()])}")
+        else:
+            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+    
     @commands.command("removeChicken")
     async def remove_chicken(self, ctx, user: discord.Member, index):
         farm_data = Farm.read(user.id)
@@ -149,15 +165,6 @@ class DevCommands(commands.Cog):
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
     
-    @commands.command("b")
-    async def update_all_chickens(self, ctx):
-        if is_dev(ctx):    
-            farms = Farm.readAll()
-            for user in farms:
-                for chicken in user['chickens']:
-                    chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
-                Farm.update_chickens(user['user_id'], user['chickens'])
-
     @commands.command(name="purge")
     async def purge(self, ctx, amount: int):
         """Deletes a certain amount of messages."""

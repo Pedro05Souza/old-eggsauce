@@ -247,26 +247,30 @@ def load_farmer_upgrades(player_id):
         player_farmer = Farm.read(player_id)['farmer']
         return farmer_dict[player_farmer]
 
-async def generate_corncrops(user: discord.member):
+async def generate_corncrops(farm_data):
         """Generate corn crops"""
-        farm_data = Farm.read(user.id)
+        corn_dict = {}
         if farm_data:
             totalCorn = calculate_corn(farm_data)
             corn = farm_data['corn']
             corn += totalCorn
             if corn > farm_data['corn_limit']:
                 corn = farm_data['corn_limit']
-            Farm.update_corn(farm_data['user_id'], corn)
+            corn_dict = {
+                 "corn" : corn
+            }
+            farm_data['corn'] = corn_dict['corn']
             return farm_data
         
 async def update_player_corn(farm_data, user: discord.Member):
     last_drop_time = time() - farm_data['last_corn_drop']
     updated_farm_data = farm_data
-    hours_passed_since_last_drop = min(last_drop_time // 3600, 10)
+    hours_passed_since_last_drop = min(last_drop_time // 1600, 10)
     for _ in range(int(hours_passed_since_last_drop)):
-        updated_farm_data = await generate_corncrops(user)
+        updated_farm_data = await generate_corncrops(farm_data)
     if hours_passed_since_last_drop != 0:
         Farm.update_corn_drop(user.id)
+        Farm.update(user.id, corn=updated_farm_data['corn'])
     return updated_farm_data
 
 def calculate_corn(farm_data):

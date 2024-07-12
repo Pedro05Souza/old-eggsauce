@@ -56,7 +56,7 @@ class ChickenMarketMenu(ui.Select):
         if price > User.read(interaction.user.id)['points']:
             await interaction.response.send_message("You don't have enough eggbux to buy this chicken.", ephemeral=True)
             self.options = [
-                SelectOption(label=chicken['name'], description=f"{get_chicken_price(chicken)}", value=str(index))
+                SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index))
                 for index, chicken in enumerate(self.chickens)
             ]
             await interaction.message.edit(view=self.view)
@@ -78,7 +78,7 @@ class ChickenMarketMenu(ui.Select):
         aux = chicken_selected.copy()
         aux['bought'] = True
         self.chickens[self.chickens.index(chicken_selected)] = aux
-        Farm.update_chickens(interaction.user.id, farm_data['chickens'])
+        Farm.update(interaction.user.id, chickens=farm_data['chickens'])
         User.update_points(interaction.user.id, User.read(interaction.user.id)["points"] - price)
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: **{chicken_selected['rarity']}** {chicken_selected['name']} Price: {get_chicken_price(chicken_selected)} :money_with_wings:")
         await interaction.response.send_message(embed=embed)
@@ -120,7 +120,7 @@ class ChickenDeleteMenu(ui.Select):
             refund_price = price
         else:
             refund_price = price//2
-        Farm.update_chickens(interaction.user.id, farm_data['chickens'])
+        Farm.update(interaction.user.id, chickens=farm_data['chickens'])
         User.update_points(interaction.user.id, User.read(interaction.user.id)["points"] + (refund_price))
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: **{chicken_selected['rarity']} {chicken_selected['name']}** Price: {refund_price} :money_with_wings:")
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -236,7 +236,7 @@ async def trade_handler(ctx, td, target):
         user_farm['chickens'] = [chicken for chicken in user_farm['chickens'] if chicken not in user_chickens]
         author_farm['chickens'].extend(user_chickens)
         user_farm['chickens'].extend(author_chickens)
-        Farm.update_chickens(ctx.user.id, author_farm['chickens'])
-        Farm.update_chickens(target.id, user_farm['chickens'])
+        Farm.update(ctx.user.id, chickens=author_farm['chickens'])
+        Farm.update(target.id, chickens=user_farm['chickens'])
         embed = await make_embed_object(description=f":white_check_mark: {ctx.user.display_name} and {target.display_name} have traded chickens.")
         return embed

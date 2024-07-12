@@ -1,11 +1,13 @@
+import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from tools.shared import create_embed_without_title, make_embed_object, is_dev
+from tools.shared import create_embed_without_title, make_embed_object, is_dev, make_embed_object
 from db.botConfigDB import BotConfig
 from tools.pointscore import refund
 from tools.prices import Prices
 from tools.helpSelect import SelectModule, ShowPointsModules
 from colorlog import ColoredFormatter
+from time import time
 import logging
 import asyncio
 import sys
@@ -17,6 +19,7 @@ class BotCore(commands.Cog):
         load_dotenv()
         self.bot = bot
         self.logger = self.setup_logging()
+        self.last_cooldown_message_time = {}
 
     def setup_logging(self):
         logger = logging.getLogger('botcore')
@@ -190,11 +193,24 @@ class BotCore(commands.Cog):
                             await create_embed_without_title(ctx, f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
                             await refund(ctx.author, ctx)
                             return
-        if isinstance(error, commands.CommandOnCooldown):
-            return
         if ctx is not None and ctx.command is not None:
-            logger.error(f"An error occurred in the server: {ctx.guild.id} in channel: {ctx.channel.id}. Command: {ctx.command.name}. Error: {error}")
-            raise error
+            if isinstance(error, commands.CommandOnCooldown) and ctx.command.name not in ("stealpoints", "market"):
+                current_time = time()
+                if ctx.author.id not in self.last_cooldown_message_time or current_time - self.last_cooldown_message_time[ctx.author.id] >= 20:
+                     msg = await make_embed_object(description=f":no_entry_sign: Slow down! Try the command again in {round(error.retry_after, 2)} seconds.")
+                     try:
+                        await ctx.author.send(embed=msg, delete_after=5)
+                        return
+                     except discord.Forbidden:
+                        await create_embed_without_title(ctx, f":no_entry_sign: Slow down! Try the command again in {round(error.retry_after, 2)} seconds.")
+                        return
+                     except Exception as e:
+                        logger.error(f"Error sending cooldown message to {ctx.author.name}", e)
+                     self.last_cooldown_message_time[ctx.author.id] = current_time
+                return
+            if not isinstance(error, commands.CommandOnCooldown):
+                logger.error(f"Error in command: {ctx.command.name}\n In server: {ctx.guild.name}\n In channel: {ctx.channel.name}\n By user: {ctx.author.name}\n Error: {error}")
+                raise error
 
 async def setup(bot):
     await bot.add_cog(BotCore(bot))

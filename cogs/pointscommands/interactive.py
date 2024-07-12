@@ -13,6 +13,7 @@ import re
 import discord
 hungergames_status = {}
 steal_status = {}
+
 class InteractiveCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -169,7 +170,7 @@ class InteractiveCommands(commands.Cog):
         if guild_id in hungergames_status:
             await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
             return
-        wait_time = 120
+        wait_time = 5
         if args and args[0].isdigit():
             args = [int(arg) for arg in args] 
             if ctx.guild.owner.id == ctx.author.id:
@@ -186,8 +187,8 @@ class InteractiveCommands(commands.Cog):
         min_tributes = 4
         end_time = time.time() + wait_time
         messageHg = await create_embed_without_title(ctx, f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
-        # for member in ctx.guild.members:
-        #     tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
+        for member in ctx.guild.members:
+            tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
         await messageHg.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
@@ -230,7 +231,8 @@ class InteractiveCommands(commands.Cog):
                         alive_tributes = self.check_alive_tributes(alive_tributes)
                         if len(alive_tributes) == 1:
                             break
-                fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == day]
+                dead_day = day - 1 if day > 0 else 0
+                fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == dead_day]
                 if fallen_tributes:
                     await create_embed_without_title(ctx, f"**Fallen tributes:** {', '.join([tribute['tribute'].display_name for tribute in fallen_tributes])}")
                 self.increase_days_alive(alive_tributes)

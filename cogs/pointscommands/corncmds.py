@@ -32,7 +32,7 @@ class CornCommands(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} The cornfield name must have a maximum of 15 characters.")
                 return
             farm_data['plant_name'] = nickname
-            Farm.update_plant_name(ctx.author.id, nickname)
+            Farm.update(ctx.author.id, plant_name=nickname)
             await create_embed_without_title(ctx, f"{ctx.author.display_name} Your cornfield has been renamed to {nickname}.")
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have a farm.")
@@ -46,7 +46,6 @@ class CornCommands(commands.Cog):
         if farm_data:
             food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in 30 minutes: {calculate_corn(farm_data)}\n:seedling: **Plots**: {farm_data['plot']}")
             food_embed.set_thumbnail(url=user.display_avatar)
-            Farm.update_corn_drop(user.id)
             return food_embed
     
     @commands.hybrid_command(name="buyplot", aliases=["bp"], usage="buyPlot", description="Buy a plot to increase the corn production.")
@@ -78,7 +77,7 @@ class CornCommands(commands.Cog):
                     if user_data['points'] >= plot_price:
                         farm_data['plot'] += 1
                         User.update_points(ctx.author.id, user_data['points'] - plot_price)
-                        Farm.update_plot(ctx.author.id, farm_data['plot'])
+                        Farm.update(ctx.author.id, plot=farm_data['plot'])
                         await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have bought a new plot.")
                         break
                     else:
@@ -116,7 +115,7 @@ class CornCommands(commands.Cog):
                     if user_data['points'] >= price_corn:
                         farm_data['corn_limit'] += range_corn
                         User.update_points(ctx.author.id, user_data['points'] - price_corn)
-                        Farm.update_corn_limit(ctx.author.id, farm_data['corn_limit'])
+                        Farm.update(ctx.author.id, corn_limit=farm_data['corn_limit'])
                         await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have upgraded the corn limit.")
                         break
                     else:
@@ -145,7 +144,7 @@ class CornCommands(commands.Cog):
                 return
             farm_data['corn'] += quantity
             User.update_points(ctx.author.id, user_data['points'] - corn_price)
-            Farm.update_corn(ctx.author.id, farm_data['corn'])
+            Farm.update(ctx.author.id, corn=farm_data['corn'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have bought {quantity} corn for {corn_price} eggbux.")
 
     @commands.hybrid_command(name="sellcorn", aliases=["sf"], usage="sellCorn <quantity>", description="Sell corn for the chickens.")
@@ -165,7 +164,7 @@ class CornCommands(commands.Cog):
             corn_price = quantity // 3
             farm_data['corn'] -= quantity
             User.update_points(ctx.author.id, user_data['points'] + corn_price)
-            Farm.update_corn(ctx.author.id, farm_data['corn'])
+            Farm.update(ctx.author.id, corn=farm_data['corn'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have sold {quantity} corn for {corn_price} eggbux.")
 
 async def setup(bot):

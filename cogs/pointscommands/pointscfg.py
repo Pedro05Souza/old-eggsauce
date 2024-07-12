@@ -10,6 +10,7 @@ import time
 import discord
 import logging
 logger = logging.getLogger('botcore')
+
 class PointsConfig(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -32,22 +33,26 @@ class PointsConfig(commands.Cog):
     async def update_points(self, user: discord.Member):
         """Updates the points of the user every 10 seconds."""
         userId = user.id
+        if not user.voice and userId in self.join_time.keys():
+            total_points = await self.add_points(self.join_time[userId], userId)
+            self.join_time.pop(userId)
+            return total_points
+        
         if userId in self.join_time.keys():
-            print("User in join_time")
-            add_points = (math.ceil(time.time()) - self.join_time[userId]) // 10
-            total_points = User.read(userId)["points"] + add_points
-            User.update_points(userId, total_points)
+            total_points = await self.add_points(self.join_time[userId], userId)
             self.join_time[userId] = math.ceil(time.time())
             return total_points
         
         if userId not in self.join_time.keys() and user.voice:
-           print("User not in join_time")
-           add_points = (math.ceil(time.time()) - self.init_time) // 10
-           total_points = User.read(userId)["points"] + add_points
-           User.update_points(userId, total_points)
+           total_points = await self.add_points(self.init_time, userId)
            self.join_time[userId] = math.ceil(time.time())
            return total_points
 
+    async def add_points(self, type, user_id):
+        add_points = (math.ceil(time.time()) - type) // 10
+        total_points = User.read(user_id)["points"] + add_points
+        return total_points
+    
     async def count_points(self, user: discord.Member):
         """Counts the points of the user every time he enters a voice channel."""
         userId = user.id
@@ -66,7 +71,6 @@ class PointsConfig(commands.Cog):
             User.create(user.id, 0)
             logger.info(f"{user.display_name} has been registered.")
             
-
     @commands.hybrid_command(name="register", aliases=["reg"], brief="Registers the user in the database.", usage="register", description="Registers the user in the database.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     async def register(self, ctx):
@@ -84,9 +88,8 @@ class PointsConfig(commands.Cog):
         """Shows the amount of points the user has."""
         if user is None:
             user = ctx.author
-        user_data = User.read(user.id)
+        user_data = await self.update_user_points(user)
         if user_data and isinstance(user_data, dict) and "points" in user_data:
-            await self.update_user_points(user)
             if Bank.read(user.id):
                 msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {Bank.read(user.id)['bank']}")
                 msg.set_thumbnail(url=user.display_avatar)
@@ -105,13 +108,16 @@ class PointsConfig(commands.Cog):
             points = await self.update_points(user)
             if points is not None:
                 user_data['points'] = points
+                User.update_points(user.id, points)
             last_title_drop = time.time() - user_data["salary_time"]
-            hours_passed = last_title_drop // 3600 if last_title_drop <= 3600 else 5
+            hours_passed = min(last_title_drop // 3600, 10)
+            hours_passed = int(hours_passed)
             salary = await self.salary_role(user)
             if hours_passed >= 1:
                 User.update_points(user.id, user_data["points"] + salary * hours_passed)
                 User.update_salary_time(user.id)
-            User.update_points(user.id, user_data["points"])
+                logger.info(f"{user.display_name} has received {salary * hours_passed} eggbux from their title.")
+            return user_data
 
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
