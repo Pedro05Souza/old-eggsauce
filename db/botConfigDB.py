@@ -1,15 +1,19 @@
 from db.dbConfig import mongo_client
+import logging
 config_collection = mongo_client.db.botcfg
+
+logger = logging.getLogger('botcore')
+
 
 class BotConfig:
 
     @staticmethod
     def create(server_id: int, toggled_modules: list = None, channel_id: int = None, prefix: str = None):
-        """Create a toggle in the database."""
+        """Create a server in the database."""
         try:
             toggle_data = config_collection.find_one({"server_id" : toggled_modules})
             if toggle_data:
-                print("This channel already exists.")
+                logger.warning("This server already exists.")
                 return None
             else:
                 toggle = {
@@ -19,9 +23,9 @@ class BotConfig:
                     "prefix": prefix,
                 }
                 config_collection.insert_one(toggle)
-                print("Server created successfully.")
+                logger.info("Server created successfully.")
         except Exception as e:
-            print("Error encountered while creating a server.", e)
+            logger.error("Error encountered while creating a server.", e)
             return None
         
     @staticmethod
@@ -30,7 +34,7 @@ class BotConfig:
         try:
             toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
-                print("This toggle already exists.")
+                logger.warning("This toggle already exists.")
                 return None
             else:
                 toggle = {
@@ -38,9 +42,9 @@ class BotConfig:
                     "toggle_modules": toggled_modules,
                 }
                 config_collection.insert_one(toggle)
-                print("Toggle created successfully.")
+                logger.info("Toggle created successfully.")
         except Exception as e:
-            print("Error encountered while creating a toggle.", e)
+            logger.error("Error encountered while creating a toggle.", e)
             return None
         
     @staticmethod
@@ -49,7 +53,7 @@ class BotConfig:
         try:
             toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
-                print("This channel already exists.")
+                logger.warning("This channel already exists.")
                 return None
             else:
                 toggle = {
@@ -57,9 +61,9 @@ class BotConfig:
                     "channel_id": channel_id,
                 }
                 config_collection.insert_one(toggle)
-                print("Channel created successfully.")
+                logger.info("Channel created successfully.")
         except Exception as e:
-            print("Error encountered while creating a channel.", e)
+            logger.error("Error encountered while creating a channel.", e)
             return
         
     @staticmethod
@@ -67,7 +71,7 @@ class BotConfig:
         try:
             prefix_data = config_collection.find_one({"server_id": server})
             if prefix_data:
-                print("This prefix already exists.")
+                logger.warning("This prefix already exists.")
                 return None
             else:
                 prefix = {
@@ -75,9 +79,9 @@ class BotConfig:
                     "prefix": prefix,
                 }
                 config_collection.insert_one(prefix)
-                print("Prefix created successfully.")
+                logger.info("Prefix created successfully.")
         except Exception as e:
-            print("Error encountered while creating a prefix.", e)
+            logger.error("Error encountered while creating a prefix.", e)
             return None
         
     @staticmethod
@@ -87,11 +91,11 @@ class BotConfig:
             prefix_data = config_collection.find_one({"server_id": server_id})
             if prefix_data:
                 config_collection.update_one({"server_id": server_id}, {"$set": {"prefix": prefix}})
-                print("Prefix updated successfully.")
+                logger.info("Prefix updated successfully.")
             else:
-                print("Prefix not found.")
+                logger.warning("Prefix not found.")
         except Exception as e:
-            print("Error encountered while updating a prefix.", e)
+            logger.error("Error encountered while updating a prefix.", e)
         
     @staticmethod
     def update_toggled_modules(server_id: int, toggled_modules: list):
@@ -100,25 +104,24 @@ class BotConfig:
             toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
                 config_collection.update_one({"server_id": server_id}, {"$set": {"toggled_modules": toggled_modules}})
-                print("Toggle updated successfully.")
+                logger.info("Toggle updated successfully.")
             else:
-                print("Toggle not found.")
+                logger.warning("Toggle not found.")
         except Exception as e:
-            print("Error encountered while updating a toggle.", e)
+            logger.error("Error encountered while updating a toggle.", e)
     
     @staticmethod
     def update_channel_id(server_id: int, channel_id: int):
         """Update a channel in the database."""
         try:
             toggle_data = config_collection.find_one({"server_id" : server_id})
-            print(toggle_data)
             if toggle_data:
                 config_collection.update_one({"server_id": toggle_data["server_id"]}, {"$set": {"channel_id": channel_id}})
-                print("Channel updated successfully.")
+                logger.info("Channel updated successfully.")
             else:
-                print("Channel not found.")
+                logger.warning("Channel not found.")
         except Exception as e:
-            print("Error encountered while updating a channel.", e)
+            logger.error("Error encountered while updating a channel.", e)
         
     @staticmethod
     def delete(server_id: int):
@@ -127,11 +130,11 @@ class BotConfig:
             config_data = config_collection.find_one({"server_id": server_id})
             if config_data:
                 config_collection.delete_one({"server_id" : server_id})
-                print("Server config has been deleted successfully.")
+                logger.info("Server deleted successfully.")
             else:
-                print("Server not found.")
+                logger.warning("Server not found.")
         except Exception as e:
-                print("Error encountered while deleting a server.", e)
+                logger.error("Error encountered while deleting a server.", e)
     
     @staticmethod
     def read_all_channels():
@@ -140,7 +143,7 @@ class BotConfig:
             channels = config_collection.find()
             return channels
         except Exception as e:
-            print("Error encountered while reading channels.", e)
+            logger.error("Error encountered while reading all channels.", e)
             return None
     
     @staticmethod
@@ -151,9 +154,9 @@ class BotConfig:
             if config_data:
                 return config_data
             else:
-                print("Server not found.")
+                logger.warning("Server not found.")
                 return None
         except Exception as e:
-            print("Error encountered while reading a server.", e)
+            logger.error("Error encountered while reading a server.", e)
             return None
         

@@ -1,10 +1,11 @@
+from discord.ext import commands
+from tools.pointscore import pricing, refund
+from tools.shared import create_embed_without_title, regular_command_cooldown
+from tools.processing import Processing
+import logging
 import discord
 import asyncio
-from discord.ext import commands
-from tools.pricing import pricing, refund
-from tools.sharedmethods import create_embed_without_title
-from tools.processing import Processing
-
+logger = logging.getLogger('botcore')
 # This class is responsible for handling the AI commands.
 
 class AICommands(commands.Cog):
@@ -13,6 +14,7 @@ class AICommands(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def love(self, ctx, user: discord.Member, user2: discord.Member):
         """Make a short love story between two users."""
@@ -30,14 +32,17 @@ class AICommands(commands.Cog):
                         await ctx.send(content)
                     else:
                         await create_embed_without_title(ctx, ":no_entry_sign: Error! AI didn't generate content.")
+                        logger.error(f"Error in server: {ctx.guild.id} in channel: {ctx.channel.id}. AI didn't generate content.")
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: Api connection failed. Probably due to the AI model being deactivated. Try again later.")
                 await refund(ctx.author, ctx)
-        except Exception:
+        except Exception as e:
             await create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
+            logger.error(f"An error occurred in the love command: {e}")
             await refund(ctx.author, ctx)
 
     @commands.command()
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     async def speak(self, ctx, *content):
         """Make the AI say something."""
         try:
@@ -59,7 +64,7 @@ class AICommands(commands.Cog):
                 await create_embed_without_title(ctx, ":no_entry_sign: Api connection failed. Probably due to the AI model being deactivated. Try again later.")
         except Exception as e:
            await create_embed_without_title(ctx, ":no_entry_sign: An unexpected problem occurred!")
-           print(e)
+           logger.error(f"An error occurred in the server: {ctx.guild.id} in channel: {ctx.channel.id}. Error: {e}")
     
         
 async def setup(bot):

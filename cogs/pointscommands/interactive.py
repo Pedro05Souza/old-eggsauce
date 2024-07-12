@@ -1,14 +1,16 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
-from tools.pricing import pricing, refund
-from tools.sharedmethods import create_embed_without_title, create_embed_with_title
+from tools.pointscore import pricing, refund
+from tools.shared import create_embed_without_title, create_embed_with_title, regular_command_cooldown, spam_command_cooldown
 from db.userDB import User
 from collections import Counter
+from random import randint, sample, choice
+from tools.pagination import PaginationView
+import logging
 import time
 import asyncio
-from tools.pagination import PaginationView
+import re
 import discord
-from random import randint, sample, choice
 hungergames_status = {}
 steal_status = {}
 class InteractiveCommands(commands.Cog):
@@ -51,6 +53,7 @@ class InteractiveCommands(commands.Cog):
             await self.drop_eggbux()
 
     @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def donate_points(self, ctx, user: discord.Member, amount: int):
         """Donates points to another user."""
@@ -63,7 +66,7 @@ class InteractiveCommands(commands.Cog):
                     return
                 else:
                     User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] - amount)
-                    User.update_points(user.id, User.read(user.id)["points"] + amount, User.read(user.id)["roles"])
+                    User.update_points(user.id, User.read(user.id)["points"] + amount   )
                     await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {user.display_name}")
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
@@ -71,12 +74,15 @@ class InteractiveCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} isn't registered in the database.")
              
     @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
+    @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
     async def cassino(self, ctx, amount, cor: str):
         """Bet on a color in the roulette."""
         if amount.upper() == "ALL":
-            amount = User.read(ctx.author.id)["points"]
+            amount = re.sub(r'[^\d]', '', str(User.read(ctx.author.id)["points"]))
+            amount = int(amount)
         else:
+            amount = re.sub(r'[^-\d]', '', str(amount))
             amount = int(amount)
         cor = cor.upper()
         coresPossiveis = ["RED", "BLACK", "GREEN"]
@@ -112,10 +118,10 @@ class InteractiveCommands(commands.Cog):
         elif isinstance(error, commands.BadArgument):
             await create_embed_without_title(ctx, f"{ctx.author.display_name} Please, insert a valid amount.")
         else:
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} An unexpected error occurred.")
-            print(error)
+            logging.warning(f"Error in cassino command: {error}")
 
     @commands.hybrid_command(name="stealpoints", aliases=["steal", "rob"], brief="Steal points from another user.", usage="stealPoints [user]", description="Steal points from another user.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def steal_points(self, ctx, user: discord.Member):
         """Steals points from another user."""
@@ -153,6 +159,7 @@ class InteractiveCommands(commands.Cog):
             return
         
     @commands.command(aliases=["hg"])
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def hungergames(self, ctx, *args):
         """Starts a hunger games event."""
@@ -315,7 +322,6 @@ class InteractiveCommands(commands.Cog):
     async def event_actions(self, ctx, tribute1, tribute2, tributes, chosen_event):
         """Perform the actions of the event."""
         events = self.events()
-        print(f"Chosen event: {chosen_event}")
         if not tribute1['has_event']:
             tribute1['has_event'] = True
             match (chosen_event):
@@ -517,7 +523,6 @@ class InteractiveCommands(commands.Cog):
         else:
             tribute2_events = [1, 3, 4, 5, 6, 7, 8, 10, 17, 19, 21, 22, 23, 24]
             list_events = [event for event in list_events if event not in tribute2_events]
-        print(f"List of events: {list_events}")
         return list_events
 
     def remove_plr_team_on_death(self, tributes):

@@ -1,5 +1,9 @@
 from db.dbConfig import mongo_client
+import logging
 bank_collection = mongo_client.db.bank
+
+logger = logging.getLogger('botcore')
+
 
 
 class Bank:
@@ -10,7 +14,7 @@ class Bank:
         try:
             user_data = bank_collection.find_one({"user_id": user_id})
             if user_data:
-                print("User already exists.")
+                logger.warning(f"User {user_id} already exists.")
                 return None
             else:
                 if not isinstance(points, int):
@@ -20,9 +24,9 @@ class Bank:
                     "bank": points
                 }
                 bank_collection.insert_one(user)
-                print("User has been created successfully.")
+                logger.info(f"User {user_id} has been created successfully.")
         except Exception as e:
-            print("Error encountered while creating the user.", e)
+            logger.error("Error encountered while creating the user.", e)
             return None
         
     @staticmethod
@@ -32,11 +36,12 @@ class Bank:
             user_data = bank_collection.find_one({"user_id": user_id})
             if user_data:
                 bank_collection.delete_one({"user_id": user_id})
-                print("User has been deleted successfully.")
+                logger.info("User has been deleted successfully.")
             else:
-                print("User not found.")
+                logger.warning("User not found.")
         except Exception as e:
-            print("Error encountered while deleting the user.", e)
+            logger.error("Error encountered while deleting the user.", e)
+            return None
 
 
     @staticmethod
@@ -46,11 +51,11 @@ class Bank:
             user_data = bank_collection.find_one({"user_id": user_id})
             if user_data:
                 bank_collection.update_one({"user_id": user_id}, {"$set": {"bank": points}})
-                print("User has been updated successfully.")
+                logger.info("User has been updated successfully.")
             else:
-                print("User not found.")
+                logger.warning("User not found.")
         except Exception as e:
-            print("Error encountered while updating the user.", e)
+            logger.error("Error encountered while updating the user.", e)
             return None
 
 
@@ -62,7 +67,7 @@ class Bank:
             if user_data:
                 return user_data
         except Exception as e:
-            print("Error encountered while trying to read user's status.", e)
+            logger.error("Error encountered while trying to read the user.", e)
             return None
     
     @staticmethod
@@ -73,6 +78,6 @@ class Bank:
             if user_data:
                 return user_data
         except Exception as e:
-            print("Error encountered while trying to read all users.", e)
+            logger.error("Error encountered while trying to read all users.", e)
             return None
         

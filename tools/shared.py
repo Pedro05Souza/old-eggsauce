@@ -3,6 +3,9 @@ import discord
 from db.botConfigDB import BotConfig
 from dotenv import load_dotenv
 
+spam_command_cooldown = 1.5
+regular_command_cooldown = 5
+
 async def create_embed_without_title(ctx, description, **kwargs):
     """Create an embed without a title."""
     if not BotConfig.read(ctx.guild.id)['channel_id'] == ctx.channel.id:

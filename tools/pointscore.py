@@ -1,16 +1,18 @@
 from db.userDB import User
-import discord
 from db.botConfigDB import BotConfig
-import inspect
 from discord.ext import commands
-from tools.sharedmethods import create_embed_without_title, make_embed_object, is_dev
+from tools.shared import create_embed_without_title, make_embed_object, is_dev
 from tools.prices import Prices
-import time
+import inspect
+import discord
+import logging
 
-# This class is responsible for handling the prices of the commands.
+logger = logging.getLogger('botcore')
 cooldown_tracker = {}
 dev_mode = False
 
+
+# This class is responsible for handling the prices of the commands.
 
 async def set_points_commands_submodules(ctx, command):
     if not BotConfig.read(ctx.guild.id)['toggled_modules']:
@@ -60,7 +62,7 @@ async def refund(user: discord.Member, ctx):
         price = Prices[ctx.command.name].value
         await User.update_points(user.id, User.read(user.id)["points"] + price)
     except Exception as e:
-        print("Error encountered while refunding the money.", e)
+        logger.error(f"An error occurred while refunding the user: {e}")
 
 async def treat_exceptions(ctx, comando):
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
@@ -136,26 +138,11 @@ async def treat_exceptions(ctx, comando):
     User.update_points(ctx.author.id, new_points)
     return True
 
-async def command_cooldown(ctx, command, cooldown_period):
-    user_command_key = f"{ctx.author.id}_{command}"
-    current_time = time.time()
-    if user_command_key in cooldown_tracker:
-        last_used_time = cooldown_tracker[user_command_key]
-        if current_time - last_used_time < cooldown_period:
-            return False
-    cooldown_tracker[user_command_key] = current_time
-    return True
-
-def immune_cooldown():
-    immune_commands = ["market"]
-    return immune_commands
-
 def pricing():
     async def predicate(ctx):
         """Check if the user has enough points to use the command."""
         global dev_mode
         command = ctx.command.name 
-        cooldown_period = 3 
         result = True
         ctx.predicate_result = result
         if dev_mode:
@@ -169,15 +156,8 @@ def pricing():
             result = False
             return result    
         if command in Prices.__members__:
-            if command in [cmd for cmd in immune_cooldown()]:
-                cooldown_period = 1 
             if not User.read(ctx.author.id):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
-                result = False
-                ctx.predicate_result = result
-                return result
-            cd = await command_cooldown(ctx, command, cooldown_period)
-            if not cd:
                 result = False
                 ctx.predicate_result = result
                 return result
@@ -200,5 +180,5 @@ def pricing():
     try:
         return commands.check(predicate)
     except Exception as e:
-        print("Error encountered while checking the predicate.", e)
+        logger.error(f"An error occurred while checking the predicate: {e}")
         return False

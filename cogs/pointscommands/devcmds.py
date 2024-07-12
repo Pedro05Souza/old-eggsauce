@@ -3,11 +3,11 @@ from discord.ext import commands
 import discord
 from random import randint
 from db.userDB import User
-import tools.pricing
-from tools.sharedmethods import create_embed_without_title, is_dev
+import tools.pointscore
+from tools.shared import create_embed_without_title, is_dev
 from db.bankDB import Bank
 from db.farmDB import Farm
-from tools.chickenInfo import ChickenMultiplier, ChickenRarity, determine_chicken_upkeep
+from tools.chickenshared import ChickenMultiplier, ChickenRarity, determine_chicken_upkeep
 from cogs.pointscommands.chickencmds import RollLimit
 
 class DevCommands(commands.Cog):
@@ -132,6 +132,23 @@ class DevCommands(commands.Cog):
                 Farm.update_chickens(user.id, farm_data['chickens'])
                 await create_embed_without_title(ctx, f"{user.display_name} received a **{rarity}** chicken.")
     
+    @commands.command("removeChicken")
+    async def remove_chicken(self, ctx, user: discord.Member, index):
+        farm_data = Farm.read(user.id)
+        if farm_data:
+            if is_dev(ctx):
+                if index.upper() == "ALL":
+                    farm_data['chickens'].clear()
+                    Farm.update_chickens(user.id, farm_data['chickens'])
+                    await create_embed_without_title(ctx, f"{user.display_name} lost all chickens.")
+                    return
+                index = int(index)
+                farm_data['chickens'].pop(index)
+                Farm.update_chickens(user.id, farm_data['chickens'])
+                await create_embed_without_title(ctx, f"{user.display_name} lost a chicken.")
+            else:
+                await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+    
     @commands.command("b")
     async def update_all_chickens(self, ctx):
         if is_dev(ctx):    
@@ -152,16 +169,8 @@ class DevCommands(commands.Cog):
     async def developer_mode(self, ctx):
         """Activates the developer mode in the bot."""
         if is_dev(ctx):
-            tools.pricing.dev_mode = not tools.pricing.dev_mode
-            await create_embed_without_title(ctx, f":warning: Developer mode is now {'enabled' if tools.pricing.dev_mode else 'disabled'}.")
-
-    @commands.command(name="updt")
-    async def updt(self, ctx):
-        """Updates the bot."""
-        if is_dev(ctx):
-            Farm.add_last_chicken_drop()
-            Farm.add_last_corn_drop()
-            Farm.remove_last_drop()
+            tools.pointscore.dev_mode = not tools.pointscore.dev_mode
+            await create_embed_without_title(ctx, f":warning: Developer mode is now {'enabled' if tools.pointscore.dev_mode else 'disabled'}.")
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

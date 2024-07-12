@@ -1,12 +1,12 @@
 from discord.ext import commands
 import discord
-from tools.sharedmethods import create_embed_without_title
+from tools.shared import create_embed_without_title, regular_command_cooldown
 import os
 from db.userDB import User
 from db.bankDB import Bank
 from tools.pagination import PaginationView
 from tools.prices import Prices
-from tools.pricing import pricing
+from tools.pointscore import pricing
 from random import choice
 
 class FriendlyCommands(commands.Cog):
@@ -20,6 +20,7 @@ class FriendlyCommands(commands.Cog):
         await create_embed_without_title(ctx, f":soccer: balls")
 
     @commands.hybrid_command("mog", brief="Mog a user", parameters=["user: discord.Member"], examples=["mog @user"], description="Mog a user.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def mog(self, ctx, user: discord.Member):
             """Mog a user."""
@@ -28,6 +29,7 @@ class FriendlyCommands(commands.Cog):
             await ctx.send(f"{user.mention} bye bye 🤫🧏‍♂️")
     
     @commands.hybrid_command(name="shop", brief="Shows the shop.", description="Shows all the points commands and their prices.", usage="shop")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def shop(self, ctx):
         """Shows the shop."""
@@ -39,6 +41,7 @@ class FriendlyCommands(commands.Cog):
         await view.send(ctx, title="Shop", description="Buy commands with your eggbux:", color=0x00ff00)
 
     @commands.hybrid_command(name="leaderboard", brief="Shows the leaderboard.", description="Shows the leaderboard..", usage="leaderboard")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def leaderboard(self, ctx):
         """Shows the leaderboard."""

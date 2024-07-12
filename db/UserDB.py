@@ -1,6 +1,9 @@
 from db.dbConfig import mongo_client
-users_collection = mongo_client.db.usuario
 from time import time
+import logging
+users_collection = mongo_client.db.usuario
+
+logger = logging.getLogger('botcore')
 
 # This class is responsible for handling user data in the database.
 
@@ -11,7 +14,7 @@ class User:
         try:            
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
-                print("User already exists.")
+                logger.warning(f"User {user_id} already exists.")
                 return None 
             else:
                 if not isinstance(points, int):
@@ -23,9 +26,9 @@ class User:
                     "salary_time": time()
                 }
                 users_collection.insert_one(user)
-                print("User has been created successfully.")
+                logger.info(f"User {user_id} has been created successfully.")
         except Exception as e:
-            print("Error encountered while creating the user.", e)
+            logger.error("Error encountered while creating the user.", e)
             return None    
         
     @staticmethod
@@ -35,11 +38,11 @@ class User:
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
                 users_collection.delete_one({"user_id" : user_id})
-                print("User has been deleted successfully.")
             else:
-                print("User not found.")
+                logger.warning("User not found.")
         except Exception as e:
-                print("Error encountered while deleting the user.", e)
+            logger.error("Error encountered while deleting the user.", e)
+            return None
     
     @staticmethod
     def update_all(user_id : int, points : int, roles: str):
@@ -51,7 +54,8 @@ class User:
                     points = 0
                 users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})
         except Exception as e:
-            print("Error encountered while trying to update user's status.", e)
+            logger.error("Error encountered while trying to update user's status.", e)
+            return None
 
     @staticmethod
     def update_points(user_id : int, points : int):
@@ -63,7 +67,8 @@ class User:
                     points = 0
                 users_collection.update_one({"user_id": user_id}, {"$set": {"points": points}})
         except Exception as e:
-            print("Error encountered while trying to update user's points.", e)
+            logger.error("Error encountered while trying to update user's points.", e)
+            return None
 
     @staticmethod
     def update_roles(user_id : int, roles: str):
@@ -73,7 +78,8 @@ class User:
             if user_data:
                 users_collection.update_one({"user_id": user_id}, {"$set": {"roles": roles}})
         except Exception as e:
-            print("Error encountered while trying to update user's roles.", e)
+            logger.error("Error encountered while trying to update user's roles.", e)
+            return None
 
     @staticmethod
     def update_salary_time(user_id : int):
@@ -83,7 +89,8 @@ class User:
             if user_data:
                 users_collection.update_one({"user_id": user_id}, {"$set": {"salary_time": time()}})
         except Exception as e:
-            print("Error encountered while trying to update user's salary time.", e)
+            logger.error("Error encountered while trying to update user's salary time.", e)
+            return None
         
     @staticmethod
     def read(user_id : int):
@@ -95,7 +102,7 @@ class User:
             else:
                 return None
         except Exception:
-            print("Error encountered while finding user.")
+            logger.error("Error encountered while trying to read the user.")
             return None
         
     @staticmethod
@@ -105,7 +112,7 @@ class User:
             users = users_collection.find()
             return users
         except Exception as e:
-            print("Error encountered while reading users.", e)
+            logger.error("Error encountered while trying to read all users.", e)
             return None
 
     @staticmethod
@@ -114,6 +121,6 @@ class User:
         try:
             users_collection.update_many({}, {"$set": {"points": 0, "roles": ""}})
         except Exception as e:
-            print("Error encountered while deleting users.", e)
+            logger.error("Error encountered while trying to reset all users.", e)
             return None
         

@@ -1,9 +1,9 @@
 from discord.ext import commands
-from tools.sharedmethods import create_embed_without_title
+from tools.shared import create_embed_without_title, regular_command_cooldown
 from db.bankDB import Bank
 from db.userDB import User
 import discord
-from tools.pricing import pricing
+from tools.pointscore import pricing
 class BankCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -13,6 +13,7 @@ class BankCommands(commands.Cog):
         Bank.create(User.id, 0)
 
     @commands.hybrid_command("deposit", aliases=["dep"], brief="Deposits points in the bank", parameters=["amount: int"], examples=["deposit 1000"], description="Deposits points in the bank. You can't have more than 5000 eggbux in the bank.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def deposit(self, ctx, amount):
         """Deposits points in the bank"""
@@ -46,14 +47,14 @@ class BankCommands(commands.Cog):
             else:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
                 await self.register_bank(ctx.author)
+        else:
+            await create_embed_without_title(ctx, f"{ctx.author.display_name}, please enter a valid amount.")
 
     @commands.hybrid_command("withdraw", aliases=["with"], brief="Withdraws eggubux from the bank", parameters=["amount: int"], examples=["withdraw 1000"], description="Withdraws points from the bank.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def withdraw(self, ctx, amount):
         """Withdraws points from the bank"""
-        if amount == 0:
-            await create_embed_without_title(ctx, f"{ctx.author.display_name}, please enter a valid amount.")
-            return
         if amount.upper() == "ALL":
             amount = Bank.read(ctx.author.id)['bank']
         else:
@@ -62,6 +63,9 @@ class BankCommands(commands.Cog):
             except ValueError:
                 await create_embed_without_title(ctx, f"{ctx.author.display_name}, please enter a valid amount.")
                 return
+        if amount <= 0:
+            await create_embed_without_title(ctx, f"{ctx.author.display_name}, please enter a valid amount.")
+            return
         if Bank.read(ctx.author.id):
             currentAmount = Bank.read(ctx.author.id)['bank']
             if currentAmount >= amount:

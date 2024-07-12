@@ -1,6 +1,6 @@
 from discord.ext import commands
-from tools.pricing import pricing, refund
-from tools.sharedmethods import create_embed_without_title
+from tools.pointscore import pricing, refund
+from tools.shared import create_embed_without_title, regular_command_cooldown
 import discord
 from db.userDB import User
 from random import choice
@@ -13,6 +13,7 @@ class HostileCommands(commands.Cog):
         self.gods = []
 
     @commands.command("momentofsilence" , aliases=["mos"])
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def moment_of_silence(self, ctx):
         """Mutes all users in the voice channel of the author of the command."""
@@ -25,6 +26,7 @@ class HostileCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command("radio")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def radio(self, ctx):
         """Sets the voice channel to radio quality."""
@@ -37,6 +39,7 @@ class HostileCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command(name="explode")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def explode(self, ctx):
         """Disconnects all users from their voice channels."""
@@ -49,6 +52,7 @@ class HostileCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command(name="mute")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def mute(self, ctx, user: discord.Member = None):
         """Mutes a user."""
@@ -72,6 +76,7 @@ class HostileCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command(name="unmute")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def unmute(self, ctx, user: discord.Member = None):
         """Unmutes a user."""
@@ -88,7 +93,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="implode")
-    
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def implode(self, ctx):
         """Disconnects all users from their voice channels."""
@@ -102,6 +107,7 @@ class HostileCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command(name="removeradio")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def remove_radio(self, ctx):
         """Removes the radio effect from the voice channel."""
@@ -114,6 +120,7 @@ class HostileCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command(name="deafen")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def deafen(self, ctx, user: discord.Member=None):
         """Deafens a user."""
@@ -130,6 +137,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
     
     @commands.command(name="pardon")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def pardon(self, ctx, user_id: int):
         """Pardons a user from prison."""
@@ -144,6 +152,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="undeafen")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def undeafen(self, ctx, user: discord.Member = None):
         """Undeafens a user."""
@@ -160,7 +169,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="disconnect", aliases=['dc'])
-    
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def disconnect(self, ctx, user: discord.Member):
         """Disconnects a user from their voice channel."""
@@ -172,6 +181,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="prison", aliases=["jail"])
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def prison(self, ctx, user:discord.Member):
         """Imprisons a user for 60 seconds."""
@@ -201,6 +211,7 @@ class HostileCommands(commands.Cog):
                 await prison_channel.delete()
                 
     @commands.command(name="fling")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def fling(self, ctx, user: discord.Member):
         """Throws a user to a random voice channel."""
@@ -220,6 +231,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="detonate")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def detonate(self, ctx):
         """Disconnects all users from their voice channels."""
@@ -229,6 +241,7 @@ class HostileCommands(commands.Cog):
         await create_embed_without_title(ctx, f"All users have been disconnected from their voice channels.")
 
     @commands.command(name="shuffle")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def shuffle(self, ctx):
         """Throws all users to random voice channels."""
@@ -242,7 +255,7 @@ class HostileCommands(commands.Cog):
         await create_embed_without_title(ctx, f"All users have been thrown to random voice channels.")
     
     @commands.command(name="emergency")
-    
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def emergency(self, ctx):
         """Throws all users to the voice channel of the author of the command."""
@@ -257,6 +270,7 @@ class HostileCommands(commands.Cog):
         await create_embed_without_title(ctx, f"All users have been thrown to {ctx.author.voice.channel.name}.")
     
     @commands.command(name="fish")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def fish(self, ctx, user: discord.Member):
         """Throws a user to the voice channel of the author of the command."""
@@ -268,6 +282,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="kick")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def kick(self, ctx, user: discord.Member):
         """Kicks a user."""
@@ -279,6 +294,7 @@ class HostileCommands(commands.Cog):
         await create_embed_without_title(ctx, f"{user.display_name} was kicked.")
      
     @commands.command(name="ban")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def ban(self, ctx, user: discord.Member):
         """Bans a user."""
@@ -290,7 +306,7 @@ class HostileCommands(commands.Cog):
         await create_embed_without_title(ctx, f"{user.display_name} was banned.")
 
     @commands.command(name="changenickname", aliases=["nick"])
-    @commands.has_permissions(manage_nicknames=True)
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def change_nickname(self, ctx, user: discord.Member, *nickname: str):
         """Changes a user's nickname."""
@@ -304,6 +320,7 @@ class HostileCommands(commands.Cog):
             await create_embed_without_title(ctx, f"{user.display_name}'s nickname has been changed to {nickname}.")
 
     @commands.command(name="nuke")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def nuke(self, ctx):
         """Nuke the database."""
@@ -311,6 +328,7 @@ class HostileCommands(commands.Cog):
         await create_embed_without_title(ctx, ":radioactive: All users have been set back to 0 eggbux and have lost their titles.")  
 
     @commands.command(name="antimute")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def antimute(self, ctx):
         """Makes the user never being able to get muted and deafened."""

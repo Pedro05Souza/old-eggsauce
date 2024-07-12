@@ -1,13 +1,16 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
-from tools.sharedmethods import create_embed_with_title, create_embed_without_title, make_embed_object
+from tools.shared import create_embed_with_title, create_embed_without_title, make_embed_object, regular_command_cooldown
 from db.bankDB import Bank
 from db.userDB import User
-from tools.pricing import pricing, refund
+from tools.pointscore import pricing, refund
 from db.botConfigDB import BotConfig
 import math
 import time
 import discord
+import logging
+
+logger = logging.getLogger('botcore')
 class PointsConfig(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -15,6 +18,7 @@ class PointsConfig(commands.Cog):
         self.init_time = math.ceil(time.time())
 
     @commands.hybrid_command(name="modulestatus", aliases=["status"], brief="Check the status of ptscmds.", usage="points_toggle", description="Check if the points commands are enabled or disabled in the server.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     async def points_status(self, ctx):
         """Check the current module active in the server"""
         modules = {
@@ -55,15 +59,17 @@ class PointsConfig(commands.Cog):
         else:
             return
 
-    def automatic_register(self, user: discord.Member):
+    async def automatic_register(self, user: discord.Member):
         """Automatically registers the user in the database."""
-        if user.read(user.id) and user.bot:
+        if User.read(user.id) and user.bot:
             return
         else:
-            user.create(user.id, 0)
-            print(f"User created: {user.name}")
+            User.create(user.id, 0)
+            logger.info(f"{user.display_name} has been registered.")
+            
 
     @commands.hybrid_command(name="register", aliases=["reg"], brief="Registers the user in the database.", usage="register", description="Registers the user in the database.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     async def register(self, ctx):
         """Registers the user in the database."""
         if User.read(ctx.author.id):
@@ -73,6 +79,7 @@ class PointsConfig(commands.Cog):
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} has been registered.")
  
     @commands.hybrid_command(name="points", aliases=["pts", "eggbux", "p"], brief="Shows the amount of points the user has.", usage="points OPTIONAL [user]", description="Shows the amount of points a usr has. If not usr, shows author's points.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def points(self, ctx, user: discord.Member = None):
         """Shows the amount of points the user has."""
@@ -101,13 +108,14 @@ class PointsConfig(commands.Cog):
                 user_data['points'] = points
             last_title_drop = time.time() - user_data["salary_time"]
             hours_passed = last_title_drop // 3600 if last_title_drop <= 3600 else 5
-            salary = self.salary_role(user)
+            salary = await self.salary_role(user)
             if hours_passed >= 1:
                 User.update_points(user.id, user_data["points"] + salary * hours_passed)
                 User.update_salary_time(user.id)
             User.update_points(user.id, user_data["points"])
 
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def points_Titles(self, ctx):
         end_time = time.time() + 60
@@ -153,7 +161,7 @@ class PointsConfig(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} already has the role **{roleName}**.")
 
-    def salary_role(self, user: discord.Member):
+    async def salary_role(self, user: discord.Member):
         """Returns the salary of a user based on their roles."""
         salarios = {
             "T": 25,
@@ -162,12 +170,12 @@ class PointsConfig(commands.Cog):
             "H": 100
         }
         user_data = User.read(user.id)
-        if user_data:
+        if user_data['roles'] != "":
             return salarios[user_data["roles"][-1]]
         else:
             return 0
         
-    def get_user_title(self, user: discord.Member):
+    async def get_user_title(self, user: discord.Member):
         userRoles = {
             "T" : "Egg Novice",
             "L" : "Egg Apprentice",
@@ -181,6 +189,7 @@ class PointsConfig(commands.Cog):
             return userRoles[user_data["roles"][-1]]
 
     @commands.hybrid_command(name="salary", aliases=["sal"], brief="Check the salary of a user.", usage="salary OPTIONAL [user]", description="Check the salary of a user. If not user, shows author's salary.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def salary(self, ctx, user: discord.Member = None):
         """Check the salary of a user."""
@@ -189,7 +198,7 @@ class PointsConfig(commands.Cog):
         user_data = User.read(user.id)
         if user_data:
             if user_data["roles"] != "":
-                await create_embed_without_title(ctx, f":moneybag: {user.display_name} has the title of **{self.get_user_title(user)}** and earns {self.salary_role(user)} eggbux..")
+                await create_embed_without_title(ctx, f":moneybag: {user.display_name} has the title of **{await self.get_user_title(user)}** and earns {await self.salary_role(user)} eggbux..")
                 return   
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} doesn't have a title.")
         else:
@@ -202,15 +211,15 @@ class PointsConfig(commands.Cog):
         if not BotConfig.read(user.guild.id)['toggled_modules'] == "N":
             if user.bot:
                 return
-            if user.read(user.id) and before.channel is None and after.channel is not None:
+            if User.read(user.id) and before.channel is None and after.channel is not None:
                 await self.count_points(user)
             elif not User.read(user.id) and before.channel is None and after.channel is not None:
-                self.automatic_register(user)
+                await self.automatic_register(user)
                 await self.count_points(user)
             elif User.read(user.id) and before.channel is not None and after.channel is None:
                 await self.update_points(user)
             elif not User.read(user.id) and before.channel is not None and after.channel is None:
-                self.automatic_register(user)
+                await self.automatic_register(user)
                 await self.update_points(user)
 
 async def setup(bot):

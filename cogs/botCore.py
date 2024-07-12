@@ -3,36 +3,60 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import asyncio
 import sys
-from tools.sharedmethods import create_embed_without_title, make_embed_object
+from tools.shared import create_embed_without_title, make_embed_object, is_dev
 from db.botConfigDB import BotConfig
-from tools.pricing import refund
+import logging
+from tools.pointscore import refund
 from tools.prices import Prices
 from tools.helpSelect import SelectModule, ShowPointsModules
+from colorlog import ColoredFormatter
+
+logger = logging.getLogger('botcore')
 
 class BotCore(commands.Cog):
     def __init__(self, bot):
         load_dotenv()
         self.bot = bot
-        self.devs = os.getenv("DEVS").split(",")
+        self.logger = self.setup_logging()
+
+    def setup_logging(self):
+        logger = logging.getLogger('botcore')
+        logger.setLevel(logging.INFO)
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        formatter = ColoredFormatter(
+            "%(log_color)s%(asctime)s - %(levelname)-8s%(reset)s - %(message)s",
+            datefmt=None,
+            reset=True,
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "purple",
+            },
+        )
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
     async def restart_client(self):
         try:
-            print("Attempting to restart the bot...")
+            logger.info("Restarting bot...")
             await self.cancel_all_async_tasks()
             await self.close_aiohttp_sessions()
             await self.bot.close()
+            await asyncio.sleep(4)
+            logger.info("Bot has been restarted.")
             command = [sys.executable, 'main.py'] + sys.argv[1:]
-            await asyncio.sleep(3)
-            print("Bot has been restarted.")
             os.execv(sys.executable, command)
         except Exception as e:
-            print(e)
+            logger.critical(f"Error restarting bot: {e}")
 
     async def close_aiohttp_sessions(self):
         """Close all aiohttp ClientSession instances."""
         if hasattr(self.bot, "http_session"):
             await self.bot.http_session.close()
-            print("Aiohttp sessions closed: OK")
+            logger.info("Aiohttp session closed.")
 
     async def cancel_all_async_tasks(self):
         """Cancel all running async tasks."""
@@ -44,14 +68,15 @@ class BotCore(commands.Cog):
             except asyncio.CancelledError:
                 pass
             except Exception as e:
-                print(e)
-        print("Async taks cancelled: OK")
+                logger.error(f"Error cancelling async task: {e}")
+        logger.info("All async tasks have been cancelled.")
 
     @commands.command("r", aliases=["restart"])
     async def force_restart(self, ctx):
         """Restart the bot."""
-        if str(ctx.author.id) in self.devs:
+        if is_dev(ctx):
             await create_embed_without_title(ctx, ":warning: Restarting...")
+            logger.info(f"{ctx.author.name}, user id: {ctx.author.id} has attempted to restart the bot.")
             await self.restart_client()
         else:
             await create_embed_without_title(ctx, ":skull: Hell naw.")
@@ -135,39 +160,37 @@ class BotCore(commands.Cog):
     async def on_guild_join(self, guild):
         await self.tutorial(guild)
         BotConfig.create(guild.id)
-        self.bot.remove_command("ignore")
-        print(f"Joined guild {guild.name}")
+        logger.info(f"Joined guild {guild.name}")
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         BotConfig.delete(guild.id)
-        print(f"Left guild {guild.name}")
+        logger.info(f"Left guild {guild.name}")
     
     @commands.Cog.listener()
     async def guild_channel_delete(self, channel):
         if BotConfig.read(channel.guild.id)['channel_id'] == channel.id:
-            BotConfig.update(channel.guild.id, BotConfig.read(channel.guild.id)['toggle'], 0)
-            print(f"Channel {channel.name} has been deleted")
+            BotConfig.update_channel_id(channel.guild.id, 0)
+            logger.info(f"Channel {channel.name} has been deleted. Commands channel has been reset.")
     
     @commands.Cog.listener()
     async def on_ready(self):
         await self.bot.tree.sync()
         await self.bot.loop.create_task(self.restart_every_day())
 
-    # @commands.Cog.listener()
-    # async def on_command_error(self, ctx, error):
-    #     if BotConfig.read(ctx.guild.id) and BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
-    #         return
-    #     if isinstance(error, commands.CommandError):
-    #         if ctx is not None:
-    #             if hasattr(ctx, "predicate_result") and ctx.predicate_result:
-    #                 enumPricing = Prices.__members__
-    #                 if ctx.command.name in enumPricing and ctx.command.name != "stealpoints":
-    #                     print("balls")
-    #                     if enumPricing[ctx.command.name].value > 0:
-    #                         await create_embed_without_title(ctx, f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
-    #                         await refund(ctx.author, ctx)
-    #     print(error)
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if BotConfig.read(ctx.guild.id) and BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
+            return
+        if isinstance(error, commands.CommandError):
+            if ctx is not None:
+                if hasattr(ctx, "predicate_result") and ctx.predicate_result:
+                    enumPricing = Prices.__members__
+                    if ctx.command.name in enumPricing and ctx.command.name != "stealpoints":
+                        if enumPricing[ctx.command.name].value > 0:
+                            await create_embed_without_title(ctx, f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
+                            await refund(ctx.author, ctx)
+        logger.error(f"An error occurred in the server: {ctx.guild.id} in channel: {ctx.channel.id}. Command: {ctx.command.name}. Error: {error}")
 
 async def setup(bot):
     await bot.add_cog(BotCore(bot))

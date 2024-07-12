@@ -1,6 +1,9 @@
 from db.dbConfig import mongo_client
-farm_collection = mongo_client.db.farm
 from time import time
+import logging
+farm_collection = mongo_client.db.farm
+logger = logging.getLogger('botcore')
+
 
 class Farm:
     @staticmethod
@@ -9,7 +12,7 @@ class Farm:
         try:
             farm_data = farm_collection.find_one({"user_id": user_id})
             if farm_data:
-                print("Farm already exists.")
+                logger.warning(f"Farm for {user_id} already exists.")
                 return None
             else:
                 farm = {
@@ -23,12 +26,13 @@ class Farm:
                     "corn_limit": 100,
                     "plot": 1,
                     "last_chicken_drop": time(),
-                    "last_corn_drop": time(),
+                    "last_farmer_drop": time(),
+                    "last_corn_drop": time()
                 }
                 farm_collection.insert_one(farm)
-                print("Farm has been created successfully.")
+                logger.info(f"Farm for {user_id} has been created successfully.")
         except Exception as e:
-            print("Error encountered while creating the farm.", e)
+            logger.error("Error encountered while creating the farm.", e)
             return None
     
     @staticmethod
@@ -38,11 +42,11 @@ class Farm:
             farm_data = farm_collection.find_one({"user_id": user_id})
             if farm_data:
                 farm_collection.delete_one({"user_id": user_id})
-                print("Farm has been deleted successfully.")
+                logger.info("Farm has been deleted successfully.")
             else:
-                print("Farm not found.")
+                logger.warning("Farm not found.")
         except Exception as e:
-            print("Error encountered while deleting the farm.", e)
+            logger.error("Error encountered while deleting the farm.", e)
 
     @staticmethod
     def update(user_id:int, farm_name:str, chickens: list, eggs_generated: int):
@@ -52,7 +56,7 @@ class Farm:
             if farm_data:
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"chickens": chickens,"farm_name": farm_name,"eggs_generated": eggs_generated}})
         except Exception as e:
-            print("Error encountered while trying to update farm's status.", e)
+            logger.error("Error encountered while trying to update farm's status.", e)
     
     @staticmethod
     def update_farmer(user_id:int, farmer: str):
@@ -62,7 +66,7 @@ class Farm:
             if farm_data:
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"farmer": farmer}})
         except Exception as e:
-            print("Error encountered while trying to update farm's farmer.", e)
+            logger.error("Error encountered while trying to update farm's farmer.", e)
 
     @staticmethod
     def update_chickens(user_id:int, chickens: list):
@@ -72,7 +76,7 @@ class Farm:
             if farm_data:
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"chickens": chickens}})
         except Exception as e:
-            print("Error encountered while trying to update farm's chickens.", e)
+            logger.error("Error encountered while trying to update farm's chickens.", e)
     
     @staticmethod
     def update_corn(user_id:int, corn:int):
@@ -82,7 +86,7 @@ class Farm:
             if farm_data:
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"corn": corn}})
         except Exception as e:
-            print("Error encountered while trying to update farm's corn.", e)
+            logger.error("Error encountered while trying to update farm's corn.", e)
     
     @staticmethod
     def update_plot(user_id: int, plot: int):
@@ -92,7 +96,7 @@ class Farm:
             if farm_data:
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"plot": plot}})
         except Exception as e:
-            print("Error encountered while trying to update farm's plot.", e)
+            logger.error("Error encountered while trying to update farm's plot.", e)
     
     @staticmethod
     def update_corn_limit(user_id: int, corn_limit: int):
@@ -102,7 +106,7 @@ class Farm:
             if farm_data:
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"corn_limit": corn_limit}})
         except Exception as e:
-            print("Error encountered while trying to update farm's corn limit.", e)
+            logger.error("Error encountered while trying to update farm's corn limit.", e)
 
     @staticmethod
     def update_plant_name(user_id: int, plant_name: str):
@@ -112,7 +116,7 @@ class Farm:
             if farm_data:
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"plant_name": plant_name}})
         except Exception as e:
-            print("Error encountered while trying to update farm's plant name.", e)
+            logger.error("Error encountered while trying to update farm's plant name.", e)
 
     @staticmethod
     def read(user_id: int):
@@ -122,10 +126,10 @@ class Farm:
             if farm_data:
                 return farm_data
             else:
-                print("Farm not found.")
+                logger.warning("Farm not found.")
                 return False
         except Exception as e:
-            print("Error encountered while reading the farm.", e)
+            logger.error("Error encountered while reading the farm.", e)
             return None
         
     @staticmethod
@@ -136,10 +140,10 @@ class Farm:
             if farms:
                 return farms
             else:
-                print("No farms found.")
+                logger.warning("No farms found.")
                 return False
         except Exception as e:
-            print("Error encountered while reading all farms.", e)
+            logger.error("Error encountered while reading all farms.", e)
             return None
     
     @staticmethod
@@ -147,9 +151,9 @@ class Farm:
         """Delete all farms from the database."""
         try:
             farm_collection.delete_many({})
-            print("All farms have been deleted successfully.")
+            logger.info("All farms have been deleted successfully.")
         except Exception as e:
-            print("Error encountered while deleting all farms.", e)
+            logger.error("Error encountered while deleting all farms.", e)
             return None
         
     @staticmethod
@@ -160,7 +164,7 @@ class Farm:
             if farm_data:
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"last_chicken_drop": time()}})
         except Exception as e:
-            print("Error encountered while trying to update farm's last drop.", e)
+            logger.error("Error encountered while trying to update farm's last drop.", e)
             return None
         
     @staticmethod
@@ -171,8 +175,9 @@ class Farm:
             if farm_data:
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"last_corn_drop": time()}})
         except Exception as e:
-            print("Error encountered while trying to update farm's last drop.", e)
+            logger.error("Error encountered while trying to update farm's last drop.", e)
             return None
+        
         
         
         

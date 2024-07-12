@@ -1,6 +1,10 @@
 from pymongo import MongoClient
-import os
 from dotenv import load_dotenv
+import os
+import logging
+
+logger = logging.getLogger('botcore')
+
 
 load_dotenv
 uri = os.getenv("MONGODB_KEY")
@@ -11,11 +15,11 @@ def connect(uri):
     try:
         client = MongoClient(uri)
         client.admin.command('ping')
-        print("Sucessfull connection with MongoDB!")
+        logger.info("Connected to the database.")
         
         return client
     except Exception as e:
-        print("Error encounted while connecting to the database.", e)
+        logger.critical(f"Error connecting to the database: {e}")
         return None    
 
 
