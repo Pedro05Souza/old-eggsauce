@@ -13,6 +13,7 @@ import asyncio
 import sys
 import os
 logger = logging.getLogger('botcore')
+monitor_mode = False
 
 class BotCore(commands.Cog):
     def __init__(self, bot):
@@ -184,7 +185,7 @@ class BotCore(commands.Cog):
     async def on_command_error(self, ctx, error):
         if BotConfig.read(ctx.guild.id) and BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
             return
-        if isinstance(error, commands.CommandError) and not isinstance(error, commands.CommandOnCooldown):
+        if isinstance(error, commands.CommandError) and not isinstance(error, (commands.CommandNotFound, commands.CheckFailure)):
             if ctx is not None:
                 if hasattr(ctx, "predicate_result") and ctx.predicate_result:
                     enumPricing = Prices.__members__
@@ -208,9 +209,14 @@ class BotCore(commands.Cog):
                         logger.error(f"Error sending cooldown message to {ctx.author.name}", e)
                      self.last_cooldown_message_time[ctx.author.id] = current_time
                 return
-            if not isinstance(error, commands.CommandOnCooldown):
+            if not isinstance(error, (commands.CommandOnCooldown, commands.CheckFailure)):
                 logger.error(f"Error in command: {ctx.command.name}\n In server: {ctx.guild.name}\n In channel: {ctx.channel.name}\n By user: {ctx.author.name}\n Error: {error}")
                 raise error
+    
+    @commands.Cog.listener()
+    async def on_command_completion(self, ctx):
+        if monitor_mode:
+            logger.info(f"Command {ctx.command.name} has been executed by {ctx.author.name} in {ctx.guild.name} in {ctx.channel.name}")
 
 async def setup(bot):
     await bot.add_cog(BotCore(bot))

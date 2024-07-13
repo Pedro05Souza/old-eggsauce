@@ -67,18 +67,17 @@ class ChickenCommands(commands.Cog):
             Farm.update(ctx.author.id, chickens=farm_data['chickens'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, **{chickens_fed}** out of **{total_chickens}** chickens have been fed.\n:corn:The corn cost was {total_cost}.")
 
-    @commands.hybrid_command(name="market", aliases=["m"], usage="market", description="Market that generates 10 random chickens to buy.")
+    @commands.hybrid_command(name="market", aliases=["m"], usage="market", description="Market that generates 8 random chickens to buy.")
     @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def market(self, ctx, egg_pack_chickens: int = 0):
+    async def market(self, ctx):
+        await self.roll(ctx, 8, "market")
+
+    async def roll(self, ctx, chickens_to_generate, action):
         """Market to buy chickens"""
         if Farm.read(ctx.author.id):
-            if egg_pack_chickens == 0:
-                default_rolls = 15
-                chickens_generated = 8
-            else:
-                chickens_generated = egg_pack_chickens
-            if egg_pack_chickens == 0:
+            default_rolls = 10
+            if action == "market":
                 plrObj = RollLimit.read(ctx.author.id)
                 if not plrObj:
                     farm_data = Farm.read(ctx.author.id)    
@@ -93,10 +92,8 @@ class ChickenCommands(commands.Cog):
                     return
                 plrObj.current -= 1
             if Farm.read(ctx.author.id)['farmer'] == "Generous Farmer":
-                chickens_generated += load_farmer_upgrades(ctx.author.id)[0]
-            generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_generated, ctx)
-            if egg_pack_chickens == 0:
-                plrObj.chickens = generated_chickens
+                default_rolls += load_farmer_upgrades(ctx.author.id)[0]
+            generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate, ctx)
             message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, Farm.read(ctx.author.id))} eggbux." for index, chicken in enumerate(generated_chickens)]))
             view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message, chicken_emoji=self.get_rarity_emoji)
             await ctx.send(embed=message, view=view)
@@ -151,6 +148,9 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def sell_chicken(self, ctx):
         """Deletes a chicken from the farm"""
+        if TradeData.read(ctx.author.id) or GiftData.read(ctx.author.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't sell a chicken while in a trade or gift request.")
+            return
         if Farm.read(ctx.author.id):
             if not Farm.read(ctx.author.id)['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
@@ -215,9 +215,14 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def trade_chicken(self, ctx, user: discord.Member):
         """Trade a chicken(s) with another user"""
+        if GiftData.read(ctx.author.id) or GiftData.read(user.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} can't trade a chicken while in a gift request")
+            return
+        elif SellData.read(ctx.author.id) or SellData.read(user.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} can't trade a chicken while in a sell request.")
+            return
         author_involved_in_trade = TradeData.read(ctx.author.id)
         target_involved_in_trade = TradeData.read(user.id)
-
         if author_involved_in_trade:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have a trade in progress.")
             return
@@ -240,13 +245,14 @@ class ChickenCommands(commands.Cog):
             await msg.add_reaction("❌")
             try:
                 reaction, usr = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == user and reaction.message == msg, timeout=40)
-                if reaction.emoji == "✅":
-                    if not author_involved_in_trade and not target_involved_in_trade:
-                        await self.trade_chickens(ctx, user, t)
-                elif reaction.emoji == "❌":
-                    await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has declined the trade request.")
-                    TradeData.remove(t)
-                    return
+                while True:
+                    if reaction.emoji == "✅" and usr == user:
+                            await self.trade_chickens(ctx, user, t)
+                            return
+                    elif reaction.emoji == "❌" and usr == user:
+                        await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has declined the trade request.")
+                        TradeData.remove(t)
+                        return
             except asyncio.TimeoutError:
                 await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has not responded to the trade request.")
                 TradeData.remove(t)
@@ -362,6 +368,12 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def gift_chicken(self, ctx, index: int, user: discord.Member):
         """Gift a chicken to another user"""
+        if TradeData.read(ctx.author.id) or TradeData.read(user.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} can't gift a chicken while in a trade.")
+            return
+        elif SellData.read(ctx.author.id) or SellData.read(user.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} can't gift a chicken while in a sell request.")
+            return
         author_involved_in_gift = GiftData.read(ctx.author.id)
         target_involved_in_gift = GiftData.read(user.id)
         if author_involved_in_gift:
@@ -421,6 +433,15 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def evolve_chicken(self, ctx, index: int, index2: int):
         """Evolves a chicken if having 2 of the same rarity"""
+        if TradeData.read(ctx.author.id) or GiftData.read(ctx.author.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a chicken while in a trade or gift request.")
+            return
+        if SellData.read(ctx.author.id) or SellData.read(ctx.author.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a chicken while in a sell request.")
+            return
+        if GiftData.read(ctx.author.id) or GiftData.read(ctx.author.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a chicken while in a gift request.")
+            return
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
             if not farm_data['chickens']:
@@ -506,13 +527,13 @@ class ChickenCommands(commands.Cog):
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have not selected a farmer role.")
 
     @commands.hybrid_command(name="eggpack", aliases=["ep"], usage="eggpack", description="Buy an egg pack.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
     async def eggpack(self, ctx):
         """Buy an egg pack"""
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
-            await self.market(ctx, 6)
+            await self.roll(ctx, 6, 'eggpack')
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
 

@@ -6,10 +6,9 @@ from db.bankDB import Bank
 from db.farmDB import Farm
 from tools.chickenshared import ChickenMultiplier, ChickenRarity, determine_chicken_upkeep
 from cogs.pointscommands.chickencmds import RollLimit
-import tools.pointscore
+from .. import botcore
 import discord
 import tools
-
 class DevCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -129,7 +128,7 @@ class DevCommands(commands.Cog):
                 }
                 chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
                 farm_data['chickens'].append(chicken)
-                Farm.update_chickens(user.id, farm_data['chickens'])
+                Farm.update(user.id, chickens=farm_data['chickens'])
                 await create_embed_without_title(ctx, f"{user.display_name} received a **{rarity}** chicken.")
     
     @commands.command("chickenlogs")
@@ -155,12 +154,12 @@ class DevCommands(commands.Cog):
             if is_dev(ctx):
                 if index.upper() == "ALL":
                     farm_data['chickens'].clear()
-                    Farm.update_chickens(user.id, farm_data['chickens'])
+                    Farm.update(user.id, chickens=farm_data['chickens'])
                     await create_embed_without_title(ctx, f"{user.display_name} lost all chickens.")
                     return
                 index = int(index)
                 farm_data['chickens'].pop(index)
-                Farm.update_chickens(user.id, farm_data['chickens'])
+                Farm.update(user.id, chickens=farm_data['chickens'])
                 await create_embed_without_title(ctx, f"{user.display_name} lost a chicken.")
             else:
                 await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
@@ -178,6 +177,13 @@ class DevCommands(commands.Cog):
         if is_dev(ctx):
             tools.pointscore.dev_mode = not tools.pointscore.dev_mode
             await create_embed_without_title(ctx, f":warning: Developer mode is now {'enabled' if tools.pointscore.dev_mode else 'disabled'}.")
+
+    @commands.command(name="mm")
+    async def monitor_mode(self, ctx):
+        """Activates the monitor mode in the bot."""
+        if is_dev(ctx):
+            botcore.monitor_mode = not botcore.monitor_mode
+            print("Monitor mode is now: ", botcore.monitor_mode)
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

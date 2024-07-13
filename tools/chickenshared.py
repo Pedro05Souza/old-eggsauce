@@ -151,6 +151,7 @@ class TradeData():
                     if id == author:
                         return True
             return None
+        
 class GiftData():
         obj_list = []
 
@@ -187,6 +188,10 @@ class GiftData():
                 for id in obj.identifier:
                     if id == author:
                         return True
+        @staticmethod
+        def getall():
+            for obj in GiftData.obj_list:
+                return obj
 class RollLimit:
     obj_list = []
     def __init__(self, user_id, current, chickens=None):
@@ -212,7 +217,42 @@ class RollLimit:
     @staticmethod
     def removeAll():
         RollLimit.obj_list.clear()
-        
+class SellData():
+    obj_list = []
+
+    def __init__ (self, author_id):
+        SellData.obj_list.append(self)
+        self.author = author_id
+
+    @staticmethod
+    def get(author):
+        for obj in SellData.obj_list:
+            if obj.author == author:
+                return obj
+        return None
+    
+    @staticmethod
+    def remove(obj):
+        try:
+            SellData.obj_list.remove(obj)
+        except Exception as e:
+            logger.error("Error removing object from list.", e)
+
+    @staticmethod
+    def get_all():
+        return SellData.obj_list
+    
+    @staticmethod
+    def clear():
+        SellData.obj_list.clear()
+
+    @staticmethod
+    def read(author):
+        for obj in SellData.obj_list:
+            print(obj.author)
+            if obj.author == author:
+                return True
+            
 def determine_chicken_upkeep(chicken):
     percentage = uniform(0, .75)
     percentage = round(percentage, 2)

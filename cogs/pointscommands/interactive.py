@@ -80,10 +80,8 @@ class InteractiveCommands(commands.Cog):
     async def cassino(self, ctx, amount, cor: str):
         """Bet on a color in the roulette."""
         if amount.upper() == "ALL":
-            amount = re.sub(r'[^\d]', '', str(User.read(ctx.author.id)["points"]))
-            amount = int(amount)
+            amount = User.read(ctx.author.id)["points"]
         else:
-            amount = re.sub(r'[^-\d]', '', str(amount))
             amount = int(amount)
         cor = cor.upper()
         coresPossiveis = ["RED", "BLACK", "GREEN"]
