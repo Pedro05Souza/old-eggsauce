@@ -38,8 +38,8 @@ class ChickenSelectView(ui.View):
     async def on_timeout(self) -> None:
         """Method to execute when the view times out."""
         if self.children[0].__class__.__name__ == "ChickenDeleteMenu":
-            print(self.children[0].delete_object)
-            SellData.remove(self.children[0].delete_object)
+            if self.chidren[0].delete_object:
+                SellData.remove(self.children[0].delete_object)
         if self.children[0].__class__.__name__ == "ChickenUserTradeMenu":
             TradeData.remove(self.children[0].td)
         return
@@ -56,7 +56,7 @@ class ChickenMarketMenu(ui.Select):
         self.author_id = author_id
         self.message = message
         self.chicken_emoji = chicken_emoji
-        super().__init__(min_values=1, max_values=1, options=options)
+        super().__init__(min_values=1, max_values=1, options=options, placeholder="Select the chicken to buy")
 
     async def callback(self, interaction):
         """Callback for the chicken market menu"""
@@ -93,14 +93,14 @@ class ChickenMarketMenu(ui.Select):
         self.chickens[self.chickens.index(chicken_selected)] = aux
         Farm.update(interaction.user.id, chickens=farm_data['chickens'])
         User.update_points(interaction.user.id, User.read(interaction.user.id)["points"] - price)
-        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: **{chicken_selected['rarity']}** {chicken_selected['name']} Price: {get_chicken_price(chicken_selected)} :money_with_wings:")
+        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: **{self.chicken_emoji(chicken_selected['rarity'])}{chicken_selected['rarity']} {chicken_selected['name']}** Price: {get_chicken_price(chicken_selected)} :money_with_wings:")
         await interaction.response.send_message(embed=embed)
         available_chickens = [chicken for chicken in self.chickens if not chicken.get('bought', False)]
         if not available_chickens:
             await interaction.message.delete()
             return
         updated_view = ChickenSelectView(available_chickens, self.author_id, "M", self.message, self.chicken_emoji)
-        updated_message = await make_embed_object(title=f":chicken: {interaction.user.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.chicken_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken)}" for index, chicken in enumerate(available_chickens)]))
+        updated_message = await make_embed_object(title=f":chicken: {interaction.user.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {self.chicken_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken)} eggbux." for index, chicken in enumerate(available_chickens)]))
         await interaction.message.edit(embed=updated_message, view=updated_view)
         self.message = updated_message
         return
@@ -120,7 +120,6 @@ class ChickenDeleteMenu(ui.Select):
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder="Select the chickens to delete")
 
     async def callback(self, interaction):
-        chicken_selected = self.chickens[int(self.values[0])]
         if interaction.user.id != self.author_id:
             await interaction.response.send_message("You can't interact with this menu.", ephemeral=True)
             return
@@ -136,9 +135,10 @@ class ChickenDeleteMenu(ui.Select):
             refund_price = price//2
         Farm.update(interaction.user.id, chickens=farm_data['chickens'])
         User.update_points(interaction.user.id, User.read(interaction.user.id)["points"] + (refund_price))
-        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chicken: **{chicken_selected['rarity']} {chicken_selected['name']}** Price: {refund_price} :money_with_wings:")
+        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chickens: \n" + "\n".join([f"{self.chicken_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_selected]) + f"\nYou have been refunded {refund_price} eggbux.")
         await interaction.response.send_message(embed=embed)
         SellData.remove(self.delete_object)
+        await interaction.message.delete()
         return
     
 class ChickenAuthorTradeMenu(ui.Select):
@@ -152,7 +152,7 @@ class ChickenAuthorTradeMenu(ui.Select):
         self.message = message
         self.chicken_emoji = chicken_emoji
         self.td = td
-        super().__init__(min_values=1, max_values=len(chickens), options=options)
+        super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder=f"{author.display_name}, select the chickens to trade")
 
     async def callback(self, interaction):
         if interaction.user.id != self.author.id:
@@ -179,7 +179,7 @@ class ChickenUserTradeMenu(ui.Select):
         self.td = td
         self.target = target
         self.instance_bot = instance_bot
-        super().__init__(min_values=1, max_values=len(chickens), options=options)
+        super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder=f"{author.display_name}, select the chickens to trade")
 
     async def callback(self, interaction):
         if interaction.user.id != self.author.id:

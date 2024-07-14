@@ -31,7 +31,7 @@ class BankCommands(commands.Cog):
                     await create_embed_without_title(ctx, f"{ctx.author.display_name}, you don't have enough eggbux.")
                     return
                 bankAmount = Bank.read(ctx.author.id)['bank']
-                maxAmount = 10000
+                maxAmount = 10000 * Bank.read(ctx.author.id)['upgrades']
                 if bankAmount >= maxAmount: 
                     await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you can't have more than 10000 eggbux in the bank.")
                     return
@@ -77,6 +77,30 @@ class BankCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
             await self.register_bank(ctx.author)
+    
+    @commands.hybrid_command("upgradebanklimit", aliases=["ubl"], brief="Upgrades the bank", description="Upgrades the bank. The bank can be upgraded up to 5 times.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def upgrade_bank_limit(self, ctx):
+        """Upgrades the bank limit."""
+        user_data = User.read(ctx.author.id)
+        bank_data = Bank.read(ctx.author.id)
+        if not bank_data:
+            await create_embed_without_title(ctx, f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
+            await self.register_bank(ctx.author)
+            return
+        if bank_data['upgrades'] == 5:
+            await create_embed_without_title(ctx, f"{ctx.author.display_name}, you can't upgrade the bank anymore.")
+            return
+        upgrades_formula = 5000 * bank_data['upgrades']
+        if user_data['points'] < upgrades_formula:
+            await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you currently have {bank_data['upgrades']} upgrades. You need **{upgrades_formula}** eggbux to upgrade the bank.")
+            return
+        User.update_points(ctx.author.id, user_data['points'] - upgrades_formula)
+        upgrades = bank_data['upgrades'] + 1
+        Bank.update_upgrades(ctx.author.id, upgrades)
+        await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you upgraded the bank to level {upgrades}. Now you can have up to **{upgrades * 10000}** eggbux in the bank.")
+        return
 
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

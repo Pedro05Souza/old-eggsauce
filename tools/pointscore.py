@@ -12,7 +12,7 @@ dev_mode = False
 
 # This class is responsible for handling the prices of the commands.
 
-async def set_points_commands_submodules(ctx, command):
+async def set_points_commands_submodules(ctx):
     if not BotConfig.read(ctx.guild.id)['toggled_modules']:
         await create_embed_without_title(ctx, ":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
@@ -122,8 +122,8 @@ async def treat_exceptions(ctx, comando):
         except commands.errors.CommandInvokeError:
             await create_embed_without_title(ctx, ":no_entry_sign: An error occurred while executing the command.")
             return False
-
-    new_points = User.read(ctx.author.id)["points"] - Prices[comando].value
+    user_data = User.read(ctx.author.id)
+    new_points = user_data['points'] - Prices[comando].value
     User.update_points(ctx.author.id, new_points)
     return True
 
@@ -150,7 +150,7 @@ def pricing():
                 result = False
                 ctx.predicate_result = result
                 return result
-            if not await set_points_commands_submodules(ctx, command):
+            if not await set_points_commands_submodules(ctx):
                 result = False
                 ctx.predicate_result = result
                 return result

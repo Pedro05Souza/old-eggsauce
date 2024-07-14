@@ -50,7 +50,7 @@ class InteractiveCommands(commands.Cog):
     async def drop_periodically(self):
         """Drops eggbux in the chat every 1000 seconds."""
         while True:
-            await asyncio.sleep(1000 - time.time() % 1000)
+            await asyncio.sleep(3600 - time.time() % 3600)
             await self.drop_eggbux()
 
     @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
@@ -232,7 +232,7 @@ class InteractiveCommands(commands.Cog):
                 dead_day = day - 1 if day > 0 else 0
                 fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == dead_day]
                 if fallen_tributes:
-                    await create_embed_without_title(ctx, f"**Fallen tributes:** {', '.join([tribute['tribute'].display_name for tribute in fallen_tributes])}")
+                    await create_embed_without_title(ctx, f"**Fallen tributes:** **{', '.join([tribute['tribute'].display_name for tribute in fallen_tributes])}**")
                 self.increase_days_alive(alive_tributes)
                 self.remove_plr_team_on_death(tributes)
                 self.update_tribute_event(alive_tributes)
@@ -473,7 +473,7 @@ class InteractiveCommands(commands.Cog):
             
             list_events = [event for event in list_events if event not in kill_requirements.keys() or kill_requirements[event] in tribute2['inventory']]
 
-            if not tribute2['inventory'] and not any(item in tribute1['inventory'] for item in tribute2['inventory'] if item in tribute2['inventory']):
+            if not tribute2['inventory'] or not any(item in tribute1['inventory'] for item in tribute2['inventory'] if item in tribute2['inventory']):
                 list_events = [event for event in list_events if event != 3]
 
             if tribute1['team'] is not None or tribute2['team'] is not None: 

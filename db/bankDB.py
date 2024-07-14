@@ -18,7 +18,8 @@ class Bank:
                     points = 0
                 user = {
                     "user_id": user_id,
-                    "bank": points
+                    "bank": points,
+                    "upgrades": 1
                 }
                 bank_collection.insert_one(user)
                 logger.info(f"User {user_id} has been created successfully.")
@@ -54,6 +55,20 @@ class Bank:
         except Exception as e:
             logger.error("Error encountered while updating the user.", e)
             return None
+        
+    @staticmethod
+    def update_upgrades(user_id: int, upgrades: int):
+        """Update a user in the database."""
+        try:
+            user_data = bank_collection.find_one({"user_id": user_id})
+            if user_data:
+                bank_collection.update_one({"user_id": user_id}, {"$set": {"upgrades": upgrades}})
+                logger.info("User has been updated successfully.")
+            else:
+                logger.warning("User not found.")
+        except Exception as e:
+            logger.error("Error encountered while updating the user.", e)
+            return None
 
 
     @staticmethod
@@ -77,3 +92,4 @@ class Bank:
         except Exception as e:
             logger.error("Error encountered while trying to read all users.", e)
             return None
+        

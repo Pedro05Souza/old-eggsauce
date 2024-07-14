@@ -489,7 +489,7 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def farmer(self, ctx):
         """The farmer automatically feeds the chickens"""
-        farmer_price = 2500
+        farmer_price = 3000
         description = [
             ":moneybag: Rich Farmer: Increase the egg value of the chickens by 10%.\n",
             ":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces upkeep by 4%.\n",
