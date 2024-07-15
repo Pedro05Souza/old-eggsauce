@@ -16,6 +16,7 @@ logger = logging.getLogger('botcore')
 monitor_mode = False
 
 class BotCore(commands.Cog):
+    
     def __init__(self, bot):
         load_dotenv()
         self.bot = bot

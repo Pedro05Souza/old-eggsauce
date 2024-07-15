@@ -63,8 +63,7 @@ class ChickenCommands(commands.Cog):
             elif total_cost == 0 and all_happiness == len(farm_data['chickens']):
                 await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, all the chickens are already fed.")
                 return
-            Farm.update(ctx.author.id, corn=farm_data['corn'])
-            Farm.update(ctx.author.id, chickens=farm_data['chickens'])
+            Farm.update(ctx.author.id, corn=farm_data['corn'], chickens=farm_data['chickens'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, **{chickens_fed}** out of **{total_chickens}** chickens have been fed.\n:corn:The corn cost was {total_cost}.")
 
     @commands.hybrid_command(name="market", aliases=["m"], usage="market", description="Market that generates 8 random chickens to buy.")
@@ -75,12 +74,12 @@ class ChickenCommands(commands.Cog):
 
     async def roll(self, ctx, chickens_to_generate, action):
         """Market to buy chickens"""
-        if Farm.read(ctx.author.id):
+        farm_data = Farm.read(ctx.author.id)
+        if farm_data:
             default_rolls = 10
             if action == "market":
                 plrObj = RollLimit.read(ctx.author.id)
-                if not plrObj:
-                    farm_data = Farm.read(ctx.author.id)    
+                if not plrObj:  
                     if farm_data['farmer'] == "Executive Farmer":
                         farmer_upgrades = load_farmer_upgrades(ctx.author.id)
                         farmer_upgd = farmer_upgrades[0]
@@ -151,11 +150,11 @@ class ChickenCommands(commands.Cog):
         if TradeData.read(ctx.author.id) or GiftData.read(ctx.author.id):
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't sell a chicken while in a trade or gift request.")
             return
-        if Farm.read(ctx.author.id):
-            if not Farm.read(ctx.author.id)['chickens']:
+        farm_data = Farm.read(ctx.author.id)
+        if farm_data:
+            if not farm_data['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
                 return
-            farm_data = Farm.read(ctx.author.id)
             message = await self.get_usr_farm(ctx.author)
             view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author.id, action="D", chicken_emoji=self.get_rarity_emoji)
             await ctx.send(embed=message,view=view)
@@ -167,8 +166,8 @@ class ChickenCommands(commands.Cog):
     @pricing()
     async def rename_farm(self, ctx, nickname: str):
         """Rename the farm"""
-        if Farm.read(ctx.author.id):
-            farm_data = Farm.read(ctx.author.id)
+        farm_data = Farm.read(ctx.author.id)
+        if farm_data:
             if len(nickname) > 20:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} The farm name must have a maximum of 20 characters.")
                 return
@@ -184,8 +183,8 @@ class ChickenCommands(commands.Cog):
     async def rename_chicken(self, ctx, index: int, nickname: str):
         """Rename a chicken in the farm"""
         index -= 1
-        if Farm.read(ctx.author.id):
-            farm_data = Farm.read(ctx.author.id)
+        farm_data = Farm.read(ctx.author.id)
+        if farm_data:
             if not farm_data['chickens']:
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                     return
@@ -229,10 +228,10 @@ class ChickenCommands(commands.Cog):
         if target_involved_in_trade:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} already has a trade request in progress.")
             return
-        
-        if Farm.read(ctx.author.id) and Farm.read(user.id):
-            farm_data = Farm.read(ctx.author.id)
-            if not farm_data['chickens'] or not Farm.read(user.id)['chickens']:
+        farm_author = Farm.read(ctx.author.id)
+        farm_target = Farm.read(user.id)
+        if farm_author and farm_target:
+            if not farm_author['chickens'] or not farm_target['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, {user.display_name} doesn't have any chickens.")
                 return
             if user.id == ctx.author.id:
@@ -247,7 +246,7 @@ class ChickenCommands(commands.Cog):
                 reaction, usr = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == user and reaction.message == msg, timeout=40)
                 while True:
                     if reaction.emoji == "✅" and usr == user:
-                            await self.trade_chickens(ctx, user, t)
+                            await self.trade_chickens(ctx, user, t, farm_author, farm_target)
                             return
                     elif reaction.emoji == "❌" and usr == user:
                         await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has declined the trade request.")
@@ -299,10 +298,8 @@ class ChickenCommands(commands.Cog):
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have a farm.")
 
-    async def trade_chickens(self, ctx, User: discord.Member, t):
+    async def trade_chickens(self, ctx, User: discord.Member, t, author_data, user_data):
         """Trade the chickens"""
-        author_data = Farm.read(ctx.author.id)
-        user_data = Farm.read(User.id)
         authorEmbed = await self.get_usr_farm(ctx.author)
         userEmbed = await self.get_usr_farm(User)
         trade_data = [author_data['chickens'], user_data['chickens']]
@@ -317,7 +314,7 @@ class ChickenCommands(commands.Cog):
         """Get the user's farm"""
         farm_data = await self.update_user_farm(user, Farm.read(user.id))
         if farm_data:
-            #await self.update_farmer(user, farm_data)
+            await self.update_farmer(user, farm_data)
             if len(farm_data['chickens']) == 0:
                 return
             msg = await make_embed_object(
@@ -382,12 +379,12 @@ class ChickenCommands(commands.Cog):
         if target_involved_in_gift:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you already have a gift in progress.")
             return
-        if Farm.read(ctx.author.id) and Farm.read(user.id):
+        author_data = Farm.read(ctx.author.id)
+        user_data = Farm.read(user.id)
+        if author_data and user_data:
             index -= 1
             g = GiftData()
             g.identifier = [ctx.author.id, user.id]
-            author_data = Farm.read(ctx.author.id)
-            user_data = Farm.read(user.id)
             if not author_data['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                 GiftData.remove(g)
@@ -505,22 +502,25 @@ class ChickenCommands(commands.Cog):
             await message.add_reaction(emoji)
         try:
             reaction, user = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == message, timeout=40)
-            if User.read(user.id)['points'] >= farmer_price:
-                if Farm.read(user.id)['farmer'] == 'Warrior Farmer' and len(Farm.read(user.id)['chickens']) > 8 and reaction.emoji in emojis:
+            user_data = User.read(user.id)
+            farm_data = Farm.read(user.id)
+            print(user_data)
+            if user_data['points'] >= farmer_price:
+                if farm_data['farmer'] == 'Warrior Farmer' and len(farm_data['chickens']) > 8 and reaction.emoji in emojis:
                     await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} you have a Warrior farmer, you need to sell the extra farm slots to buy another farmer.")
                     return
                 if reaction.emoji == "💰":
-                    await self.buy_farmer_upgrade(ctx, "Rich Farmer", farmer_price)
+                    await self.buy_farmer_upgrade(ctx, "Rich Farmer", farmer_price, user_data, farm_data)
                 elif reaction.emoji == "🛡️":
-                    await self.buy_farmer_upgrade(ctx, "Guardian Farmer", farmer_price)
+                    await self.buy_farmer_upgrade(ctx, "Guardian Farmer", farmer_price, user_data, farm_data)
                 elif reaction.emoji == "💼":
-                    await self.buy_farmer_upgrade(ctx, "Executive Farmer", farmer_price)
+                    await self.buy_farmer_upgrade(ctx, "Executive Farmer", farmer_price, user_data, farm_data)
                 elif reaction.emoji == "⚔️":
-                    await self.buy_farmer_upgrade(ctx, "Warrior Farmer", farmer_price)
+                    await self.buy_farmer_upgrade(ctx, "Warrior Farmer", farmer_price, user_data, farm_data)
                 elif reaction.emoji == "🍃":
-                    await self.buy_farmer_upgrade(ctx, "Sustainable Farmer", farmer_price)
+                    await self.buy_farmer_upgrade(ctx, "Sustainable Farmer", farmer_price, user_data, farm_data)
                 elif reaction.emoji == "🎟️":
-                    await self.buy_farmer_upgrade(ctx, "Generous Farmer", farmer_price)
+                    await self.buy_farmer_upgrade(ctx, "Generous Farmer", farmer_price, user_data, farm_data)
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to purchase a farmer role.")
         except asyncio.TimeoutError:
@@ -536,11 +536,25 @@ class ChickenCommands(commands.Cog):
             await self.roll(ctx, 6, 'eggpack')
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
-
-    async def buy_farmer_upgrade(self, ctx, name, farmer_price):
-        """Buy the farmer upgrade"""
-        user_data = User.read(ctx.author.id)
+    
+    @commands.hybrid_command(name="switchchicken", aliases=["switch"], usage="switchChicken <index> <index2>", description="Switch the position of two chickens.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def switch_chicken(self, ctx, index: int, index2: int):
+        """Switches chickens"""
         farm_data = Farm.read(ctx.author.id)
+        if farm_data:
+            if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                return
+            farm_data['chickens'][index - 1], farm_data['chickens'][index2 - 1] = farm_data['chickens'][index2 - 1], farm_data['chickens'][index - 1]
+            Farm.update(ctx.author.id, chickens=farm_data['chickens'])
+            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
+        else:
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+
+    async def buy_farmer_upgrade(self, ctx, name, farmer_price, user_data, farm_data):
+        """Buy the farmer upgrade"""
         if user_data['points'] >= farmer_price:
             farm_data['farmer'] = name
             User.update_points(ctx.author.id, user_data['points'] - farmer_price)
@@ -639,8 +653,9 @@ class ChickenCommands(commands.Cog):
         bank_data = bank_dictionary['bank']
         return farm_data
                     
-    async def feed_eggs_auto(self, farm_data): 
+    async def feed_eggs_auto(self, farm_data, bank_amount): 
         """Feed the chickens automatically"""
+        total_upkeep = 0
         if farm_data['farmer'] == "Sustainable Farmer":
             for chicken in farm_data['chickens']:
                 if chicken['happiness'] == 100:
@@ -650,11 +665,11 @@ class ChickenCommands(commands.Cog):
                 if cHappiness > 100:
                     cHappiness = 100
                 chicken['happiness'] = cHappiness
-                totalUpkeep = chicken['upkeep_multiplier']
-            if Bank.read(farm_data['user_id'])['bank'] > totalUpkeep:
-                Bank.update(farm_data['user_id'], Bank.read(farm_data['user_id'])['bank'] - totalUpkeep)
-                Farm.update(farm_data['user_id'], farm_data['farm_name'], farm_data['chickens'], farm_data['eggs_generated'])
-        logger.info(f"Chickens have been fed automatically for user {farm_data['user_id']}")
+                chicken_loss = int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])
+                total_upkeep += chicken_loss
+            if bank_amount < total_upkeep:
+                return 0
+            return total_upkeep
 
     async def update_user_farm(self, user, farm_data):
         if not farm_data:
@@ -674,15 +689,23 @@ class ChickenCommands(commands.Cog):
         return updated_farm_data
 
     async def update_farmer(self, user, farm_data):
-        if not farm_data:
-            return
         last_drop_time = time() - farm_data['last_farmer_drop']
         hours_passed_since_feed = 0
+        bank_data = Bank.read(user.id)
+        bank_amount = bank_data['bank']
         if farm_data['farmer'] == "Sustainable Farmer":
             hours_passed_since_feed = min(last_drop_time // 14600, 10)
             for _ in range(int(hours_passed_since_feed)):
-                await self.feed_eggs_auto(farm_data)
-        Farm.update_chicken_drop(user.id)
+                total_upkeep = await self.feed_eggs_auto(farm_data, bank_amount)
+                bank_amount -= total_upkeep
+                if total_upkeep == 0:
+                    break
+                if bank_amount < total_upkeep:
+                    break
+            if hours_passed_since_feed != 0:
+                Bank.update(farm_data['user_id'], bank_amount)
+                Farm.update(farm_data['user_id'], chickens=farm_data['chickens'], eggs_generated=farm_data['eggs_generated'])
+                Farm.update_farmer_drop(user.id)
     
     @commands.Cog.listener()
     async def on_ready(self):

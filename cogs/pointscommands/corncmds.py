@@ -26,8 +26,8 @@ class CornCommands(commands.Cog):
     @pricing()
     async def rename_corn_field(self, ctx, nickname: str):
         """Rename the cornfield"""
-        if Farm.read(ctx.author.id):
-            farm_data = Farm.read(ctx.author.id)
+        farm_data = Farm.read(ctx.author.id)
+        if farm_data:
             if len(nickname) > 20:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} The cornfield name must have a maximum of 15 characters.")
                 return
@@ -71,9 +71,9 @@ class CornCommands(commands.Cog):
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have not responded to the purchase request.")
                     break
                 reaction, user = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == msg, timeout=40)
-                farm_data = Farm.read(ctx.author.id)
-                user_data = User.read(ctx.author.id)
                 if reaction.emoji == "✅":
+                    farm_data = Farm.read(ctx.author.id)
+                    user_data = User.read(ctx.author.id)
                     if user_data['points'] >= plot_price:
                         farm_data['plot'] += 1
                         User.update_points(ctx.author.id, user_data['points'] - plot_price)
@@ -108,10 +108,10 @@ class CornCommands(commands.Cog):
                 if actual_time <= 0:
                     await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have not responded to the upgrade request.")
                     break
-                farm_data = Farm.read(ctx.author.id)
-                user_data = User.read(ctx.author.id)
                 reaction, user = await ctx.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == msg, timeout=40)
                 if reaction.emoji == "✅":
+                    farm_data = Farm.read(ctx.author.id)
+                    user_data = User.read(ctx.author.id)
                     if user_data['points'] >= price_corn:
                         farm_data['corn_limit'] += range_corn
                         User.update_points(ctx.author.id, user_data['points'] - price_corn)

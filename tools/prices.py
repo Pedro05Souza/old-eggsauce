@@ -28,6 +28,7 @@ class Prices(Enum):
     buytitles = 0
     shop = 0
     upgradecornlimit = 0
+    switchchicken = 0
     chickencorn = 0
     salary = 0
     hungergames = 0

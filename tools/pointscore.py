@@ -13,10 +13,10 @@ dev_mode = False
 # This class is responsible for handling the prices of the commands.
 
 async def set_points_commands_submodules(ctx):
-    if not BotConfig.read(ctx.guild.id)['toggled_modules']:
+    active_module = BotConfig.read(ctx.guild.id)['toggled_modules']
+    if not active_module:
         await create_embed_without_title(ctx, ":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
-    active_module = BotConfig.read(ctx.guild.id)['toggled_modules']
     shared_cogs = ["PointsConfig", "BankCommands"]
     friendly_cogs = ["FriendlyCommands", "ChickenCommands", "InteractiveCommands", "AICommands", "CornCommands"]
     hostile_cog = ["HostileCommands"]
@@ -84,7 +84,7 @@ async def treat_exceptions(ctx, comando):
         await create_embed_without_title(ctx, ":no_entry_sign: The bot has not been configured properly. Type **!setChannel** in the desired channel.")
         return False
     if ctx.channel.id != channel['channel_id']:
-        commands_object = ctx.bot.get_channel(BotConfig.read(ctx.guild.id)['channel_id'])
+        commands_object = ctx.bot.get_channel(channel['channel_id'])
         channel_mention = commands_object.mention
         embed = await make_embed_object(title=":no_entry_sign: Invalid channel", description=f"Please use the commands channel: **{channel_mention}**")
         await ctx.author.send(embed=embed)

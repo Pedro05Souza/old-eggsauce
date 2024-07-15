@@ -76,6 +76,17 @@ class Farm:
             return None
         
     @staticmethod
+    def update_farmer_drop(user_id: int):
+        """Update a farm's last drop in the database."""
+        try:
+            farm_data = farm_collection.find_one({"user_id": user_id})
+            if farm_data:
+                farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}})
+        except Exception as e:
+            logger.error("Error encountered while trying to update farm's last drop.", e)
+            return
+        
+    @staticmethod
     def update_corn_drop(user_id: int):
         """Update a farm's last drop in the database."""
         try:

@@ -112,8 +112,9 @@ class PointsConfig(commands.Cog):
             last_title_drop = time.time() - user_data["salary_time"]
             hours_passed = min(last_title_drop // 3600, 10)
             hours_passed = int(hours_passed)
-            salary = await self.salary_role(user)
-            if hours_passed >= 1:
+            salary = await self.salary_role(user_data)
+            if hours_passed >= 1 and user_data["roles"] != "":
+                user_data['points'] += salary * hours_passed
                 User.update_points(user.id, user_data["points"] + salary * hours_passed)
                 User.update_salary_time(user.id)
                 logger.info(f"{user.display_name} has received {salary * hours_passed} eggbux from their title.")
@@ -147,26 +148,27 @@ class PointsConfig(commands.Cog):
             check = lambda reaction, user: reaction.emoji == "✅" and reaction.message.id == message.id
             reaction, user = await self.bot.wait_for("reaction_add", check=check)
             if reaction.emoji == "✅":
-                if User.read(user.id)["roles"] == "":
-                    await self.buy_roles(ctx, user, rolePrices["T"], "T", roles["T"])
-                elif User.read(user.id)["roles"][-1] == "T":
-                    await self.buy_roles(ctx, user, rolePrices["L"], "L", roles["L"])
-                elif User.read(user.id)["roles"][-1] == "L":
-                    await self.buy_roles(ctx, user, rolePrices["M"], "M", roles["M"])
-                elif User.read(user.id)["roles"][-1] == "M":
-                    await self.buy_roles(ctx, user, rolePrices["H"], "H", roles["H"])
+                user_data = User.read(user.id)
+                if user_data["roles"] == "":
+                    await self.buy_roles(ctx, user, rolePrices["T"], "T", roles["T"], user_data)
+                elif user_data["roles"][-1] == "T":
+                    await self.buy_roles(ctx, user, rolePrices["L"], "L", roles["L"], user_data)
+                elif user_data["roles"][-1] == "L":
+                    await self.buy_roles(ctx, user, rolePrices["M"], "M", roles["M"], user_data)
+                elif user_data["roles"][-1] == "M":
+                    await self.buy_roles(ctx, user, rolePrices["H"], "H", roles["H"], user_data)
 
-    async def buy_roles(self, ctx, user: discord.Member, roleValue, roleChar, roleName):
+    async def buy_roles(self, ctx, user: discord.Member, roleValue, roleChar, roleName, user_data):
         """Buy roles."""
-        if User.read(user.id)["points"] >= roleValue and roleChar not in User.read(user.id)["roles"]:
-            User.update_all(user.id, User.read(user.id)["points"] - roleValue, User.read(user.id)["roles"] + roleChar)
+        if user_data["points"] >= roleValue and roleChar not in user_data["roles"]:
+            User.update_all(user.id, user_data["points"] - roleValue, user_data["roles"] + roleChar)
             await create_embed_without_title(ctx, f":white_check_mark: {user.display_name} has bought the role **{roleName}**.")
-        elif User.read(user.id)["points"] < roleValue:
+        elif user_data["points"] < roleValue:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have enough eggbux to buy the role **{roleName}**.")
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} already has the role **{roleName}**.")
 
-    async def salary_role(self, user: discord.Member):
+    async def salary_role(self, user_data):
         """Returns the salary of a user based on their roles."""
         salarios = {
             "T": 25,
@@ -174,20 +176,18 @@ class PointsConfig(commands.Cog):
             "M": 75,
             "H": 100
         }
-        user_data = User.read(user.id)
         if user_data['roles'] != "":
             return salarios[user_data["roles"][-1]]
         else:
             return 0
         
-    async def get_user_title(self, user: discord.Member):
+    async def get_user_title(self, user_data):
         userRoles = {
             "T" : "Egg Novice",
             "L" : "Egg Apprentice",
             "M" : "Egg wizard",
             "H" : "Egg King",
         }
-        user_data = User.read(user.id)
         if user_data:
             if user_data["roles"] == "":
                 return "Unemployed"
@@ -203,7 +203,7 @@ class PointsConfig(commands.Cog):
         user_data = User.read(user.id)
         if user_data:
             if user_data["roles"] != "":
-                await create_embed_without_title(ctx, f":moneybag: {user.display_name} has the title of **{await self.get_user_title(user)}** and earns {await self.salary_role(user)} eggbux..")
+                await create_embed_without_title(ctx, f":moneybag: {user.display_name} has the title of **{await self.get_user_title(user_data)}** and earns {await self.salary_role(user_data)} eggbux..")
                 return   
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} doesn't have a title.")
         else:
@@ -213,17 +213,18 @@ class PointsConfig(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, user: discord.Member, before, after):
         """Listens to the voice state update event."""
+        user_data = User.read(user.id)
         if not BotConfig.read(user.guild.id)['toggled_modules'] == "N":
             if user.bot:
                 return
-            if User.read(user.id) and before.channel is None and after.channel is not None:
+            if user_data and before.channel is None and after.channel is not None:
                 await self.count_points(user)
-            elif not User.read(user.id) and before.channel is None and after.channel is not None:
+            elif not user_data and before.channel is None and after.channel is not None:
                 await self.automatic_register(user)
                 await self.count_points(user)
-            elif User.read(user.id) and before.channel is not None and after.channel is None:
+            elif user_data and before.channel is not None and after.channel is None:
                 await self.update_points(user)
-            elif not User.read(user.id) and before.channel is not None and after.channel is None:
+            elif not user_data and before.channel is not None and after.channel is None:
                 await self.automatic_register(user)
                 await self.update_points(user)
 

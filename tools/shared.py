@@ -2,16 +2,11 @@ from db.botConfigDB import BotConfig
 from dotenv import load_dotenv
 import os
 import discord
-
 spam_command_cooldown = 1.5
 regular_command_cooldown = 5
 
 async def create_embed_without_title(ctx, description, **kwargs):
     """Create an embed without a title."""
-    if not BotConfig.read(ctx.guild.id)['channel_id'] == ctx.channel.id:
-        channel = discord.utils.get(ctx.guild.text_channels, id=BotConfig.read(ctx.guild.id)['channel_id'])
-        await ctx.author.send(f"Please use the commands channel: {channel.mention}")
-        return
     embed = discord.Embed(description=description, color=discord.Color.yellow())
     if isinstance(ctx, discord.Interaction):
         message = await ctx.response.send_message(embed=embed, **kwargs)
@@ -21,10 +16,6 @@ async def create_embed_without_title(ctx, description, **kwargs):
 
 async def create_embed_with_title(ctx, title, description, **kwargs):
     """Create an embed with a title."""
-    if not BotConfig.read(ctx.guild.id)['channel_id'] == ctx.channel.id:
-        channel = discord.utils.get(ctx.guild.text_channels, id=BotConfig.read(ctx.guild.id)['channel_id'])
-        await ctx.author.send(f"Please use the commands channel: {channel.mention}")
-        return
     embed = discord.Embed(title=title, description=description, color=discord.Color.yellow())
     if isinstance(ctx, discord.Interaction):
         message = await ctx.response.send_message(embed=embed, **kwargs)
