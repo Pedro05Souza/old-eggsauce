@@ -2,7 +2,8 @@ from discord import SelectOption, ui
 from db.userDB import User
 from random import randint
 from db.farmDB import Farm
-from tools.chickenshared import *
+from tools.chickens.chickenshared import *
+from tools.chickens.chickenhandlers import SellData, TradeData
 from tools.shared import make_embed_object
 import asyncio
 

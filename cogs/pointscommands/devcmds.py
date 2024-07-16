@@ -4,8 +4,9 @@ from db.userDB import User
 from tools.shared import create_embed_without_title, is_dev
 from db.bankDB import Bank
 from db.farmDB import Farm
-from tools.chickenshared import ChickenMultiplier, ChickenRarity, determine_chicken_upkeep
-from cogs.pointscommands.chickencmds import RollLimit
+from tools.chickens.chickenshared import determine_chicken_upkeep
+from tools.chickens.chickeninfo import ChickenRarity, ChickenMultiplier
+from tools.chickens.chickenhandlers import RollLimit
 from .. import botcore
 import discord
 import tools

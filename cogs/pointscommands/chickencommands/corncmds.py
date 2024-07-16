@@ -2,9 +2,10 @@ from time import time
 from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
+from tools.chickens.chickeninfo import ChickenFood
 from tools.shared import create_embed_without_title, make_embed_object, regular_command_cooldown
 from tools.pointscore import pricing
-from tools.chickenshared import update_player_corn, calculate_corn
+from tools.chickens.chickenshared import update_player_corn, calculate_corn
 import discord
 
 class CornCommands(commands.Cog):
@@ -166,6 +167,42 @@ class CornCommands(commands.Cog):
             User.update_points(ctx.author.id, user_data['points'] + corn_price)
             Farm.update(ctx.author.id, corn=farm_data['corn'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, you have sold {quantity} corn for {corn_price} eggbux.")
+
+    @commands.hybrid_command(name="feedallchicken", aliases=["fac"], usage="feedallchicken", description="Feed a chicken.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def feed_all_chickens(self, ctx):
+        """Feed all the chickens"""
+        farm_data = await update_player_corn(Farm.read(ctx.author.id), ctx.author)
+        total_chickens = len(farm_data['chickens'])
+        chickens_fed = 0
+        if farm_data:
+            if farm_data['corn'] == 0:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any corn.")
+                return
+            total_cost = 0
+            all_happiness = 0
+            for chicken in farm_data['chickens']:
+                if chicken['happiness'] == 100:
+                    all_happiness += 1
+                    continue
+                cost_to_feed = ChickenFood[chicken['rarity']].value
+                if farm_data['corn'] > cost_to_feed:
+                    total_cost += cost_to_feed
+                    chicken['happiness'] = 100
+                    chickens_fed += 1
+                    all_happiness += 1
+                    farm_data['corn'] -= cost_to_feed
+                else:
+                    break
+            if total_cost == 0 and all_happiness != len(farm_data['chickens']):
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't afford to feed any chickens.")
+                return
+            elif total_cost == 0 and all_happiness == len(farm_data['chickens']):
+                await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, all the chickens are already fed.")
+                return
+            Farm.update(ctx.author.id, corn=farm_data['corn'], chickens=farm_data['chickens'])
+            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, **{chickens_fed}** out of **{total_chickens}** chickens have been fed.\n:corn:The corn cost was {total_cost}.")
 
 async def setup(bot):
     await bot.add_cog(CornCommands(bot))

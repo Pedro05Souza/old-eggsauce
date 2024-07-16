@@ -18,7 +18,7 @@ async def set_points_commands_submodules(ctx):
         await create_embed_without_title(ctx, ":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
     shared_cogs = ["PointsConfig", "BankCommands"]
-    friendly_cogs = ["FriendlyCommands", "ChickenCommands", "InteractiveCommands", "AICommands", "CornCommands"]
+    friendly_cogs = ["FriendlyCommands", "ChickenCore", "ChickenEvents", "ChickenView", "InteractiveCommands", "AICommands", "CornCommands"]
     hostile_cog = ["HostileCommands"]
     module_cogs = {
         "F": friendly_cogs + shared_cogs,
