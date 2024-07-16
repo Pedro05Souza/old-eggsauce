@@ -80,10 +80,7 @@ class ChickenMarketMenu(ui.Select):
         if not farm_data:
             await interaction.response.send_message("You don't have a farm yet. Create one to buy chickens by typing !createFarm.", ephemeral=True)
             return
-        if len(farm_data['chickens']) == 8 and farm_data['farmer'] != 'Warrior Farmer':
-            await interaction.response.send_message("You hit the maximum limit of chickens in the farm.", ephemeral=True)
-            return
-        elif len(farm_data['chickens']) == 11 and farm_data['farmer'] == 'Warrior Farmer':
+        if len(farm_data['chickens']) == get_max_chicken_limit(farm_data):
             await interaction.response.send_message("You hit the maximum limit of chickens in the farm.", ephemeral=True)
             return
         chicken_selected['happiness'] = randint(60, 100)
@@ -236,6 +233,9 @@ async def trade_handler(ctx, td, target):
         user_chickens = td.author[target.id]
         author_farm = Farm.read(ctx.user.id)
         user_farm = Farm.read(target.id)
+        if len(author_chickens) + len(user_chickens) > get_max_chicken_limit(author_farm) or len(user_chickens) + len(author_chickens) > get_max_chicken_limit(user_farm):
+            embed = await make_embed_object(description="Trade cannot be completed. The total number of chickens after the trade exceeds the maximum limit.")
+            return embed
         author_farm['chickens'] = [chicken for chicken in author_farm['chickens'] if chicken not in author_chickens]
         user_farm['chickens'] = [chicken for chicken in user_farm['chickens'] if chicken not in user_chickens]
         author_farm['chickens'].extend(user_chickens)

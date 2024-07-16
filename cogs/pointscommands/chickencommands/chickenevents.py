@@ -133,7 +133,7 @@ class ChickenEvents(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't gift a chicken to yourself.")
                 GiftData.remove(g)
                 return
-            if len(user_data['chickens']) >= get_max_chicken_limit():
+            if len(user_data['chickens']) >= get_max_chicken_limit(user_data):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, {user.display_name} already has the maximum amount of chickens.")
                 GiftData.remove(g)
                 return
@@ -224,9 +224,9 @@ class ChickenEvents(commands.Cog):
             reaction, user = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == message, timeout=40)
             user_data = User.read(user.id)
             farm_data = Farm.read(user.id)
-            print(user_data)
             if user_data['points'] >= farmer_price:
-                if farm_data['farmer'] == 'Warrior Farmer' and len(farm_data['chickens']) > 8 and reaction.emoji in emojis:
+                farm_size = get_max_chicken_limit(farm_data)
+                if farm_size > 8:
                     await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} you have a Warrior farmer, you need to sell the extra farm slots to buy another farmer.")
                     return
                 if reaction.emoji == "💰":

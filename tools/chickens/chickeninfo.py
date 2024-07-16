@@ -3,6 +3,7 @@ from enum import Enum
 # Chicken information module
 
 chicken_default_value = 150
+default_farm_size = 8
 
 rollRates = {
         "COMMON": 5000,

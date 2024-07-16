@@ -3,11 +3,10 @@ from time import time
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.userDB import User
-from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities
+from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size
 from tools.shared import make_embed_object
 import discord
 import logging
-
 logger = logging.getLogger('botcore')
 
 # Shared functions for the chicken commands
@@ -38,7 +37,7 @@ def load_farmer_upgrades(player_id):
         """Load the farmer upgrades"""
         farmer_dict = {
             "Rich Farmer": 10,
-            "Guardian Farmer": 4,
+            "Guardian Farmer": 3,
             "Executive Farmer" : [8, 4],
             "Warrior Farmer": 3,
             "Generous Farmer": [3]
@@ -74,10 +73,12 @@ def determine_upkeep_rarity(upkeep_multiplier):
             if chicken_upkeep >= value:
                 return rarity
                  
-def get_max_chicken_limit():
+def get_max_chicken_limit(farm_data):
         """Get the maximum chicken limit"""
-        return 10
-
+        if farm_data['farmer'] == 'Warrior Farmer':
+            return default_farm_size + load_farmer_upgrades(farm_data['user_id'])
+        else:
+            return default_farm_size
 
 # updates
 
