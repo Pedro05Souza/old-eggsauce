@@ -1,10 +1,10 @@
 from discord.ext import commands
 from db.farmDB import Farm
 from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates
-from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades
-from tools.chickens.chickenshared import update_user_farm
+from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades, update_user_farm
 from tools.shared import create_embed_with_title, create_embed_without_title, make_embed_object, regular_command_cooldown
 from tools.pointscore import pricing
+from math import ceil
 import discord
 
 class ChickenView(commands.Cog):
@@ -25,7 +25,7 @@ class ChickenView(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, the chicken index is invalid.")
                 return
             chicken = farm_data['chickens'][index - 1]
-            msg = await make_embed_object(title=f":chicken: {chicken['rarity']} {chicken['name']}", description=f":partying_face: **Happiness**: {chicken['happiness']}%\n:moneybag: **Price**: {get_chicken_price(chicken)} eggbux\n:egg: **Egg value**: {await get_chicken_egg_value(chicken)} \n:gem: **Upkeep rarity**: {int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])}\n:coin: **Eggs generated:** {chicken['eggs_generated']}\n:corn: **Food necessary:** {ChickenFood[chicken['rarity']].value} \n:money_with_wings: **Total profit: {int(((await get_chicken_egg_value(chicken) * chicken['happiness']) // 100) - (await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))} eggbux.**")
+            msg = await make_embed_object(title=f":chicken: {chicken['rarity']} {chicken['name']}", description=f":partying_face: **Happiness**: {chicken['happiness']}%\n:moneybag: **Price**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux\n:egg: **Egg value**: {await get_chicken_egg_value(chicken)} \n:gem: **Upkeep rarity**: {int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])}\n:coin: **Eggs generated:** {chicken['eggs_generated']}\n:corn: **Food necessary:** {ChickenFood[chicken['rarity']].value} \n:money_with_wings: **Total profit: {ceil(((await get_chicken_egg_value(chicken) * chicken['happiness']) // 100) - (await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))} eggbux.**")
             await ctx.send(embed=msg)
             
     @commands.hybrid_command(name="chickenrarities", aliases=["cr"], usage="chickenRarities", description="Check the rarities of the chickens.")
@@ -82,14 +82,14 @@ class ChickenView(commands.Cog):
                 chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
                 totalProfit += (chicken_profit * chicken['happiness']) // 100
                 if farm_data['farmer'] == 'Guardian Farmer':
-                    to_reduce = load_farmer_upgrades(user.id)
+                    to_reduce = load_farmer_upgrades("Guardian Farmer")
                     current_upkeep = chicken['upkeep_multiplier'] - to_reduce
-                    totalLoss += int(await get_chicken_egg_value(chicken) * current_upkeep)
+                    totalLoss += ceil(await get_chicken_egg_value(chicken) * current_upkeep)
                 else:
                     current_upkeep = chicken['upkeep_multiplier']
-                    totalLoss += int(await get_chicken_egg_value(chicken) * current_upkeep)
+                    totalLoss += ceil(await get_chicken_egg_value(chicken) * current_upkeep)
             if farm_data['farmer'] == "Rich Farmer":
-                to_add = load_farmer_upgrades(user.id)
+                to_add = load_farmer_upgrades("Rich Farmer")
                 added_value = (totalProfit * to_add) // 100
                 totalProfit += added_value
             result = totalProfit - totalLoss

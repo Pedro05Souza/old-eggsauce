@@ -5,6 +5,7 @@ from db.farmDB import Farm
 from db.userDB import User
 from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size
 from tools.shared import make_embed_object
+from math import ceil
 import discord
 import logging
 logger = logging.getLogger('botcore')
@@ -23,17 +24,18 @@ async def get_chicken_egg_value(chicken):
 
 def get_chicken_price(chicken, *args):
      if args:   
-          farm_data = args[0]
-          if farm_data['farmer'] == 'Executive Farmer':
-               farmer_upgrades = load_farmer_upgrades(farm_data['user_id'])
+          farmer = args[0]
+          if farmer == 'Executive Farmer':
+               farmer_upgrades = load_farmer_upgrades(farmer)
                discount_value = farmer_upgrades[1]
-               default_discount = chicken_default_value * discount_value // 100
-               chicken_discount = chicken_default_value - default_discount  
+               default_discount = chicken_default_value * (discount_value / 100)
+               default_discount = int(default_discount)
+               chicken_discount = chicken_default_value - default_discount
                chicken_price = (ChickenRarity[chicken['rarity']].value * chicken_discount)
                return chicken_price
      return ChickenRarity[chicken['rarity']].value * chicken_default_value
 
-def load_farmer_upgrades(player_id):
+def load_farmer_upgrades(farmer):
         """Load the farmer upgrades"""
         farmer_dict = {
             "Rich Farmer": 10,
@@ -42,8 +44,7 @@ def load_farmer_upgrades(player_id):
             "Warrior Farmer": 3,
             "Generous Farmer": [3]
         }
-        player_farmer = Farm.read(player_id)['farmer']
-        return farmer_dict[player_farmer]
+        return farmer_dict[farmer]
         
 def get_rarity_emoji(rarity):
     return defineRarityEmojis[rarity]
@@ -76,7 +77,7 @@ def determine_upkeep_rarity(upkeep_multiplier):
 def get_max_chicken_limit(farm_data):
         """Get the maximum chicken limit"""
         if farm_data['farmer'] == 'Warrior Farmer':
-            return default_farm_size + load_farmer_upgrades(farm_data['user_id'])
+            return default_farm_size + load_farmer_upgrades('Warrior Farmer')
         else:
             return default_farm_size
 
@@ -95,7 +96,7 @@ async def drop_egg_for_player(farm_data, bank_data, user_data):
         for chicken in farm_data_copy:
             if chicken['rarity'] == 'DEAD':
                 continue
-            chicken_loss = int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']) 
+            chicken_loss = ceil(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']) 
             total_upkeep += chicken_loss
             chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
             total_profit += (chicken_profit * chicken['happiness']) // 100
@@ -105,10 +106,10 @@ async def drop_egg_for_player(farm_data, bank_data, user_data):
             if chicken['happiness'] == 0:
                 await devolve_chicken(chicken)
         if farm_data['farmer'] == 'Rich Farmer':
-            to_increase = (total_profit * load_farmer_upgrades(farm_data['user_id'])) // 100 
+            to_increase = (total_profit * load_farmer_upgrades('Rich Farmer')) // 100 
             total_profit += to_increase
         elif farm_data['farmer'] == 'Guardian Farmer':
-            to_discount = (total_upkeep * load_farmer_upgrades(farm_data['user_id'])) // 100
+            to_discount = (total_upkeep * load_farmer_upgrades('Guardian Farmer')) // 100
             total_upkeep -= to_discount
         user_networth = bank_data['bank'] + user_data['points'] 
         if user_networth < total_upkeep:

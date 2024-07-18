@@ -19,7 +19,8 @@ class Bank:
                 user = {
                     "user_id": user_id,
                     "bank": points,
-                    "upgrades": 1
+                    "upgrades": 1,
+                    "credit_score": 0
                 }
                 bank_collection.insert_one(user)
                 logger.info(f"User {user_id} has been created successfully.")

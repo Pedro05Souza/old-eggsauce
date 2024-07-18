@@ -31,7 +31,7 @@ class ChickenEvents(commands.Cog):
             if not farm_data['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
                 return
-            message = await self.get_usr_farm(ctx.author)
+            message = await get_usr_farm(ctx.author)
             view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author.id, action="D", chicken_emoji=get_rarity_emoji)
             await ctx.send(embed=message,view=view)
         else:
@@ -86,8 +86,8 @@ class ChickenEvents(commands.Cog):
 
     async def trade_chickens(self, ctx, User: discord.Member, t, author_data, user_data):
         """Trade the chickens"""
-        authorEmbed = await self.get_usr_farm(ctx.author)
-        userEmbed = await self.get_usr_farm(User)
+        authorEmbed = await get_usr_farm(ctx.author)
+        userEmbed = await get_usr_farm(User)
         trade_data = [author_data['chickens'], user_data['chickens']]
         members_data = [ctx.author, User]
         embeds = [authorEmbed, userEmbed]
@@ -226,7 +226,7 @@ class ChickenEvents(commands.Cog):
             farm_data = Farm.read(user.id)
             if user_data['points'] >= farmer_price:
                 farm_size = get_max_chicken_limit(farm_data)
-                if farm_size > 8:
+                if len(farm_data['chickens']) >= farm_size and farm_data > 8:
                     await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} you have a Warrior farmer, you need to sell the extra farm slots to buy another farmer.")
                     return
                 if reaction.emoji == "💰":

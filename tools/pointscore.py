@@ -12,8 +12,8 @@ dev_mode = False
 
 # This class is responsible for handling the prices of the commands.
 
-async def set_points_commands_submodules(ctx):
-    active_module = BotConfig.read(ctx.guild.id)['toggled_modules']
+async def set_points_commands_submodules(ctx, config_data):
+    active_module = config_data['toggled_modules']
     if not active_module:
         await create_embed_without_title(ctx, ":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
@@ -38,9 +38,8 @@ async def set_points_commands_submodules(ctx):
         await create_embed_without_title(ctx, ":warning: The module is not enabled in this server.")
         return False
 
-def verify_points(user: discord.Member, comando):
-    price = Prices[comando].value
-    user_data = User.read(user.id)   
+def verify_points(comando, user_data):
+    price = Prices[comando].value 
     if user_data:
         return user_data["points"] >= price
     else:
@@ -53,10 +52,10 @@ async def refund(user: discord.Member, ctx):
     except Exception as e:
         logger.error(f"An error occurred while refunding the user: {e}")
 
-async def treat_exceptions(ctx, comando):
+async def treat_exceptions(ctx, comando, user_data):
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
     if is_slash_command:
-        new_points = User.read(ctx.author.id)["points"] - Prices[comando].value
+        new_points = user_data["points"] - Prices[comando].value
         User.update_points(ctx.author.id, new_points)
         return True
     message_content = ctx.message.content
@@ -122,7 +121,6 @@ async def treat_exceptions(ctx, comando):
         except commands.errors.CommandInvokeError:
             await create_embed_without_title(ctx, ":no_entry_sign: An error occurred while executing the command.")
             return False
-    user_data = User.read(ctx.author.id)
     new_points = user_data['points'] - Prices[comando].value
     User.update_points(ctx.author.id, new_points)
     return True
@@ -134,28 +132,30 @@ def pricing():
         command = ctx.command.name 
         result = True
         ctx.predicate_result = result
+        config_data = BotConfig.read(ctx.guild.id)
         if dev_mode:
             if not is_dev(ctx):
                 await create_embed_without_title(ctx, ":warning: The bot is currently in development mode.")
                 result = False
                 return result
-        if BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
+        if config_data['toggled_modules'] == "N":
             embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
             await ctx.author.send(embed=embed)
             result = False
             return result    
         if command in Prices.__members__:
-            if not User.read(ctx.author.id):
+            user_data = User.read(ctx.author.id)
+            if not user_data:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
                 result = False
                 ctx.predicate_result = result
                 return result
-            if not await set_points_commands_submodules(ctx):
+            if not await set_points_commands_submodules(ctx, config_data):
                 result = False
                 ctx.predicate_result = result
                 return result
-            if verify_points(ctx.author, command):
-                result = await treat_exceptions(ctx,command)
+            if verify_points(command, user_data):
+                result = await treat_exceptions(ctx,command, user_data)
                 ctx.predicate_result = result
                 return result
             else:

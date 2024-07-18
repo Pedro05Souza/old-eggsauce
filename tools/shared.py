@@ -2,8 +2,8 @@ from db.botConfigDB import BotConfig
 from dotenv import load_dotenv
 import os
 import discord
-spam_command_cooldown = 1.5
-regular_command_cooldown = 5
+spam_command_cooldown = .8
+regular_command_cooldown = 3.5
 
 async def create_embed_without_title(ctx, description, **kwargs):
     """Create an embed without a title."""

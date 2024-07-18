@@ -104,6 +104,8 @@ class BankCommands(commands.Cog):
         Bank.update_upgrades(ctx.author.id, upgrades)
         await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you upgraded the bank to level {upgrades}. Now you can have up to **{upgrades * 10000}** eggbux in the bank.")
         return
+    
+    
 
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

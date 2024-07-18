@@ -5,9 +5,8 @@ from db.farmDB import Farm
 from tools.chickens.chickenselection import ChickenSelectView
 from tools.shared import create_embed_without_title, spam_command_cooldown
 from tools.chickens.chickenhandlers import RollLimit
-from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades
+from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
 from tools.chickens.chickeninfo import rollRates
-from tools.chickens.chickenshared import get_usr_farm
 from tools.pointscore import pricing
 from tools.shared import create_embed_without_title, make_embed_object, regular_command_cooldown
 import discord
@@ -68,7 +67,7 @@ class ChickenCore(commands.Cog):
                 plrObj = RollLimit.read(ctx.author.id)
                 if not plrObj:  
                     if farm_data['farmer'] == "Executive Farmer":
-                        farmer_upgrades = load_farmer_upgrades(ctx.author.id)
+                        farmer_upgrades = load_farmer_upgrades("Executive Farmer")
                         farmer_upgd = farmer_upgrades[0]
                         plrObj = RollLimit(ctx.author.id, default_rolls + farmer_upgd)
                     else:
@@ -78,9 +77,9 @@ class ChickenCore(commands.Cog):
                     return
                 plrObj.current -= 1
             if farm_data['farmer'] == "Generous Farmer":
-                default_rolls += load_farmer_upgrades(ctx.author.id)[0]
+                default_rolls += load_farmer_upgrades("Generous Farmer")[0]
             generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
-            message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, Farm.read(ctx.author.id))} eggbux." for index, chicken in enumerate(generated_chickens)]))
+            message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux." for index, chicken in enumerate(generated_chickens)]))
             view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message, chicken_emoji=get_rarity_emoji)
             await ctx.send(embed=message, view=view)
         else:

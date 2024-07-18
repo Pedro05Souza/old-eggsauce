@@ -89,6 +89,7 @@ class PointsConfig(commands.Cog):
         if user is None:
             user = ctx.author
         user_data = await self.update_user_points(user)
+        print(user_data)
         if user_data and isinstance(user_data, dict) and "points" in user_data:
             if Bank.read(user.id):
                 msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {Bank.read(user.id)['bank']}")
