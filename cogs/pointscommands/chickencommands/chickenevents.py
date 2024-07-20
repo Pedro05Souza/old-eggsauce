@@ -194,6 +194,9 @@ class ChickenEvents(commands.Cog):
             if chicken_selected['rarity'] == "ASCENDED" or chicken_removed['rarity'] == "ASCENDED":
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve an ascended chicken.")
                 return
+            if chicken_selected['rarity'] == "DEAD" or chicken_removed['rarity'] == "DEAD":
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a dead chicken.")
+                return
             rarity_list = list(ChickenRarity.__members__)
             chicken_selected['rarity'] = rarity_list[rarity_list.index(chicken_selected['rarity']) + 1]
             chicken_selected['upkeep_multiplier'] = determine_chicken_upkeep(chicken_selected)
@@ -206,7 +209,7 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def farmer(self, ctx):
         """The farmer automatically feeds the chickens"""
-        farmer_price = 3000
+        farmer_price = 4200
         description = [
             ":moneybag: Rich Farmer: Increase the egg value of the chickens by 10%.\n",
             ":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces upkeep by 4%.\n",

@@ -184,7 +184,8 @@ class BotCore(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if BotConfig.read(ctx.guild.id) and BotConfig.read(ctx.guild.id)['toggled_modules'] == "N":
+        config_data = BotConfig.read(ctx.guild.id)
+        if config_data and config_data['toggled_modules'] == "N":
             return
         if isinstance(error, commands.CommandError) and not isinstance(error, (commands.CommandNotFound, commands.CheckFailure)):
             if ctx is not None:

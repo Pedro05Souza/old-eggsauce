@@ -1,6 +1,6 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
-from tools.shared import create_embed_with_title, create_embed_without_title, make_embed_object, regular_command_cooldown
+from tools.shared import create_embed_with_title, create_embed_without_title, make_embed_object, regular_command_cooldown, get_user_title
 from db.bankDB import Bank
 from db.userDB import User
 from tools.pointscore import pricing, refund
@@ -89,11 +89,13 @@ class PointsConfig(commands.Cog):
         if user is None:
             user = ctx.author
         user_data = await self.update_user_points(user)
-        print(user_data)
+        bank_data = Bank.read(user.id)
         if user_data and isinstance(user_data, dict) and "points" in user_data:
-            if Bank.read(user.id):
-                msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {Bank.read(user.id)['bank']}")
+            if bank_data:
+                msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {bank_data['bank']}")
+                msg.add_field(name=":money_with_wings: Total eggbux:", value=f"{user_data['points'] + bank_data['bank']}")
                 msg.set_thumbnail(url=user.display_avatar)
+                msg.set_footer(text="You can earn eggs by being in a voice channel, buying titles, betting, and more.")
                 await ctx.send(embed=msg)
             else:
                 msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}")
@@ -111,7 +113,7 @@ class PointsConfig(commands.Cog):
                 user_data['points'] = points
                 User.update_points(user.id, points)
             last_title_drop = time.time() - user_data["salary_time"]
-            hours_passed = min(last_title_drop // 3600, 10)
+            hours_passed = min(last_title_drop // 3600, 15)
             hours_passed = int(hours_passed)
             salary = await self.salary_role(user_data)
             if hours_passed >= 1 and user_data["roles"] != "":
@@ -132,14 +134,13 @@ class PointsConfig(commands.Cog):
             "M" : "Egg wizard",
             "H" : "Egg King",
         }
-
         rolePrices = {
-            "T" : 600,
-            "L" : 800,
-            "M" : 1200,
-            "H" : 1500
+            "T" : 1500,
+            "L" : 2500,
+            "M" : 4000,
+            "H" : 5000
         }
-        message = await create_embed_with_title(ctx, "Custom Titles:", f":poop: **{roles['T']}**\nIncome: 25 eggbux. :money_bag: \nPrice: 600 eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 50 eggbux. :money_bag:\n Price: 800 eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 75 eggbux. :money_bag:\n Price: 1200 eggbux. \n\n:crown: **{roles['H']}** \n Income: 100 eggbux. :money_bag:\n Price: 1500 eggbux. \n**The titles are bought sequentially.**\nReact with ✅ to buy a title.")
+        message = await create_embed_with_title(ctx, "Custom Titles:", f":poop: **{roles['T']}**\nIncome: 20 eggbux. :money_bag: \nPrice: {rolePrices['T']} eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 40 eggbux. :money_bag:\n Price: {rolePrices['L']} eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 60 eggbux. :money_bag:\n Price: {rolePrices['M']} eggbux. \n\n:crown: **{roles['H']}** \n Income: 80 eggbux. :money_bag:\n Price: {rolePrices['H']} eggbux. \n\n**The titles are bought sequentially.**\nReact with ✅ to buy a title.")
         await message.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
@@ -172,28 +173,16 @@ class PointsConfig(commands.Cog):
     async def salary_role(self, user_data):
         """Returns the salary of a user based on their roles."""
         salarios = {
-            "T": 25,
-            "L": 50,
-            "M": 75,
-            "H": 100
+            "T": 20,
+            "L": 40,
+            "M": 60,
+            "H": 80
         }
         if user_data['roles'] != "":
             return salarios[user_data["roles"][-1]]
         else:
             return 0
-        
-    async def get_user_title(self, user_data):
-        userRoles = {
-            "T" : "Egg Novice",
-            "L" : "Egg Apprentice",
-            "M" : "Egg wizard",
-            "H" : "Egg King",
-        }
-        if user_data:
-            if user_data["roles"] == "":
-                return "Unemployed"
-            return userRoles[user_data["roles"][-1]]
-
+    
     @commands.hybrid_command(name="salary", aliases=["sal"], brief="Check the salary of a user.", usage="salary OPTIONAL [user]", description="Check the salary of a user. If not user, shows author's salary.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
@@ -204,7 +193,7 @@ class PointsConfig(commands.Cog):
         user_data = User.read(user.id)
         if user_data:
             if user_data["roles"] != "":
-                await create_embed_without_title(ctx, f":moneybag: {user.display_name} has the title of **{await self.get_user_title(user_data)}** and earns {await self.salary_role(user_data)} eggbux..")
+                await create_embed_without_title(ctx, f":moneybag: {user.display_name} has the title of **{await get_user_title(user_data)}** and earns {await self.salary_role(user_data)} eggbux..")
                 return   
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} doesn't have a title.")
         else:

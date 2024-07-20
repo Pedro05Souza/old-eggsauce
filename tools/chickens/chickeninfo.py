@@ -2,7 +2,7 @@ from enum import Enum
 
 # Chicken information module
 
-chicken_default_value = 150
+chicken_default_value = 200
 default_farm_size = 8
 
 rollRates = {
@@ -75,22 +75,22 @@ class ChickenRarity(Enum):
 
 class ChickenMultiplier(Enum):
     DEAD = 0
-    COMMON = 3
-    UNCOMMON = 7
-    RARE = 9
+    COMMON = 1
+    UNCOMMON = 3
+    RARE = 6
     EXCEPTIONAL = 10
-    EPIC = 11
-    LEGENDARY = 14
-    MYTHICAL = 17
-    ULTIMATE = 18
-    COSMIC = 25
-    DIVINE = 29
-    INFINITY = 45
-    OMINOUS = 60
-    CELESTIAL = 70
-    IMMORTAL = 75
-    CHOSEN = 82
-    ASCENDED = 92
+    EPIC = 15
+    LEGENDARY = 21
+    MYTHICAL = 27
+    ULTIMATE = 34
+    COSMIC = 41
+    DIVINE = 50
+    INFINITY = 58
+    OMINOUS = 68
+    CELESTIAL = 78
+    IMMORTAL = 88
+    CHOSEN = 99
+    ASCENDED = 111
     
 class ChickenFood(Enum):
     DEAD = 0

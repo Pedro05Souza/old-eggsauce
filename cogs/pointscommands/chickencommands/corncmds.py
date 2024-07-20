@@ -45,7 +45,7 @@ class CornCommands(commands.Cog):
             user = ctx.author
         farm_data = await update_player_corn(farm_data, user)
         if farm_data:
-            food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in 30 minutes: {calculate_corn(farm_data)}\n:seedling: **Plots**: {farm_data['plot']}")
+            food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in 1 hour: {calculate_corn(farm_data)}\n:seedling: **Plots**: {farm_data['plot']}")
             food_embed.set_thumbnail(url=user.display_avatar)
             return food_embed
     

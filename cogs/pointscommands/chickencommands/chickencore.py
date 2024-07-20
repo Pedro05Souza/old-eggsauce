@@ -62,7 +62,7 @@ class ChickenCore(commands.Cog):
         """Market to buy chickens"""
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
-            default_rolls = 10
+            default_rolls = 12
             if action == "market":
                 plrObj = RollLimit.read(ctx.author.id)
                 if not plrObj:  

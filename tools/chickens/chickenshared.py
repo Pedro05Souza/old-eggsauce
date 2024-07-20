@@ -57,7 +57,7 @@ async def get_usr_farm(user: discord.Member):
             if len(farm_data['chickens']) == 0:
                 return
             msg = await make_embed_object(
-                title=f":chicken: {farm_data['farm_name']}\n\n:egg: **Eggs generated**: {farm_data['eggs_generated']}\n:farmer: Farmer: {farm_data['farmer'] if farm_data['farmer'] else 'No Farmer.'}",
+                title=f":chicken: {farm_data['farm_name']}\n:egg: **Eggs generated**: {farm_data['eggs_generated']}\n:farmer: Farmer: {farm_data['farmer'] if farm_data['farmer'] else 'No Farmer.'}",
                 description="\n".join([
                 f"{get_rarity_emoji(chicken['rarity'])}  **{index + 1}.** **{chicken['rarity']} {chicken['name']}** \n:partying_face: Happiness: **{chicken['happiness']}%**\n :gem: Upkeep rarity: **{determine_upkeep_rarity(chicken['upkeep_multiplier'])}**\n"
                 for index, chicken in enumerate(farm_data['chickens'])
@@ -100,7 +100,7 @@ async def drop_egg_for_player(farm_data, bank_data, user_data):
             total_upkeep += chicken_loss
             chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
             total_profit += (chicken_profit * chicken['happiness']) // 100
-            chicken['happiness'] -= randint(1,4)
+            chicken['happiness'] -= randint(1,5)
             if chicken['happiness'] < 0:
                 chicken['happiness'] = 0
             if chicken['happiness'] == 0:
@@ -150,7 +150,7 @@ async def feed_eggs_auto(farm_data, bank_amount):
         for chicken in farm_data['chickens']:
             if chicken['happiness'] == 100:
                 continue
-            generated_happines = randint(20, 50)
+            generated_happines = randint(5, 40)
             cHappiness = chicken['happiness'] + generated_happines
             if cHappiness > 100:
                 cHappiness = 100
@@ -166,7 +166,7 @@ async def update_user_farm(user, farm_data):
         return
     last_drop_time = time() - farm_data['last_chicken_drop']
     updated_farm_data = farm_data
-    hours_passed_since_last_egg_drop = min(last_drop_time // 3600, 10)
+    hours_passed_since_last_egg_drop = min(last_drop_time // 3600, 15)
     bank_data = Bank.read(user.id)
     user_data = User.read(user.id)
     for _ in range(int(hours_passed_since_last_egg_drop)):
@@ -184,7 +184,7 @@ async def update_farmer(user, farm_data):
     bank_data = Bank.read(user.id)
     bank_amount = bank_data['bank']
     if farm_data['farmer'] == "Sustainable Farmer":
-        hours_passed_since_feed = min(last_drop_time // 14600, 10)
+        hours_passed_since_feed = min(last_drop_time // 14600, 2)
         for _ in range(int(hours_passed_since_feed)):
             total_upkeep = await feed_eggs_auto(farm_data, bank_amount)
             bank_amount -= total_upkeep
@@ -219,7 +219,7 @@ async def devolve_chicken(chicken):
 async def update_player_corn(farm_data, user: discord.Member):
     last_drop_time = time() - farm_data['last_corn_drop']
     updated_farm_data = farm_data
-    hours_passed_since_last_drop = min(last_drop_time // 1600, 10)
+    hours_passed_since_last_drop = min(last_drop_time // 3600, 10)
     for _ in range(int(hours_passed_since_last_drop)):
         updated_farm_data = await generate_corncrops(farm_data)
     if hours_passed_since_last_drop != 0:

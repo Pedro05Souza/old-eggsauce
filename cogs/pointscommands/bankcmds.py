@@ -35,12 +35,12 @@ class BankCommands(commands.Cog):
                 bankAmount = bank_data['bank']
                 maxAmount = 10000 * bank_data['upgrades']
                 if bankAmount >= maxAmount: 
-                    await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you can't have more than 10000 eggbux in the bank.")
+                    await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you can't have more than **{maxAmount}** eggbux in the bank.")
                     return
                 if bankAmount + amount > maxAmount:
                     amount = maxAmount - bankAmount
                     if amount <= 0:
-                        await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you can't have more than 10000 eggbux in the bank.")
+                        await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you can't have more than **{maxAmount}** eggbux in the bank.")
                         return
                 Bank.update(ctx.author.id, bankAmount + amount)
                 User.update_points(ctx.author.id, user_data["points"] - amount)
@@ -102,7 +102,7 @@ class BankCommands(commands.Cog):
         User.update_points(ctx.author.id, user_data['points'] - upgrades_formula)
         upgrades = bank_data['upgrades'] + 1
         Bank.update_upgrades(ctx.author.id, upgrades)
-        await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you upgraded the bank to level {upgrades}. Now you can have up to **{upgrades * 10000}** eggbux in the bank.")
+        await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you upgraded the bank to level {upgrades - 1}. Now you can have up to **{upgrades * 10000}** eggbux in the bank.")
         return
     
     

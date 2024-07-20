@@ -40,6 +40,18 @@ def dev_list():
     devs = os.getenv("DEVS").split(",")
     return devs
 
+async def get_user_title(user_data):
+        userRoles = {
+            "T" : "Egg Novice",
+            "L" : "Egg Apprentice",
+            "M" : "Egg wizard",
+            "H" : "Egg King",
+        }
+        if user_data:
+            if user_data["roles"] == "":
+                return "Unemployed"
+            return userRoles[user_data["roles"][-1]]
+
 
 
 

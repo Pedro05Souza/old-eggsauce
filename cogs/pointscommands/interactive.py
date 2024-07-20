@@ -126,6 +126,7 @@ class InteractiveCommands(commands.Cog):
         """Steals points from another user."""
         if ctx.author.id in steal_status and steal_status[ctx.author.id] == user.id:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You can't steal from the same user twice.")
+            await refund(ctx.author, ctx)
             return
         else:
             steal_status[ctx.author.id] = user.id

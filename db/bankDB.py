@@ -4,7 +4,6 @@ bank_collection = mongo_client.db.bank
 logger = logging.getLogger('botcore')
 
 class Bank:
-
     @staticmethod
     def create(user_id: int, points: int):
         """Create a user in the database."""
@@ -82,6 +81,16 @@ class Bank:
         except Exception as e:
             logger.error("Error encountered while trying to read the user.", e)
             return None
+        
+    @staticmethod
+    def read_highest_10_bank():
+        """Read a user from the database."""
+        try:
+            user_data = bank_collection.find().sort("bank", -1).limit(10)
+            if user_data:
+                return user_data
+        except Exception as e:
+            logger.error("Error encountered while trying to read the user.", e)
     
     @staticmethod
     def readAll():

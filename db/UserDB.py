@@ -113,6 +113,16 @@ class User:
         except Exception as e:
             logger.error("Error encountered while trying to read all users.", e)
             return None
+        
+    @staticmethod
+    def read_highest_10_points():
+        """Read the top 10 users with the most points from the database."""
+        try:
+            users = users_collection.find().sort("points", -1).limit(10)
+            return users
+        except Exception as e:
+            logger.error("Error encountered while trying to read the top 10 users with the most points.", e)
+            return None
 
     @staticmethod
     def resetAll():

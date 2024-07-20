@@ -42,6 +42,7 @@ class Prices(Enum):
     feedallchickens = 0
     chickeninfo = 0
     evolvechicken = 0
+    profile = 0
     farmer = 0
     balls = 50
     love = 75
