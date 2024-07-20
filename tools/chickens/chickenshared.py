@@ -3,8 +3,9 @@ from time import time
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.userDB import User
+from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size
-from tools.shared import make_embed_object
+from tools.shared import create_embed_without_title, make_embed_object
 from math import ceil
 import discord
 import logging
@@ -80,7 +81,20 @@ def get_max_chicken_limit(farm_data):
             return default_farm_size + load_farmer_upgrades('Warrior Farmer')
         else:
             return default_farm_size
-
+        
+async def verify_events(ctx, *args):
+     if EventData.read_kwargs(author=ctx.author.id) or EventData.read_kwargs(target=ctx.author.id):
+        await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't use this command while an event is active.")
+        return True
+     if args:
+        user = args[0]
+        if EventData.read_kwargs(author=user.id) or EventData.read_kwargs(target=user.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} or {user.display_name}, you can't use this command while an event is active.")
+            return True
+        if EventData.read_kwargs(author=user.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you can't use this command while an event is active.")
+            return True
+     
 # updates
 
 async def drop_egg_for_player(farm_data, bank_data, user_data):

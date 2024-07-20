@@ -114,7 +114,7 @@ class ChickenCore(commands.Cog):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             await asyncio.sleep(43200 - time() % 43200)
-            RollLimit.removeAll()
+            RollLimit.remove_all()
 
 async def setup(bot):
     await bot.add_cog(ChickenCore(bot))

@@ -4,7 +4,7 @@ from tools.chickens.chickenshared import *
 from db.userDB import User
 from tools.chickens.chickenselection import ChickenSelectView
 from tools.chickens.chickeninfo import ChickenRarity
-from tools.chickens.chickenhandlers import GiftData, TradeData, SellData
+from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import get_rarity_emoji, determine_chicken_upkeep, get_max_chicken_limit
 from tools.pointscore import pricing
 from tools.shared import create_embed_without_title, create_embed_with_title, regular_command_cooldown
@@ -23,8 +23,7 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def sell_chicken(self, ctx):
         """Deletes a chicken from the farm"""
-        if TradeData.read(ctx.author.id) or GiftData.read(ctx.author.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't sell a chicken while in a trade or gift request.")
+        if await verify_events(ctx):
             return
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
@@ -42,19 +41,7 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def trade_chicken(self, ctx, user: discord.Member):
         """Trade a chicken(s) with another user"""
-        if GiftData.read(ctx.author.id) or GiftData.read(user.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} can't trade a chicken while in a gift request")
-            return
-        elif SellData.read(ctx.author.id) or SellData.read(user.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} can't trade a chicken while in a sell request.")
-            return
-        author_involved_in_trade = TradeData.read(ctx.author.id)
-        target_involved_in_trade = TradeData.read(user.id)
-        if author_involved_in_trade:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have a trade in progress.")
-            return
-        if target_involved_in_trade:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} already has a trade request in progress.")
+        if await verify_events(ctx, user):
             return
         farm_author = Farm.read(ctx.author.id)
         farm_target = Farm.read(user.id)
@@ -65,8 +52,7 @@ class ChickenEvents(commands.Cog):
             if user.id == ctx.author.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't trade with yourself.")
                 return
-            t = TradeData()
-            t.identifier = [ctx.author.id, user.id]
+            t = EventData(author=ctx.author.id, target=user.id)
             msg = await create_embed_without_title(ctx, f":chicken: {ctx.author.display_name} has sent a trade request to {user.display_name}. You have 40 seconds to react with ✅ to accept or ❌ to decline.")
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
@@ -78,11 +64,11 @@ class ChickenEvents(commands.Cog):
                             return
                     elif reaction.emoji == "❌" and usr == user:
                         await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has declined the trade request.")
-                        TradeData.remove(t)
+                        EventData.remove(t)
                         return
             except asyncio.TimeoutError:
                 await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has not responded to the trade request.")
-                TradeData.remove(t)
+                EventData.remove(t)
 
     async def trade_chickens(self, ctx, User: discord.Member, t, author_data, user_data):
         """Trade the chickens"""
@@ -101,41 +87,28 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def gift_chicken(self, ctx, index: int, user: discord.Member):
         """Gift a chicken to another user"""
-        if TradeData.read(ctx.author.id) or TradeData.read(user.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} can't gift a chicken while in a trade.")
-            return
-        elif SellData.read(ctx.author.id) or SellData.read(user.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} can't gift a chicken while in a sell request.")
-            return
-        author_involved_in_gift = GiftData.read(ctx.author.id)
-        target_involved_in_gift = GiftData.read(user.id)
-        if author_involved_in_gift:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you already have a gift in progress.")
-            return
-        if target_involved_in_gift:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you already have a gift in progress.")
+        if await verify_events(ctx, user):
             return
         author_data = Farm.read(ctx.author.id)
         user_data = Farm.read(user.id)
         if author_data and user_data:
             index -= 1
-            g = GiftData()
-            g.identifier = [ctx.author.id, user.id]
+            g = EventData(author=ctx.author.id, target=user.id)
             if not author_data['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
-                GiftData.remove(g)
+                EventData.remove(g)
                 return
             if index > len(author_data['chickens']) or index < 0:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
-                GiftData.remove(g)
+                EventData.remove(g)
                 return
             if user.id == ctx.author.id:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't gift a chicken to yourself.")
-                GiftData.remove(g)
+                EventData.remove(g)
                 return
             if len(user_data['chickens']) >= get_max_chicken_limit(user_data):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, {user.display_name} already has the maximum amount of chickens.")
-                GiftData.remove(g)
+                EventData.remove(g)
                 return
             gifted_chicken = author_data['chickens'][index]
             msg = await create_embed_without_title(ctx, f":gift: {user.display_name}, {ctx.author.display_name} wants to gift you a {gifted_chicken['rarity']} {gifted_chicken['name']}. You have 20 seconds to react with ✅ to accept or ❌ to decline the gift request.")
@@ -150,14 +123,14 @@ class ChickenEvents(commands.Cog):
                     Farm.update(ctx.author.id, chickens=author_data['chickens'])
                     Farm.update(user.id, chickens=user_data['chickens'])
                     await create_embed_without_title(ctx, f":gift: {ctx.author.display_name}, the chicken has been gifted to {user.display_name}.")
-                    GiftData.remove(g)
+                    EventData.remove(g)
                 elif reaction.emoji == "❌":
                     await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has declined the gift request.")
-                    GiftData.remove(g)
+                    EventData.remove(g)
                     return
             except asyncio.TimeoutError:
                 await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has not responded to the gift request.")
-                GiftData.remove(g)
+                EventData.remove(g)
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} don't have a farm.")
     
@@ -166,36 +139,36 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def evolve_chicken(self, ctx, index: int, index2: int):
         """Evolves a chicken if having 2 of the same rarity"""
-        if TradeData.read(ctx.author.id) or GiftData.read(ctx.author.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a chicken while in a trade or gift request.")
+        if await verify_events(ctx):
             return
-        if SellData.read(ctx.author.id) or SellData.read(ctx.author.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a chicken while in a sell request.")
-            return
-        if GiftData.read(ctx.author.id) or GiftData.read(ctx.author.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a chicken while in a gift request.")
-            return
+        e = EventData(author=ctx.author.id)
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
             if not farm_data['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+                EventData.remove(e)
                 return
             if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                EventData.remove(e)
                 return
             if index == index2:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a chicken with itself.")
+                EventData.remove(e)
                 return
             chicken_selected = farm_data['chickens'][index - 1]
             chicken_removed = farm_data['chickens'][index2 - 1]
             if chicken_selected['rarity'] != chicken_removed['rarity']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chickens must be of the same rarity to evolve.")
+                EventData.remove(e)
                 return
             if chicken_selected['rarity'] == "ASCENDED" or chicken_removed['rarity'] == "ASCENDED":
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve an ascended chicken.")
+                EventData.remove(e)
                 return
             if chicken_selected['rarity'] == "DEAD" or chicken_removed['rarity'] == "DEAD":
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a dead chicken.")
+                EventData.remove(e)
                 return
             rarity_list = list(ChickenRarity.__members__)
             chicken_selected['rarity'] = rarity_list[rarity_list.index(chicken_selected['rarity']) + 1]

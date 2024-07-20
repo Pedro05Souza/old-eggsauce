@@ -1,50 +1,7 @@
 import logging
 logger = logging.getLogger('botcore')
 
-# Shared event classes for the chicken commands
-
-class GiftData():
-    obj_list = []
-
-    def __init__ (self):
-        self.author = {}
-        self.target = {}
-        self.identifier = []
-        GiftData.obj_list.append(self)
-
-    @staticmethod
-    def get(identifier):
-        for obj in GiftData.obj_list:
-            if obj.identifier == identifier:
-                return obj
-        return None
-    
-    @staticmethod
-    def remove(obj):
-        try:
-            GiftData.obj_list.remove(obj)
-        except Exception as e:
-            logger.error("Error removing object from list.", e)
-
-    @staticmethod
-    def get_all():
-        return GiftData.obj_list
-    
-    @staticmethod
-    def clear():
-        GiftData.obj_list.clear()
-
-    @staticmethod
-    def read(author):
-        for obj in GiftData.obj_list:
-            for id in obj.identifier:
-                if id == author:
-                    return True
-    @staticmethod
-    def getall():
-        for obj in GiftData.obj_list:
-            return obj
-        
+# Shared event classes for the chicken commands        
 class RollLimit:
     obj_list = []
     def __init__(self, user_id, current, chickens=None):
@@ -68,79 +25,38 @@ class RollLimit:
             logger.error("Error removing object from list.", e)
     
     @staticmethod
-    def removeAll():
+    def remove_all():
         RollLimit.obj_list.clear()
 
-class SellData():
+class EventData():
     obj_list = []
+    allowed_keys = ['author', 'target']
 
-    def __init__ (self, author_id):
-        SellData.obj_list.append(self)
-        self.author = author_id
-
-    @staticmethod
-    def get(author):
-        for obj in SellData.obj_list:
-            if obj.author == author:
-                return obj
-        return None
-    
-    @staticmethod
-    def remove(obj):
-        if obj in SellData.obj_list:
-            SellData.obj_list.remove(obj)
+    def __init__(self, **kwargs):
+        if any(key in kwargs for key in EventData.allowed_keys if key not in kwargs):
+            raise ValueError("Missing required keys.")
         else:
-            logger.error("Error removing object from list. Probably doesn't exist or already removed.")
+            for key in kwargs:
+                if key in EventData.allowed_keys:
+                    setattr(self, key, kwargs[key])
+            EventData.obj_list.append(self)
 
     @staticmethod
-    def get_all():
-        return SellData.obj_list
+    def read_kwargs(**kwargs):
+        for obj in EventData.obj_list:
+            for key in kwargs:
+                if key in EventData.allowed_keys:
+                    if getattr(obj, key) == kwargs[key]:
+                        return True
+        return False
     
-    @staticmethod
-    def clear():
-        SellData.obj_list.clear()
-
-    @staticmethod
-    def read(author):
-        for obj in SellData.obj_list:
-            print(obj.author)
-            if obj.author == author:
-                return True
-            
-class TradeData():
-    obj_list = []
-
-    def __init__ (self):
-        self.author = {}
-        self.target = {}
-        self.identifier = []
-        TradeData.obj_list.append(self)
-
-    @staticmethod
-    def get(identifier):
-        for obj in TradeData.obj_list:
-            if obj.identifier == identifier:
-                return obj
-        return None
     @staticmethod
     def remove(obj):
         try:
-            TradeData.obj_list.remove(obj)
+            EventData.obj_list.remove(obj)
         except Exception as e:
             logger.error("Error removing object from list.", e)
 
     @staticmethod
-    def get_all():
-        return TradeData.obj_list
-
-    @staticmethod
-    def clear():
-        TradeData.obj_list.clear()
-
-    @staticmethod
-    def read(author):
-        for obj in TradeData.obj_list:
-            for id in obj.identifier:
-                if id == author:
-                    return True
-        return None
+    def remove_all():
+        EventData.obj_list.clear()

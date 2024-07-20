@@ -3,7 +3,7 @@ from db.userDB import User
 from random import randint
 from db.farmDB import Farm
 from tools.chickens.chickenshared import *
-from tools.chickens.chickenhandlers import SellData, TradeData
+from tools.chickens.chickenhandlers import EventData
 from tools.shared import make_embed_object
 import asyncio
 
@@ -21,7 +21,7 @@ class ChickenSelectView(ui.View):
             menu = ChickenMarketMenu(chickens, author, message, chicken_emoji)
         elif action == "D":
             self.timeout = 30
-            s = SellData(author)
+            s = EventData(author=author)
             menu = ChickenDeleteMenu(chickens, author, message, chicken_emoji, s)
         elif action == "T":
             if role=="author":
@@ -40,9 +40,9 @@ class ChickenSelectView(ui.View):
         """Method to execute when the view times out."""
         if self.children[0].__class__.__name__ == "ChickenDeleteMenu":
             if hasattr(self.children[0], "delete_object"):
-                SellData.remove(self.children[0].delete_object)
+                EventData.remove(self.children[0].delete_object)
         if self.children[0].__class__.__name__ == "ChickenUserTradeMenu":
-            TradeData.remove(self.children[0].td)
+            EventData.remove(self.children[0].td)
         return
 
 class ChickenMarketMenu(ui.Select):
@@ -141,7 +141,7 @@ class ChickenDeleteMenu(ui.Select):
         User.update_points(interaction.user.id, User.read(interaction.user.id)["points"] + (refund_price))
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chickens: \n\n" + "\n".join([f"{self.chicken_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_selected]) + f"\n\nYou have been refunded {refund_price} eggbux.")
         await interaction.response.send_message(embed=embed)
-        SellData.remove(self.delete_object)
+        EventData.remove(self.delete_object)
         await asyncio.sleep(2.5)
         await interaction.message.delete()
         return
@@ -219,17 +219,17 @@ class ChickenUserTradeMenu(ui.Select):
                 elif reaction.emoji == "❌":
                     embed = await make_embed_object(description="Trade has been cancelled.")
                     await msg.edit(embed=embed)
-                    TradeData.remove(self.td)
+                    EventData.remove(self.td)
                     break
             except asyncio.TimeoutError:
                 embed = await make_embed_object(description="Trade confirmation has timed out.")
                 await msg.edit(embed=embed)
-                TradeData.remove(self.td)
+                EventData.remove(self.td)
                 break
         if len(users_reacted) == 2:
             msg = await trade_handler(interaction, self.td, self.target)
             await interaction.followup.send(embed=msg)
-            TradeData.remove(self.td)
+            EventData.remove(self.td)
             return
 
 async def trade_handler(ctx, td, target):
