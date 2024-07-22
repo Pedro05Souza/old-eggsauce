@@ -90,6 +90,51 @@ class Market:
         except Exception as e:
             logger.error("Error encountered while getting the offers.", e)
             return None
+                
+    @staticmethod
+    def get_chicken_offers(**kwargs):
+        """Get all offers with specific parameters."""
+        query = {}
+        possible_keywords = ["chicken_rarity", "upkeep_rarity", "price", "author_id"]
+        for key, value in kwargs.items():
+            if key not in possible_keywords:
+                logger.warning(f"Keyword {key} is not a valid keyword.")
+                return None
+            if value:
+                if key == "upkeep_rarity":
+                    query["chicken.upkeep_multiplier"] = value
+                    min_upkeep = value - 0.15 if value - 0.15 > 0 else 0
+                    max_upkeep = value + 0.15 if value + 0.15 < 1 else 1
+                    query["chicken.upkeep_multiplier"] = {"$gte": min_upkeep, "$lte": max_upkeep}
+                elif key == "price":
+                    query["price"] = value
+                    min_price = value * .5 if value * .5 > 0 else 0
+                    max_price = value * 1.5 if value * 1.5 < 25000 else 25000
+                    query["price"] = {"$gte": min_price, "$lte": max_price}
+                elif key == "author_id":
+                    query["author_id"] = value
+                else:
+                    query["chicken.rarity"] = value
+        try:
+            offers = market_collection.find(query).sort("price", 1).limit(10)
+            if offers:
+                return list(offers)
+            else:
+                logger.warning(f"No offers found with the parameters provided.")
+                return None
+        except Exception as e:
+            logger.error("Error encountered while getting the offers.", e)
+            return None
+        
+    @staticmethod    
+    def count_all_offers():
+        """Count all offers in the market."""
+        try:
+            count = market_collection.count_documents({})
+            return count
+        except Exception as e:
+            logger.error("Error encountered while counting the offers.", e)
+            return None
         
     @staticmethod
     def generate_uuid():

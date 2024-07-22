@@ -113,7 +113,7 @@ class PointsConfig(commands.Cog):
                 user_data['points'] = points
                 User.update_points(user.id, points)
             last_title_drop = time.time() - user_data["salary_time"]
-            hours_passed = min(last_title_drop // 3600, 15)
+            hours_passed = min(last_title_drop // 3600, 12)
             hours_passed = int(hours_passed)
             salary = await self.salary_role(user_data)
             if hours_passed >= 1 and user_data["roles"] != "":

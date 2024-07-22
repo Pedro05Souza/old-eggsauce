@@ -4,8 +4,9 @@ from db.userDB import User
 from tools.shared import create_embed_without_title, is_dev
 from db.bankDB import Bank
 from db.farmDB import Farm
+from db.MarketDB import Market
 from tools.chickens.chickenshared import determine_chicken_upkeep
-from tools.chickens.chickeninfo import ChickenRarity, ChickenMultiplier
+from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import RollLimit
 from .. import botcore
 import discord
@@ -123,7 +124,6 @@ class DevCommands(commands.Cog):
                     "name": "Chicken",
                     "price": ChickenRarity[rarity].value * 150,
                     "happiness": randint(60, 100),
-                    "egg_value" : ChickenMultiplier[rarity].value,
                     "eggs_generated": 0,
                     "upkeep_multiplier": 0,
                 }
@@ -207,6 +207,15 @@ class DevCommands(commands.Cog):
             await create_embed_without_title(ctx, f"```Total points in circulation: {total_points}```\n\nAccounts with 5k or more points: **{accounts_with_5k_wallet}**")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+    
+    @commands.command(name="marketLogs")
+    async def market_logs(self, ctx):
+     """Check the total number of active offers in the market."""
+     if is_dev(ctx):
+        total_offers = Market.count_all_offers()
+        await create_embed_without_title(ctx, f"```Total active offers in the player market: {total_offers}```")
+     else:
+        await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

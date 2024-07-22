@@ -3,10 +3,10 @@ from time import time
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.userDB import User
+from db.MarketDB import Market
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size
+from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size, offer_expire_time
 from tools.shared import create_embed_without_title, make_embed_object
-from math import ceil
 import discord
 import logging
 logger = logging.getLogger('botcore')
@@ -83,7 +83,7 @@ def get_max_chicken_limit(farm_data):
             return default_farm_size
         
 async def verify_events(ctx, *args):
-     if EventData.read_kwargs(author=ctx.author.id) or EventData.read_kwargs(target=ctx.author.id):
+     if EventData.read_kwargs(author=ctx.author.id):
         await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't use this command while an event is active.")
         return True
      if args:
@@ -91,8 +91,8 @@ async def verify_events(ctx, *args):
         if EventData.read_kwargs(author=user.id) or EventData.read_kwargs(target=user.id):
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} or {user.display_name}, you can't use this command while an event is active.")
             return True
-        if EventData.read_kwargs(author=user.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you can't use this command while an event is active.")
+        if EventData.read_kwargs(target=ctx.author.id):
+            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't use this command while an event is active.")
             return True
      
 # updates
@@ -110,7 +110,7 @@ async def drop_egg_for_player(farm_data, bank_data, user_data):
         for chicken in farm_data_copy:
             if chicken['rarity'] == 'DEAD':
                 continue
-            chicken_loss = ceil(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']) 
+            chicken_loss = int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])
             total_upkeep += chicken_loss
             chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
             total_profit += (chicken_profit * chicken['happiness']) // 100
@@ -120,7 +120,7 @@ async def drop_egg_for_player(farm_data, bank_data, user_data):
             if chicken['happiness'] == 0:
                 await devolve_chicken(chicken)
         if farm_data['farmer'] == 'Rich Farmer':
-            to_increase = (total_profit * load_farmer_upgrades('Rich Farmer')) // 100 
+            to_increase = (total_profit * load_farmer_upgrades('Rich Farmer')) // 100
             total_profit += to_increase
         elif farm_data['farmer'] == 'Guardian Farmer':
             to_discount = (total_upkeep * load_farmer_upgrades('Guardian Farmer')) // 100
@@ -259,3 +259,17 @@ async def generate_corncrops(farm_data):
             }
             farm_data['corn'] = corn_dict['corn']
             return farm_data
+        
+async def get_player_chicken(user: discord.Member):
+     """Retrieves the player's chickens from market offers."""
+     market_data = Market.get_user_offers(user.id)
+     farm_data = Farm.read(user.id)
+     chickens_list = []
+     for offer in market_data:
+         if offer['created_at'] // 3600 >= offer_expire_time:
+             Market.delete(offer['offer_id'])
+             chickens_list.append(offer['chicken'])
+     if chickens_list:
+        farm_data['chickens'] += chickens_list
+        Farm.update(user.id, chickens=farm_data['chickens'])
+    

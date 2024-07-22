@@ -4,6 +4,8 @@ from enum import Enum
 
 chicken_default_value = 200
 default_farm_size = 8
+market_tax = 0.15
+offer_expire_time = 48
 
 rollRates = {
         "COMMON": 5000,
@@ -52,6 +54,7 @@ chicken_rarities = {
     "DECENT" : .2,
     "GOOD" : .1,
     "GREAT" : .05,
+    "AMAZING" : .025,
     "PERFECT" : 0
 }
 class ChickenRarity(Enum):
@@ -75,8 +78,8 @@ class ChickenRarity(Enum):
 
 class ChickenMultiplier(Enum):
     DEAD = 0
-    COMMON = 1
-    UNCOMMON = 3
+    COMMON = 2
+    UNCOMMON = 4
     RARE = 6
     EXCEPTIONAL = 10
     EPIC = 15

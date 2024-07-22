@@ -25,7 +25,9 @@ class ChickenView(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, the chicken index is invalid.")
                 return
             chicken = farm_data['chickens'][index - 1]
-            msg = await make_embed_object(title=f":chicken: {chicken['rarity']} {chicken['name']}", description=f":partying_face: **Happiness**: {chicken['happiness']}%\n:moneybag: **Price**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux\n:egg: **Egg value**: {await get_chicken_egg_value(chicken)} \n:gem: **Upkeep rarity**: {int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])}\n:coin: **Eggs generated:** {chicken['eggs_generated']}\n:corn: **Food necessary:** {ChickenFood[chicken['rarity']].value} \n:money_with_wings: **Total profit: {ceil(((await get_chicken_egg_value(chicken) * chicken['happiness']) // 100) - (await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))} eggbux.**")
+            chicken_egg_value = await get_chicken_egg_value(chicken) - int((await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))
+            total_profit = (chicken_egg_value * chicken['happiness']) // 100
+            msg = await make_embed_object(title=f":chicken: {chicken['rarity']} {chicken['name']}", description=f":partying_face: **Happiness**: {chicken['happiness']}%\n:moneybag: **Price**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux\n:egg: **Egg value**: {chicken_egg_value} \n:gem: **Upkeep rarity**: {round(chicken['upkeep_multiplier'], 2)}%\n:coin: **Eggs generated:** {chicken['eggs_generated']}\n:corn: **Food necessary:** {ChickenFood[chicken['rarity']].value} \n:money_with_wings: **Total profit: {total_profit} eggbux.**")
             await ctx.send(embed=msg)
             
     @commands.hybrid_command(name="chickenrarities", aliases=["cr"], usage="chickenRarities", description="Check the rarities of the chickens.")

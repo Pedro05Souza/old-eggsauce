@@ -46,8 +46,8 @@ class Prices(Enum):
     farmer = 0
     balls = 50
     love = 75
+    eggpack = 75
     mog = 100
-    eggpack = 100
     mute = 325
     unmute = 325
     deafen = 325

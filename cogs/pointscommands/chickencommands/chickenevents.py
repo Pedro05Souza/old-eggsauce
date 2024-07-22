@@ -2,10 +2,10 @@ from discord.ext import commands
 from db.farmDB import Farm
 from tools.chickens.chickenshared import *
 from db.userDB import User
-from tools.chickens.chickenselection import ChickenSelectView
+from tools.chickens.selection.chickenselection import ChickenSelectView
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickenshared import get_rarity_emoji, determine_chicken_upkeep, get_max_chicken_limit
+from tools.chickens.chickenshared import determine_chicken_upkeep, get_max_chicken_limit
 from tools.pointscore import pricing
 from tools.shared import create_embed_without_title, create_embed_with_title, regular_command_cooldown
 import asyncio
@@ -31,7 +31,7 @@ class ChickenEvents(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
                 return
             message = await get_usr_farm(ctx.author)
-            view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author.id, action="D", chicken_emoji=get_rarity_emoji)
+            view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author.id, action="D")
             await ctx.send(embed=message,view=view)
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you do not have a farm.")
@@ -77,8 +77,8 @@ class ChickenEvents(commands.Cog):
         trade_data = [author_data['chickens'], user_data['chickens']]
         members_data = [ctx.author, User]
         embeds = [authorEmbed, userEmbed]
-        view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, chicken_emoji=get_rarity_emoji, role="author", trade_data=t)
-        view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, chicken_emoji=get_rarity_emoji, role="user", trade_data=t, instance_bot = self.bot)
+        view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="author", trade_data=t)
+        view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="user", trade_data=t, instance_bot = self.bot)
         await ctx.send(embed=authorEmbed, view=view_author)
         await ctx.send(embed=userEmbed, view=view_user)
 

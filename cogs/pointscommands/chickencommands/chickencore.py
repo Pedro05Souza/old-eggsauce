@@ -2,7 +2,7 @@ from random import uniform
 from time import time
 from discord.ext import commands
 from db.farmDB import Farm
-from tools.chickens.chickenselection import ChickenSelectView
+from tools.chickens.selection.chickenselection import ChickenSelectView
 from tools.shared import create_embed_without_title, spam_command_cooldown
 from tools.chickens.chickenhandlers import RollLimit
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
@@ -54,7 +54,7 @@ class ChickenCore(commands.Cog):
         """Buy an egg pack"""
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
-            await self.roll(ctx, 6, 'eggpack')
+            await self.roll(ctx, 8, 'eggpack')
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
             
@@ -80,7 +80,7 @@ class ChickenCore(commands.Cog):
                 default_rolls += load_farmer_upgrades("Generous Farmer")[0]
             generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
             message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux." for index, chicken in enumerate(generated_chickens)]))
-            view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message, chicken_emoji=get_rarity_emoji)
+            view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message)
             await ctx.send(embed=message, view=view)
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you don't have a farm.")
