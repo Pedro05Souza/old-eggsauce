@@ -7,6 +7,8 @@ from db.MarketDB import Market
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size, offer_expire_time
 from tools.shared import create_embed_without_title, make_embed_object
+from tools.tips import tips
+from random import randint
 import discord
 import logging
 logger = logging.getLogger('botcore')
@@ -41,9 +43,10 @@ def load_farmer_upgrades(farmer):
         farmer_dict = {
             "Rich Farmer": 10,
             "Guardian Farmer": 3,
-            "Executive Farmer" : [8, 4],
+            "Executive Farmer" : [8, 20],
             "Warrior Farmer": 3,
-            "Generous Farmer": [3]
+            "Generous Farmer": [3],
+            'Sustainable Farmer': [4, [5, 40]]
         }
         return farmer_dict[farmer]
         
@@ -64,6 +67,7 @@ async def get_usr_farm(user: discord.Member):
                 for index, chicken in enumerate(farm_data['chickens'])
             ]))
             msg.set_thumbnail(url=user.display_avatar)
+            msg.set_footer(text=tips[randint(0, len(tips) - 1)])
             return msg
         else:
             return None
@@ -160,11 +164,12 @@ async def drop_egg_for_player(farm_data, bank_data, user_data):
 async def feed_eggs_auto(farm_data, bank_amount): 
     """Feed the chickens automatically"""
     total_upkeep = 0
+    random_range = load_farmer_upgrades('Sustainable Farmer')[1]
     if farm_data['farmer'] == "Sustainable Farmer":
         for chicken in farm_data['chickens']:
             if chicken['happiness'] == 100:
                 continue
-            generated_happines = randint(5, 40)
+            generated_happines = randint(random_range[0], random_range[1])
             cHappiness = chicken['happiness'] + generated_happines
             if cHappiness > 100:
                 cHappiness = 100
@@ -198,7 +203,7 @@ async def update_farmer(user, farm_data):
     bank_data = Bank.read(user.id)
     bank_amount = bank_data['bank']
     if farm_data['farmer'] == "Sustainable Farmer":
-        hours_passed_since_feed = min(last_drop_time // 14600, 2)
+        hours_passed_since_feed = min(last_drop_time // load_farmer_upgrades('Sustainable Farmer')[0], 2)
         for _ in range(int(hours_passed_since_feed)):
             total_upkeep = await feed_eggs_auto(farm_data, bank_amount)
             bank_amount -= total_upkeep

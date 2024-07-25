@@ -1,8 +1,10 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
 from tools.shared import create_embed_with_title, create_embed_without_title, make_embed_object, regular_command_cooldown, get_user_title
+from tools.tips import tips
 from db.bankDB import Bank
 from db.userDB import User
+from random import randint
 from tools.pointscore import pricing, refund
 from db.botConfigDB import BotConfig
 import math
@@ -95,7 +97,7 @@ class PointsConfig(commands.Cog):
                 msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {bank_data['bank']}")
                 msg.add_field(name=":money_with_wings: Total eggbux:", value=f"{user_data['points'] + bank_data['bank']}")
                 msg.set_thumbnail(url=user.display_avatar)
-                msg.set_footer(text="You can earn eggs by being in a voice channel, buying titles, betting, and more.")
+                msg.set_footer(text=tips[randint(0, len(tips) - 1)])
                 await ctx.send(embed=msg)
             else:
                 msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}")

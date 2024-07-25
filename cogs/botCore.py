@@ -106,7 +106,7 @@ class BotCore(commands.Cog):
     @commands.hybrid_command("modules", brief="Displays the modules available to the user.", usage="modules")
     async def modules(self, ctx):
         """Displays a list of commands available to the user."""
-        if ctx.author.guild_permissions.administrator:
+        if ctx.author.id == ctx.guild.owner_id:
             Embed = await make_embed_object(title="**:gear: BOT MODULES:**", description=":egg: **Points**: Fun and unique economy system, has sub-Modules.\n:tools: **Utility**: Useful commands for everyday use.\nSelect one of the modules to see a better description.")
             view = SelectModule(ctx.author.id)
             await ctx.send(embed=Embed, view=view)
@@ -118,7 +118,7 @@ class BotCore(commands.Cog):
     async def set_module(self, ctx):
         """Set the module where the bot will pick commands from."""
         if BotConfig.read(ctx.guild.id):
-            if ctx.author.guild_permissions.administrator:
+            if ctx.author.id == ctx.guild.owner_id:
                 embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. :star: **Friendly**\n3. :gun: **Hostiles**\n4. :x: **None**\n\n**Important note**: \n**Friendly module:** contains Chicken commands, bank commands, interactive commands, AI commands and friendly commands and activates users gaining one currency every 10 seconds during call-time.\n**Hostile module:** contains hostile commands, bank commands and activates users gaining one currency every 10 seconds during call-time.\n\nSelect one of the modules to enable/disable it.")
                 view = ShowPointsModules(ctx.author.id)
                 await ctx.send(embed=embed, view=view)

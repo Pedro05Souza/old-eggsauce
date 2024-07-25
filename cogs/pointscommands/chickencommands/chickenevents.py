@@ -177,19 +177,19 @@ class ChickenEvents(commands.Cog):
             Farm.update(ctx.author.id, chickens=farm_data['chickens'])
             await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, the chicken has been evolved to {chicken_selected['rarity']} {chicken_selected['name']}.")
 
-    @commands.hybrid_command(name="farmer", usage="farmer", description="The farmers helps increase the productivity of the chickens.")
+    @commands.hybrid_command(name="farmer", aliases =["farmers"], usage="farmer", description="The farmers helps increase the productivity of the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def farmer(self, ctx):
         """The farmer automatically feeds the chickens"""
         farmer_price = 4200
         description = [
-            ":moneybag: Rich Farmer: Increase the egg value of the chickens by 10%.\n",
-            ":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces upkeep by 4%.\n",
-            ":briefcase: Executive Farmer: Gives you 4 more daily rolls in the market and chickens generated in the market comes with 30% discount. \n",
-            ":crossed_swords: Warrior Farmer: Gives 3 more farm slots.\n",
-            ":leaves: Sustainable Farmer: Auto-feeds the chickens every 4 hours, the happiness generated is a number between 20-40%. The farmer uses the money from your bank account.\n",
-            ":tickets: Generous Farmer: Increases the maximum chickens generated in the market by 3 slots.\n"
+            f":moneybag: Rich Farmer: Increase the egg value of the chickens by {load_farmer_upgrades('Rich Farmer')}%.\n",
+            f":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces upkeep by **{load_farmer_upgrades('Guardian Farmer')}%**.\n",
+            f":briefcase: Executive Farmer: Gives you **{load_farmer_upgrades('Executive Farmer')[0]}** more daily rolls in the market and chickens generated in the market comes with **{load_farmer_upgrades('Executive Farmer')[1]}%** discount. \n",
+            f":crossed_swords: Warrior Farmer: Gives **{load_farmer_upgrades('Warrior Farmer')}** more farm slots.\n",
+            f":leaves: Sustainable Farmer: Auto-feeds the chickens every **{load_farmer_upgrades('Sustainable Farmer')[0]}** hours, the happiness generated is a number between **{load_farmer_upgrades('Sustainable Farmer')[1][0]}-{load_farmer_upgrades('Sustainable Farmer')[1][1]}%**. The farmer uses the money from your bank account.\n",
+            f":tickets: Generous Farmer: Increases the maximum chickens generated in the market by **{load_farmer_upgrades('Generous Farmer')[0]}** slots.\n"
             f"\n\nAll the farmer roles have a cost of **{farmer_price}** eggbux and you can only buy one of them. **Buying a farmer when you already have one will override the existing one.**\nReact with the corresponding emoji to purchase the role."
         ]
         message = await create_embed_with_title(ctx, ":farmer: Farmer roles:\n", "\n".join(description))

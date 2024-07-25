@@ -47,14 +47,16 @@ defineRarityEmojis = {
 }
 
 chicken_rarities = {
-    "TERRIBLE" : .75,
+    "HORRIFIC" : .75,
+    "TERRIBLE": .7,
     "AWFUL" : .6,
-    "BAD" : .45,
+    "BAD" : .5,
     "NORMAL" : .3,
     "DECENT" : .2,
     "GOOD" : .1,
     "GREAT" : .05,
-    "AMAZING" : .025,
+    "AMAZING" : .02,
+    "AWESOME" : .01,
     "PERFECT" : 0
 }
 class ChickenRarity(Enum):

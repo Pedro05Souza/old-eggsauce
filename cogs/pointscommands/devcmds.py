@@ -102,13 +102,8 @@ class DevCommands(commands.Cog):
     async def total_users(self, ctx):
         """Check the total number of users in the database."""
         if is_dev(ctx):
-            users = User.readAll()
-            total_users = len(list(users))
-            farms_created = Farm.readAll()
-            total_farms = len(list(farms_created))
-            banks_created = Bank.readAll()
-            total_banks = len(list(banks_created))
-            await create_embed_without_title(ctx, f"```The bot has {total_users} users, {total_farms} farms and {total_banks} banks accounts registered.```")
+            total_users = User.count_users()
+            await create_embed_without_title(ctx, f"```Total users in the database: {total_users}```")
         else:
             await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
 
@@ -216,6 +211,18 @@ class DevCommands(commands.Cog):
         await create_embed_without_title(ctx, f"```Total active offers in the player market: {total_offers}```")
      else:
         await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+    
+    @commands.command(name="reloadCog")
+    async def reload_cog(self, ctx, cog):
+        """Reload a cog."""
+        if is_dev(ctx):
+            if cog in self.bot.cogs:
+                self.bot.reload_extension(f"cogs.pointscommands.{cog}")
+                await create_embed_without_title(ctx, f":warning: {cog} has been reloaded.")
+            else:
+                await create_embed_without_title(ctx, f":no_entry_sign: {cog} is not a valid cog.")
+        else:
+            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

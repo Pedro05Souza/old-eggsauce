@@ -132,3 +132,13 @@ class User:
         except Exception as e:
             logger.error("Error encountered while trying to reset all users.", e)
             return None
+    
+    @staticmethod
+    def count_users():
+        """Counts all users from the database."""
+        try:
+            count = users_collection.count_documents({})
+            return count
+        except Exception as e:
+            logger.error("Error encountered while trying to count all users.", e)
+            return None
