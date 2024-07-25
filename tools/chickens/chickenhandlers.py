@@ -45,7 +45,7 @@ class EventData():
     def read_kwargs(**kwargs):
         for obj in EventData.obj_list:
             for key in kwargs:
-                if key in EventData.allowed_keys:
+                if key in EventData.allowed_keys and key in obj.__dict__:
                     if getattr(obj, key) == kwargs[key]:
                         return True
         return False

@@ -35,7 +35,7 @@ class ChickenCore(commands.Cog):
         """Check the chickens in the farm"""
         if user is None:
             user = ctx.author
-        msg = await get_usr_farm(user)
+        msg = await get_usr_farm(ctx, user)
         if not msg:
             await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have a farm or any chickens.")
             return

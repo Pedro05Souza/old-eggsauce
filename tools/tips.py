@@ -32,5 +32,6 @@ tips = {
     30: "The formula for the eggs produced by a chicken is: (eggs_per_hour * upkeep_multiplier)",
     31: "You need to pay hourly for the upkeep of your chickens.",
     32: "The upkeep multiplier for the chickens has two functions, it regulates the eggs produced and the upkeep cost.",
-
+    33: "You can evolve two chickens of the same type to the next rarity",
+    34: "Everytime you don't have money to maintain your chickens, one of them will randomly be picked to be deleted.",
 }

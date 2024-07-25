@@ -137,5 +137,15 @@ class Market:
             return None
         
     @staticmethod
+    def create_many(chickenlist, author_id):
+        """Create multiple items in the market."""
+        try:
+            market_collection.insert_many(chickenlist)
+            logger.info(f"Offers have been created successfully.")
+        except Exception as e:
+            logger.error("Error encountered while creating the offers.", e)
+            return None
+        
+    @staticmethod
     def generate_uuid():
         return str(uuid.uuid4())

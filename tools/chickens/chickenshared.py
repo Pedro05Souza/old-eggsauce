@@ -46,17 +46,18 @@ def load_farmer_upgrades(farmer):
             "Executive Farmer" : [8, 20],
             "Warrior Farmer": 3,
             "Generous Farmer": [3],
-            'Sustainable Farmer': [4, [5, 40]]
+            'Sustainable Farmer': [14600, [5, 40]]
         }
         return farmer_dict[farmer]
         
 def get_rarity_emoji(rarity):
     return defineRarityEmojis[rarity]
 
-async def get_usr_farm(user: discord.Member):
+async def get_usr_farm(ctx, user: discord.Member):
         """Get the user's farm"""
         farm_data = await update_user_farm(user, Farm.read(user.id))
         if farm_data:
+            farm_data = await get_player_chicken(ctx, user, farm_data)
             await update_farmer(user, farm_data)
             if len(farm_data['chickens']) == 0:
                 return
@@ -182,10 +183,10 @@ async def feed_eggs_auto(farm_data, bank_amount):
 
 async def update_user_farm(user, farm_data):
     if not farm_data:
-        return
+        return None
     last_drop_time = time() - farm_data['last_chicken_drop']
     updated_farm_data = farm_data
-    hours_passed_since_last_egg_drop = min(last_drop_time // 3600, 15)
+    hours_passed_since_last_egg_drop = min(last_drop_time // 3600, 24)
     bank_data = Bank.read(user.id)
     user_data = User.read(user.id)
     for _ in range(int(hours_passed_since_last_egg_drop)):
@@ -265,16 +266,32 @@ async def generate_corncrops(farm_data):
             farm_data['corn'] = corn_dict['corn']
             return farm_data
         
-async def get_player_chicken(user: discord.Member):
+async def get_player_chicken(ctx, user: discord.Member, farm_data):
      """Retrieves the player's chickens from market offers."""
      market_data = Market.get_user_offers(user.id)
-     farm_data = Farm.read(user.id)
-     chickens_list = []
+     offers_list = []
+     chickens_added = []
      for offer in market_data:
-         if offer['created_at'] // 3600 >= offer_expire_time:
-             Market.delete(offer['offer_id'])
-             chickens_list.append(offer['chicken'])
-     if chickens_list:
-        farm_data['chickens'] += chickens_list
-        Farm.update(user.id, chickens=farm_data['chickens'])
+         if offer['created_at'] // 3600 >= 0:
+             offers_list.append(offer)
+     if offers_list:
+            for offer in offers_list:
+                chicken = offer['chicken']
+                print(offer)
+                var = farm_data['chickens'] + [chicken]
+                if len(var) > get_max_chicken_limit(farm_data):
+                    break
+                farm_data['chickens'] = var
+                offers_list.remove(offer)
+                chickens_added.append(chicken)
+                Market.delete(offer['offer_id'])
+            if chickens_added:
+                chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_added])
+                await create_embed_without_title(ctx, description=f":white_check_mark: {user.display_name}, you have successfully added the following chickens to your farm: \n\n{chicken_desc}")
+                Farm.update(user.id, chickens=farm_data['chickens'])
+            if offers_list:
+                chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for offer in offers_list for chicken in [offer['chicken']]])
+                await create_embed_without_title(ctx, description=f":no_entry_sign: {user.display_name}, you can't add the following chickens to your farm: \n\n{chicken_desc}\n They have been automatically put back in the market.")
+     return farm_data
+            
     

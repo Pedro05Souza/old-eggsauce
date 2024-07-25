@@ -30,7 +30,7 @@ class ChickenEvents(commands.Cog):
             if not farm_data['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
                 return
-            message = await get_usr_farm(ctx.author)
+            message = await get_usr_farm(ctx, ctx.author)
             view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author.id, action="D")
             await ctx.send(embed=message,view=view)
         else:
@@ -73,7 +73,7 @@ class ChickenEvents(commands.Cog):
     async def trade_chickens(self, ctx, User: discord.Member, t, author_data, user_data):
         """Trade the chickens"""
         authorEmbed = await get_usr_farm(ctx.author)
-        userEmbed = await get_usr_farm(User)
+        userEmbed = await get_usr_farm(ctx, User)
         trade_data = [author_data['chickens'], user_data['chickens']]
         members_data = [ctx.author, User]
         embeds = [authorEmbed, userEmbed]
@@ -188,7 +188,7 @@ class ChickenEvents(commands.Cog):
             f":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces upkeep by **{load_farmer_upgrades('Guardian Farmer')}%**.\n",
             f":briefcase: Executive Farmer: Gives you **{load_farmer_upgrades('Executive Farmer')[0]}** more daily rolls in the market and chickens generated in the market comes with **{load_farmer_upgrades('Executive Farmer')[1]}%** discount. \n",
             f":crossed_swords: Warrior Farmer: Gives **{load_farmer_upgrades('Warrior Farmer')}** more farm slots.\n",
-            f":leaves: Sustainable Farmer: Auto-feeds the chickens every **{load_farmer_upgrades('Sustainable Farmer')[0]}** hours, the happiness generated is a number between **{load_farmer_upgrades('Sustainable Farmer')[1][0]}-{load_farmer_upgrades('Sustainable Farmer')[1][1]}%**. The farmer uses the money from your bank account.\n",
+            f":leaves: Sustainable Farmer: Auto-feeds the chickens every **{load_farmer_upgrades('Sustainable Farmer')[0] // 3600}** hours, the happiness generated is a number between **{load_farmer_upgrades('Sustainable Farmer')[1][0]}-{load_farmer_upgrades('Sustainable Farmer')[1][1]}%**. The farmer uses the money from your bank account.\n",
             f":tickets: Generous Farmer: Increases the maximum chickens generated in the market by **{load_farmer_upgrades('Generous Farmer')[0]}** slots.\n"
             f"\n\nAll the farmer roles have a cost of **{farmer_price}** eggbux and you can only buy one of them. **Buying a farmer when you already have one will override the existing one.**\nReact with the corresponding emoji to purchase the role."
         ]
@@ -202,7 +202,7 @@ class ChickenEvents(commands.Cog):
             farm_data = Farm.read(user.id)
             if user_data['points'] >= farmer_price:
                 farm_size = get_max_chicken_limit(farm_data)
-                if len(farm_data['chickens']) >= farm_size and farm_data > 8:
+                if len(farm_data['chickens']) >= farm_size and len(farm_data['chickens']) > 8:
                     await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} you have a Warrior farmer, you need to sell the extra farm slots to buy another farmer.")
                     return
                 if reaction.emoji == "💰":
