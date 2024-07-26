@@ -51,6 +51,22 @@ async def get_user_title(user_data):
                 return "Unemployed"
             return userRoles[user_data["roles"][-1]]
 
+async def confirmation_embed(ctx, user: discord.Member, description):
+     """Confirmation embed for modularization"""
+     embed = await make_embed_object(title=f":warning: {user.display_name}, you need to confirm this first:", description=description)
+     embed.set_footer(text="React with ✅ to confirm or ❌ to cancel.")
+     if isinstance(ctx, discord.Interaction):
+        await ctx.response.send_message(embed=embed)
+        msg = await ctx.original_response()
+     else:
+        msg = await ctx.send(embed=embed)
+     await msg.add_reaction("✅")
+     await msg.add_reaction("❌")
+     client = ctx.cilent if isinstance(ctx, discord.Interaction) else ctx.bot
+     reaction, _ = await client.wait_for("reaction_add", check=lambda reaction, author: reaction.message.id == msg.id and author.id == user.id and reaction.emoji in ["✅", "❌"])
+     if reaction.emoji == "✅":
+          return True
+
 
 
 

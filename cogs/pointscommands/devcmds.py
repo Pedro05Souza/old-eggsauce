@@ -212,12 +212,12 @@ class DevCommands(commands.Cog):
      else:
         await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
     
-    @commands.command(name="reloadCog")
+    @commands.command(name="reloadCog", aliases=["reload, rc"])
     async def reload_cog(self, ctx, cog):
         """Reload a cog."""
         if is_dev(ctx):
             if cog in self.bot.cogs:
-                self.bot.reload_extension(f"cogs.pointscommands.{cog}")
+                await self.bot.reload_extension(f"cogs.pointscommands.{cog}")
                 await create_embed_without_title(ctx, f":warning: {cog} has been reloaded.")
             else:
                 await create_embed_without_title(ctx, f":no_entry_sign: {cog} is not a valid cog.")

@@ -15,9 +15,10 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 def get_prefix_for_guild(bot, message):
     """Get the prefix for the guild."""
     if message:
+        bot_data = BotConfig.read(message.guild.id)
         guild_id = message.guild.id
-        if BotConfig.read(guild_id)['prefix']:
-            return BotConfig.read(guild_id)['prefix']
+        if bot_data['prefix']:
+            return bot_data['prefix']
         return "!"
 
 bot = commands.Bot(command_prefix=get_prefix_for_guild, intents=Intents.all(), case_insensitive=True, help_command=None)

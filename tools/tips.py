@@ -11,7 +11,7 @@ tips = {
     9: "You can trade chickens with other players, using !trade command.",
     10:"You can gift chickens to other players, using !gift command.",
     11: "You can register your chicken to the player market, using !offer command.",
-    12: "You can do up to 27 different searches in the player market with the !search command.",
+    12: "You can do up to 15 different searches in the player market with the !search command.",
     13: "You can view your market offers, using !offers, it comes with an optional user parameter.",
     14: "You can extend your bank's capacity with the !ubl command.",
     15: "Your chickens require daily attention or they have a chance of devolving.",

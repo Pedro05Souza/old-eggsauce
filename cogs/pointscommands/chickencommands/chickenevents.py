@@ -1,13 +1,12 @@
 from discord.ext import commands
 from db.farmDB import Farm
-from tools.chickens.chickenshared import *
 from db.userDB import User
 from tools.chickens.selection.chickenselection import ChickenSelectView
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickenshared import determine_chicken_upkeep, get_max_chicken_limit
+from tools.chickens.chickenshared import *
 from tools.pointscore import pricing
-from tools.shared import create_embed_without_title, create_embed_with_title, regular_command_cooldown
+from tools.shared import create_embed_without_title, create_embed_with_title, confirmation_embed, regular_command_cooldown
 import asyncio
 import logging
 import discord
@@ -111,25 +110,30 @@ class ChickenEvents(commands.Cog):
                 EventData.remove(g)
                 return
             gifted_chicken = author_data['chickens'][index]
-            msg = await create_embed_without_title(ctx, f":gift: {user.display_name}, {ctx.author.display_name} wants to gift you a {gifted_chicken['rarity']} {gifted_chicken['name']}. You have 20 seconds to react with ✅ to accept or ❌ to decline the gift request.")
-            await msg.add_reaction("✅")
-            await msg.add_reaction("❌")
-            try:
-                reaction, jogador = await self.bot.wait_for("reaction_add", check=lambda reaction, jogador: jogador == user and reaction.message == msg, timeout=40)
-                if reaction.emoji == "✅":
-                    chicken = author_data['chickens'][index]
-                    user_data['chickens'].append(chicken)
-                    author_data['chickens'].remove(chicken)
-                    Farm.update(ctx.author.id, chickens=author_data['chickens'])
-                    Farm.update(user.id, chickens=user_data['chickens'])
-                    await create_embed_without_title(ctx, f":gift: {ctx.author.display_name}, the chicken has been gifted to {user.display_name}.")
+            confirmation = await confirmation_embed(ctx, ctx.author, f":question: {ctx.author.display_name}, are you sure you want to gift **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']} to {user.display_name}?")
+            if confirmation:
+                msg = await create_embed_without_title(ctx, f":gift: {user.display_name}, {ctx.author.display_name} wants to gift you a {gifted_chicken['rarity']} {gifted_chicken['name']}. You have 20 seconds to react with ✅ to accept or ❌ to decline the gift request.")
+                await msg.add_reaction("✅")
+                await msg.add_reaction("❌")
+                try:
+                    reaction, jogador = await self.bot.wait_for("reaction_add", check=lambda reaction, jogador: jogador == user and reaction.message == msg, timeout=40)
+                    if reaction.emoji == "✅":
+                        chicken = author_data['chickens'][index]
+                        user_data['chickens'].append(chicken)
+                        author_data['chickens'].remove(chicken)
+                        Farm.update(ctx.author.id, chickens=author_data['chickens'])
+                        Farm.update(user.id, chickens=user_data['chickens'])
+                        await create_embed_without_title(ctx, f":gift: {ctx.author.display_name}, the chicken has been gifted to {user.display_name}.")
+                        EventData.remove(g)
+                    elif reaction.emoji == "❌":
+                        await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has declined the gift request.")
+                        EventData.remove(g)
+                        return
+                except asyncio.TimeoutError:
+                    await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has not responded to the gift request.")
                     EventData.remove(g)
-                elif reaction.emoji == "❌":
-                    await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has declined the gift request.")
-                    EventData.remove(g)
-                    return
-            except asyncio.TimeoutError:
-                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} has not responded to the gift request.")
+            else:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have cancelled the gift request.")
                 EventData.remove(g)
         else:
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} don't have a farm.")
@@ -141,9 +145,9 @@ class ChickenEvents(commands.Cog):
         """Evolves a chicken if having 2 of the same rarity"""
         if await verify_events(ctx):
             return
-        e = EventData(author=ctx.author.id)
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
+            e = EventData(author=ctx.author.id)
             if not farm_data['chickens']:
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                 EventData.remove(e)
@@ -170,12 +174,18 @@ class ChickenEvents(commands.Cog):
                 await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't evolve a dead chicken.")
                 EventData.remove(e)
                 return
-            rarity_list = list(ChickenRarity.__members__)
-            chicken_selected['rarity'] = rarity_list[rarity_list.index(chicken_selected['rarity']) + 1]
-            chicken_selected['upkeep_multiplier'] = determine_chicken_upkeep(chicken_selected)
-            farm_data['chickens'].remove(chicken_removed)
-            Farm.update(ctx.author.id, chickens=farm_data['chickens'])
-            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, the chicken has been evolved to {chicken_selected['rarity']} {chicken_selected['name']}.")
+            confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to evolve your **{get_rarity_emoji(chicken_selected['rarity'])}{chicken_selected['rarity']} {chicken_selected['name']}** to a higher rarity?")
+            if confirmation:
+                rarity_list = list(ChickenRarity.__members__)
+                chicken_selected['rarity'] = rarity_list[rarity_list.index(chicken_selected['rarity']) + 1]
+                chicken_selected['upkeep_multiplier'] = determine_chicken_upkeep(chicken_selected)
+                farm_data['chickens'].remove(chicken_removed)
+                Farm.update(ctx.author.id, chickens=farm_data['chickens'])
+                await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, the chicken has been evolved to {chicken_selected['rarity']} {chicken_selected['name']}.")
+                EventData.remove(e)
+            else:
+                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you have cancelled the evolution.")
+                EventData.remove(e)
 
     @commands.hybrid_command(name="farmer", aliases =["farmers"], usage="farmer", description="The farmers helps increase the productivity of the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)

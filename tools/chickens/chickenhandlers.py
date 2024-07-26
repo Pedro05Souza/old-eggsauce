@@ -54,8 +54,10 @@ class EventData():
     def remove(obj):
         try:
             EventData.obj_list.remove(obj)
+        except ValueError as e:
+            logger.error("Error removing object from list. Probably already removed.", e)
         except Exception as e:
-            logger.error("Error removing object from list.", e)
+            logger.error("Error removing object from list.",e)
 
     @staticmethod
     def remove_all():

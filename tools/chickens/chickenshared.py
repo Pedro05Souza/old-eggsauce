@@ -99,7 +99,7 @@ async def verify_events(ctx, *args):
         if EventData.read_kwargs(target=ctx.author.id):
             await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't use this command while an event is active.")
             return True
-     
+    
 # updates
 
 async def drop_egg_for_player(farm_data, bank_data, user_data):
@@ -272,12 +272,12 @@ async def get_player_chicken(ctx, user: discord.Member, farm_data):
      offers_list = []
      chickens_added = []
      for offer in market_data:
-         if offer['created_at'] // 3600 >= 0:
+        last_offer_time = time() - offer['created_at']
+        if last_offer_time // 3600 > offer_expire_time:
              offers_list.append(offer)
      if offers_list:
             for offer in offers_list:
                 chicken = offer['chicken']
-                print(offer)
                 var = farm_data['chickens'] + [chicken]
                 if len(var) > get_max_chicken_limit(farm_data):
                     break
@@ -287,7 +287,7 @@ async def get_player_chicken(ctx, user: discord.Member, farm_data):
                 Market.delete(offer['offer_id'])
             if chickens_added:
                 chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_added])
-                await create_embed_without_title(ctx, description=f":white_check_mark: {user.display_name}, you have successfully added the following chickens to your farm: \n\n{chicken_desc}")
+                await create_embed_without_title(ctx, description=f":white_check_mark: {user.display_name}, you have successfully added the following chickens to your farm: \n\n{chicken_desc}\n Those chickens have been removed from the market.")
                 Farm.update(user.id, chickens=farm_data['chickens'])
             if offers_list:
                 chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for offer in offers_list for chicken in [offer['chicken']]])

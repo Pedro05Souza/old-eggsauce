@@ -1,5 +1,5 @@
 from discord.ext import commands
-from tools.shared import create_embed_without_title, regular_command_cooldown
+from tools.shared import create_embed_without_title, regular_command_cooldown, confirmation_embed
 from db.bankDB import Bank
 from db.userDB import User
 from tools.pointscore import pricing
@@ -99,13 +99,15 @@ class BankCommands(commands.Cog):
         if user_data['points'] < upgrades_formula:
             await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you currently have {bank_data['upgrades'] - 1} upgrades. You need **{upgrades_formula}** eggbux to upgrade the bank.")
             return
-        User.update_points(ctx.author.id, user_data['points'] - upgrades_formula)
-        upgrades = bank_data['upgrades'] + 1
-        Bank.update_upgrades(ctx.author.id, upgrades)
-        await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you upgraded the bank to level {upgrades - 1}. Now you can have up to **{upgrades * 10000}** eggbux in the bank.")
-        return
-    
-    
-
+        confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to upgrade the bank to level {bank_data['upgrades']} for {upgrades_formula} eggbux?")
+        if confirmation:
+            User.update_points(ctx.author.id, user_data['points'] - upgrades_formula)
+            upgrades = bank_data['upgrades'] + 1
+            Bank.update_upgrades(ctx.author.id, upgrades)
+            await create_embed_without_title(ctx, f":bank: {ctx.author.display_name}, you upgraded the bank to level {upgrades - 1}. Now you can have up to **{upgrades * 10000}** eggbux in the bank.")
+            return
+        else:
+            await create_embed_without_title(ctx, f"{ctx.author.display_name}, you have cancelled the bank upgrade.")
+            return
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

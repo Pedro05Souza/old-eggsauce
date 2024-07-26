@@ -87,7 +87,7 @@ class ChickenMarketMenu(ui.Select):
         if len(farm_data['chickens']) == get_max_chicken_limit(farm_data):
             await interaction.response.send_message("You hit the maximum limit of chickens in the farm.", ephemeral=True)
             self.options = [
-                SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken, farm_data['farmer'])}", value=str(index), emoji=self.chicken_emoji(chicken['rarity']))
+                SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken, farm_data['farmer'])}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
                 for index, chicken in enumerate(self.chickens)
             ]
             await interaction.message.edit(view=self.view)
