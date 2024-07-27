@@ -6,6 +6,7 @@ from tools.chickens.chickenhandlers import EventData
 from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object
 from tools.pointscore import pricing
 from math import ceil
+from better_profanity import profanity
 import discord
 
 class ChickenView(commands.Cog):
@@ -112,6 +113,10 @@ class ChickenView(commands.Cog):
         """Rename the farm"""
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
+            censor = profanity.contains_profanity(nickname)
+            if censor:
+                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't use profanity in the farm name.")
+                return
             if len(nickname) > 20:
                 await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name} The farm name must have a maximum of 20 characters.")
                 return
@@ -129,6 +134,10 @@ class ChickenView(commands.Cog):
         index -= 1
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
+            censor = profanity.contains_profanity(nickname)
+            if censor:
+                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't use profanity in the chicken name.")
+                return
             if not farm_data['chickens']:
                     await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                     return

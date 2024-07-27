@@ -7,6 +7,7 @@ from tools.shared import confirmation_embed
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.selection.chickenselection import ChickenSelectView
+from better_profanity import profanity
 import discord
 
 class PlayerMarket(commands.Cog):
@@ -36,6 +37,11 @@ class PlayerMarket(commands.Cog):
                 EventData.remove(r)
                 return
             if desc:
+                censor = profanity.contains_profanity(desc)
+                if censor:
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, your description contains profanity.")
+                    EventData.remove(r)
+                    return
                 if len(desc) > 50:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, your description cannot be longer than **50** characters.")
                     EventData.remove(r)

@@ -6,6 +6,7 @@ from tools.chickens.chickeninfo import ChickenFood, max_corn_limit, max_plot_lim
 from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown
 from tools.pointscore import pricing
 from tools.chickens.chickenshared import update_player_corn, calculate_corn
+from better_profanity import profanity
 import discord
 
 class CornCommands(commands.Cog):
@@ -29,6 +30,10 @@ class CornCommands(commands.Cog):
         """Rename the cornfield"""
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
+            censor = profanity.contains_profanity(nickname)
+            if censor:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} The cornfield name contains profanity.")
+                return
             if len(nickname) > 20:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} The cornfield name must have a maximum of 15 characters.")
                 return
