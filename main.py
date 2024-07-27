@@ -16,7 +16,6 @@ def get_prefix_for_guild(bot, message):
     """Get the prefix for the guild."""
     if message:
         bot_data = BotConfig.read(message.guild.id)
-        guild_id = message.guild.id
         if bot_data['prefix']:
             return bot_data['prefix']
         return "!"

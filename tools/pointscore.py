@@ -1,7 +1,7 @@
 from db.userDB import User
 from db.botConfigDB import BotConfig
 from discord.ext import commands
-from tools.shared import create_embed_without_title, make_embed_object, is_dev
+from tools.shared import send_bot_embed, make_embed_object, is_dev
 from tools.prices import Prices
 import inspect
 import discord
@@ -15,7 +15,7 @@ dev_mode = False
 async def set_points_commands_submodules(ctx, config_data):
     active_module = config_data['toggled_modules']
     if not active_module:
-        await create_embed_without_title(ctx, ":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
+        await send_bot_embed(ctx, description=":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
     shared_cogs = ["PointsConfig", "BankCommands"]
     friendly_cogs = ["FriendlyCommands", "ChickenCore", "ChickenEvents", "ChickenView", "InteractiveCommands", "AICommands", "CornCommands", "PlayerMarket"]
@@ -28,14 +28,14 @@ async def set_points_commands_submodules(ctx, config_data):
         return True
     
     if active_module == "N":
-        await create_embed_without_title(ctx, ":warning: The points commands are **disabled** in this server.")
+        await send_bot_embed(ctx, description=":warning: The points commands are **disabled** in this server.")
         return False
     
     cogs_to_check = module_cogs.get(active_module, [])
     if ctx.cog.qualified_name in cogs_to_check:
         return True
     else:
-        await create_embed_without_title(ctx, ":warning: The module is not enabled in this server.")
+        await send_bot_embed(ctx, description=":warning: The module is not enabled in this server.")
         return False
 
 def verify_points(comando, user_data):
@@ -72,15 +72,15 @@ async def treat_exceptions(ctx, comando, user_data):
     if varargs_index is not None:
         expected_args_count -= 1 
     if len(command_args) < expected_args_count:
-        await create_embed_without_title(ctx, ":no_entry_sign: Insufficient amount of arguments.")
+        await send_bot_embed(ctx, description=":no_entry_sign: Insufficient amount of arguments.")
         return False
     elif len(command_args) > len(parameters) and varargs_index is None:
-        await create_embed_without_title(ctx, ":no_entry_sign: Excessive amount of arguments.")
+        await send_bot_embed(ctx, description=":no_entry_sign: Excessive amount of arguments.")
         return False
     
     channel = BotConfig.read(ctx.guild.id)
     if not channel['channel_id']:
-        await create_embed_without_title(ctx, ":no_entry_sign: The bot has not been configured properly. Type **!setChannel** in the desired channel.")
+        await send_bot_embed(ctx, description=":no_entry_sign: The bot has not been configured properly. Type **!setChannel** in the desired channel.")
         return False
     if ctx.channel.id != channel['channel_id']:
         commands_object = ctx.bot.get_channel(channel['channel_id'])
@@ -105,21 +105,21 @@ async def treat_exceptions(ctx, comando, user_data):
                 else:
                     arg = param_type(arg)
             if arg is not None and not isinstance(arg, param_type):
-                await create_embed_without_title(ctx, f":no_entry_sign: Invalid argument type. Expected {param_type.__name__}.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: Invalid argument type. Expected {param_type.__name__}.")
                 return False
             if '*' not in str(param) and index not in optional_params_indices:
                 i += 1
         except ValueError:
-            await create_embed_without_title(ctx, ":no_entry_sign: Invalid arguments.")
+            await send_bot_embed(ctx, description=":no_entry_sign: Invalid arguments.")
             return False
         except commands.MemberNotFound:
-            await create_embed_without_title(ctx, ":no_entry_sign: Member not found.")
+            await send_bot_embed(ctx, description=":no_entry_sign: Member not found.")
             return False
         except commands.errors.BadArgument:
-            await create_embed_without_title(ctx, ":no_entry_sign: Invalid arguments.")
+            await send_bot_embed(ctx, description=":no_entry_sign: Invalid arguments.")
             return False
         except commands.errors.CommandInvokeError:
-            await create_embed_without_title(ctx, ":no_entry_sign: An error occurred while executing the command.")
+            await send_bot_embed(ctx, description=":no_entry_sign: An error occurred while executing the command.")
             return False
     new_points = user_data['points'] - Prices[comando].value
     User.update_points(ctx.author.id, new_points)
@@ -135,7 +135,7 @@ def pricing():
         config_data = BotConfig.read(ctx.guild.id)
         if dev_mode:
             if not is_dev(ctx):
-                await create_embed_without_title(ctx, ":warning: The bot is currently in development mode.")
+                await send_bot_embed(ctx, description=":warning: The bot is currently in development mode.")
                 result = False
                 return result
         if config_data['toggled_modules'] == "N":
@@ -146,7 +146,7 @@ def pricing():
         if command in Prices.__members__:
             user_data = User.read(ctx.author.id)
             if not user_data:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
                 result = False
                 ctx.predicate_result = result
                 return result
@@ -159,12 +159,12 @@ def pricing():
                 ctx.predicate_result = result
                 return result
             else:
-                await create_embed_without_title(ctx, ":no_entry_sign: You do not have enough points to use this command.")
+                await send_bot_embed(ctx, description=":no_entry_sign: You do not have enough points to use this command.")
                 result = False
                 ctx.predicate_result = result
                 return result
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: Unknown points command.")
+            await send_bot_embed(ctx, description=":no_entry_sign: Unknown points command.")
         return result
     try:
         return commands.check(predicate)

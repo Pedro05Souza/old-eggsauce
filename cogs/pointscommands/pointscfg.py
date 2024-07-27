@@ -1,6 +1,6 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
-from tools.shared import create_embed_with_title, create_embed_without_title, make_embed_object, regular_command_cooldown, get_user_title
+from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, get_user_title
 from tools.tips import tips
 from db.bankDB import Bank
 from db.userDB import User
@@ -30,7 +30,7 @@ class PointsConfig(commands.Cog):
             "N": "None"
         }
         current_module = BotConfig.read(ctx.guild.id)['toggled_modules']
-        await create_embed_without_title(ctx, f":warning: Points commands are currently set to: **{modules[current_module]}**")
+        await send_bot_embed(ctx, description=f":warning: Points commands are currently set to: **{modules[current_module]}**")
 
     async def update_points(self, user: discord.Member):
         """Updates the points of the user every 10 seconds."""
@@ -78,10 +78,10 @@ class PointsConfig(commands.Cog):
     async def register(self, ctx):
         """Registers the user in the database."""
         if User.read(ctx.author.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} is already registered.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is already registered.")
         else:
             User.create(ctx.author.id, 0)
-            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} has been registered.")
+            await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} has been registered.")
  
     @commands.hybrid_command(name="points", aliases=["pts", "eggbux", "p"], brief="Shows the amount of points the user has.", usage="points OPTIONAL [user]", description="Shows the amount of points a usr has. If not usr, shows author's points.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -104,7 +104,7 @@ class PointsConfig(commands.Cog):
                 msg.set_thumbnail(url=user.display_avatar)
                 await ctx.send(embed=msg)
         else:   
-            await create_embed_without_title(ctx, f"{user.display_name} has no eggbux :cry:")
+            await send_bot_embed(ctx, description=f"{user.display_name} has no eggbux :cry:")
 
     async def update_user_points(self, user: discord.Member):
         """Updates the user's points."""
@@ -142,7 +142,7 @@ class PointsConfig(commands.Cog):
             "M" : 4000,
             "H" : 5000
         }
-        message = await create_embed_with_title(ctx, "Custom Titles:", f":poop: **{roles['T']}**\nIncome: 20 eggbux. :money_bag: \nPrice: {rolePrices['T']} eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 40 eggbux. :money_bag:\n Price: {rolePrices['L']} eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 60 eggbux. :money_bag:\n Price: {rolePrices['M']} eggbux. \n\n:crown: **{roles['H']}** \n Income: 80 eggbux. :money_bag:\n Price: {rolePrices['H']} eggbux. \n\n**The titles are bought sequentially.**\nReact with ✅ to buy a title.")
+        message = await send_bot_embed(ctx, title="Custom Titles:", description=f":poop: **{roles['T']}**\nIncome: 20 eggbux. :money_bag: \nPrice: {rolePrices['T']} eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 40 eggbux. :money_bag:\n Price: {rolePrices['L']} eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 60 eggbux. :money_bag:\n Price: {rolePrices['M']} eggbux. \n\n:crown: **{roles['H']}** \n Income: 80 eggbux. :money_bag:\n Price: {rolePrices['H']} eggbux. \n\n**The titles are bought sequentially.**\nReact with ✅ to buy a title.")
         await message.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
@@ -166,11 +166,11 @@ class PointsConfig(commands.Cog):
         """Buy roles."""
         if user_data["points"] >= roleValue and roleChar not in user_data["roles"]:
             User.update_all(user.id, user_data["points"] - roleValue, user_data["roles"] + roleChar)
-            await create_embed_without_title(ctx, f":white_check_mark: {user.display_name} has bought the role **{roleName}**.")
+            await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name} has bought the role **{roleName}**.")
         elif user_data["points"] < roleValue:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have enough eggbux to buy the role **{roleName}**.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have enough eggbux to buy the role **{roleName}**.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} already has the role **{roleName}**.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} already has the role **{roleName}**.")
 
     async def salary_role(self, user_data):
         """Returns the salary of a user based on their roles."""
@@ -195,11 +195,11 @@ class PointsConfig(commands.Cog):
         user_data = User.read(user.id)
         if user_data:
             if user_data["roles"] != "":
-                await create_embed_without_title(ctx, f":moneybag: {user.display_name} has the title of **{await get_user_title(user_data)}** and earns {await self.salary_role(user_data)} eggbux..")
+                await send_bot_embed(ctx, description=f":moneybag: {user.display_name} has the title of **{await get_user_title(user_data)}** and earns {await self.salary_role(user_data)} eggbux..")
                 return   
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} doesn't have a title.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a title.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} isn't registered in the database.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} isn't registered in the database.")
             await refund(ctx.author, ctx)
             
     @commands.Cog.listener()

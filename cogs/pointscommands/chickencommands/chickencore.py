@@ -3,12 +3,11 @@ from time import time
 from discord.ext import commands
 from db.farmDB import Farm
 from tools.chickens.selection.chickenselection import ChickenSelectView
-from tools.shared import create_embed_without_title, spam_command_cooldown
 from tools.chickens.chickenhandlers import RollLimit
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
 from tools.chickens.chickeninfo import rollRates
 from tools.pointscore import pricing
-from tools.shared import create_embed_without_title, make_embed_object, regular_command_cooldown
+from tools.shared import make_embed_object, regular_command_cooldown, spam_command_cooldown, send_bot_embed
 import discord
 import asyncio
 
@@ -23,10 +22,10 @@ class ChickenCore(commands.Cog):
     async def create_farm(self, ctx):
         """Farm some eggs"""
         if Farm.read(ctx.author.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You already have a farm.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You already have a farm.")
         else:
             Farm.create(ctx.author.id, ctx)
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} You have created a farm.")
+            await send_bot_embed(ctx, description=f"{ctx.author.display_name} You have created a farm.")
 
     @commands.hybrid_command(name="farm", aliases=["f"], usage="farm OPTIONAL [user]", description="Check the chickens in the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -37,7 +36,7 @@ class ChickenCore(commands.Cog):
             user = ctx.author
         msg = await get_usr_farm(ctx, user)
         if not msg:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have a farm or any chickens.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have a farm or any chickens.")
             return
         await ctx.send(embed=msg)
 
@@ -56,7 +55,7 @@ class ChickenCore(commands.Cog):
         if farm_data:
             await self.roll(ctx, 8, 'eggpack')
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
             
     async def roll(self, ctx, chickens_to_generate, action):
         """Market to buy chickens"""
@@ -73,7 +72,7 @@ class ChickenCore(commands.Cog):
                     else:
                         plrObj = RollLimit(ctx.author.id, default_rolls)
                 if plrObj.current == 0:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today.")
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today.")
                     return
                 plrObj.current -= 1
             if farm_data['farmer'] == "Generous Farmer":
@@ -83,7 +82,7 @@ class ChickenCore(commands.Cog):
             view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message)
             await ctx.send(embed=message, view=view)
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} you don't have a farm.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you don't have a farm.")
                          
     def roll_rates_sum(self):
         """Roll the sum of the rates of the chicken rarities"""

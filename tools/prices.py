@@ -21,6 +21,10 @@ class Prices(Enum):
     buycorn = 0
     chickenprices = 0
     chickenvalues = 0
+    addbench = 0
+    removebench = 0
+    bench = 0
+    switchbench = 0
     farmprofit = 0
     feedallchicken = 0
     renamecornfield = 0

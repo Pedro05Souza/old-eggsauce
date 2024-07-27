@@ -1,6 +1,6 @@
 from discord.ui import View, Select
 from discord import SelectOption
-from tools.shared import create_embed_without_title, make_embed_object
+from tools.shared import make_embed_object
 from db.botConfigDB import BotConfig
 
 class SelectModule(View):

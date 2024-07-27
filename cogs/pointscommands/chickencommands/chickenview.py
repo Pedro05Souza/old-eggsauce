@@ -1,8 +1,9 @@
 from discord.ext import commands
 from db.farmDB import Farm
-from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates
-from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades, update_user_farm
-from tools.shared import create_embed_with_title, create_embed_without_title, make_embed_object, regular_command_cooldown
+from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, max_bench
+from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades, update_user_farm, get_user_bench, get_max_chicken_limit
+from tools.chickens.chickenhandlers import EventData
+from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object
 from tools.pointscore import pricing
 from math import ceil
 import discord
@@ -22,7 +23,7 @@ class ChickenView(commands.Cog):
         farm_data = Farm.read(user.id)
         if farm_data:
             if index > len(farm_data['chickens']) or index < 0:
-                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, the chicken index is invalid.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, the chicken index is invalid.")
                 return
             chicken = farm_data['chickens'][index - 1]
             chicken_egg_value = await get_chicken_egg_value(chicken) - int((await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))
@@ -36,7 +37,7 @@ class ChickenView(commands.Cog):
     async def check_chicken_rarities(self, ctx):
         """Check the rarities of the chickens"""
         rarity_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {round(rate/100, 4)}%" for rarity, rate in rollRates.items()])
-        await create_embed_with_title(ctx, "Chicken Rarities:", rarity_info)
+        await send_bot_embed(ctx, title="Chicken Rarities:", description=rarity_info)
 
     @commands.hybrid_command(name="chickenvalues", aliases=["cv"], usage="chickenValues", description="Check the values of eggs produced by chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -44,7 +45,7 @@ class ChickenView(commands.Cog):
     async def check_chicken_values(self, ctx):
         """Check the amount of eggs produced by chickens"""
         value_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {ChickenMultiplier[rarity].value}x" for rarity in ChickenMultiplier.__members__])
-        await create_embed_with_title(ctx, "Amount of eggs produced by rarity:", value_info)
+        await send_bot_embed(ctx, title="Amount of eggs produced by rarity:", description=value_info)
     
     @commands.hybrid_command(name="chickencorn", usage="chickencorn", description="Show all the chicken food values.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -52,7 +53,7 @@ class ChickenView(commands.Cog):
     async def chicken_corn(self, ctx):
         """Show all the chicken food values"""
         corn_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {ChickenFood[rarity].value}" for rarity in ChickenFood.__members__])
-        await create_embed_with_title(ctx, "Chicken food values:", corn_info)
+        await send_bot_embed(ctx, title="Chicken food values:", description=corn_info)
     
     @commands.hybrid_command(name="chickenprices", aliases=["cprice"], usage="chickenPrices", description="Check the prices of the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -60,7 +61,7 @@ class ChickenView(commands.Cog):
     async def check_chicken_prices(self, ctx):
         """Check the prices of the chickens"""
         prices_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {175 * ChickenRarity[rarity].value} eggbux" for rarity in ChickenRarity.__members__])
-        await create_embed_with_title(ctx, "Chicken prices:", prices_info)
+        await send_bot_embed(ctx, title="Chicken prices:", description=prices_info)
 
     @commands.hybrid_command(name="farmprofit", aliases=["fp"], usage="farmprofit OPTIONAL [user]", description="Check the farm profit.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -76,7 +77,7 @@ class ChickenView(commands.Cog):
             current_upkeep = 0
             totalcorn = 0
             if len(farm_data['chickens']) == 0:
-                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have any chickens.")
+                await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have any chickens.")
                 return
             for chicken in farm_data['chickens']:
                 totalcorn += ChickenFood[chicken['rarity']].value
@@ -96,13 +97,13 @@ class ChickenView(commands.Cog):
                 totalProfit += added_value
             result = totalProfit - totalLoss
             if result > 0:
-                await create_embed_without_title(ctx, f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**.")
+                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**.")
             elif result < 0:
-                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, your farm is expected to generate a loss of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**.")
+                await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, your farm is expected to generate a loss of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**.")
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss.")
+                await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have a farm.")
+            await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have a farm.")
 
     @commands.hybrid_command(name="renamefarm", aliases=["rf"], usage="renameFarm <nickname>", description="Rename the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -112,13 +113,13 @@ class ChickenView(commands.Cog):
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
             if len(nickname) > 20:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} The farm name must have a maximum of 20 characters.")
+                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name} The farm name must have a maximum of 20 characters.")
                 return
             farm_data['farm_name'] = nickname
             Farm.update(ctx.author.id, farm_name=nickname)
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} Your farm has been renamed to {nickname}.")
+            await send_bot_embed(ctx,description= f"{ctx.author.display_name} Your farm has been renamed to {nickname}.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You do not have a farm.")
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name} You do not have a farm.")
 
     @commands.hybrid_command(name="renamechicken", aliases=["rc"], usage="renameChicken <index> <nickname>", description="Rename a chicken in the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -129,17 +130,17 @@ class ChickenView(commands.Cog):
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
             if not farm_data['chickens']:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+                    await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                     return
             if len(nickname) > 15:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken name must have a maximum of 15 characters.")
+                    await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, the chicken name must have a maximum of 15 characters.")
                     return
             if index > len(farm_data['chickens']) or index < 0:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                    await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
                     return
             check_nickname = nickname.upper()
             if check_nickname in ChickenRarity.__members__:
-                    await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't rename a chicken with a rarity name.")
+                    await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't rename a chicken with a rarity name.")
                     return
             chicken_arr = farm_data['chickens']
             for i, chicken in enumerate(chicken_arr):
@@ -148,9 +149,9 @@ class ChickenView(commands.Cog):
                     break
             farm_data['chickens'] = chicken_arr
             Farm.update(ctx.author.id, chickens=farm_data['chickens'])
-            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, the chicken has been renamed to {nickname}.")
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chicken has been renamed to {nickname}.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
     
     @commands.hybrid_command(name="switchchicken", aliases=["switch"], usage="switchChicken <index> <index2>", description="Switch the position of two chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -160,13 +161,91 @@ class ChickenView(commands.Cog):
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
             if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
                 return
             farm_data['chickens'][index - 1], farm_data['chickens'][index2 - 1] = farm_data['chickens'][index2 - 1], farm_data['chickens'][index - 1]
             Farm.update(ctx.author.id, chickens=farm_data['chickens'])
-            await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+    
+    @commands.hybrid_command(name="bench", aliases=["b"], usage="b", description="You can store chickens in the bench.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def view_bench(self, ctx, user: discord.Member = None):
+        """View the bench"""
+        if not user:
+            user = ctx.author
+        farm_data = Farm.read(user.id)
+        if farm_data:
+            await get_user_bench(ctx, farm_data)
+        else:
+            await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have a farm.")
+    
+    @commands.hybrid_command(name="addbench", aliases=["ab"], usage="addbench <index>", description="Add a chicken from the farm to the bench.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def add_bench(self, ctx, index: int):
+        """Adds a chicken to the bench"""
+        farm_data = Farm.read(ctx.author.id)
+        index -= 1
+        if farm_data:
+            e = EventData(author=ctx.author.id)
+            if index > len(farm_data['chickens']) or index < 0:
+                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                EventData.remove(e)
+                return
+            if len(farm_data['bench']) >= max_bench:
+                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the bench is full.")
+                EventData.remove(e)
+                return
+            farm_data['bench'].append(farm_data['chickens'][index])
+            print(farm_data['bench'])
+            farm_data['chickens'].pop(index)
+            EventData.remove(e)
+            Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, **{get_rarity_emoji(farm_data['bench'][-1]['rarity'])}{farm_data['bench'][-1]['rarity']} {farm_data['bench'][-1]['name']}** has been added to the bench.")
+        else:
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+    
+    @commands.hybrid_command(name="removebench", aliases=["rb"], usage="removebench <index>", description="Remove a chicken from the bench to the farm.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def remove_bench(self, ctx, index: int):
+        """Removes a chicken from the bench"""
+        farm_data = Farm.read(ctx.author.id)
+        index -= 1
+        if farm_data:
+            if index > len(farm_data['bench']) or index < 0:
+                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                return
+            if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
+                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum chicken limit.")
+                return
+            farm_data['chickens'].append(farm_data['bench'][index])
+            farm_data['bench'].pop(index)
+            Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the {get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']} has been removed from the bench.")
+    
+    @commands.hybrid_command(name="switchbench", aliases=["sb"], usage="switchb <index_farm> <index_bench>", description="Switch a chicken from the farm to the bench.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def switch_bench(self, ctx, index_farm: int, index_bench_int: int):
+        """Switches a chicken from the farm to the bench"""
+        farm_data = Farm.read(ctx.author.id)
+        index_farm -= 1
+        index_bench_int -= 1
+        if farm_data:
+            e = EventData(author=ctx.author.id)
+            if index_farm > len(farm_data['chickens']) or index_farm < 0 or index_bench_int > len(farm_data['bench']) or index_bench_int < 0:
+                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                EventData.remove(e)
+                return
+            farm_data['chickens'][index_farm], farm_data['bench'][index_bench_int] = farm_data['bench'][index_bench_int], farm_data['chickens'][index_farm]
+            Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
+            EventData.remove(e)
+            
 
 async def setup(bot):
     await bot.add_cog(ChickenView(bot))

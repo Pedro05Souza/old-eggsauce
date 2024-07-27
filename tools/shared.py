@@ -4,20 +4,11 @@ import discord
 spam_command_cooldown = .8
 regular_command_cooldown = 3.5
 
-async def create_embed_without_title(ctx, description, **kwargs):
+async def send_bot_embed(ctx, **kwargs):
     """Create an embed without a title."""
-    embed = discord.Embed(description=description, color=discord.Color.yellow())
+    embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     if isinstance(ctx, discord.Interaction):
-        message = await ctx.response.send_message(embed=embed, **kwargs)
-    else:
-        message = await ctx.send(embed=embed, **kwargs)
-    return message
-
-async def create_embed_with_title(ctx, title, description, **kwargs):
-    """Create an embed with a title."""
-    embed = discord.Embed(title=title, description=description, color=discord.Color.yellow())
-    if isinstance(ctx, discord.Interaction):
-        message = await ctx.response.send_message(embed=embed, **kwargs)
+        message = await ctx.response.send_message(embed=embed)
     else:
         message = await ctx.send(embed=embed)
     return message
@@ -62,7 +53,7 @@ async def confirmation_embed(ctx, user: discord.Member, description):
         msg = await ctx.send(embed=embed)
      await msg.add_reaction("✅")
      await msg.add_reaction("❌")
-     client = ctx.cilent if isinstance(ctx, discord.Interaction) else ctx.bot
+     client = ctx.client if isinstance(ctx, discord.Interaction) else ctx.bot
      reaction, _ = await client.wait_for("reaction_add", check=lambda reaction, author: reaction.message.id == msg.id and author.id == user.id and reaction.emoji in ["✅", "❌"])
      if reaction.emoji == "✅":
           return True

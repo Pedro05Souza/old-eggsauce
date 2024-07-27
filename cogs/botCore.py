@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from tools.shared import create_embed_without_title, make_embed_object, is_dev, make_embed_object
+from tools.shared import send_bot_embed, make_embed_object, is_dev, make_embed_object
 from db.botConfigDB import BotConfig
 from tools.pointscore import refund
 from tools.prices import Prices
@@ -16,7 +16,6 @@ logger = logging.getLogger('botcore')
 monitor_mode = False
 
 class BotCore(commands.Cog):
-    
     def __init__(self, bot):
         load_dotenv()
         self.bot = bot
@@ -79,21 +78,16 @@ class BotCore(commands.Cog):
     async def force_restart(self, ctx):
         """Restart the bot."""
         if is_dev(ctx):
-            await create_embed_without_title(ctx, ":warning: Restarting...")
+            await send_bot_embed(ctx, description=":warning: Restarting...")
             logger.info(f"{ctx.author.name}, user id: {ctx.author.id} has attempted to restart the bot.")
             await self.restart_client()
         else:
-            await create_embed_without_title(ctx, ":skull: Hell naw.")
+            await send_bot_embed(ctx, description=":skull: Hell naw.")
 
     async def restart_every_day(self):
         while True:
             await asyncio.sleep(86400)
             await self.restart_client()
-
-    @commands.hybrid_command("commands", brief="Displays the commands available to the user.", usage="commands")
-    async def cmds(self, ctx):
-        """Displays a list of commands available to the user."""
-        embed = await make_embed_object(title="**:gear: COMMANDS:***", description="Select a module to display the commands available.")
     
     async def tutorial(self, target):
         """Sends a tutorial message to the user."""
@@ -127,7 +121,7 @@ class BotCore(commands.Cog):
                 await ctx.author.send(embed=embed)
         else:
             BotConfig.create(ctx.guild.id)
-            await create_embed_without_title(ctx, ":warning: The bot wasn't registered in this server. Try again.")
+            await send_bot_embed(ctx, description=":warning: The bot wasn't registered in this server. Try again.")
 
     @commands.command("setPrefix", aliases=["setP"])
     async def set_prefix(self, ctx, prefix: str):
@@ -135,16 +129,16 @@ class BotCore(commands.Cog):
         if BotConfig.read(ctx.guild.id):
             if ctx.author.guild_permissions.administrator:
                 if len(prefix) > 1:
-                    await create_embed_without_title(ctx, ":no_entry_sign: The prefix can't have more than one character.")
+                    await send_bot_embed(ctx, description=":no_entry_sign: The prefix can't have more than one character.")
                     return
                 BotConfig.update_prefix(ctx.guild.id, prefix)
-                await create_embed_without_title(ctx, f":white_check_mark: Prefix has been set to **{prefix}**.")
+                await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
                 await ctx.author.send(embed=embed)
         else:
             BotConfig.create(ctx.guild.id, prefix=prefix)
-            await create_embed_without_title(ctx, f":white_check_mark: Prefix has been set to **{prefix}**.")
+            await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
             
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx):
@@ -152,13 +146,13 @@ class BotCore(commands.Cog):
         if BotConfig.read(ctx.guild.id):
             if ctx.author.guild_permissions.administrator:
                 BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
-                await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been set.")
+                await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
                 await ctx.author.send(embed=embed)
         else:
             BotConfig.create(ctx.guild.id, None, ctx.channel.id)
-            await create_embed_without_title(ctx, ":white_check_mark: Commands channel has been set.")
+            await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -193,7 +187,7 @@ class BotCore(commands.Cog):
                     enumPricing = Prices.__members__
                     if ctx.command.name in enumPricing and ctx.command.name != "stealpoints":
                         if enumPricing[ctx.command.name].value > 0:
-                            await create_embed_without_title(ctx, f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
+                            await send_bot_embed(ctx, description=f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
                             await refund(ctx.author, ctx)
                             return
         if ctx is not None and ctx.command is not None:
@@ -205,7 +199,7 @@ class BotCore(commands.Cog):
                         await ctx.author.send(embed=msg, delete_after=5)
                         return
                      except discord.Forbidden:
-                        await create_embed_without_title(ctx, f":no_entry_sign: Slow down! Try the command again in {round(error.retry_after, 2)} seconds.")
+                        await send_bot_embed(ctx, description=f":no_entry_sign: Slow down! Try the command again in {round(error.retry_after, 2)} seconds.")
                         return
                      except Exception as e:
                         logger.error(f"Error sending cooldown message to {ctx.author.name}", e)

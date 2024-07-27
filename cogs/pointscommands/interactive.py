@@ -1,7 +1,7 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
 from tools.pointscore import pricing, refund
-from tools.shared import create_embed_without_title, create_embed_with_title, regular_command_cooldown, spam_command_cooldown
+from tools.shared import send_bot_embed, regular_command_cooldown, spam_command_cooldown
 from db.userDB import User
 from collections import Counter
 from random import randint, sample, choice
@@ -60,19 +60,19 @@ class InteractiveCommands(commands.Cog):
         """Donates points to another user."""
         if User.read(user.id):
             if ctx.author.id == user.id:
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate to yourself.")
+                await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't donate to yourself.")
             elif User.read(ctx.author.id)["points"] >= amount:
                 if amount <= 0:
-                    await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't donate 0 or negative eggbux.")
+                    await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't donate 0 or negative eggbux.")
                     return
                 else:
                     User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] - amount)
                     User.update_points(user.id, User.read(user.id)["points"] + amount   )
-                    await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {user.display_name}")
+                    await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {user.display_name}")
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
         else:
-            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} isn't registered in the database.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} isn't registered in the database.")
              
     @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
     @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
@@ -94,28 +94,28 @@ class InteractiveCommands(commands.Cog):
                 corSorteada = roleta[cassino]
                 if corSorteada == "GREEN" and cor == "GREEN":
                     User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + (amount * 14))
-                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {corSorteada} {corEmoji[corSorteada]}")
+                    await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {corSorteada} {corEmoji[corSorteada]}")
                 elif corSorteada == cor:
                     User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + amount)
-                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has **won** {amount} eggbux!")
+                    await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount} eggbux!")
                 else:                  
                     User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] - amount)
-                    await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} has **lost!** The selected color was {corSorteada} {corEmoji[corSorteada]}")
+                    await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **lost!** The selected color was {corSorteada} {corEmoji[corSorteada]}")
                     return
             else:
-                await create_embed_without_title(ctx, f":slot_machine: {ctx.author.display_name} You don't have enough eggbux or the amount is less than 50.")
+                await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} You don't have enough eggbux or the amount is less than 50.")
                 return  
         else:
-            await create_embed_with_title(ctx, ":slot_machine:" ,f"{ctx.author.display_name} You don't have permission to do this.")
+            await send_bot_embed(ctx, title=":slot_machine:", description=f"{ctx.author.display_name} You don't have permission to do this.")
             return
 
     @cassino.error
     async def cassino_error(self, ctx, error):
         """Handles errors in the cassino command."""
         if isinstance(error, commands.MissingRequiredArgument):
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} Please, insert a valid amount and color.")
+            await send_bot_embed(ctx, description=f"{ctx.author.display_name} Please, insert a valid amount and color.")
         elif isinstance(error, commands.BadArgument):
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} Please, insert a valid amount.")
+            await send_bot_embed(ctx, description=f"{ctx.author.display_name} Please, insert a valid amount.")
         else:
             logging.warning(f"Error in cassino command: {error}")
 
@@ -125,37 +125,37 @@ class InteractiveCommands(commands.Cog):
     async def steal_points(self, ctx, user: discord.Member):
         """Steals points from another user."""
         if ctx.author.id in steal_status and steal_status[ctx.author.id] == user.id:
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} You can't steal from the same user twice.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You can't steal from the same user twice.")
             await refund(ctx.author, ctx)
             return
         else:
             steal_status[ctx.author.id] = user.id
         chance  = randint(0, 100)
         if user.bot:
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a bot.")
+            await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from a bot.")
             await refund(ctx.author, ctx)
             return
         if User.read(user.id):
             if ctx.author.id == user.id:
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from yourself.")
+                await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from yourself.")
                 await refund(ctx.author, ctx)
                 return
             user_points = User.read(user.id)["points"]
             if user_points <= 150:
-                await create_embed_without_title(ctx, f"{ctx.author.display_name} You can't steal from a user with less than 150 eggbux.")
+                await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from a user with less than 150 eggbux.")
                 await refund(ctx.author, ctx)
                 return
             elif chance >= 10:
                 random_integer = randint(1, int(user_points//2))
                 User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + random_integer)
                 User.update_points(user.id, User.read(user.id)["points"] - random_integer)
-                await create_embed_without_title(ctx, f":white_check_mark: {ctx.author.display_name} stole {random_integer} eggbux from {user.display_name}")
+                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} stole {random_integer} eggbux from {user.display_name}")
                 return
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} failed to steal from {user.display_name}")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} failed to steal from {user.display_name}")
                 return
         else:
-            await create_embed_without_title(ctx, f"{ctx.author.display_name} You don't have permission to do this.")
+            await send_bot_embed(ctx, description=f"{ctx.author.display_name} You don't have permission to do this.")
             return
         
     @commands.command(aliases=["hg"])
@@ -167,7 +167,7 @@ class InteractiveCommands(commands.Cog):
         default_game_value = 50
         guild_id = ctx.guild.id
         if guild_id in hungergames_status:
-            await create_embed_without_title(ctx, ":no_entry_sign: A hunger games is already in progress.")
+            await send_bot_embed(ctx, description=":no_entry_sign: A hunger games is already in progress.")
             return
         wait_time = 5
         if args and args[0].isdigit():
@@ -175,7 +175,7 @@ class InteractiveCommands(commands.Cog):
             if ctx.guild.owner.id == ctx.author.id:
                 wait_time = args[0] * 60  
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you don't have permission to set a custom time for the hunger games. The default time is 60 seconds.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have permission to set a custom time for the hunger games. The default time is 60 seconds.")
         hungergames_status[guild_id] = {
         "game_Start": False,
         "dead_tribute": None,
@@ -185,7 +185,7 @@ class InteractiveCommands(commands.Cog):
         tributes = []
         min_tributes = 4
         end_time = time.time() + wait_time
-        messageHg = await create_embed_without_title(ctx, f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
+        messageHg = await send_bot_embed(ctx, description=f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
         for member in ctx.guild.members:
             tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
         await messageHg.add_reaction("✅")
@@ -200,26 +200,26 @@ class InteractiveCommands(commands.Cog):
                     if allowplay:
                         if not any(tribute['tribute'] == user for tribute in tributes):
                             tributes.append({"tribute": user, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
-                            await create_embed_without_title(ctx, f":white_check_mark: {user.display_name} has joined the hunger games.")
+                            await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name} has joined the hunger games.")
                         else:
-                            await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name} is already in the hunger games.")
+                            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} is already in the hunger games.")
                     else:
-                        await create_embed_without_title(ctx, f":no_entry_sign: {user.display_name}, you don't have enough eggbux to join the hunger games.")
+                        await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have enough eggbux to join the hunger games.")
             except asyncio.TimeoutError:
                 break
         if len(tributes) < min_tributes:
-            await create_embed_without_title(ctx, f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is **{min_tributes}**.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is **{min_tributes}**.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
                     User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + default_game_value)
             return
         else:
-            await create_embed_without_title(ctx, f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
+            await send_bot_embed(ctx, description=f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
             alive_tributes = tributes
             while len(alive_tributes) > 1:
                 shuffle_tributes = sample(alive_tributes, len(alive_tributes))
                 alive_tributes = shuffle_tributes
-                await create_embed_with_title(ctx, f"Day {day}", f"**Tributes remaining: {len(alive_tributes)}**")
+                await send_bot_embed(ctx, title=f"Day {day}", description=f"**Tributes remaining: {len(alive_tributes)}**")
                 for tribute in alive_tributes:
                     if tribute['is_alive']:
                         await asyncio.sleep(3)
@@ -233,14 +233,14 @@ class InteractiveCommands(commands.Cog):
                 dead_day = day - 1 if day > 0 else 0
                 fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == dead_day]
                 if fallen_tributes:
-                    await create_embed_without_title(ctx, f"**Fallen tributes:** **{', '.join([tribute['tribute'].display_name for tribute in fallen_tributes])}**")
+                    await send_bot_embed(ctx, description=f"**Fallen tributes:** **{', '.join([tribute['tribute'].display_name for tribute in fallen_tributes])}**")
                 self.increase_days_alive(alive_tributes)
                 self.remove_plr_team_on_death(tributes)
                 self.update_tribute_event(alive_tributes)
                 day += 1
             winner = alive_tributes[0]
             prizeMultiplier = len(tributes) * 50
-            await create_embed_without_title(ctx, f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
+            await send_bot_embed(ctx, description=f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
             User.update_points(winner['tribute'].id, User.read(winner['tribute'].id)["points"] + prizeMultiplier)
             hungergames_status.pop(guild_id)
             await self.statistics(ctx, tributes)
@@ -329,44 +329,44 @@ class InteractiveCommands(commands.Cog):
                 case 0:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = "Bear"
-                    await create_embed_without_title(ctx, f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
+                    await send_bot_embed(ctx, description=f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
                 case 1:
                     team = self.create_team(tribute1, tribute2, tributes)
-                    await create_embed_without_title(ctx, f":people_hugging: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}** creating team **{team}**!")
+                    await send_bot_embed(ctx, description=f":people_hugging: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}** creating team **{team}**!")
                 case 2:
                     tribute1['inventory'].append("knife")
-                    await create_embed_without_title(ctx, f":dagger: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
+                    await send_bot_embed(ctx, description=f":dagger: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
                 case 3:
                     item = self.steal_item(tribute1, tribute2)
-                    await create_embed_without_title(ctx, f":crossed_swords: **{tribute1['tribute'].display_name}** {events[chosen_event]} {item} from **{tribute2['tribute'].display_name}**!")
+                    await send_bot_embed(ctx, description=f":crossed_swords: **{tribute1['tribute'].display_name}** {events[chosen_event]} {item} from **{tribute2['tribute'].display_name}**!")
                 case 4:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
-                    await create_embed_without_title(ctx, f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**")
+                    await send_bot_embed(ctx, description=f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**")
                     tribute2['kills'] += 1
                     tribute2['inventory'].remove("trap")
                 case 5:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
-                    await create_embed_without_title(ctx, f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**")
+                    await send_bot_embed(ctx, description=f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**")
                     tribute2['kills'] += 1
                 case 6:
-                    await create_embed_without_title(ctx, f":warning: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**!")
+                    await send_bot_embed(ctx, description=f":warning: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**!")
                 case 7:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
-                    await create_embed_without_title(ctx, f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**")
+                    await send_bot_embed(ctx, description=f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**")
                     tribute2['kills'] += 1
                     tribute2['inventory'].remove("gun")
                 case 8:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = tribute2['tribute'].display_name
-                    await create_embed_without_title(ctx, f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**")
+                    await send_bot_embed(ctx, description=f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**")
                     tribute2['kills'] += 1
                     tribute2['inventory'].remove("knife")
                 case 9:
                     tribute1['inventory'].append("trap")
-                    await create_embed_without_title(ctx, f":mouse_trap: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
+                    await send_bot_embed(ctx, description=f":mouse_trap: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
                 case 10:
                     tribute1['is_alive'] = False
                     tribute1['Killed_by'] = "team " + str(tribute2['team'])
@@ -375,20 +375,20 @@ class InteractiveCommands(commands.Cog):
                         if tribute['team'] == tribute2['team'] and tribute['is_alive']:
                             if tribute['team'] is not None:
                                 tribute['kills'] += 1
-                    await create_embed_without_title(ctx, f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['team']}**!")
+                    await send_bot_embed(ctx, description=f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['team']}**!")
                 case 11:
                     tribute1['inventory'].append("gun")
-                    await create_embed_without_title(ctx, f":gun: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
+                    await send_bot_embed(ctx, description=f":gun: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
                 case 17:
-                    await create_embed_without_title(ctx, f":flag_white: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**!")
+                    await send_bot_embed(ctx, description=f":flag_white: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**!")
                 case 19:
-                    await create_embed_without_title(ctx, f":warning: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}** running in the distance!")
+                    await send_bot_embed(ctx, description=f":warning: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}** running in the distance!")
                 case 20:
                     dead_tribute = hungergames_status[ctx.guild.id]['dead_tribute']
                     item = self.steal_item(tribute1, dead_tribute)
-                    await create_embed_without_title(ctx, f":ninja: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{dead_tribute['tribute'].display_name}** stealing a {item} in the process!")
+                    await send_bot_embed(ctx, description=f":ninja: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{dead_tribute['tribute'].display_name}** stealing a {item} in the process!")
                 case 21:
-                    await create_embed_without_title(ctx, f":broken_heart: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**!")
+                    await send_bot_embed(ctx, description=f":broken_heart: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}**!")
                     tribute1['team'] = None
                     tribute2['team'] = None
                     tribute1['is_alive'] = False
@@ -396,7 +396,7 @@ class InteractiveCommands(commands.Cog):
                     tribute2['kills'] += 1
                 case 22:
                     disbanded_team = self.get_tribute_team(tribute1, tributes)
-                    await create_embed_without_title(ctx, f":broken_heart: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{disbanded_team}**!")
+                    await send_bot_embed(ctx, description=f":broken_heart: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{disbanded_team}**!")
                     for tribute in tributes:
                         if tribute['team'] == disbanded_team:
                             tribute['team'] = None
@@ -410,7 +410,7 @@ class InteractiveCommands(commands.Cog):
                         if tribute['team'] == tribute2['team']:
                             tribute['kills'] += 1
                             tribute2['kills'] += 1
-                    await create_embed_without_title(ctx, f":skull_crossbones: {events[chosen_event]} **{tribute1['team']}** has been eliminated by team **{tribute2['team']}**!")
+                    await send_bot_embed(ctx, description=f":skull_crossbones: {events[chosen_event]} **{tribute1['team']}** has been eliminated by team **{tribute2['team']}**!")
                 case 24:
                     for tribute in tributes:
                         if tribute['team'] == tribute2['team']:
@@ -419,16 +419,16 @@ class InteractiveCommands(commands.Cog):
                             tribute2['is_alive'] = False
                             tribute2['Killed_by'] = tribute1['tribute'].display_name
                     tribute1['kills'] += 2
-                    await create_embed_without_title(ctx, f":zap: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['team']}**!")
+                    await send_bot_embed(ctx, description=f":zap: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['team']}**!")
                 case 25:
                     team = self.get_tribute_team(tribute1, tributes)
-                    await create_embed_without_title(ctx, f":bear: {events[chosen_event]} **{team}** has managed to kill the bear, disabling that for the rest of the game.")
+                    await send_bot_embed(ctx, description=f":bear: {events[chosen_event]} **{team}** has managed to kill the bear, disabling that for the rest of the game.")
                     hungergames_status[ctx.guild.id]['bear_disabled'] = True
                 case 26:
                     tribute1Item = choice(tribute1['inventory'])
                     tribute2['inventory'].append(tribute1Item)
                     tribute1['inventory'].remove(tribute1Item)
-                    await create_embed_without_title(ctx, f":gift: **{tribute1['tribute'].display_name}** {events[chosen_event]} {tribute1Item} to **{tribute2['tribute'].display_name}**!")
+                    await send_bot_embed(ctx, description=f":gift: **{tribute1['tribute'].display_name}** {events[chosen_event]} {tribute1Item} to **{tribute2['tribute'].display_name}**!")
                 case 27:
                     tribute1Item = choice(tribute1['inventory'])
                     tribute2Item = choice(tribute2['inventory'])
@@ -436,9 +436,9 @@ class InteractiveCommands(commands.Cog):
                     tribute2['inventory'].append(tribute1Item)
                     tribute1['inventory'].remove(tribute1Item)
                     tribute2['inventory'].remove(tribute2Item)
-                    await create_embed_without_title(ctx, f":handshake: **{tribute1['tribute'].display_name}** {events[chosen_event]} {tribute1Item} for a {tribute2Item} with **{tribute2['tribute'].display_name}**!")
+                    await send_bot_embed(ctx, description=f":handshake: **{tribute1['tribute'].display_name}** {events[chosen_event]} {tribute1Item} for a {tribute2Item} with **{tribute2['tribute'].display_name}**!")
                 case _:
-                    await create_embed_without_title(ctx, f"**{tribute1['tribute'].display_name}** {events[chosen_event]}")
+                    await send_bot_embed(ctx, description=f"**{tribute1['tribute'].display_name}** {events[chosen_event]}")
 
 
     def check_event_possibilities(self, tribute1, tribute2, tributes, dead_tributes, guild_id):

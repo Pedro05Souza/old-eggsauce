@@ -1,7 +1,7 @@
 from discord.ext import commands
 from random import randint
 from db.userDB import User
-from tools.shared import create_embed_without_title, is_dev
+from tools.shared import send_bot_embed, is_dev
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.MarketDB import Market
@@ -24,11 +24,11 @@ class DevCommands(commands.Cog):
         if user_data:
             if is_dev(ctx):
                 User.update_points(user.id, user_data["points"] + amount)
-                await create_embed_without_title(ctx, f"{user.display_name} received {amount} eggbux")
+                await send_bot_embed(ctx, description=f"{user.display_name} received {amount} eggbux")
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: user not found in the database.")
+            await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
 
     @commands.command("removePoints")
     async def remove_points(self, ctx, amount: int, user: discord.Member = None):
@@ -39,17 +39,17 @@ class DevCommands(commands.Cog):
         if user_data:
             if is_dev(ctx):
                 User.update_points(user.id, user_data["points"] - amount)
-                await create_embed_without_title(ctx, f"{user.display_name} lost {amount} eggbux")
+                await send_bot_embed(ctx, description=f"{user.display_name} lost {amount} eggbux")
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: user not found in the database.")
+            await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
 
     @commands.command("latency", aliases=["ping"])
     async def latency(self, ctx):
         """Check the bot's latency."""
         if is_dev(ctx):
-            await create_embed_without_title(ctx, f":ping_pong: {round(self.bot.latency * 1000)}ms")
+            await send_bot_embed(ctx, description=f":ping_pong: {round(self.bot.latency * 1000)}ms")
 
     @commands.command("deleteDB")
     async def delete_db(self, ctx,  user: discord.Member):
@@ -58,11 +58,11 @@ class DevCommands(commands.Cog):
         if User.read(user):
             if is_dev(ctx):
                 User.delete(user)
-                await create_embed_without_title(ctx, f":warning: {user.display_name} has been deleted from the database.")
+                await send_bot_embed(ctx, description=f":warning: {user.display_name} has been deleted from the database.")
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
-                await create_embed_without_title(ctx, ":no_entry_sign: user not found in the database.")
+                await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
             
     @commands.command()
     async def reset(self, ctx, user: discord.Member):
@@ -71,9 +71,9 @@ class DevCommands(commands.Cog):
             if Bank.read(user.id):
                 Bank.update(user.id, 0)
             User.update_all(user.id, 0, "")
-            await create_embed_without_title(ctx, f"{user.display_name} has been reset.")
+            await send_bot_embed(ctx, description=f"{user.display_name} has been reset.")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command("giveRolls")
     async def give_rolls(self, ctx, rolls : int, user: discord.Member):
@@ -82,11 +82,11 @@ class DevCommands(commands.Cog):
         if is_dev(ctx):
             if userObj:
                 userObj.current += rolls
-                await create_embed_without_title(ctx, f"{user.display_name} received {rolls} rolls.")
+                await send_bot_embed(ctx, description=f"{user.display_name} received {rolls} rolls.")
             else:
-                await create_embed_without_title(ctx, ":no_entry_sign: user didn't roll chickens in the market yet.")
+                await send_bot_embed(ctx, description=":no_entry_sign: user didn't roll chickens in the market yet.")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command("checkbotServers", aliases=["cbs"])
     async def check_bot_servers(self, ctx):
@@ -94,18 +94,18 @@ class DevCommands(commands.Cog):
         if is_dev(ctx):
             servers = self.bot.guilds
             total_servers = len(servers)
-            await create_embed_without_title(ctx, f"```The bot is currently in: {total_servers} servers```")
+            await send_bot_embed(ctx, description=f"```The bot is currently in: {total_servers} servers```")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command("totalusers")
     async def total_users(self, ctx):
         """Check the total number of users in the database."""
         if is_dev(ctx):
             total_users = User.count_users()
-            await create_embed_without_title(ctx, f"```Total users in the database: {total_users}```")
+            await send_bot_embed(ctx, description=f"```Total users in the database: {total_users}```")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command("spawnChicken")
     async def spawn_chicken(self, ctx, user: discord.Member, rarity):
@@ -125,7 +125,7 @@ class DevCommands(commands.Cog):
                 chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
                 farm_data['chickens'].append(chicken)
                 Farm.update(user.id, chickens=farm_data['chickens'])
-                await create_embed_without_title(ctx, f"{user.display_name} received a **{rarity}** chicken.")
+                await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")
     
     @commands.command("chickenlogs")
     async def circulation_chickens(self, ctx):
@@ -139,9 +139,9 @@ class DevCommands(commands.Cog):
                     for chicken in farm['chickens']:
                         rarity_dictionary[chicken['rarity']] += 1
                         total_chickens += 1
-            await create_embed_without_title(ctx, f"```Total chickens in circulation: {total_chickens}```\n Rarities: \n{' '.join([f'{rarity}: {count}' for rarity, count in rarity_dictionary.items()])}")
+            await send_bot_embed(ctx, description=f"```Total chickens in circulation: {total_chickens}```\n Rarities: \n{' '.join([f'{rarity}: {count}' for rarity, count in rarity_dictionary.items()])}")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command("removeChicken")
     async def remove_chicken(self, ctx, user: discord.Member, index):
@@ -151,14 +151,14 @@ class DevCommands(commands.Cog):
                 if index.upper() == "ALL":
                     farm_data['chickens'].clear()
                     Farm.update(user.id, chickens=farm_data['chickens'])
-                    await create_embed_without_title(ctx, f"{user.display_name} lost all chickens.")
+                    await send_bot_embed(ctx, description=f"{user.display_name} lost all chickens.")
                     return
                 index = int(index)
                 farm_data['chickens'].pop(index)
                 Farm.update(user.id, chickens=farm_data['chickens'])
-                await create_embed_without_title(ctx, f"{user.display_name} lost a chicken.")
+                await send_bot_embed(ctx, description=f"{user.display_name} lost a chicken.")
             else:
-                await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+                await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command(name="purge")
     async def purge(self, ctx, amount: int):
@@ -172,7 +172,7 @@ class DevCommands(commands.Cog):
         """Activates the developer mode in the bot."""
         if is_dev(ctx):
             tools.pointscore.dev_mode = not tools.pointscore.dev_mode
-            await create_embed_without_title(ctx, f":warning: Developer mode is now {'enabled' if tools.pointscore.dev_mode else 'disabled'}.")
+            await send_bot_embed(ctx, description=f":warning: Developer mode is now {'enabled' if tools.pointscore.dev_mode else 'disabled'}.")
 
     @commands.command(name="mm")
     async def monitor_mode(self, ctx):
@@ -199,18 +199,18 @@ class DevCommands(commands.Cog):
                 total_points += bank['bank']
                 if bank['bank'] >= 5000:
                     accounts_with_5k_wallet += 1 
-            await create_embed_without_title(ctx, f"```Total points in circulation: {total_points}```\n\nAccounts with 5k or more points: **{accounts_with_5k_wallet}**")
+            await send_bot_embed(ctx, description=f"```Total points in circulation: {total_points}```\n\nAccounts with 5k or more points: **{accounts_with_5k_wallet}**")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command(name="marketLogs")
     async def market_logs(self, ctx):
      """Check the total number of active offers in the market."""
      if is_dev(ctx):
         total_offers = Market.count_all_offers()
-        await create_embed_without_title(ctx, f"```Total active offers in the player market: {total_offers}```")
+        await send_bot_embed(ctx, description=f"```Total active offers in the player market: {total_offers}```")
      else:
-        await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+        await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command(name="reloadCog", aliases=["reload, rc"])
     async def reload_cog(self, ctx, cog):
@@ -218,11 +218,11 @@ class DevCommands(commands.Cog):
         if is_dev(ctx):
             if cog in self.bot.cogs:
                 await self.bot.reload_extension(f"cogs.pointscommands.{cog}")
-                await create_embed_without_title(ctx, f":warning: {cog} has been reloaded.")
+                await send_bot_embed(ctx, description=f":warning: {cog} has been reloaded.")
             else:
-                await create_embed_without_title(ctx, f":no_entry_sign: {cog} is not a valid cog.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {cog} is not a valid cog.")
         else:
-            await create_embed_without_title(ctx, ":no_entry_sign: You do not have permission to do this.")
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

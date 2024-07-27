@@ -6,7 +6,7 @@ from db.userDB import User
 from db.MarketDB import Market
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size, offer_expire_time
-from tools.shared import create_embed_without_title, make_embed_object
+from tools.shared import send_bot_embed, make_embed_object
 from tools.tips import tips
 from random import randint
 import discord
@@ -89,16 +89,28 @@ def get_max_chicken_limit(farm_data):
         
 async def verify_events(ctx, *args):
      if EventData.read_kwargs(author=ctx.author.id):
-        await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't use this command while an event is active.")
+        await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't use this command while an event is active.")
         return True
      if args:
         user = args[0]
         if EventData.read_kwargs(author=user.id) or EventData.read_kwargs(target=user.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name} or {user.display_name}, you can't use this command while an event is active.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} or {user.display_name}, you can't use this command while an event is active.")
             return True
         if EventData.read_kwargs(target=ctx.author.id):
-            await create_embed_without_title(ctx, f":no_entry_sign: {ctx.author.display_name}, you can't use this command while an event is active.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't use this command while an event is active.")
             return True
+        
+async def get_user_bench(ctx, farm_data):
+     """Gets the user's bench"""
+     bench = farm_data['bench']
+     await send_bot_embed(ctx, title=f":chair: {ctx.author.display_name}'s bench:", description="\n".join([f"**{index + 1}**. **{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
+
+async def check_if_farm_data_exists(ctx, user: discord.Member):
+    farm_data = Farm.read(user.id)
+    if not farm_data:
+        await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
+        return None
+    return farm_data
     
 # updates
 
@@ -119,7 +131,7 @@ async def drop_egg_for_player(farm_data, bank_data, user_data):
             total_upkeep += chicken_loss
             chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
             total_profit += (chicken_profit * chicken['happiness']) // 100
-            chicken['happiness'] -= randint(1,5)
+            chicken['happiness'] -= randint(1,3)
             if chicken['happiness'] < 0:
                 chicken['happiness'] = 0
             if chicken['happiness'] == 0:
@@ -276,9 +288,11 @@ async def get_player_chicken(ctx, user: discord.Member, farm_data):
         if last_offer_time // 3600 > offer_expire_time:
              offers_list.append(offer)
      if offers_list:
-            for offer in offers_list:
+            offers_to_process = offers_list.copy()
+            for offer in offers_to_process:
                 chicken = offer['chicken']
                 var = farm_data['chickens'] + [chicken]
+                print(len(var))
                 if len(var) > get_max_chicken_limit(farm_data):
                     break
                 farm_data['chickens'] = var
@@ -287,11 +301,11 @@ async def get_player_chicken(ctx, user: discord.Member, farm_data):
                 Market.delete(offer['offer_id'])
             if chickens_added:
                 chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_added])
-                await create_embed_without_title(ctx, description=f":white_check_mark: {user.display_name}, you have successfully added the following chickens to your farm: \n\n{chicken_desc}\n Those chickens have been removed from the market.")
+                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, you have successfully added the following chickens to your farm: \n\n{chicken_desc}\n Those chickens have been removed from the market.")
                 Farm.update(user.id, chickens=farm_data['chickens'])
             if offers_list:
                 chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for offer in offers_list for chicken in [offer['chicken']]])
-                await create_embed_without_title(ctx, description=f":no_entry_sign: {user.display_name}, you can't add the following chickens to your farm: \n\n{chicken_desc}\n They have been automatically put back in the market.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you can't add the following chickens to your farm: \n\n{chicken_desc}\n They have been automatically put back in the market.")
      return farm_data
             
     

@@ -1,6 +1,6 @@
 from discord.ext import commands
 from db.farmDB import Farm
-from tools.shared import create_embed_without_title, regular_command_cooldown, make_embed_object, get_user_title
+from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object, get_user_title
 from db.userDB import User
 from db.bankDB import Bank
 from tools.pagination import PaginationView
@@ -18,7 +18,7 @@ class FriendlyCommands(commands.Cog):
     @pricing()
     async def balls(self, ctx):
         """Bot sends balls."""
-        await create_embed_without_title(ctx, f":soccer: balls")
+        await send_bot_embed(ctx, description=f":soccer: balls")
 
     @commands.hybrid_command("mog", brief="Mog a user", parameters=["user: discord.Member"], examples=["mog @user"], description="Mog a user.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -73,7 +73,7 @@ class FriendlyCommands(commands.Cog):
         bank_data = Bank.read(user.id)
         farm_data = Farm.read(user.id)
         if not user_data:
-            await create_embed_without_title(ctx, f"{user.display_name} doesn't have a profile.")
+            await send_bot_embed(ctx, description=f"{user.display_name} doesn't have a profile.")
             return
         msg = await make_embed_object(title=f"{user.display_name}'s Profile:\n")
         msg.add_field(name=":coin: Title:", value=await get_user_title(user_data), inline=True)
