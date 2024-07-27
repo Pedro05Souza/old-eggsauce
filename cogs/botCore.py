@@ -170,11 +170,6 @@ class BotCore(commands.Cog):
         if BotConfig.read(channel.guild.id)['channel_id'] == channel.id:
             BotConfig.update_channel_id(channel.guild.id, 0)
             logger.info(f"Channel {channel.name} has been deleted. Commands channel has been reset.")
-    
-    @commands.Cog.listener()
-    async def on_ready(self):
-        await self.bot.tree.sync()
-        await self.bot.loop.create_task(self.restart_every_day())
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -213,6 +208,11 @@ class BotCore(commands.Cog):
     async def on_command_completion(self, ctx):
         if monitor_mode:
             logger.info(f"Command {ctx.command.name} has been executed by {ctx.author.name} in {ctx.guild.name} in {ctx.channel.name}")
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        #await self.bot.tree.sync() # only sync if code modified
+        await self.bot.loop.create_task(self.restart_every_day())
 
 async def setup(bot):
     await bot.add_cog(BotCore(bot))

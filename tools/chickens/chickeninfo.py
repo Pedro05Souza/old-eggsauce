@@ -7,6 +7,8 @@ default_farm_size = 8
 market_tax = 0.15
 offer_expire_time = 48
 max_bench = 5
+max_corn_limit = 1702
+max_plot_limit = 8
 
 rollRates = {
         "COMMON": 5000,

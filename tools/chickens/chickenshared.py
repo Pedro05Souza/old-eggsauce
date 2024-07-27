@@ -103,7 +103,7 @@ async def verify_events(ctx, *args):
 async def get_user_bench(ctx, farm_data):
      """Gets the user's bench"""
      bench = farm_data['bench']
-     await send_bot_embed(ctx, title=f":chair: {ctx.author.display_name}'s bench:", description="\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
+     await send_bot_embed(ctx, title=f":chair: {ctx.author.display_name}'s bench:", description="\n\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
     
 # updates
 

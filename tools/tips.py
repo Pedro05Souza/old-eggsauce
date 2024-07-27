@@ -1,3 +1,5 @@
+from tools.chickens.chickeninfo import *
+
 tips = {
     0: "You earn 1 eggbux every 10 seconds of call time.",
     1: "The currency name is eggbux.",
@@ -7,7 +9,7 @@ tips = {
     5: "You can start a farm and buy chickens with eggbux.",
     6: "Type !farm to see your farm.",
     7: "The market command generates 8 random chickens.",
-    8: "Type !market to generate 8 random chickens.",
+    8: "You gain 10 rolls every 2 hours, you can use them with the !market command.",
     9: "You can trade chickens with other players, using !trade command.",
     10:"You can gift chickens to other players, using !gift command.",
     11: "You can register your chicken to the player market, using !offer command.",
@@ -25,7 +27,7 @@ tips = {
     23: "You can buy corn with eggbux.",
     24: "You can start a hunger games event with the !hg command, the minimum number of players is 4.",
     25: "This message is a tip.",
-    26: "The maximum plot limit is 8.",
+    26: f"The maximum plot limit is {max_plot_limit}.",
     27: "Your chickens wait for you to feed them.",
     28: "This bot was made by a human.",
     29: "The formula for the eggs produced by a chicken is: (eggs_per_hour * happiness) / 100.",
@@ -34,5 +36,5 @@ tips = {
     32: "The upkeep multiplier for the chickens has two functions, it regulates the eggs produced and the upkeep cost.",
     33: "You can evolve two chickens of the same type to the next rarity",
     34: "Everytime you don't have money to maintain your chickens, one of them will randomly be picked to be deleted.",
-    35: "You can put your chickens in the bench to avoid them from being deleted. The limit is 5 chickens.",
+    35: f"You can put your chickens in the bench to avoid them from being deleted. The limit is {max_bench} chickens.",
 }

@@ -2,7 +2,7 @@ from time import time
 from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
-from tools.chickens.chickeninfo import ChickenFood
+from tools.chickens.chickeninfo import ChickenFood, max_corn_limit, max_plot_limit
 from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown
 from tools.pointscore import pricing
 from tools.chickens.chickenshared import update_player_corn, calculate_corn
@@ -59,7 +59,7 @@ class CornCommands(commands.Cog):
         user_data = User.read(ctx.author.id)
         if farm_data:
             actual_plot = farm_data['plot']
-            if actual_plot == 8:
+            if actual_plot == max_plot_limit:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum number of plots.")
                 return
             plot_price = (actual_plot ** 2) * 150
@@ -97,7 +97,7 @@ class CornCommands(commands.Cog):
         user_data = User.read(ctx.author.id)
         if farm_data:
             range_corn = int((farm_data['corn_limit'] * 50)  // 100)
-            if farm_data['corn_limit'] == 1702:
+            if farm_data['corn_limit'] == max_corn_limit:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum corn limit.")
                 return
             price_corn = farm_data['corn_limit'] * 2
