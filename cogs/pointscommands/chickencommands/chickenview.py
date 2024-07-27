@@ -225,7 +225,7 @@ class ChickenView(commands.Cog):
             farm_data['chickens'].append(farm_data['bench'][index])
             farm_data['bench'].pop(index)
             Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
-            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the {get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']} has been removed from the bench.")
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the **{get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']}** has been removed from the bench.")
     
     @commands.hybrid_command(name="switchbench", aliases=["sb"], usage="switchb <index_farm> <index_bench>", description="Switch a chicken from the farm to the bench.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)

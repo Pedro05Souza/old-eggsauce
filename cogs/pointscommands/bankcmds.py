@@ -12,7 +12,7 @@ class BankCommands(commands.Cog):
         """Registers the user in the bank database."""
         Bank.create(User.id, 0)
 
-    @commands.hybrid_command("deposit", aliases=["dep"], brief="Deposits points in the bank", parameters=["amount: int"], description="Deposits points in the bank. You can't have more than 10000 eggbux in the bank.")
+    @commands.hybrid_command("deposit", aliases=["dep"], brief="Deposits points in the bank", parameters=["amount: int"], description=f"Deposits points in the bank.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def deposit(self, ctx, amount):
