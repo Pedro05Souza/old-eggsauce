@@ -34,4 +34,5 @@ tips = {
     32: "The upkeep multiplier for the chickens has two functions, it regulates the eggs produced and the upkeep cost.",
     33: "You can evolve two chickens of the same type to the next rarity",
     34: "Everytime you don't have money to maintain your chickens, one of them will randomly be picked to be deleted.",
+    35: "You can put your chickens in the bench to avoid them from being deleted. The limit is 5 chickens.",
 }

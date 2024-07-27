@@ -103,14 +103,7 @@ async def verify_events(ctx, *args):
 async def get_user_bench(ctx, farm_data):
      """Gets the user's bench"""
      bench = farm_data['bench']
-     await send_bot_embed(ctx, title=f":chair: {ctx.author.display_name}'s bench:", description="\n".join([f"**{index + 1}**. **{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
-
-async def check_if_farm_data_exists(ctx, user: discord.Member):
-    farm_data = Farm.read(user.id)
-    if not farm_data:
-        await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
-        return None
-    return farm_data
+     await send_bot_embed(ctx, title=f":chair: {ctx.author.display_name}'s bench:", description="\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
     
 # updates
 
