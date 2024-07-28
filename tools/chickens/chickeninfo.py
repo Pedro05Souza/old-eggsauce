@@ -8,7 +8,7 @@ market_tax = 0.15
 offer_expire_time = 48
 max_bench = 5
 max_corn_limit = 1702
-max_plot_limit = 8
+max_plot_limit = 14
 
 rollRates = {
         "COMMON": 5000,
@@ -41,12 +41,13 @@ defineRarityEmojis = {
     "ULTIMATE": "⚫",
     "COSMIC": "⚪",
     "DIVINE": "✨",
-    "INFINITY": "🌌",
+    "GALATIC": "🌌",
     "OMINOUS": "💥",
     "CELESTIAL": "🌟",
     "IMMORTAL": "☄️",
     "CHOSEN": "🌀",
     "ASCENDED": "🌠",
+    "ETHEREAL": "♾️"
 }
 
 chicken_rarities = {
@@ -80,6 +81,7 @@ class ChickenRarity(Enum):
     IMMORTAL = 14
     CHOSEN = 15
     ASCENDED = 16
+    ETHEREAL = 250
 
 class ChickenMultiplier(Enum):
     DEAD = 0
@@ -99,6 +101,7 @@ class ChickenMultiplier(Enum):
     IMMORTAL = 88
     CHOSEN = 99
     ASCENDED = 111
+    ETHEREAL = 1000
     
 class ChickenFood(Enum):
     DEAD = 0
@@ -118,3 +121,4 @@ class ChickenFood(Enum):
     IMMORTAL = 28
     CHOSEN = 30
     ASCENDED = 32
+    ETHEREAL = 300

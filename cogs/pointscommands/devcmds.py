@@ -6,7 +6,7 @@ from db.bankDB import Bank
 from db.farmDB import Farm
 from db.MarketDB import Market
 from tools.chickens.chickenshared import determine_chicken_upkeep
-from tools.chickens.chickeninfo import ChickenRarity
+from tools.chickens.chickeninfo import ChickenRarity, chicken_default_value
 from tools.chickens.chickenhandlers import RollLimit
 from .. import botcore
 import discord
@@ -117,12 +117,12 @@ class DevCommands(commands.Cog):
                 chicken = {
                     "rarity": rarity,
                     "name": "Chicken",
-                    "price": ChickenRarity[rarity].value * 150,
+                    "price": ChickenRarity[rarity].value * chicken_default_value,
                     "happiness": randint(60, 100),
                     "eggs_generated": 0,
                     "upkeep_multiplier": 0,
                 }
-                chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
+                #chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
                 farm_data['chickens'].append(chicken)
                 Farm.update(user.id, chickens=farm_data['chickens'])
                 await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")
@@ -223,6 +223,6 @@ class DevCommands(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {cog} is not a valid cog.")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
-
+            
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

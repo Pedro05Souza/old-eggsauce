@@ -92,9 +92,6 @@ class BankCommands(commands.Cog):
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
             await self.register_bank(ctx.author)
             return
-        if bank_data['upgrades'] == 5:
-            await send_bot_embed(ctx, description=f"{ctx.author.display_name}, you can't upgrade the bank anymore.")
-            return
         upgrades_formula = 10000 * bank_data['upgrades']
         if user_data['points'] < upgrades_formula:
             await send_bot_embed(ctx, description=f":bank: {ctx.author.display_name}, you currently have {bank_data['upgrades'] - 1} upgrades. You need **{upgrades_formula}** eggbux to upgrade the bank.")
@@ -109,5 +106,6 @@ class BankCommands(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, you have cancelled the bank upgrade.")
             return
+        
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

@@ -135,15 +135,3 @@ class Farm:
         except Exception as e:
             logger.error("Error encountered while deleting all farms.", e)
             return None
-    
-    @staticmethod
-    def add_attribute_bench_to_all():
-        """Add the bench attribute to all farms."""
-        try:
-            farms = farm_collection.find()
-            if farms:
-                for farm in farms:
-                    farm_collection.update_one({"user_id": farm['user_id']}, {"$set": {"bench": []}})
-        except Exception as e:
-            logger.error("Error encountered while adding the bench attribute to all farms.", e)
-            return None

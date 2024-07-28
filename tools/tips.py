@@ -37,4 +37,12 @@ tips = {
     33: "You can evolve two chickens of the same type to the next rarity",
     34: "Everytime you don't have money to maintain your chickens, one of them will randomly be picked to be deleted.",
     35: f"You can put your chickens in the bench to avoid them from being deleted. The limit is {max_bench} chickens.",
+    36: "You can see the bench with the !bench command.",
+    37: "Somewhere in the world, a chicken is being born.",
+    38: "There is a chicken out there that is waiting for you to buy it.",
+    39: "Also try Hollow era in roblox!",
+    40: "You can see the egg maximum egg value that can be produced by a chicken with the !chickenvalues command.",
+    41: "You can see the price of each rarity with the !chickenprices command.",
+    42: "You can see how much each rarity consumes corn with the !chickencorn command.",
+    43: "You can see the chance of dropping a chicken with the !chickenrarities command.",
 }

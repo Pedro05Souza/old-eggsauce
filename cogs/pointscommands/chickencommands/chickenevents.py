@@ -2,7 +2,7 @@ from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
 from tools.chickens.selection.chickenselection import ChickenSelectView
-from tools.chickens.chickeninfo import ChickenRarity
+from tools.chickens.chickeninfo import ChickenRarity, chicken_default_value
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import *
 from tools.pointscore import pricing
@@ -56,22 +56,21 @@ class ChickenEvents(commands.Cog):
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
             try:
-                reaction, usr = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == user and reaction.message == msg, timeout=40)
-                while True:
-                    if reaction.emoji == "✅" and usr == user:
-                            await self.trade_chickens(ctx, user, t, farm_author, farm_target)
-                            return
-                    elif reaction.emoji == "❌" and usr == user:
-                        await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the trade request.")
-                        EventData.remove(t)
+                reaction, usr = await self.bot.wait_for("reaction_add", check=lambda reaction, usr: usr == user and reaction.message == msg, timeout=40)
+                if reaction.emoji == "✅":
+                        await self.trade_chickens(ctx, user, t, farm_author, farm_target)
                         return
+                elif reaction.emoji == "❌":
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the trade request.")
+                    EventData.remove(t)
+                    return
             except asyncio.TimeoutError:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has not responded to the trade request.")
                 EventData.remove(t)
 
     async def trade_chickens(self, ctx, User: discord.Member, t, author_data, user_data):
         """Trade the chickens"""
-        authorEmbed = await get_usr_farm(ctx.author)
+        authorEmbed = await get_usr_farm(ctx, ctx.author)
         userEmbed = await get_usr_farm(ctx, User)
         trade_data = [author_data['chickens'], user_data['chickens']]
         members_data = [ctx.author, User]
@@ -110,6 +109,10 @@ class ChickenEvents(commands.Cog):
                 EventData.remove(g)
                 return
             gifted_chicken = author_data['chickens'][index]
+            if gifted_chicken['rarity'] == "ETHEREAL":
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift an ethereal chicken.")
+                EventData.remove(g)
+                return
             confirmation = await confirmation_embed(ctx, ctx.author, f":question: {ctx.author.display_name}, are you sure you want to gift **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']} to {user.display_name}?")
             if confirmation:
                 msg = await send_bot_embed(ctx, description=f":gift: {user.display_name}, {ctx.author.display_name} wants to gift you a {gifted_chicken['rarity']} {gifted_chicken['name']}. You have 20 seconds to react with ✅ to accept or ❌ to decline the gift request.")
@@ -166,8 +169,8 @@ class ChickenEvents(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chickens must be of the same rarity to evolve.")
                 EventData.remove(e)
                 return
-            if chicken_selected['rarity'] == "ASCENDED" or chicken_removed['rarity'] == "ASCENDED":
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve an ascended chicken.")
+            if chicken_selected['rarity'] == "ASCENDED" or chicken_removed['rarity'] == "ASCENDED" or chicken_selected['rarity'] == "ETHEREAL" or chicken_removed['rarity'] == "ETHEREAL":
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve an ascended or ethereal chicken.")
                 EventData.remove(e)
                 return
             if chicken_selected['rarity'] == "DEAD" or chicken_removed['rarity'] == "DEAD":
@@ -241,6 +244,29 @@ class ChickenEvents(commands.Cog):
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have purchased the {name} farmer role.")
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to purchase the {name} farmer role.")
+    
+    @commands.hybrid_command(name="transcend", usage="transcend", description="Only available when having 8 ascended chickens.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def transcend(self, ctx):
+        """Transcend chicken"""
+        farm_data = Farm.read(ctx.author.id)
+        if all(chicken for chicken in farm_data['chickens'] if chicken['rarity'] == 'ASCENDED'):
+            if len(farm_data['chickens']) < 8:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to have 8 ascended chickens to transcend.")
+                return
+            transcended_chicken = {
+                    "rarity": "ETHEREAL",
+                    "name": "Chicken",
+                    "price": ChickenRarity["ETHEREAL"].value * chicken_default_value,
+                    "happiness": randint(60, 100),
+                    "eggs_generated": 0,
+                    "upkeep_multiplier": 0,
+            }
+            farm_data['chickens'] = [transcended_chicken]
+            Farm.update(ctx.author.id, chickens=farm_data['chickens'])
+            await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have transcended your chickens to an **{get_rarity_emoji('ETHEREAL')} ETHEREAL Chicken.**")
+            return
             
 async def setup(bot):
     await bot.add_cog(ChickenEvents(bot))

@@ -32,7 +32,7 @@ class PlayerMarket(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a chicken at that index.")
                 EventData.remove(r)
                 return
-            if price < 50 or price > 250000:
+            if price < 50 or price > 500000:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you cannot set a price lower than **50** eggbux or higher than **250,000** eggbux.")
                 EventData.remove(r)
                 return
@@ -57,6 +57,10 @@ class PlayerMarket(commands.Cog):
             selected_chicken = farm_data['chickens'][index]
             if selected_chicken['rarity'] == "DEAD":
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you cannot sell a dead chicken.")
+                EventData.remove(r)
+                return
+            if selected_chicken['rarity'] == "ETHEREAL":
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you cannot sell an ethereal chicken.")
                 EventData.remove(r)
                 return
             confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to register your **{get_rarity_emoji(selected_chicken['rarity'])}{selected_chicken['rarity']} {selected_chicken['name']}** to the player market for **{price}** eggbux?")

@@ -10,7 +10,7 @@ class ChickenAuthorTradeMenu(ui.Select):
     def __init__(self, chickens, author, message, td):
         options = [
             SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
-            for index, chicken in enumerate(chickens)
+            for index, chicken in enumerate(chickens) if chicken['rarity'] != "ETHEREAL"
         ]
         self.chickens = chickens
         self.author = author
@@ -34,7 +34,7 @@ class ChickenUserTradeMenu(ui.Select):
     def __init__(self, chickens, author, message, td, target, instance_bot):
         options = [
             SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
-            for index, chicken in enumerate(chickens)
+            for index, chicken in enumerate(chickens) if chicken['rarity'] != "ETHEREAL"
         ]
         self.chickens = chickens
         self.author = author

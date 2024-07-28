@@ -209,7 +209,6 @@ class ChickenView(commands.Cog):
                 EventData.remove(e)
                 return
             farm_data['bench'].append(farm_data['chickens'][index])
-            print(farm_data['bench'])
             farm_data['chickens'].pop(index)
             EventData.remove(e)
             Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
