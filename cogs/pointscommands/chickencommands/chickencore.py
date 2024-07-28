@@ -61,7 +61,7 @@ class ChickenCore(commands.Cog):
         """Market to buy chickens"""
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
-            default_rolls = 12
+            default_rolls = 10
             if action == "market":
                 plrObj = RollLimit.read(ctx.author.id)
                 if not plrObj:  
@@ -109,10 +109,10 @@ class ChickenCore(commands.Cog):
         self.bot.loop.create_task(self.reset_periodically())
     
     async def reset_periodically(self):
-        """Reset the roll limit every 12 hours"""
+        """Reset the roll limit every hour"""
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            await asyncio.sleep(43200 - time() % 43200)
+            await asyncio.sleep(3600 - time() % 3600)
             RollLimit.remove_all()
 
 async def setup(bot):

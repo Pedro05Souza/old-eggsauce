@@ -1,7 +1,7 @@
 from discord.ext import commands
 from db.farmDB import Farm
 from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, max_bench
-from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades, update_user_farm, get_user_bench, get_max_chicken_limit
+from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades, update_user_farm, get_user_bench, get_max_chicken_limit, verify_events
 from tools.chickens.chickenhandlers import EventData
 from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object
 from tools.pointscore import pricing
@@ -199,7 +199,7 @@ class ChickenView(commands.Cog):
         farm_data = Farm.read(ctx.author.id)
         index -= 1
         if farm_data:
-            e = EventData(author=ctx.author.id)
+            e = EventData(ctx.author)
             if index > len(farm_data['chickens']) or index < 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
                 EventData.remove(e)
@@ -240,11 +240,13 @@ class ChickenView(commands.Cog):
     @pricing()
     async def switch_bench(self, ctx, index_farm: int, index_bench_int: int):
         """Switches a chicken from the farm to the bench"""
+        if await verify_events(ctx, ctx.author):
+            return
         farm_data = Farm.read(ctx.author.id)
         index_farm -= 1
         index_bench_int -= 1
         if farm_data:
-            e = EventData(author=ctx.author.id)
+            e = EventData(ctx.author)
             if index_farm > len(farm_data['chickens']) or index_farm < 0 or index_bench_int > len(farm_data['bench']) or index_bench_int < 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
                 EventData.remove(e)

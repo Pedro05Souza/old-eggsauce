@@ -29,35 +29,26 @@ class RollLimit:
         RollLimit.obj_list.clear()
 
 class EventData():
-    obj_list = []
-    allowed_keys = ['author', 'target']
+    current_users_in_event = {}
 
-    def __init__(self, **kwargs):
-        if any(key in kwargs for key in EventData.allowed_keys if key not in kwargs):
-            raise ValueError("Missing required keys.")
-        else:
-            for key in kwargs:
-                if key in EventData.allowed_keys:
-                    setattr(self, key, kwargs[key])
-            EventData.obj_list.append(self)
+    def __init__(self, user):
+        self.user = user
+        EventData.current_users_in_event[user.id] = self
 
     @staticmethod
-    def read_kwargs(**kwargs):
-        for obj in EventData.obj_list:
-            for key in kwargs:
-                if key in EventData.allowed_keys and key in obj.__dict__:
-                    if getattr(obj, key) == kwargs[key]:
-                        return True
+    def check_user_in_event(user_id):
+        if user_id in EventData.current_users_in_event.keys():
+            return True
         return False
-    
+        
     @staticmethod
     def remove(obj):
         try:
-            EventData.obj_list.remove(obj)
+            del EventData.current_users_in_event[obj.user.id]
         except ValueError as e:
             logger.error("Error removing object from list. Probably already removed.", e)
-        except Exception as e:
-            logger.error("Error removing object from list.",e)
+        except KeyError as e:
+            logger.error("Error removing object from list. Probably already removed.", e)
 
     @staticmethod
     def remove_all():

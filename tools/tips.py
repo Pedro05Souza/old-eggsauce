@@ -21,7 +21,7 @@ tips = {
     17: "You can view the top 10 users with the most points using the !leaderboard command.",
     18: "You can see the hourly income of your farm with the !fp command, it comes with an optional user parameter.",
     19: "You can donate eggbux to other players using the !donate command.",
-    20: "Every plot of corn produces 25 corn every hour, you can expand your plot limit with the !bp command.",
+    20: f"Every plot of corn produces {corn_per_plot} corn every hour, you can expand your plot limit with the !bp command.",
     21: "You can expand your corn limit with the !ucl command.",
     22: "You can sell corn for a third of the price.",
     23: "You can buy corn with eggbux.",

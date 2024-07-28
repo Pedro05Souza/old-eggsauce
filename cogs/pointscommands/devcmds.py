@@ -122,7 +122,7 @@ class DevCommands(commands.Cog):
                     "eggs_generated": 0,
                     "upkeep_multiplier": 0,
                 }
-                #chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
+                chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
                 farm_data['chickens'].append(chicken)
                 Farm.update(user.id, chickens=farm_data['chickens'])
                 await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")

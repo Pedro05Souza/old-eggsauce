@@ -8,6 +8,7 @@ offer_expire_time = 48
 max_bench = 5
 max_corn_limit = 1702
 max_plot_limit = 14
+corn_per_plot = 25
 
 rollRates = {
         "COMMON": 5000,
@@ -20,7 +21,7 @@ rollRates = {
         "ULTIMATE": 39,
         "COSMIC": 19.5,
         "DIVINE": 9.7,
-        "INFINITY": 4.8,
+        "GALATIC": 4.8,
         "OMINOUS": 2.4,
         "CELESTIAL": 1.2,
         "IMMORTAL": 0.6,
@@ -74,7 +75,7 @@ class ChickenRarity(Enum):
     ULTIMATE = 8
     COSMIC = 9
     DIVINE = 10
-    INFINITY = 11
+    GALATIC = 11
     OMINOUS = 12
     CELESTIAL = 13
     IMMORTAL = 14
@@ -94,7 +95,7 @@ class ChickenMultiplier(Enum):
     ULTIMATE = 34
     COSMIC = 41
     DIVINE = 50
-    INFINITY = 58
+    GALATIC = 58
     OMINOUS = 68
     CELESTIAL = 78
     IMMORTAL = 88
@@ -114,7 +115,7 @@ class ChickenFood(Enum):
     ULTIMATE = 16
     COSMIC = 18
     DIVINE = 20
-    INFINITY = 22
+    GALATIC = 22
     OMINOUS = 24
     CELESTIAL = 26
     IMMORTAL = 28

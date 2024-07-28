@@ -3,6 +3,7 @@ from db.botConfigDB import BotConfig
 from discord.ext import commands
 from tools.shared import send_bot_embed, make_embed_object, is_dev
 from tools.prices import Prices
+from functools import wraps
 import inspect
 import discord
 import logging
@@ -18,7 +19,7 @@ async def set_points_commands_submodules(ctx, config_data):
         await send_bot_embed(ctx, description=":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
     shared_cogs = ["PointsConfig", "BankCommands"]
-    friendly_cogs = ["FriendlyCommands", "ChickenCore", "ChickenEvents", "ChickenView", "InteractiveCommands", "AICommands", "CornCommands", "PlayerMarket"]
+    friendly_cogs = ["FriendlyCommands", "ChickenCore", "ChickenEvents", "ChickenView", "InteractiveCommands", "AICommands", "CornCommands", "PlayerMarket", "ChickenCombat"]
     hostile_cog = ["HostileCommands"]
     module_cogs = {
         "F": friendly_cogs + shared_cogs,
@@ -52,7 +53,7 @@ async def refund(user: discord.Member, ctx):
     except Exception as e:
         logger.error(f"An error occurred while refunding the user: {e}")
 
-async def treat_exceptions(ctx, comando, user_data):
+async def treat_exceptions(ctx, comando, user_data, config_data):
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
     if is_slash_command:
         new_points = user_data["points"] - Prices[comando].value
@@ -78,7 +79,7 @@ async def treat_exceptions(ctx, comando, user_data):
         await send_bot_embed(ctx, description=":no_entry_sign: Excessive amount of arguments.")
         return False
     
-    channel = BotConfig.read(ctx.guild.id)
+    channel = config_data
     if not channel['channel_id']:
         await send_bot_embed(ctx, description=":no_entry_sign: The bot has not been configured properly. Type **!setChannel** in the desired channel.")
         return False
@@ -127,7 +128,7 @@ async def treat_exceptions(ctx, comando, user_data):
 
 def pricing():
     async def predicate(ctx):
-        """Check if the user has enough points to use the command."""
+        """Check if the user is able to use any of the points commands."""
         global dev_mode
         command = ctx.command.name 
         result = True
@@ -155,7 +156,7 @@ def pricing():
                 ctx.predicate_result = result
                 return result
             if verify_points(command, user_data):
-                result = await treat_exceptions(ctx,command, user_data)
+                result = await treat_exceptions(ctx,command, user_data, config_data)
                 ctx.predicate_result = result
                 return result
             else:

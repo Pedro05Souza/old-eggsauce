@@ -22,7 +22,7 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def sell_chicken(self, ctx):
         """Deletes a chicken from the farm"""
-        if await verify_events(ctx):
+        if await verify_events(ctx, ctx.author):
             return
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
@@ -30,7 +30,7 @@ class ChickenEvents(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
                 return
             message = await get_usr_farm(ctx, ctx.author)
-            view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author.id, action="D")
+            view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author, action="D")
             await ctx.send(embed=message,view=view)
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you do not have a farm.")
@@ -40,7 +40,7 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def trade_chicken(self, ctx, user: discord.Member):
         """Trade a chicken(s) with another user"""
-        if await verify_events(ctx, user):
+        if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
             return
         farm_author = Farm.read(ctx.author.id)
         farm_target = Farm.read(user.id)
@@ -51,30 +51,41 @@ class ChickenEvents(commands.Cog):
             if user.id == ctx.author.id:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade with yourself.")
                 return
-            t = EventData(author=ctx.author.id, target=user.id)
+            if len(farm_author['chickens']) == 1 and farm_author['chickens'][0]['rarity'] == "ETHEREAL":
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade an ethereal chicken.")
+                return
+            t = EventData(user=ctx.author)
+            t2 = EventData(user=user)
             msg = await send_bot_embed(ctx, description=f":chicken: {ctx.author.display_name} has sent a trade request to {user.display_name}. You have 40 seconds to react with ✅ to accept or ❌ to decline.")
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
             try:
-                reaction, usr = await self.bot.wait_for("reaction_add", check=lambda reaction, usr: usr == user and reaction.message == msg, timeout=40)
+                reaction, _ = await self.bot.wait_for("reaction_add", check=lambda reaction, usr: usr == user and reaction.message == msg, timeout=40)
                 if reaction.emoji == "✅":
                         await self.trade_chickens(ctx, user, t, farm_author, farm_target)
                         return
                 elif reaction.emoji == "❌":
                     await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the trade request.")
                     EventData.remove(t)
+                    EventData.remove(t2)
                     return
             except asyncio.TimeoutError:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has not responded to the trade request.")
                 EventData.remove(t)
+                EventData.remove(t2)
 
     async def trade_chickens(self, ctx, User: discord.Member, t, author_data, user_data):
         """Trade the chickens"""
         authorEmbed = await get_usr_farm(ctx, ctx.author)
         userEmbed = await get_usr_farm(ctx, User)
         trade_data = [author_data['chickens'], user_data['chickens']]
+        trade_data[0] = [chicken for chicken in trade_data[0] if chicken['rarity'] != "DEAD" and chicken['rarity'] != "ETHEREAL"]
+        trade_data[1] = [chicken for chicken in trade_data[1] if chicken['rarity'] != "DEAD" and chicken['rarity'] != "ETHEREAL"]
         members_data = [ctx.author, User]
         embeds = [authorEmbed, userEmbed]
+        if len(user_data['chickens']) == 1 and user_data['chickens'][0]['rarity'] == "ETHEREAL":
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade an ethereal chicken.")
+            return
         view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="author", trade_data=t)
         view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="user", trade_data=t, instance_bot = self.bot)
         await ctx.send(embed=authorEmbed, view=view_author)
@@ -85,33 +96,39 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def gift_chicken(self, ctx, index: int, user: discord.Member):
         """Gift a chicken to another user"""
-        if await verify_events(ctx, user):
+        if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
             return
         author_data = Farm.read(ctx.author.id)
         user_data = Farm.read(user.id)
         if author_data and user_data:
             index -= 1
-            g = EventData(author=ctx.author.id, target=user.id)
+            g = EventData(ctx.author)
+            g2 = EventData(user)
             if not author_data['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                 EventData.remove(g)
+                EventData.remove(g2)
                 return
             if index > len(author_data['chickens']) or index < 0:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
                 EventData.remove(g)
+                EventData.remove(g2)
                 return
             if user.id == ctx.author.id:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift a chicken to yourself.")
                 EventData.remove(g)
+                EventData.remove(g2)
                 return
             if len(user_data['chickens']) >= get_max_chicken_limit(user_data):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, {user.display_name} already has the maximum amount of chickens.")
                 EventData.remove(g)
+                EventData.remove(g2)
                 return
             gifted_chicken = author_data['chickens'][index]
             if gifted_chicken['rarity'] == "ETHEREAL":
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift an ethereal chicken.")
                 EventData.remove(g)
+                EventData.remove(g2)
                 return
             confirmation = await confirmation_embed(ctx, ctx.author, f":question: {ctx.author.display_name}, are you sure you want to gift **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']} to {user.display_name}?")
             if confirmation:
@@ -128,16 +145,20 @@ class ChickenEvents(commands.Cog):
                         Farm.update(user.id, chickens=user_data['chickens'])
                         await send_bot_embed(ctx, description=f":gift: {ctx.author.display_name}, the chicken has been gifted to {user.display_name}.")
                         EventData.remove(g)
+                        EventData.remove(g2)
                     elif reaction.emoji == "❌":
                         await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the gift request.")
                         EventData.remove(g)
+                        EventData.remove(g2)
                         return
                 except asyncio.TimeoutError:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has not responded to the gift request.")
                     EventData.remove(g)
+                    EventData.remove(g2)
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the gift request.")
                 EventData.remove(g)
+                EventData.remove(g2)
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} don't have a farm.")
     
@@ -146,11 +167,11 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def evolve_chicken(self, ctx, index: int, index2: int):
         """Evolves a chicken if having 2 of the same rarity"""
-        if await verify_events(ctx):
+        if await verify_events(ctx, ctx.author):
             return
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
-            e = EventData(author=ctx.author.id)
+            e = EventData(ctx.author)
             if not farm_data['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                 EventData.remove(e)
@@ -197,7 +218,7 @@ class ChickenEvents(commands.Cog):
         """The farmer automatically feeds the chickens"""
         farmer_price = 4200
         description = [
-            f":moneybag: Rich Farmer: Increase the egg value of the chickens by {load_farmer_upgrades('Rich Farmer')}%.\n",
+            f":moneybag: Rich Farmer: Increase the egg value of the chickens by **{load_farmer_upgrades('Rich Farmer')[0]}%** and increases the hourly corn production by **{load_farmer_upgrades('Rich Farmer')[1]}%**\n",
             f":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces upkeep by **{load_farmer_upgrades('Guardian Farmer')}%**.\n",
             f":briefcase: Executive Farmer: Gives you **{load_farmer_upgrades('Executive Farmer')[0]}** more daily rolls in the market and chickens generated in the market comes with **{load_farmer_upgrades('Executive Farmer')[1]}%** discount. \n",
             f":crossed_swords: Warrior Farmer: Gives **{load_farmer_upgrades('Warrior Farmer')}** more farm slots.\n",

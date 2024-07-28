@@ -9,19 +9,19 @@ import asyncio
 
 class ChickenDeleteMenu(ui.Select):
     """Menu to delete chickens from the farm"""
-    def __init__(self, chickens, author_id, message, s):
+    def __init__(self, chickens, author, message, s):
         options = [
             SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
-            for index, chicken in enumerate(chickens)
+            for index, chicken in enumerate(chickens) if chicken['rarity'] != "DEAD" or chicken['rarity'] != "ETHEREAL"
         ]
         self.chickens = chickens
-        self.author_id = author_id
+        self.author = author
         self.message = message
         self.delete_object = s
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder="Select the chickens to delete:")
 
     async def callback(self, interaction):
-        if interaction.user.id != self.author_id:
+        if interaction.user.id != self.author.id:
             await interaction.response.send_message("You can't interact with this menu.", ephemeral=True)
             return
         farm_data = Farm.read(interaction.user.id)

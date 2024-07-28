@@ -23,7 +23,7 @@ class ChickenSelectView(ui.View):
             menu = ChickenMarketMenu(chickens, author, message)
         elif action == "D":
             self.timeout = 30
-            s = EventData(author=author)
+            s = EventData(author)
             menu = ChickenDeleteMenu(chickens, author, message, s)
         elif action == "T":
             if role=="author":
