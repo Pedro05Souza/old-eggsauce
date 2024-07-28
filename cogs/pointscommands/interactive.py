@@ -1,7 +1,7 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
 from tools.pointscore import pricing, refund
-from tools.shared import send_bot_embed, regular_command_cooldown, spam_command_cooldown
+from tools.shared import send_bot_embed, regular_command_cooldown, spam_command_cooldown, tax
 from db.userDB import User
 from collections import Counter
 from random import randint, sample, choice
@@ -9,7 +9,6 @@ from tools.pagination import PaginationView
 import logging
 import time
 import asyncio
-import re
 import discord
 hungergames_status = {}
 steal_status = {}
@@ -58,21 +57,24 @@ class InteractiveCommands(commands.Cog):
     @pricing()
     async def donate_points(self, ctx, user: discord.Member, amount: int):
         """Donates points to another user."""
-        if User.read(user.id):
+        user_data = User.read(ctx.author.id)
+        target_data = User.read(user.id)
+        if user_data:
             if ctx.author.id == user.id:
                 await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't donate to yourself.")
-            elif User.read(ctx.author.id)["points"] >= amount:
-                if amount <= 0:
-                    await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't donate 0 or negative eggbux.")
+            elif user_data["points"] >= amount:
+                if amount <= 0 or amount < 50:
+                    await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't donate 0 or less than 50 eggbux.")
                     return
                 else:
-                    User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] - amount)
-                    User.update_points(user.id, User.read(user.id)["points"] + amount   )
-                    await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {user.display_name}")
+                    taxed_amount = amount * tax
+                    amount -= taxed_amount
+                    amount = int(amount)
+                    User.update_points(ctx.author.id, user_data["points"] - amount)
+                    User.update_points(user.id, target_data["points"] + amount)
+                    await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {user.display_name}. The donation was taxed by **{int(tax * 100)}%** eggbux.")
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
-        else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} isn't registered in the database.")
              
     @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
     @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
@@ -89,17 +91,18 @@ class InteractiveCommands(commands.Cog):
         vermelhos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
         roleta = {i : "RED" if i in vermelhos else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
         if cor in coresPossiveis:
-            if User.read(ctx.author.id)["points"] >= amount and amount >= 50:
+            user_data = User.read(ctx.author.id)
+            if user_data["points"] >= amount and amount >= 50:
                 cassino = randint(0, 36)
                 corSorteada = roleta[cassino]
                 if corSorteada == "GREEN" and cor == "GREEN":
-                    User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + (amount * 14))
+                    User.update_points(ctx.author.id, user_data["points"] + (amount * 14))
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {corSorteada} {corEmoji[corSorteada]}")
                 elif corSorteada == cor:
-                    User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + amount)
+                    User.update_points(ctx.author.id, user_data["points"] + amount)
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount} eggbux!")
                 else:                  
-                    User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] - amount)
+                    User.update_points(ctx.author.id, user_data["points"] - amount)
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **lost!** The selected color was {corSorteada} {corEmoji[corSorteada]}")
                     return
             else:
@@ -135,7 +138,9 @@ class InteractiveCommands(commands.Cog):
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from a bot.")
             await refund(ctx.author, ctx)
             return
-        if User.read(user.id):
+        user_data = User.read(ctx.author.id)
+        target_data = User.read(user.id)
+        if user_data:
             if ctx.author.id == user.id:
                 await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from yourself.")
                 await refund(ctx.author, ctx)
@@ -147,8 +152,8 @@ class InteractiveCommands(commands.Cog):
                 return
             elif chance >= 10:
                 random_integer = randint(1, int(user_points//2))
-                User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + random_integer)
-                User.update_points(user.id, User.read(user.id)["points"] - random_integer)
+                User.update_points(ctx.author.id, user_data['points'] + random_integer)
+                User.update_points(user.id, target_data['points'] - random_integer)
                 await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} stole {random_integer} eggbux from {user.display_name}")
                 return
             else:

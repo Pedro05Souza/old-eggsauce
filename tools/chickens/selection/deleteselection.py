@@ -7,7 +7,6 @@ from tools.shared import confirmation_embed
 from tools.shared import make_embed_object
 import asyncio
 
-
 class ChickenDeleteMenu(ui.Select):
     """Menu to delete chickens from the farm"""
     def __init__(self, chickens, author_id, message, s):

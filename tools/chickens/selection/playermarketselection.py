@@ -1,7 +1,6 @@
 from discord import SelectOption, ui
 from tools.chickens.chickenshared import get_rarity_emoji, get_max_chicken_limit
-from tools.chickens.chickeninfo import market_tax
-from tools.shared import make_embed_object
+from tools.shared import make_embed_object, tax
 from db.userDB import User
 from db.farmDB import Farm
 from db.MarketDB import Market
@@ -45,14 +44,14 @@ class PlayerMarketMenu(ui.Select):
     async def on_chicken_bought(self, offer):
         """Callback for the chicken being bought"""
         user_data = User.read(offer['author_id'])
-        tax = int(offer['price'] * market_tax)
+        tax = int(offer['price'] * tax)
         total = offer['price'] - tax
         User.update_points(offer['author_id'], points=user_data['points'] + total)
         user = self.instance_bot.get_user(offer['author_id'])
         user = user if user else await self.instance_bot.fetch_user(offer['author_id'])
         if user:
             try:
-                msg = await make_embed_object(description=f":white_check_mark: Your **{get_rarity_emoji(offer['chicken']['rarity'])}{offer['chicken']['rarity']}** has been bought for **{offer['price']}** eggbux. After a {int(market_tax * 100)}% tax, you have received **{total}** eggbux.")
+                msg = await make_embed_object(description=f":white_check_mark: Your **{get_rarity_emoji(offer['chicken']['rarity'])}{offer['chicken']['rarity']}** has been bought for **{offer['price']}** eggbux. After a {int(tax * 100)}% tax, you have received **{total}** eggbux.")
                 await user.send(embed=msg)
             except Exception:
                 print(f"User {offer['author_id']} has disabled DMs.")

@@ -4,7 +4,6 @@ from enum import Enum
 
 chicken_default_value = 200
 default_farm_size = 8
-market_tax = 0.15
 offer_expire_time = 48
 max_bench = 5
 max_corn_limit = 1702
