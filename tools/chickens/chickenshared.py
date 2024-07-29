@@ -5,7 +5,7 @@ from db.farmDB import Farm
 from db.userDB import User
 from db.MarketDB import Market
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size, offer_expire_time, corn_per_plot
+from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size, offer_expire_time, corn_per_plot, chicken_ranking
 from tools.shared import send_bot_embed, make_embed_object
 from tools.tips import tips
 from random import randint
@@ -99,6 +99,15 @@ async def get_user_bench(ctx, farm_data):
      """Gets the user's bench"""
      bench = farm_data['bench']
      await send_bot_embed(ctx, title=f":chair: {ctx.author.display_name}'s bench:", description="\n\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
+
+
+async def rank_determiner(farm_data):
+     """Determines the players rank."""
+     rank = farm_data['mmr']
+     for key, value in chicken_ranking.items():
+         if rank >= value:
+             return key
+     return len(chicken_ranking) - 1
     
 # updates
 

@@ -63,6 +63,19 @@ chicken_rarities = {
     "AWESOME" : .01,
     "PERFECT" : 0
 }
+
+chicken_ranking = {
+    "BRONZE": 0,
+    "SILVER": 250,
+    "GOLD": 500,
+    "PLATINUM": 750,
+    "DIAMOND": 1000,
+    "MASTER": 1250,
+    "GRANDMASTER": 1500,
+    "CHALLENGER": 1750,
+    "LEGEND": 2000
+}
+
 class ChickenRarity(Enum):
     DEAD = 0
     COMMON = 1

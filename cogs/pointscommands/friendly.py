@@ -2,6 +2,7 @@ from discord.ext import commands
 from db.MarketDB import Market
 from db.farmDB import Farm
 from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object, get_user_title
+from tools.chickens.chickenshared import rank_determiner
 from db.userDB import User
 from db.bankDB import Bank
 from tools.pagination import PaginationView
@@ -85,6 +86,7 @@ class FriendlyCommands(commands.Cog):
         msg.add_field(name=":corn: Corn limit:", value=farm_data['corn_limit'] if farm_data else 0, inline=True)
         msg.add_field(name=":moneybag: Corn plot:", value=farm_data['plot'] if farm_data else 0, inline=True)
         msg.add_field(name=":scroll: Activate offers:", value=len(market_data) if market_data else 0, inline=True)
+        msg.add_field(name="Chicken Rank:", value=await rank_determiner(farm_data))
         msg.set_footer(text=f"User ID: {user.id}. Created at: {user.created_at}")
         msg.set_thumbnail(url=user.display_avatar.url)
         await ctx.send(embed=msg)

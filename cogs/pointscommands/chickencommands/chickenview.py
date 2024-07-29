@@ -93,7 +93,7 @@ class ChickenView(commands.Cog):
                     current_upkeep = chicken['upkeep_multiplier']
                     totalLoss += ceil(await get_chicken_egg_value(chicken) * current_upkeep)
             if farm_data['farmer'] == "Rich Farmer":
-                to_add = load_farmer_upgrades("Rich Farmer")
+                to_add = load_farmer_upgrades("Rich Farmer")[0]
                 added_value = (totalProfit * to_add) // 100
                 totalProfit += added_value
             result = totalProfit - totalLoss
@@ -255,8 +255,7 @@ class ChickenView(commands.Cog):
             Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
             await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
             EventData.remove(e)
-            
-
+        
 async def setup(bot):
     await bot.add_cog(ChickenView(bot))
 
