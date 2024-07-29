@@ -120,7 +120,7 @@ class PointsConfig(commands.Cog):
             salary = await self.salary_role(user_data)
             if hours_passed >= 1 and user_data["roles"] != "":
                 user_data['points'] += salary * hours_passed
-                User.update_points(user.id, user_data["points"] + salary * hours_passed)
+                User.update_points(user.id, user_data['points'])
                 User.update_salary_time(user.id)
                 logger.info(f"{user.display_name} has received {salary * hours_passed} eggbux from their title.")
             return user_data
