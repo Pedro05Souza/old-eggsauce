@@ -101,11 +101,10 @@ async def get_user_bench(ctx, farm_data):
      await send_bot_embed(ctx, title=f":chair: {ctx.author.display_name}'s bench:", description="\n\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
 
 
-async def rank_determiner(farm_data):
+async def rank_determiner(mmr):
      """Determines the players rank."""
-     rank = farm_data['mmr']
-     for key, value in chicken_ranking.items():
-         if rank >= value:
+     for key, value in reversed(chicken_ranking.items()):
+         if mmr >= value:
              return key
      return len(chicken_ranking) - 1
     

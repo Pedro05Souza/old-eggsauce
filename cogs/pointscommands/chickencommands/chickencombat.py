@@ -87,7 +87,7 @@ class UserInQueue():
     has_opponent: bool = False
 
     async def define_rank_mmr_weight(self, farm_data):
-        self.score += ranks_weight[await rank_determiner(farm_data)]
+        self.score += ranks_weight[await rank_determiner(farm_data['mmr'])]
         if self.score < 0:
             self.score = 0
         return self.score
@@ -134,7 +134,7 @@ class ChickenCombat(commands.Cog):
             self.user_queue.append(user)
             await user.define_rank_mmr_weight(farm_data)
             await user.define_chicken_overrall_score()
-            match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data)}**.")
+            match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data['mmr'])}**.")
             match_matching_obj.set_footer(text=f"Having a higher chicken overall will decrease the chances of finding an opponent, but also increase the rewards.")
             await ctx.send(embed=match_matching_obj)
             opponent = await self.search(user)
@@ -144,8 +144,9 @@ class ChickenCombat(commands.Cog):
                 opponent.has_opponent = True
                 user.has_opponent = True
                 self.map = {str(user.member.id) + "_" + str(opponent.member.id): [user, opponent]}
-                msg_user = await make_embed_object(description=f"🔎 {opponent.member.name} has been found as your opponent.")
-                msg_opponent = await make_embed_object(description=f"🔎 {user.member.name} has been found as your opponent.")
+                opponent_data = Farm.read(opponent.member.id)
+                msg_user = await make_embed_object(description=f"🔎 {opponent.member.name} has been found as your opponent. **({opponent_data['mmr']} MMR)**")
+                msg_opponent = await make_embed_object(description=f"🔎 {user.member.name} has been found as your opponent. **({farm_data['mmr']} MMR)**")
                 await user.ctx.send(embed=msg_user)
                 await opponent.ctx.send(embed=msg_opponent)
                 await self.define_chicken_matchups(user, opponent)
@@ -280,11 +281,11 @@ class ChickenCombat(commands.Cog):
         win_rate_for_user = win_rate_for_user / real_win_rate
 
         if random_number < win_rate_for_author:
-            embed_per_round.add_field(name=f"Battle:", value=f"🎉 {author.member.name}'s **{get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']}** has won against {user.member.name}'s **{get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']}**\n Win chance for {author.member.name}: {round(win_rate_for_author * 100)}%\n Win chance for {user.member.name}: {round(win_rate_for_user * 100)}%", inline=False)
+            embed_per_round.add_field(name=f"Battle:", value=f"🎉 {author.member.name}'s **{get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']}** has won against {user.member.name}'s **{get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']}**\n Win chance for {author.member.name}: {round(win_rate_for_author * 100)}%\n Win chance for {user.member.name}: **{round(win_rate_for_user * 100)}%**", inline=False)
             if match[1] in user.chickens:
                 user.chickens.remove(match[1])
         else:
-            embed_per_round.add_field(name=f"Battle:", value=f"🎉 {user.member.name}'s **{get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']}** has won against {author.member.name}'s **{get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']}**\n Win chance for {author.member.name}: {round(win_rate_for_author * 100)}%\n Win chance for {user.member.name}: {round(win_rate_for_user * 100)}%", inline=False) 
+            embed_per_round.add_field(name=f"Battle:", value=f"🎉 {user.member.name}'s **{get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']}** has won against {author.member.name}'s **{get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']}**\n Win chance for {author.member.name}: {round(win_rate_for_author * 100)}%\n Win chance for {user.member.name}: **{round(win_rate_for_user * 100)}%**", inline=False) 
             if match[0] in author.chickens:
                 author.chickens.remove(match[0])
 
@@ -330,15 +331,26 @@ class ChickenCombat(commands.Cog):
         multiplier = (winner.score + winner.chicken_overrall_score) / (loser.score + loser.chicken_overrall_score)
         mmr_gain = base_mmr_gain * multiplier
         mmr_gain = int(mmr_gain)
-        farm_data_winner['mmr'] += mmr_gain
+        score = mmr_gain
         farm_data_loser['mmr'] -= mmr_gain
         if farm_data_loser['mmr'] < 0:
             farm_data_loser['mmr'] = 0
+        await self.verify_if_upwards_rank(winner.ctx, farm_data_winner['mmr'], farm_data_winner['mmr'] + score)
+        farm_data_winner['mmr'] += mmr_gain
         Farm.update(winner.member.id, mmr=farm_data_winner['mmr'])
         Farm.update(loser.member.id, mmr=farm_data_loser['mmr'])
-        msg = await make_embed_object(description=f"🎉 {winner.member.name} has won the combat and has gained {mmr_gain} MMR, while {loser.member.name} has lost {mmr_gain} MMR.")
+        msg = await make_embed_object(description=f"🎉 {winner.member.name} has won the combat and has gained **{mmr_gain}** MMR, while {loser.member.name} has lost the same amount.")
         await self.check_if_same_guild(winner, loser, msg)
         return
+
+    async def verify_if_upwards_rank(self, ctx, before_mmr, after_mmr):
+        """Sends a notification if the user has uppwarded in rank."""
+        before_mmr = await rank_determiner(before_mmr)
+        after_mmr = await rank_determiner(after_mmr)
+        if before_mmr != after_mmr:
+            await send_bot_embed(ctx, description=f"🎉 {ctx.author.name} has been promoted to **{after_mmr}**.")
+            return
+
     
 async def setup(bot):
     await bot.add_cog(ChickenCombat(bot))

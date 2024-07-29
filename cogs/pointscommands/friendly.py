@@ -86,7 +86,7 @@ class FriendlyCommands(commands.Cog):
         msg.add_field(name=":corn: Corn limit:", value=farm_data['corn_limit'] if farm_data else 0, inline=True)
         msg.add_field(name=":moneybag: Corn plot:", value=farm_data['plot'] if farm_data else 0, inline=True)
         msg.add_field(name=":scroll: Activate offers:", value=len(market_data) if market_data else 0, inline=True)
-        msg.add_field(name="Chicken Rank:", value=await rank_determiner(farm_data))
+        msg.add_field(name="Chicken Rank:", value=await rank_determiner(farm_data['mmr']))
         msg.set_footer(text=f"User ID: {user.id}. Created at: {user.created_at}")
         msg.set_thumbnail(url=user.display_avatar.url)
         await ctx.send(embed=msg)
