@@ -92,7 +92,7 @@ class PointsConfig(commands.Cog):
             user = ctx.author
         user_data = await self.update_user_points(user)
         bank_data = Bank.read(user.id)
-        if user_data and isinstance(user_data, dict) and "points" in user_data:
+        if user_data:
             if bank_data:
                 msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {bank_data['bank']}")
                 msg.add_field(name=":money_with_wings: Total eggbux:", value=f"{user_data['points'] + bank_data['bank']}")

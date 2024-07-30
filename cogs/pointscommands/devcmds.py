@@ -117,7 +117,6 @@ class DevCommands(commands.Cog):
                 chicken = {
                     "rarity": rarity,
                     "name": "Chicken",
-                    "price": ChickenRarity[rarity].value * chicken_default_value,
                     "happiness": randint(60, 100),
                     "eggs_generated": 0,
                     "upkeep_multiplier": 0,

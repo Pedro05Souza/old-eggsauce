@@ -5,7 +5,7 @@ from db.farmDB import Farm
 from db.userDB import User
 from db.MarketDB import Market
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickeninfo import ChickenMultiplier, ChickenRarity, chicken_default_value, defineRarityEmojis, chicken_rarities, default_farm_size, offer_expire_time, corn_per_plot, chicken_ranking
+from tools.chickens.chickeninfo import *
 from tools.shared import send_bot_embed, make_embed_object
 from tools.tips import tips
 from random import randint
@@ -107,6 +107,31 @@ async def rank_determiner(mmr):
          if mmr >= value:
              return key
      return len(chicken_ranking) - 1
+
+
+async def create_chicken(rarity):
+     """"Create a chicken"""
+     chicken = {
+                "rarity": rarity,
+                "name": "Chicken",
+                "happiness": randint(60, 100),
+                "eggs_generated": 0,
+                "upkeep_multiplier": 0,
+                }
+     chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
+     return chicken
+
+async def define_chicken_overrall_score(chickens):
+        """Defines the chicken overall score."""
+        chicken_overrall_score = 0
+        for chicken in chickens:
+            chicken_overrall_score += rarities_weight[chicken['rarity']]
+            chicken_overrall_score += upkeep_weight[determine_upkeep_rarity(chicken['upkeep_multiplier'])]
+        chicken_overrall_score -= farm_size_weights[len(chickens)]
+        if chicken_overrall_score < 0:
+            chicken_overrall_score = 0
+        return chicken_overrall_score
+
     
 # updates
 

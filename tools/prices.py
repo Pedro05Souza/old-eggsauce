@@ -25,6 +25,7 @@ class Prices(Enum):
     removebench = 0
     bench = 0
     switchbench = 0
+    queue = 0
     farmprofit = 0
     feedallchicken = 0
     renamecornfield = 0
@@ -38,7 +39,9 @@ class Prices(Enum):
     hungergames = 0
     tradechicken = 0
     buyplot = 0
+    transcend = 0
     cornfood = 0
+    chickenrank = 0
     renamechicken = 0
     upgradebanklimit = 0
     feedchicken = 0

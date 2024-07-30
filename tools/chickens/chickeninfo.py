@@ -135,3 +135,72 @@ class ChickenFood(Enum):
     CHOSEN = 30
     ASCENDED = 32
     ETHEREAL = 300
+
+
+rarities_weight = {
+    "DEAD": 0,
+    "COMMON": 2,
+    "UNCOMMON": 4,
+    "RARE": 6,
+    "EXCEPTIONAL": 10,
+    "EPIC": 15,
+    "LEGENDARY" : 21,
+    "MYTHICAL" : 27,
+    "ULTIMATE": 34,
+    "COSMIC": 41,
+    "DIVINE": 50,
+    "GALATIC": 58,
+    "OMINOUS": 68,
+    "CELESTIAL": 78,
+    "IMMORTAL": 88,
+    "CHOSEN": 99,
+    "ASCENDED": 111,
+    "ETHEREAL": 200
+}
+
+upkeep_weight = {
+    "HORRIFIC" : -30,
+    "TERRIBLE": -20,
+    "AWFUL" : -10,
+    "BAD" : 0,
+    "NORMAL" : 10,
+    "DECENT" : 20,
+    "GOOD" : 30,
+    "GREAT" : 40,
+    "AMAZING" : 50,
+    "AWESOME" : 60,
+    "PERFECT" : 70
+}
+
+score_determiner = {
+    "REALLY LOW": 100,
+    "LOW": 350,
+    "MEDIUM": 500,
+    "HIGH": 1000,
+    "REALLY HIGH": 1300,
+    "EXTREMELY HIGH": 1600,
+    "MAXIMUM": 2160
+}
+
+farm_size_weights = {
+    1: 100,
+    2: 80,
+    3: 60,
+    4: 40,
+    5: 20,
+    6: 10,
+    7: 5,
+    8: 0
+}
+
+ranks_weight = {
+    "BRONZE": 0,
+    "SILVER": 250,
+    "GOLD": 500,
+    "PLATINUM": 750,
+    "DIAMOND": 1000,
+    "MASTER": 1250,
+    "GRANDMASTER": 1500,
+    "CHALLENGER": 1750,
+    "LEGEND": 2000
+}
