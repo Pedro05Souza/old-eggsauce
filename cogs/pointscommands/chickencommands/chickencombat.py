@@ -1,7 +1,7 @@
 from discord.ext import commands
 from dataclasses import dataclass
 from tools.pointscore import pricing
-from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown
+from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, queue_command_cooldown
 from tools.chickens.combatbot import BotMatchMaking, bot_maker
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity, get_rarity_emoji, rank_determiner, define_chicken_overrall_score
@@ -17,15 +17,9 @@ class UserInQueue():
     chickens: list
     ctx: commands.Context   
     in_event: EventData
-    score: int = 0
+    score: int
     chicken_overrall_score: int = 0
     has_opponent: bool = False
-
-    async def define_rank_mmr_weight(self, farm_data):
-        self.score += ranks_weight[await rank_determiner(farm_data['mmr'])]
-        if self.score < 0:
-            self.score = 0
-        return self.score
     
 class ChickenCombat(commands.Cog):
     def __init__(self, bot):
@@ -47,7 +41,7 @@ class ChickenCombat(commands.Cog):
             return
 
     @commands.hybrid_command(name="queue", aliases=["fight"], brief="Match making for chicken combat.", description="Match making for chicken combat.", usage="combat")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, queue_command_cooldown, commands.BucketType.user)
     @pricing()
     async def queue(self, ctx):
         """Match making for chicken combat."""
@@ -66,13 +60,12 @@ class ChickenCombat(commands.Cog):
                         break
                 farm_data['chickens'] = combat_list
             e = EventData(ctx.author)
-            user = UserInQueue(ctx.author, farm_data['chickens'], ctx, e)
+            user = UserInQueue(ctx.author, farm_data['chickens'], ctx, e, farm_data['mmr'])
             if not user.chickens:
                 await send_bot_embed(ctx, description=":no_entry_sign: You need to have chickens to participate in combat.")
                 EventData.remove(user.in_event)
                 return
             self.user_queue.append(user)
-            await user.define_rank_mmr_weight(farm_data)
             user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
             match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data['mmr'])}**.")
             match_matching_obj.set_footer(text=f"Having a higher chicken overall will decrease the chances of finding an opponent, but also increase the rewards.")
@@ -85,8 +78,8 @@ class ChickenCombat(commands.Cog):
                 user.has_opponent = True
                 self.map = {str(user.member.id) + "_" + str(opponent.member.id): [user, opponent]}
                 opponent_data = Farm.read(opponent.member.id)
-                msg_user = await make_embed_object(description=f"🔎 {opponent.member.name} has been found as your opponent. **({opponent_data['mmr']} MMR)**")
-                msg_opponent = await make_embed_object(description=f"🔎 {user.member.name} has been found as your opponent. **({farm_data['mmr']} MMR)**")
+                msg_user = await make_embed_object(description=f"🔎 **{opponent.member.name}** has been found as your opponent. **({opponent_data['mmr']} MMR)**")
+                msg_opponent = await make_embed_object(description=f"🔎 **{user.member.name}** has been found as your opponent. **({farm_data['mmr']} MMR)**")
                 await user.ctx.send(embed=msg_user)
                 await opponent.ctx.send(embed=msg_opponent)
                 await self.define_chicken_matchups(user, opponent)
@@ -103,7 +96,8 @@ class ChickenCombat(commands.Cog):
                     user.has_opponent = True
                     opponent.has_opponent = True
                     self.map = {str(user.member.id) + "_" + str(opponent.name): [user, opponent]}
-                    msg_user = await make_embed_object(description=f"🔎 {opponent.name} has been found as your opponent. **({opponent.score}) MMR**")
+                    msg_user = await make_embed_object(description=f"🔎 **{opponent.name}** has been found as your opponent. **({opponent.score}) MMR**")
+                    await asyncio.sleep(2)
                     await user.ctx.send(embed=msg_user)
                     await self.define_chicken_matchups(user, opponent)
                     self.user_queue.remove(user)
@@ -117,7 +111,9 @@ class ChickenCombat(commands.Cog):
                 if not await self.check_if_user_is_bot(user):
                     if user.member.id == current_user.member.id:
                         continue
-                if user.chicken_overrall_score >= current_user.chicken_overrall_score - positive_search_overrall and user.chicken_overrall_score <= current_user.chicken_overrall_score + negative_search_overrall:
+                print("user has around the same score")
+                if user.chicken_overrall_score >= negative_search_overrall and user.chicken_overrall_score <= positive_search_overrall:
+                    print("user has around the same chicken overrall")
                     yield user
 
     async def increase_search_range(self, positive_search, negative_search, current_user, positive_search_overrall, negative_search_overrall): 
@@ -127,16 +123,17 @@ class ChickenCombat(commands.Cog):
     async def search(self, current_user):
         attemps = 0
         saved_positive_score, saved_negative_score = current_user.score, current_user.score
-        positive_overrall_score, negative_overrall_score = current_user.chicken_overrall_score, current_user.chicken_overrall_score
-        while attemps < 20:
+        saved_positive_overrall, saved_negative_overrall = current_user.chicken_overrall_score, current_user.chicken_overrall_score
+        print(current_user.score, current_user.chicken_overrall_score)
+        while attemps < 30:
             if current_user.has_opponent:
                 return "opponent"
-            if attemps == 15:
+            if attemps == 15:   
                 bot = await bot_maker(current_user.chickens, current_user.score)
                 self.user_queue.append(bot)
-            positive_search = saved_positive_score + 15
-            negative_search = saved_negative_score - 15
-            positive_search_overrall, negative_search_overrall = positive_overrall_score + 50, negative_overrall_score - 50
+            positive_search = saved_positive_score + 30
+            negative_search = saved_negative_score - 30
+            positive_search_overrall, negative_search_overrall = saved_positive_overrall + 50, saved_negative_overrall - 50
             if positive_search_overrall < 0:
                 positive_search_overrall = 0
             if negative_search < 0:
@@ -149,6 +146,7 @@ class ChickenCombat(commands.Cog):
             attemps += 1
             await asyncio.sleep(1.5)
             saved_negative_score, saved_positive_score = negative_search, positive_search
+            saved_positive_overrall, saved_negative_overrall = positive_search_overrall, negative_search_overrall
         return "No opponent found."
     
     async def define_chicken_matchups(self, author, user):
@@ -203,10 +201,10 @@ class ChickenCombat(commands.Cog):
 
         if rarity_chicken_author_position > rarity_chicken_user_position:
             difficulty = rarity_chicken_author_position - rarity_chicken_user_position
-            win_rate_for_author += 0.2 * difficulty
+            win_rate_for_author += 0.3 * difficulty
         else:
             difficulty = rarity_chicken_user_position - rarity_chicken_author_position
-            win_rate_for_user += 0.2 * difficulty
+            win_rate_for_user += 0.3 * difficulty
 
         if upkeep_chicken_author_position > upkeep_chicken_user_position:
             difficulty = upkeep_chicken_author_position - upkeep_chicken_user_position
@@ -237,15 +235,10 @@ class ChickenCombat(commands.Cog):
 
         winner = await self.check_winner(author, user)
         if winner:
-            if not await self.check_if_user_is_bot(user) and not await self.check_if_user_is_bot(author):
-                loser = author if getattr(winner, 'member', None) and winner.member.id == user.member.id else user
-            elif await self.check_if_user_is_bot(user):
-                loser = author if getattr(winner, 'member', None) and winner.member.id == user.bot_id else user
-            else:
-                loser = author if getattr(winner, 'bot_id', None) and winner.bot_id == user.member.id else user
+            loser = author if winner == user else user
             await asyncio.sleep(5)
             await self.check_if_same_guild(author, user, embed_per_round)
-            await self.rewards(winner, loser)
+            await self.rewards(winner, loser, author.ctx)
             EventData.remove(author.in_event)
             if not await self.check_if_user_is_bot(user):
                 EventData.remove(user.in_event)
@@ -262,6 +255,9 @@ class ChickenCombat(commands.Cog):
     async def check_if_same_guild(self, author, user, embed):
         if await self.check_if_user_is_bot(user):
             await author.ctx.send(embed=embed)
+            return
+        elif await self.check_if_user_is_bot(author):
+            await user.ctx.send(embed=embed)
             return
         if author.ctx.guild.id == user.ctx.guild.id:
             await author.ctx.send(embed=embed)
@@ -293,24 +289,13 @@ class ChickenCombat(commands.Cog):
             farm_data = Farm.read(user.member.id)
             return farm_data['mmr']
         return user.score
-    
-    async def check_user_context(self, user):
-        if not await self.check_if_user_is_bot(user):
-            return user.ctx
-    
-    async def rewards(self, winner, loser):
+
+    async def rewards(self, winner, loser, ctx):
         """Rewards the winner of the combat."""
         farm_data_winner = await self.check_user_score(winner)
         farm_data_loser = await self.check_user_score(loser)
         base_mmr_gain = 30
-        context = None
-        context_winner = await self.check_user_context(winner)
-        context_loser = await self.check_user_context(loser)
-        if context_winner is not None:
-            context = context_winner
-        elif context_loser is not None:
-            context = context_loser
-        multiplier = (loser.score + loser.chicken_overrall_score) / (winner.score + winner.chicken_overrall_score) 
+        multiplier = (loser.score + loser.chicken_overrall_score) / (winner.score + winner.chicken_overrall_score)
         mmr_gain = base_mmr_gain * multiplier
         mmr_gain = int(mmr_gain)
         mmr_gain = max(base_mmr_gain, mmr_gain)
@@ -318,23 +303,24 @@ class ChickenCombat(commands.Cog):
         farm_data_loser -= mmr_gain
         if farm_data_loser < 0:
             farm_data_loser = 0
-        await self.verify_if_upwards_rank(context, farm_data_winner, farm_data_winner + score)
+        await self.verify_if_upwards_rank(ctx, farm_data_winner, farm_data_winner + score, winner)
         farm_data_winner += mmr_gain
         if not await self.check_if_user_is_bot(winner):
             Farm.update(winner.member.id, mmr=farm_data_winner)
         if not await self.check_if_user_is_bot(loser):
             Farm.update(loser.member.id, mmr=farm_data_loser)
-        msg = await make_embed_object(description=f"🎉 {winner.member.name} has won the combat and has gained **{mmr_gain}** MMR, while {await self.check_user_name(loser)} has lost the same amount.")
-        await self.check_if_same_guild(winner, loser, msg)
+        msg = await make_embed_object(description=f"🎉 {await self.check_user_name(winner)} has won the combat and has gained **{mmr_gain}** MMR, while {await self.check_user_name(loser)} has lost the same amount.")
+        await ctx.send(embed=msg)
         return
 
-    async def verify_if_upwards_rank(self, ctx, before_mmr, after_mmr):
+    async def verify_if_upwards_rank(self, ctx, before_mmr, after_mmr, winner):
         """Sends a notification if the user has uppwarded in rank."""
         before_mmr = await rank_determiner(before_mmr)
         after_mmr = await rank_determiner(after_mmr)
         if before_mmr != after_mmr:
-            await send_bot_embed(ctx, description=f"🎉 {ctx.author.name} has been promoted to **{after_mmr}**.")
+            await send_bot_embed(ctx, description=f"🎉 {await self.check_user_name(winner)} has been promoted to **{after_mmr}**.")
             return
+        return
         
     async def score_string(self, score):
         for key, value in score_determiner.items():

@@ -3,6 +3,7 @@ import os
 import discord
 spam_command_cooldown = .8
 regular_command_cooldown = 3.5
+queue_command_cooldown = 120
 tax = .15
 
 async def send_bot_embed(ctx, **kwargs):
