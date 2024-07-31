@@ -1,11 +1,11 @@
 from discord.ext import commands
 from dataclasses import dataclass
 from tools.pointscore import pricing
-from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, queue_command_cooldown
+from tools.shared import send_bot_embed, make_embed_object, queue_command_cooldown
 from tools.chickens.combatbot import BotMatchMaking, bot_maker
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity, get_rarity_emoji, rank_determiner, define_chicken_overrall_score
-from tools.chickens.chickeninfo import ranks_weight, rarities_weight, upkeep_weight, score_determiner
+from tools.chickens.chickeninfo import rarities_weight, upkeep_weight, score_determiner
 from db.farmDB import Farm
 from random import sample, random
 import asyncio
@@ -26,19 +26,6 @@ class ChickenCombat(commands.Cog):
         self.bot = bot
         self.user_queue = []
         self.map = {}
-
-    @commands.hybrid_command(name="chickenrank", aliases=["crank"], brief="Shows your current rank.", description="Shows your current rank.", usage="rank")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
-    @pricing()
-    async def player_rank(self, ctx, user: discord.Member = None):
-        """Shows your current rank."""
-        if user is None:
-            user = ctx.author
-        farm_data = Farm.read(user.id)
-        if farm_data:
-            rank = await rank_determiner(farm_data['mmr'])
-            await send_bot_embed(ctx, description=f"🏆 {user.name}, your current rank is: **{rank}** with the MMR of **{farm_data['mmr']}**.")
-            return
 
     @commands.hybrid_command(name="queue", aliases=["fight"], brief="Match making for chicken combat.", description="Match making for chicken combat.", usage="combat")
     @commands.cooldown(1, queue_command_cooldown, commands.BucketType.user)
@@ -97,11 +84,11 @@ class ChickenCombat(commands.Cog):
                     opponent.has_opponent = True
                     self.map = {str(user.member.id) + "_" + str(opponent.name): [user, opponent]}
                     msg_user = await make_embed_object(description=f"🔎 **{opponent.name}** has been found as your opponent. **({opponent.score}) MMR**")
-                    await asyncio.sleep(2)
-                    await user.ctx.send(embed=msg_user)
-                    await self.define_chicken_matchups(user, opponent)
                     self.user_queue.remove(user)
                     self.user_queue.remove(opponent)
+                    await asyncio.sleep(5)
+                    await user.ctx.send(embed=msg_user)
+                    await self.define_chicken_matchups(user, opponent)
 
     async def user_queue_generator(self, positive_search_rank, negative_search_rank, current_user, positive_search_overrall, negative_search_overrall):
         for user in self.user_queue:
@@ -111,9 +98,7 @@ class ChickenCombat(commands.Cog):
                 if not await self.check_if_user_is_bot(user):
                     if user.member.id == current_user.member.id:
                         continue
-                print("user has around the same score")
                 if user.chicken_overrall_score >= negative_search_overrall and user.chicken_overrall_score <= positive_search_overrall:
-                    print("user has around the same chicken overrall")
                     yield user
 
     async def increase_search_range(self, positive_search, negative_search, current_user, positive_search_overrall, negative_search_overrall): 
@@ -124,15 +109,14 @@ class ChickenCombat(commands.Cog):
         attemps = 0
         saved_positive_score, saved_negative_score = current_user.score, current_user.score
         saved_positive_overrall, saved_negative_overrall = current_user.chicken_overrall_score, current_user.chicken_overrall_score
-        print(current_user.score, current_user.chicken_overrall_score)
         while attemps < 30:
             if current_user.has_opponent:
                 return "opponent"
             if attemps == 15:   
                 bot = await bot_maker(current_user.chickens, current_user.score)
                 self.user_queue.append(bot)
-            positive_search = saved_positive_score + 30
-            negative_search = saved_negative_score - 30
+            positive_search = saved_positive_score + 10
+            negative_search = saved_negative_score - 10
             positive_search_overrall, negative_search_overrall = saved_positive_overrall + 50, saved_negative_overrall - 50
             if positive_search_overrall < 0:
                 positive_search_overrall = 0
@@ -201,10 +185,10 @@ class ChickenCombat(commands.Cog):
 
         if rarity_chicken_author_position > rarity_chicken_user_position:
             difficulty = rarity_chicken_author_position - rarity_chicken_user_position
-            win_rate_for_author += 0.3 * difficulty
+            win_rate_for_author += 0.35 * difficulty
         else:
             difficulty = rarity_chicken_user_position - rarity_chicken_author_position
-            win_rate_for_user += 0.3 * difficulty
+            win_rate_for_user += 0.35 * difficulty
 
         if upkeep_chicken_author_position > upkeep_chicken_user_position:
             difficulty = upkeep_chicken_author_position - upkeep_chicken_user_position
@@ -236,12 +220,12 @@ class ChickenCombat(commands.Cog):
         winner = await self.check_winner(author, user)
         if winner:
             loser = author if winner == user else user
-            await asyncio.sleep(5)
-            await self.check_if_same_guild(author, user, embed_per_round)
-            await self.rewards(winner, loser, author.ctx)
             EventData.remove(author.in_event)
             if not await self.check_if_user_is_bot(user):
                 EventData.remove(user.in_event)
+            await asyncio.sleep(5)
+            await self.check_if_same_guild(author, user, embed_per_round)
+            await self.rewards(winner, loser, author.ctx)
             return
         else:
             if accumulator == total_matches:

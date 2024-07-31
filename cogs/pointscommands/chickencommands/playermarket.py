@@ -22,9 +22,9 @@ class PlayerMarket(commands.Cog):
         description = ""
         farm_data = Farm.read(ctx.author.id)
         if farm_data:
-            if await verify_events(ctx):
+            if await verify_events(ctx, ctx.author):
              return
-            r = EventData(author=ctx.author.id)
+            r = EventData(ctx.author)
             total_user_offers = Market.get_user_offers(ctx.author.id)
             if not total_user_offers:
                 total_user_offers = []

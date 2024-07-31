@@ -1,7 +1,7 @@
 from discord.ext import commands
 from db.farmDB import Farm
-from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, max_bench
-from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades, update_user_farm, get_user_bench, get_max_chicken_limit, verify_events
+from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, max_bench, ranks_weight
+from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades, rank_determiner, update_user_farm, get_user_bench, get_max_chicken_limit, verify_events
 from tools.chickens.chickenhandlers import EventData
 from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object
 from tools.pointscore import pricing
@@ -29,7 +29,7 @@ class ChickenView(commands.Cog):
             chicken = farm_data['chickens'][index - 1]
             chicken_egg_value = await get_chicken_egg_value(chicken) - int((await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))
             total_profit = (chicken_egg_value * chicken['happiness']) // 100
-            msg = await make_embed_object(title=f":chicken: {chicken['rarity']} {chicken['name']}", description=f":partying_face: **Happiness**: {chicken['happiness']}%\n:moneybag: **Price**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux\n:egg: **Egg value**: {chicken_egg_value} \n:gem: **Upkeep rarity**: {round(chicken['upkeep_multiplier'] * 100)}%\n:coin: **Eggs generated:** {chicken['eggs_generated']}\n:corn: **Food necessary:** {ChickenFood[chicken['rarity']].value} \n:money_with_wings: **Total profit: {total_profit} eggbux.**")
+            msg = await make_embed_object(title=f":chicken: {chicken['rarity']} {chicken['name']}", description=f":partying_face: **Happiness**: {chicken['happiness']}%\n:moneybag: **Price**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux\n:egg: **Egg value**: {chicken_egg_value}/{ChickenMultiplier[chicken['rarity']].value} \n:gem: **Upkeep rarity**: {round(chicken['upkeep_multiplier'] * 100)}%\n:coin: **Eggs generated:** {chicken['eggs_generated']}\n:corn: **Food necessary:** {ChickenFood[chicken['rarity']].value} \n:money_with_wings: **Total profit: {total_profit} eggbux.**")
             await ctx.send(embed=msg)
             
     @commands.hybrid_command(name="chickenrarities", aliases=["cr"], usage="chickenRarities", description="Check the rarities of the chickens.")
@@ -63,6 +63,27 @@ class ChickenView(commands.Cog):
         """Check the prices of the chickens"""
         prices_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {175 * ChickenRarity[rarity].value} eggbux" for rarity in ChickenRarity.__members__])
         await send_bot_embed(ctx, title="Chicken prices:", description=prices_info)
+
+    @commands.hybrid_command(name="chickenrank", aliases=["crank"], brief="Shows your current rank.", description="Shows your current rank.", usage="rank")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def player_rank(self, ctx, user: discord.Member = None):
+        """Shows your current rank."""
+        if user is None:
+            user = ctx.author
+        farm_data = Farm.read(user.id)
+        if farm_data:
+            rank = await rank_determiner(farm_data['mmr'])
+            await send_bot_embed(ctx, description=f"🏆 {user.name}, your current rank is: **{rank}** with the MMR of **{farm_data['mmr']}**.")
+            return
+        
+    @commands.hybrid_command(name="rankinfo", aliases=["ri"], usage="rankInfo", description="Check the chicken matchmaking ranks.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def rank_info(self, ctx):
+        """Check the chicken matchmaking ranks"""
+        rank_info = "\n".join([f"{rank} - {weight} MMR" for rank, weight in ranks_weight.items()])
+        await send_bot_embed(ctx, title="Chicken matchmaking ranks:", description=rank_info)
 
     @commands.hybrid_command(name="farmprofit", aliases=["fp"], usage="farmprofit OPTIONAL [user]", description="Check the farm profit.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -224,16 +245,20 @@ class ChickenView(commands.Cog):
         farm_data = Farm.read(ctx.author.id)
         index -= 1
         if farm_data:
+            e = EventData(ctx.author)
             if index > len(farm_data['bench']) or index < 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                EventData.remove(e)
                 return
             if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
                 await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum chicken limit.")
+                EventData.remove(e)
                 return
             farm_data['chickens'].append(farm_data['bench'][index])
             farm_data['bench'].pop(index)
             Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
             await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the **{get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']}** has been removed from the bench.")
+            EventData.remove(e)
     
     @commands.hybrid_command(name="switchbench", aliases=["sb"], usage="switchb <index_farm> <index_bench>", description="Switch a chicken from the farm to the bench.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)

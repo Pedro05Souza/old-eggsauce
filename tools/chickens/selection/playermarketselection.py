@@ -44,8 +44,8 @@ class PlayerMarketMenu(ui.Select):
     async def on_chicken_bought(self, offer):
         """Callback for the chicken being bought"""
         user_data = User.read(offer['author_id'])
-        tax = int(offer['price'] * tax)
-        total = offer['price'] - tax
+        take_off = int(offer['price'] * tax)
+        total = offer['price'] - take_off
         User.update_points(offer['author_id'], points=user_data['points'] + total)
         user = self.instance_bot.get_user(offer['author_id'])
         user = user if user else await self.instance_bot.fetch_user(offer['author_id'])

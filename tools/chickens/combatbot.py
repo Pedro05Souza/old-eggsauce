@@ -1,6 +1,6 @@
-from random import randint
+from random import randint, random
 from tools.chickens.chickenshared import ChickenRarity, create_chicken, define_chicken_overrall_score
-
+import bisect
 
 class BotMatchMaking():
 
@@ -21,11 +21,19 @@ async def bot_maker(user_chicken, user_score):
     bot_farm_size = randint(await define_bot_min_farm_size(user_score), 8)
     all_rarities = list(ChickenRarity.__members__)
     all_rarities.remove("DEAD")
+    all_rarities_dict = {rarity: position for position, rarity in enumerate(all_rarities)}
     bot_chickens = []
-    bot_rarity_list = await define_chicken_rarity_list(all_rarities[:5], all_rarities[5:10], all_rarities[10:14], all_rarities[12:], all_rarities[15:], user_chicken, user_score)
+    bot_rarity_list = await define_chicken_rarity_list(user_score, all_rarities_dict)
+    cumulative_distribution = []
+    cummulative = 0
+    for rarity, probability in bot_rarity_list.items():
+        cummulative += probability
+        cumulative_distribution.append((cummulative, rarity))
     for _ in range(bot_farm_size):
-        random_rank = bot_rarity_list[randint(0, len(bot_rarity_list) - 1)]
-        bot_chickens.append(await create_chicken(random_rank))
+        random_number = random()
+        index = bisect.bisect_left(cumulative_distribution, (random_number,))
+        rarity = cumulative_distribution[index][1]
+        bot_chickens.append(await create_chicken(rarity))
     bot.chickens = bot_chickens
     negative_score = user_score * .8
     positive_score = user_score * 1.2
@@ -43,21 +51,21 @@ async def define_bot_min_farm_size(player_mmr):
         if player_mmr <= i:
             return min(8, max(2, int(i / 100)))
         
-async def define_chicken_rarity_list(low_level_rarities, medium_level_rarities, high_level_rarities, extreme_level_rarities, maxed_level_rarities, player_rarity_list, player_mmr):
+async def define_chicken_rarity_list(player_mmr, all_rarities):
     """Changes the rarity list for the bot."""
-    bot_rarity = [chicken['rarity'] for chicken in player_rarity_list]
-    if player_mmr < 250:
-        [bot_rarity.append(rarity) for rarity in low_level_rarities if rarity not in bot_rarity]
-    elif player_mmr >= 250 and player_mmr < 500:
-        [bot_rarity.append(rarity) for rarity in medium_level_rarities if rarity not in bot_rarity]
-    elif player_mmr >= 500 and player_mmr < 1000:
-        [bot_rarity.append(rarity) for rarity in high_level_rarities if rarity not in bot_rarity]
-    elif player_mmr >= 1000 and player_mmr < 1600:
-        [bot_rarity.append(rarity) for rarity in extreme_level_rarities if rarity not in bot_rarity]
-    else:
-        [bot_rarity.append(rarity) for rarity in maxed_level_rarities if rarity not in bot_rarity]
-    return bot_rarity
-    
+    bot_deck = all_rarities.copy()
+    chicken_selected = player_mmr * 17/2000
+    chicken_selected = int(chicken_selected)
+    for key, value in all_rarities.items():
+        distribution = abs(value - chicken_selected)
+        distribution = 1 if distribution == 0 else distribution
+        distribution = 1/distribution
+        bot_deck[key] = distribution
+    total = sum(bot_deck.values())
+    for key in bot_deck:
+        bot_deck[key] = round(bot_deck[key] / total, 2)
+    return bot_deck
+
 async def name_maker():
     """Defines the bot's username."""
     name_list = [
@@ -75,7 +83,7 @@ async def name_maker():
         "GamerGirl <3",
         "Her Jett :sunglasses:",
         "Cru1zz",
-        "salsa",
+        "the man",
         "Kefero",
         "trainer beco"
     ]
