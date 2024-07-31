@@ -25,7 +25,7 @@ class Prices(Enum):
     removebench = 0
     bench = 0
     switchbench = 0
-    queue = 0
+    eggleague = 0
     farmprofit = 0
     feedallchicken = 0
     renamecornfield = 0
@@ -51,6 +51,7 @@ class Prices(Enum):
     evolvechicken = 0
     profile = 0
     farmer = 0
+    eggrank = 0
     balls = 50
     love = 75
     eggpack = 75

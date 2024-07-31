@@ -32,8 +32,11 @@ async def bot_maker(user_chicken, user_score):
     for _ in range(bot_farm_size):
         random_number = random()
         index = bisect.bisect_left(cumulative_distribution, (random_number,))
-        rarity = cumulative_distribution[index][1]
-        bot_chickens.append(await create_chicken(rarity))
+        if index >= len(cumulative_distribution):
+            index = len(cumulative_distribution) - 1
+        else:
+         rarity = cumulative_distribution[index][1]
+        bot_chickens.append(await create_chicken(rarity, "bot"))
     bot.chickens = bot_chickens
     negative_score = user_score * .8
     positive_score = user_score * 1.2
@@ -47,13 +50,17 @@ async def bot_maker(user_chicken, user_score):
 
 async def define_bot_min_farm_size(player_mmr):
     """Defines the minimum farm size for the bot."""
-    for i in range(0, 2000, 100):
+    if player_mmr >= 2000:
+        return 8
+    for i in range(0, 2100, 100):
         if player_mmr <= i:
             return min(8, max(2, int(i / 100)))
         
 async def define_chicken_rarity_list(player_mmr, all_rarities):
     """Changes the rarity list for the bot."""
     bot_deck = all_rarities.copy()
+    if player_mmr >= 2000:
+        player_mmr = 2000
     chicken_selected = player_mmr * 17/2000
     chicken_selected = int(chicken_selected)
     for key, value in all_rarities.items():

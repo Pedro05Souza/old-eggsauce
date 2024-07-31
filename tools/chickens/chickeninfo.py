@@ -64,18 +64,6 @@ chicken_rarities = {
     "PERFECT" : 0
 }
 
-chicken_ranking = {
-    "BRONZE": 0,
-    "SILVER": 250,
-    "GOLD": 500,
-    "PLATINUM": 750,
-    "DIAMOND": 1000,
-    "MASTER": 1250,
-    "GRANDMASTER": 1500,
-    "CHALLENGER": 1750,
-    "LEGEND": 2000
-}
-
 class ChickenRarity(Enum):
     DEAD = 0
     COMMON = 1
@@ -193,14 +181,14 @@ farm_size_weights = {
     8: 0
 }
 
-ranks_weight = {
-    "BRONZE": 0,
-    "SILVER": 250,
-    "GOLD": 500,
-    "PLATINUM": 750,
-    "DIAMOND": 1000,
-    "MASTER": 1250,
-    "GRANDMASTER": 1500,
-    "CHALLENGER": 1750,
-    "LEGEND": 2000
+chicken_ranking = {
+    "RAW EGG": 0,
+    "FRIED EGG": 100,
+    "BOILED EGG": 250,
+    "OMELET": 500,
+    "EGGPLANT": 750,
+    "EGG MASTER": 1000,
+    "EGG GRANDMASTER": 1250,
+    "EGG CHALLENGER": 1750,
+    "LEGGEND": 2000
 }

@@ -109,17 +109,27 @@ async def rank_determiner(mmr):
      return len(chicken_ranking) - 1
 
 
-async def create_chicken(rarity):
+async def create_chicken(rarity, author):
      """"Create a chicken"""
-     chicken = {
-                "rarity": rarity,
-                "name": "Chicken",
-                "happiness": randint(60, 100),
-                "eggs_generated": 0,
-                "upkeep_multiplier": 0,
-                }
-     chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
-     return chicken
+     if rarity in ChickenRarity.__members__:
+        chicken = {
+                    "rarity": rarity,
+                    "name": "Chicken",
+                    "eggs_generated": 0,
+                    "upkeep_multiplier": 0,
+                    }
+        if author == "bot":
+            chicken["happiness"] = 100
+        else:
+            chicken["happiness"] = randint(60, 100)
+        
+        if rarity == "ETHEREAL":
+            chicken['upkeep_multiplier'] = 0
+        else:
+         chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
+            
+        return chicken
+     return None
 
 async def define_chicken_overrall_score(chickens):
         """Defines the chicken overall score."""

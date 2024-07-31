@@ -1,6 +1,6 @@
 from discord.ext import commands
 from db.farmDB import Farm
-from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, max_bench, ranks_weight
+from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, max_bench, chicken_ranking
 from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades, rank_determiner, update_user_farm, get_user_bench, get_max_chicken_limit, verify_events
 from tools.chickens.chickenhandlers import EventData
 from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object
@@ -77,12 +77,12 @@ class ChickenView(commands.Cog):
             await send_bot_embed(ctx, description=f"🏆 {user.name}, your current rank is: **{rank}** with the MMR of **{farm_data['mmr']}**.")
             return
         
-    @commands.hybrid_command(name="rankinfo", aliases=["ri"], usage="rankInfo", description="Check the chicken matchmaking ranks.")
+    @commands.hybrid_command(name="eggrank", aliases=["erank"], usage="rankInfo", description="Check the chicken matchmaking ranks.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def rank_info(self, ctx):
         """Check the chicken matchmaking ranks"""
-        rank_info = "\n".join([f"{rank} - {weight} MMR" for rank, weight in ranks_weight.items()])
+        rank_info = "\n".join([f"{rank} - {weight} MMR" for rank, weight in chicken_ranking.items()])
         await send_bot_embed(ctx, title="Chicken matchmaking ranks:", description=rank_info)
 
     @commands.hybrid_command(name="farmprofit", aliases=["fp"], usage="farmprofit OPTIONAL [user]", description="Check the farm profit.")

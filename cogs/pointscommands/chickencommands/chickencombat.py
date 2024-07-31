@@ -27,7 +27,7 @@ class ChickenCombat(commands.Cog):
         self.user_queue = []
         self.map = {}
 
-    @commands.hybrid_command(name="queue", aliases=["fight"], brief="Match making for chicken combat.", description="Match making for chicken combat.", usage="combat")
+    @commands.hybrid_command(name="eggleague", aliases=["eleague", "fight", "battle"], brief="Match making for chicken combat.", description="Match making for chicken combat.", usage="combat")
     @commands.cooldown(1, queue_command_cooldown, commands.BucketType.user)
     @pricing()
     async def queue(self, ctx):

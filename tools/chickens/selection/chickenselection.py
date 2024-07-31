@@ -3,7 +3,6 @@ from tools.chickens.chickenhandlers import EventData
 from tools.chickens.selection.deleteselection import ChickenDeleteMenu
 from tools.chickens.selection.tradeselection import ChickenAuthorTradeMenu, ChickenUserTradeMenu
 from tools.chickens.selection.playermarketselection import PlayerMarketMenu
-from random import randint
 from discord import SelectOption, ui
 from db.farmDB import Farm
 from db.userDB import User
@@ -92,13 +91,11 @@ class ChickenMarketMenu(ui.Select):
             ]
             await interaction.message.edit(view=self.view)
             return
-        chicken_selected['happiness'] = randint(60, 100)
-        chicken_selected['eggs_generated'] = 0
-        chicken_selected['upkeep_multiplier'] = determine_chicken_upkeep(chicken_selected)
-        farm_data['chickens'].append(chicken_selected)
         aux = chicken_selected.copy()
-        aux['bought'] = True
         self.chickens[self.chickens.index(chicken_selected)] = aux
+        chicken_selected = await create_chicken(chicken_selected['rarity'], "market")
+        farm_data['chickens'].append(chicken_selected)
+        aux['bought'] = True
         Farm.update(interaction.user.id, chickens=farm_data['chickens'])
         User.update_points(interaction.user.id, user_data["points"] - price)
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: **{get_rarity_emoji(chicken_selected['rarity'])} {chicken_selected['rarity']} {chicken_selected['name']}**, costing {price} eggbux :money_with_wings:")

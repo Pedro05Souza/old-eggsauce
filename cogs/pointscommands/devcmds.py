@@ -5,7 +5,7 @@ from tools.shared import send_bot_embed, is_dev
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.MarketDB import Market
-from tools.chickens.chickenshared import determine_chicken_upkeep
+from tools.chickens.chickenshared import create_chicken
 from tools.chickens.chickeninfo import ChickenRarity, chicken_default_value
 from tools.chickens.chickenhandlers import RollLimit
 from .. import botcore
@@ -114,14 +114,7 @@ class DevCommands(commands.Cog):
             rarity = rarity.upper()
             farm_data = Farm.read(user.id)
             if farm_data:
-                chicken = {
-                    "rarity": rarity,
-                    "name": "Chicken",
-                    "happiness": randint(60, 100),
-                    "eggs_generated": 0,
-                    "upkeep_multiplier": 0,
-                }
-                chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
+                chicken = create_chicken(rarity, "dev")
                 farm_data['chickens'].append(chicken)
                 Farm.update(user.id, chickens=farm_data['chickens'])
                 await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")
