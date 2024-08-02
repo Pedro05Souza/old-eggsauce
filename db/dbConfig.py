@@ -24,3 +24,10 @@ def connect(uri):
 
 mongo_client = connect(uri)
 db = mongo_client.botDiscord
+
+# mongo_client.db.command("collMod", "market", validator=new_schema)
+# for collection in mongo_client.db.list_collection_names():
+#     collection_info = mongo_client.db.list_collections(filter={"name": collection})
+#     for info in collection_info:
+#         schema = info.get("options", {}).get("validator", {})
+#         print(f"Schema for collection '{collection}': {schema}\n")

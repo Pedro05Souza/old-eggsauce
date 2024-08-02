@@ -27,7 +27,7 @@ class ChickenCombat(commands.Cog):
         self.user_queue = []
         self.map = {}
 
-    @commands.hybrid_command(name="eggleague", aliases=["eleague", "fight", "battle"], brief="Match making for chicken combat.", description="Match making for chicken combat.", usage="combat")
+    @commands.hybrid_command(name="eggleague", aliases=["eleague", "fight", "battle", "queue"], brief="Match making for chicken combat.", description="Match making for chicken combat.", usage="combat")
     @commands.cooldown(1, queue_command_cooldown, commands.BucketType.user)
     @pricing()
     async def queue(self, ctx):
@@ -271,45 +271,51 @@ class ChickenCombat(commands.Cog):
     async def check_user_score(self, user):
         if not await self.check_if_user_is_bot(user):
             farm_data = Farm.read(user.member.id)
-            return farm_data['mmr']
-        return user.score
+            return [farm_data['mmr'], farm_data['highest_mmr'], farm_data['wins'], farm_data['losses']]
+        return [user.score, 0, 0, 0]
 
     async def rewards(self, winner, loser, ctx):
         """Rewards the winner of the combat."""
         farm_data_winner = await self.check_user_score(winner)
         farm_data_loser = await self.check_user_score(loser)
-        base_mmr_gain = 30
+        base_mmr_gain = 23
         multiplier = (loser.score + loser.chicken_overrall_score) / (winner.score + winner.chicken_overrall_score)
         mmr_gain = base_mmr_gain * multiplier
         mmr_gain = int(mmr_gain)
         mmr_gain = max(base_mmr_gain, mmr_gain)
         score = mmr_gain
-        farm_data_loser -= mmr_gain
-        if farm_data_loser < 0:
-            farm_data_loser = 0
-        await self.verify_if_upwards_rank(ctx, farm_data_winner, farm_data_winner + score, winner)
-        farm_data_winner += mmr_gain
+        farm_data_loser[0] -= mmr_gain
+        if farm_data_loser[0] < 0:
+            farm_data_loser[0] = 0
+        await self.verify_if_upwards_rank(ctx, farm_data_winner[0], farm_data_winner[0] + score, winner, farm_data_winner[1])
+        farm_data_winner[0] += mmr_gain
         if not await self.check_if_user_is_bot(winner):
-            Farm.update(winner.member.id, mmr=farm_data_winner)
+            increment_wins = farm_data_winner[2] + 1
+            Farm.update(winner.member.id, mmr=farm_data_winner[0], wins=increment_wins)
         if not await self.check_if_user_is_bot(loser):
-            Farm.update(loser.member.id, mmr=farm_data_loser)
+            increment_losses = farm_data_loser[3] + 1
+            Farm.update(loser.member.id, mmr=farm_data_loser[0], losses=increment_losses)
         msg = await make_embed_object(description=f"🎉 {await self.check_user_name(winner)} has won the combat and has gained **{mmr_gain}** MMR, while {await self.check_user_name(loser)} has lost the same amount.")
         await ctx.send(embed=msg)
         return
 
-    async def verify_if_upwards_rank(self, ctx, before_mmr, after_mmr, winner):
+    async def verify_if_upwards_rank(self, ctx, before_mmr, after_mmr, winner, highest_mmr):
         """Sends a notification if the user has uppwarded in rank."""
-        before_mmr = await rank_determiner(before_mmr)
-        after_mmr = await rank_determiner(after_mmr)
-        if before_mmr != after_mmr:
-            await send_bot_embed(ctx, description=f"🎉 {await self.check_user_name(winner)} has been promoted to **{after_mmr}**.")
-            return
+        before_rank = await rank_determiner(before_mmr)
+        after_rank = await rank_determiner(after_mmr)
+        if before_rank != after_rank:
+            await send_bot_embed(ctx, description=f"🎉 {await self.check_user_name(winner)} has been promoted to **{after_rank}**.")    
+        if not await self.check_if_user_is_bot(winner):
+                print(after_mmr, highest_mmr)
+                if after_mmr > highest_mmr:
+                    Farm.update(winner.member.id, highest_mmr=after_mmr)
         return
         
     async def score_string(self, score):
         for key, value in score_determiner.items():
             if score <= value:
                 return key
+
 
 async def setup(bot):
     await bot.add_cog(ChickenCombat(bot))

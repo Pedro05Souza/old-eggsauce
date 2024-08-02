@@ -211,7 +211,7 @@ class BotCore(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        #await self.bot.tree.sync() # only sync if code modified
+        await self.bot.tree.sync() # only sync if code modified
         await self.bot.loop.create_task(self.restart_every_day())
 
 async def setup(bot):

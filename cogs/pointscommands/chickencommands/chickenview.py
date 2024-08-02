@@ -64,7 +64,7 @@ class ChickenView(commands.Cog):
         prices_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {175 * ChickenRarity[rarity].value} eggbux" for rarity in ChickenRarity.__members__])
         await send_bot_embed(ctx, title="Chicken prices:", description=prices_info)
 
-    @commands.hybrid_command(name="chickenrank", aliases=["crank"], brief="Shows your current rank.", description="Shows your current rank.", usage="rank")
+    @commands.hybrid_command(name="battleinfo", aliases=["binfo"], brief="Shows your current rank.", description="Shows your current rank.", usage="rank")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def player_rank(self, ctx, user: discord.Member = None):
@@ -74,7 +74,18 @@ class ChickenView(commands.Cog):
         farm_data = Farm.read(user.id)
         if farm_data:
             rank = await rank_determiner(farm_data['mmr'])
-            await send_bot_embed(ctx, description=f"🏆 {user.name}, your current rank is: **{rank}** with the MMR of **{farm_data['mmr']}**.")
+            msg = await make_embed_object(title=f":crossed_swords: {user.display_name}'s battle stats:")
+            msg.add_field(name="🏆 Rank:", value=f"🥇 Rank: **{rank}**\n📊 MMR: **{farm_data['mmr']}**")
+            wins = farm_data['wins']
+            losses = farm_data['losses']
+            highest_mmr = farm_data['highest_mmr']
+            if wins + losses > 0:
+                win_rate = round((wins / (wins + losses)) * 100, 2)
+                msg.add_field(name="🏅 Win rate:", value=f"🔥 Wins: **{wins}**\n 🚫 Losses: **{losses}**\n 📖 Win rate: **{win_rate}%**")
+            if highest_mmr > 0:
+                msg.add_field(name="📈 Highest MMR:", value=f"🏆 Highest MMR: **{highest_mmr}**")
+            msg.set_thumbnail(url=user.display_avatar)
+            await ctx.send(embed=msg)
             return
         
     @commands.hybrid_command(name="eggrank", aliases=["erank"], usage="rankInfo", description="Check the chicken matchmaking ranks.")

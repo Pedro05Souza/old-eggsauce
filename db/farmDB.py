@@ -29,7 +29,10 @@ class Farm:
                     "last_chicken_drop": time(),
                     "last_farmer_drop": time(),
                     "last_corn_drop": time(),
-                    "mmr": 0
+                    "mmr": 0,
+                    "highest_mmr": 0,
+                    "wins": 0,
+                    "losses": 0,
                 }
                 farm_collection.insert_one(farm)
                 logger.info(f"Farm for {user_id} has been created successfully.")
@@ -53,7 +56,7 @@ class Farm:
     @staticmethod
     def update(user_id: int, **kwargs):
         """Update a farm's status in the database."""
-        possible_keywords = ["farm_name","plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr"]
+        possible_keywords = ["farm_name","plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses"]
         try:
             farm_data = farm_collection.find_one({"user_id": user_id})
             if farm_data:
@@ -136,18 +139,16 @@ class Farm:
         except Exception as e:
             logger.error("Error encountered while deleting all farms.", e)
             return None
-        
+    
     @staticmethod
-    def add_mmr_to_all():
-        """Add MMR to all farms in the database."""
+    def add_attribute_win_loss_to_all():
+        """Add win and loss attributes to all farms."""
         try:
             farms = farm_collection.find()
-            if farms:
-                for farm in farms:
-                    farm_collection.update_one({"user_id": farm['user_id']}, {"$set": {"mmr": 0}})
-            else:
-                logger.warning("No farms found.")
-                return False
+            for farm in farms:
+                farm_collection.update_one({"user_id": farm["user_id"]}, {"$set": {"wins": 0, "losses": 0}})
+            logger.info("Added win and loss attributes to all farms.")
         except Exception as e:
-            logger.error("Error encountered while adding MMR to all farms.", e)
+            logger.error("Error encountered while adding win and loss attributes to all farms.", e)
             return None
+        

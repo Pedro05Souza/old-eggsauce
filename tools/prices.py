@@ -41,7 +41,7 @@ class Prices(Enum):
     buyplot = 0
     transcend = 0
     cornfood = 0
-    chickenrank = 0
+    battleinfo = 0
     renamechicken = 0
     upgradebanklimit = 0
     feedchicken = 0

@@ -114,7 +114,7 @@ class DevCommands(commands.Cog):
             rarity = rarity.upper()
             farm_data = Farm.read(user.id)
             if farm_data:
-                chicken = create_chicken(rarity, "dev")
+                chicken = await create_chicken(rarity, "dev")
                 farm_data['chickens'].append(chicken)
                 Farm.update(user.id, chickens=farm_data['chickens'])
                 await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")
@@ -215,6 +215,11 @@ class DevCommands(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {cog} is not a valid cog.")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+
+    @commands.command(name="test")
+    async def test_command(self, ctx, user: discord.Member):
+        if is_dev(ctx):
+            Farm.update(user.id, corn=100)
             
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

@@ -42,8 +42,8 @@ class PlayerMarket(commands.Cog):
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, your description contains profanity.")
                     EventData.remove(r)
                     return
-                if len(desc) > 50:
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, your description cannot be longer than **50** characters.")
+                if len(desc) > 25:
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, your description cannot be longer than **25** characters.")
                     EventData.remove(r)
                     return
                 else:
