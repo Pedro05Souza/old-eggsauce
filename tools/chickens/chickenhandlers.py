@@ -45,11 +45,13 @@ class EventData():
     def remove(obj):
         try:
             del EventData.current_users_in_event[obj.user.id]
-        except ValueError as e:
-            logger.error("Error removing object from list. Probably already removed.", e)
-        except KeyError as e:
-            logger.error("Error removing object from list. Probably already removed.", e)
-
+        except ValueError:
+            logger.warning("Error removing object from list. Probably already removed.")
+        except KeyError:
+            logger.warning("Error removing object from list. Probably already removed.")
+        except Exception as e:
+            logger.error("Error removing object from list.", e)
+        
     @staticmethod
     def remove_all():
         EventData.obj_list.clear()

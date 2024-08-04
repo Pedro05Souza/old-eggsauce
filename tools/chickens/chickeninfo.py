@@ -2,13 +2,13 @@ from enum import Enum
 
 # Chicken information module
 
-chicken_default_value = 200
+chicken_default_value = 400
 default_farm_size = 8
 offer_expire_time = 48
 max_bench = 5
-max_corn_limit = 1702
-max_plot_limit = 14
-corn_per_plot = 25
+max_corn_limit = 2553
+max_plot_limit = 20
+corn_per_plot = 100
 
 rollRates = {
         "COMMON": 5000,
@@ -88,42 +88,41 @@ class ChickenMultiplier(Enum):
     DEAD = 0
     COMMON = 2
     UNCOMMON = 4
-    RARE = 6
-    EXCEPTIONAL = 10
-    EPIC = 15
-    LEGENDARY = 21
-    MYTHICAL = 27
-    ULTIMATE = 34
-    COSMIC = 41
-    DIVINE = 50
-    GALATIC = 58
-    OMINOUS = 68
-    CELESTIAL = 78
-    IMMORTAL = 88
-    CHOSEN = 99
-    ASCENDED = 111
+    RARE = 9
+    EXCEPTIONAL = 16
+    EPIC = 25
+    LEGENDARY = 36
+    MYTHICAL = 49
+    ULTIMATE = 64
+    COSMIC = 81
+    DIVINE = 100
+    GALATIC = 121
+    OMINOUS = 144
+    CELESTIAL = 169
+    IMMORTAL = 196
+    CHOSEN = 225
+    ASCENDED = 256
     ETHEREAL = 1000
     
 class ChickenFood(Enum):
     DEAD = 0
-    COMMON = 2
-    UNCOMMON = 4
-    RARE = 6
-    EXCEPTIONAL = 8
-    EPIC = 10
-    LEGENDARY = 12
-    MYTHICAL = 14
-    ULTIMATE = 16
-    COSMIC = 18
-    DIVINE = 20
-    GALATIC = 22
-    OMINOUS = 24
-    CELESTIAL = 26
-    IMMORTAL = 28
-    CHOSEN = 30
-    ASCENDED = 32
-    ETHEREAL = 300
-
+    COMMON = 1
+    UNCOMMON = 3
+    RARE = 7
+    EXCEPTIONAL = 12
+    EPIC = 18
+    LEGENDARY = 25
+    MYTHICAL = 33
+    ULTIMATE = 42
+    COSMIC = 52
+    DIVINE = 63
+    GALATIC = 74
+    OMINOUS = 87
+    CELESTIAL = 101
+    IMMORTAL = 115
+    CHOSEN = 130
+    ASCENDED = 146
+    ETHEREAL = 210
 
 rarities_weight = {
     "DEAD": 0,

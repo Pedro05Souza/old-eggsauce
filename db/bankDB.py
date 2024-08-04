@@ -102,4 +102,3 @@ class Bank:
         except Exception as e:
             logger.error("Error encountered while trying to read all users.", e)
             return None
-        

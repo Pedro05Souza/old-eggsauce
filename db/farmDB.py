@@ -24,7 +24,7 @@ class Farm:
                     "bench": [],
                     "eggs_generated": 0,
                     "farmer": None,
-                    "corn_limit": 100,
+                    "corn_limit": 200,
                     "plot": 1,
                     "last_chicken_drop": time(),
                     "last_farmer_drop": time(),
@@ -33,6 +33,7 @@ class Farm:
                     "highest_mmr": 0,
                     "wins": 0,
                     "losses": 0,
+                    "redeemables": []
                 }
                 farm_collection.insert_one(farm)
                 logger.info(f"Farm for {user_id} has been created successfully.")
@@ -56,7 +57,7 @@ class Farm:
     @staticmethod
     def update(user_id: int, **kwargs):
         """Update a farm's status in the database."""
-        possible_keywords = ["farm_name","plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses"]
+        possible_keywords = ["farm_name","plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses", "redeemables"]
         try:
             farm_data = farm_collection.find_one({"user_id": user_id})
             if farm_data:
@@ -139,16 +140,18 @@ class Farm:
         except Exception as e:
             logger.error("Error encountered while deleting all farms.", e)
             return None
-    
+        
     @staticmethod
-    def add_attribute_win_loss_to_all():
-        """Add win and loss attributes to all farms."""
+    def reset_mmr():
+        """Reset all farms' mmr in the database."""
         try:
             farms = farm_collection.find()
-            for farm in farms:
-                farm_collection.update_one({"user_id": farm["user_id"]}, {"$set": {"wins": 0, "losses": 0}})
-            logger.info("Added win and loss attributes to all farms.")
+            if farms:
+                for farm in farms:
+                    farm_collection.update_one({"user_id": farm["user_id"]}, {"$set": {"mmr": 0, "highest_mmr": 0}})
+                logger.info("All farms' mmr have been reset successfully.")
+            else:
+                logger.warning("No farms found.")
         except Exception as e:
-            logger.error("Error encountered while adding win and loss attributes to all farms.", e)
+            logger.error("Error encountered while resetting all farms' mmr.", e)
             return None
-        

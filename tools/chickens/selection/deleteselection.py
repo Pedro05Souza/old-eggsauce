@@ -4,7 +4,7 @@ from db.userDB import User
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji
 from tools.shared import confirmation_embed
-from tools.shared import make_embed_object
+from tools.shared import make_embed_object, send_bot_embed
 import asyncio
 
 class ChickenDeleteMenu(ui.Select):
@@ -22,8 +22,7 @@ class ChickenDeleteMenu(ui.Select):
 
     async def callback(self, interaction):
         if interaction.user.id != self.author.id:
-            await interaction.response.send_message("You can't interact with this menu.", ephemeral=True)
-            return
+            return await send_bot_embed(interaction, description=":no_entry_sign: You can't delete chickens for another user.", ephemeral=True)
         farm_data = Farm.read(interaction.user.id)
         chickens_selected = [self.chickens[int(value)] for value in self.values]
         price = sum([get_chicken_price(chicken, farm_data['farmer']) for chicken in chickens_selected])

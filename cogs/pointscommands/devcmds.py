@@ -217,9 +217,9 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command(name="test")
-    async def test_command(self, ctx, user: discord.Member):
+    async def test_command(self, ctx):
         if is_dev(ctx):
-            Farm.update(user.id, corn=100)
+            Farm.reset_mmr()
             
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

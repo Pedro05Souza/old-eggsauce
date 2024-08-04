@@ -1,3 +1,4 @@
+import asyncio
 from dotenv import load_dotenv
 import os
 import discord
@@ -6,11 +7,11 @@ regular_command_cooldown = 3.5
 queue_command_cooldown = 120
 tax = .15
 
-async def send_bot_embed(ctx, **kwargs):
+async def send_bot_embed(ctx, ephemeral=False, **kwargs):
     """Create an embed without a title."""
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     if isinstance(ctx, discord.Interaction):
-        message = await ctx.response.send_message(embed=embed)
+        message = await ctx.response.send_message(embed=embed, ephemeral=ephemeral)
     else:
         message = await ctx.send(embed=embed)
     return message
@@ -56,16 +57,11 @@ async def confirmation_embed(ctx, user: discord.Member, description):
      await msg.add_reaction("✅")
      await msg.add_reaction("❌")
      client = ctx.client if isinstance(ctx, discord.Interaction) else ctx.bot
-     reaction, _ = await client.wait_for("reaction_add", check=lambda reaction, author: reaction.message.id == msg.id and author.id == user.id and reaction.emoji in ["✅", "❌"])
-     if reaction.emoji == "✅":
-          return True
-
-
-
-
-            
-
-    
-
-
-
+     try:
+        reaction, _ = await client.wait_for("reaction_add", check=lambda reaction, author: reaction.message.id == msg.id and author.id == user.id and reaction.emoji in ["✅", "❌"], timeout=60)
+        if reaction.emoji == "✅":
+            return True
+        else:
+            return False
+     except asyncio.TimeoutError:
+        return False

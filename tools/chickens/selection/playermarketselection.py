@@ -1,6 +1,6 @@
 from discord import SelectOption, ui
 from tools.chickens.chickenshared import get_rarity_emoji, get_max_chicken_limit
-from tools.shared import make_embed_object, tax
+from tools.shared import make_embed_object, tax, send_bot_embed
 from db.userDB import User
 from db.farmDB import Farm
 from db.MarketDB import Market
@@ -21,18 +21,18 @@ class PlayerMarketMenu(ui.Select):
     async def callback(self, interaction):
         """Callback for the interaction"""
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message("You cannot select a chicken for another user.")
+            return await send_bot_embed(interaction, description=":no_entry_sign: You can't buy chickens for another user.", ephemeral=True)
         index = self.values[0]
         offer = self.offers[int(index)]
         author_data = User.read(self.author.id)
         farm_data = Farm.read(self.author.id)
         if not farm_data:
-            return await interaction.response.send_message("You do not have a farm.", ephemeral=True)
+            return await send_bot_embed(interaction, description=":no_entry_sign: You do not have a farm.", ephemeral=True)
         if offer['price'] > author_data['points']:
-            return await interaction.response.send_message("You do not have enough eggbux to buy this chicken.")
+            return await send_bot_embed(interaction, description=":no_entry_sign: You don't have enough eggbux to buy this chicken.", ephemeral=True)
         farm_data['chickens'].append(offer['chicken'])
         if len(farm_data['chickens']) > get_max_chicken_limit(farm_data):
-            return await interaction.response.send_message("You can't buy more chickens as you have reached the maximum limit.", ephemeral=True)
+            return await send_bot_embed(interaction, description=":no_entry_sign: You hit the maximum limit of chickens in the farm.", ephemeral=True)
         msg = await make_embed_object(description=f":white_check_mark: {self.author.display_name} have successfully bought the **{get_rarity_emoji(offer['chicken']['rarity'])}{offer['chicken']['rarity']}** chicken for {offer['price']} eggbux.")
         await interaction.response.send_message(embed=msg)
         Market.delete(offer['offer_id'])
@@ -57,8 +57,3 @@ class PlayerMarketMenu(ui.Select):
                 print(f"User {offer['author_id']} has disabled DMs.")
         else:
             print(f"User {offer['author_id']} not found.")
-        
-        
-
-
-

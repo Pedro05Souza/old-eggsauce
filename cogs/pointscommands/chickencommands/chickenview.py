@@ -1,11 +1,11 @@
 from discord.ext import commands
 from db.farmDB import Farm
 from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, max_bench, chicken_ranking
-from tools.chickens.chickenshared import get_chicken_egg_value, get_chicken_price, get_rarity_emoji, load_farmer_upgrades, rank_determiner, update_user_farm, get_user_bench, get_max_chicken_limit, verify_events
+from tools.chickens.chickenshared import *
 from tools.chickens.chickenhandlers import EventData
+from tools.chickens.selection.chickenselection import ChickenSelectView
 from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object
 from tools.pointscore import pricing
-from math import ceil
 from better_profanity import profanity
 import discord
 
@@ -83,7 +83,7 @@ class ChickenView(commands.Cog):
                 win_rate = round((wins / (wins + losses)) * 100, 2)
                 msg.add_field(name="🏅 Win rate:", value=f"🔥 Wins: **{wins}**\n 🚫 Losses: **{losses}**\n 📖 Win rate: **{win_rate}%**")
             if highest_mmr > 0:
-                msg.add_field(name="📈 Highest MMR:", value=f"🏆 Highest MMR: **{highest_mmr}**")
+                msg.add_field(name="📈 Highest MMR:", value=f"**{highest_mmr}**")
             msg.set_thumbnail(url=user.display_avatar)
             await ctx.send(embed=msg)
             return
@@ -106,8 +106,6 @@ class ChickenView(commands.Cog):
         farm_data = await update_user_farm(user, Farm.read(user.id))
         if farm_data:
             totalProfit = 0
-            totalLoss = 0
-            current_upkeep = 0
             totalcorn = 0
             if len(farm_data['chickens']) == 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have any chickens.")
@@ -117,23 +115,15 @@ class ChickenView(commands.Cog):
                 chicken_loss = int((await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))
                 chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
                 totalProfit += (chicken_profit * chicken['happiness']) // 100
-                if farm_data['farmer'] == 'Guardian Farmer':
-                    to_reduce = load_farmer_upgrades("Guardian Farmer")
-                    current_upkeep = chicken['upkeep_multiplier'] - to_reduce
-                    totalLoss += ceil(await get_chicken_egg_value(chicken) * current_upkeep)
-                else:
-                    current_upkeep = chicken['upkeep_multiplier']
-                    totalLoss += ceil(await get_chicken_egg_value(chicken) * current_upkeep)
             if farm_data['farmer'] == "Rich Farmer":
                 to_add = load_farmer_upgrades("Rich Farmer")[0]
                 added_value = (totalProfit * to_add) // 100
                 totalProfit += added_value
-            result = totalProfit - totalLoss
-            if result > 0:
-                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**.")
-            elif result < 0:
-                await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, your farm is expected to generate a loss of **{result}** per hour :money_with_wings:.\n:chicken: Chicken upkeep: **{totalLoss}**\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**.")
-            else:
+            taxes = await farm_maintence_tax(farm_data)
+            result = totalProfit - taxes
+            if totalProfit > 0:
+                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per hour :money_with_wings:.\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**\n 🚜 Farm maintenance: **{taxes}**")
+            elif totalProfit == 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss.")
         else:
             await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have a farm.")
@@ -291,8 +281,21 @@ class ChickenView(commands.Cog):
             Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
             await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
             EventData.remove(e)
+
+    @commands.hybrid_command(name="redeemables", aliases=["redeem"], usage="reedemables", description="Check the reedemable items.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def reedemables(self, ctx):
+        """Check the reedemable items"""
+        farm_data = Farm.read(ctx.author.id)
+        reedemables = farm_data['redeemables']
+        if not reedemables:
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you don't have any reedemable items.")
+            return
+        reedemables_info = "\n".join([f"**{index + 1}.** {get_rarity_emoji(reedemable['rarity'])} **{reedemable['rarity']}** **{reedemable['name']}**" for index, reedemable in enumerate(reedemables)])
+        msg = await make_embed_object(title=f":gift: {ctx.author.display_name}'s reedemable items:", description=reedemables_info)
+        view = ChickenSelectView(chickens=reedemables, author=ctx.author.id, action="R", message=msg)
+        await ctx.send(embed=msg, view=view)
         
 async def setup(bot):
     await bot.add_cog(ChickenView(bot))
-
-    

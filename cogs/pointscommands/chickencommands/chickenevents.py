@@ -2,7 +2,7 @@ from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
 from tools.chickens.selection.chickenselection import ChickenSelectView
-from tools.chickens.chickeninfo import ChickenRarity, chicken_default_value
+from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import *
 from tools.pointscore import pricing
@@ -216,7 +216,7 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def farmer(self, ctx) -> None:
         """The farmer automatically feeds the chickens"""
-        farmer_price = 4200
+        farmer_price = 5000
         description = [
             f":moneybag: Rich Farmer: Increase the egg value of the chickens by **{load_farmer_upgrades('Rich Farmer')[0]}%** and increases the hourly corn production by **{load_farmer_upgrades('Rich Farmer')[1]}%**\n",
             f":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces upkeep by **{load_farmer_upgrades('Guardian Farmer')}%**.\n",
@@ -276,14 +276,7 @@ class ChickenEvents(commands.Cog):
             if len(farm_data['chickens']) < 8:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to have 8 ascended chickens to transcend.")
                 return
-            transcended_chicken = {
-                    "rarity": "ETHEREAL",
-                    "name": "Chicken",
-                    "price": ChickenRarity["ETHEREAL"].value * chicken_default_value,
-                    "happiness": randint(60, 100),
-                    "eggs_generated": 0,
-                    "upkeep_multiplier": 0,
-            }
+            transcended_chicken = await create_chicken("ETHEREAL", "transced")
             farm_data['chickens'] = [transcended_chicken]
             Farm.update(ctx.author.id, chickens=farm_data['chickens'])
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have transcended your chickens to an **{get_rarity_emoji('ETHEREAL')} ETHEREAL Chicken.**")

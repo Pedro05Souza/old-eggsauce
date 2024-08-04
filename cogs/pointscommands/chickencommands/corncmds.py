@@ -1,9 +1,8 @@
-from time import time
 from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
 from tools.chickens.chickeninfo import ChickenFood, max_corn_limit, max_plot_limit
-from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown
+from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, confirmation_embed
 from tools.pointscore import pricing
 from tools.chickens.chickenshared import update_player_corn, calculate_corn
 from better_profanity import profanity
@@ -59,76 +58,56 @@ class CornCommands(commands.Cog):
     @pricing()
     async def buy_plot(self, ctx):
         """Buy a plot for corn production"""
-        end_time = time() + 60
         farm_data = Farm.read(ctx.author.id)
-        user_data = User.read(ctx.author.id)
-        if farm_data:
-            actual_plot = farm_data['plot']
-            if actual_plot == max_plot_limit:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum number of plots.")
-                return
-            plot_price = (actual_plot ** 2) * 150
-            msg = await send_bot_embed(ctx, description=f":seedling: {ctx.author.display_name}, currently have {farm_data['plot']} plots. The next plot will cost {plot_price} eggbux. React with ✅ to buy the plot or ❌ to cancel.")
-            await msg.add_reaction("✅")
-            await msg.add_reaction("❌")
-            while True:
-                actual_time = end_time - time()
-                if actual_time <= 0:
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have not responded to the purchase request.")
-                    break
-                reaction, user = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == msg, timeout=40)
-                if reaction.emoji == "✅":
-                    farm_data = Farm.read(ctx.author.id)
-                    user_data = User.read(ctx.author.id)
-                    if user_data['points'] >= plot_price:
-                        farm_data['plot'] += 1
-                        User.update_points(ctx.author.id, user_data['points'] - plot_price)
-                        Farm.update(ctx.author.id, plot=farm_data['plot'])
-                        await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have bought a new plot.")
-                        break
-                    else:
-                        await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to buy the plot.")
-                elif reaction.emoji == "❌":
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the purchase.")
-                    break
-
+        if not farm_data:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+            return
+        actual_plot = farm_data['plot']
+        if actual_plot == max_plot_limit:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum number of plots.")
+            return
+        plot_price = (actual_plot ** 1.7) * 100
+        plot_price = int(plot_price)
+        confirmation = await confirmation_embed(ctx, ctx.author, f":seedling: {ctx.author.display_name}, currently have **{farm_data['plot']}** plots. The next plot will cost **{plot_price}** eggbux.")
+        if confirmation:
+            farm_data = Farm.read(ctx.author.id)
+            user_data = User.read(ctx.author.id)
+            if user_data['points'] >= plot_price:
+                farm_data['plot'] += 1
+                User.update_points(ctx.author.id, user_data['points'] - plot_price)
+                Farm.update(ctx.author.id, plot=farm_data['plot'])
+                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have bought a new plot.")
+            else:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to buy the plot.")
+        else:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the purchase or the offer has expired.")
     @commands.hybrid_command(name="upgradecornlimit", aliases=["ucl"], usage="upgradeCornLimit", description="Upgrade the corn limit.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
     async def upgrade_corn_limit(self, ctx):
         """Upgrades the player corn limit."""
-        end_time = time() + 60
         farm_data = Farm.read(ctx.author.id)
-        user_data = User.read(ctx.author.id)
-        if farm_data:
-            range_corn = int((farm_data['corn_limit'] * 50)  // 100)
-            if farm_data['corn_limit'] == max_corn_limit:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum corn limit.")
-                return
-            price_corn = farm_data['corn_limit'] * 2
-            msg = await send_bot_embed(ctx, description=f":corn: {ctx.author.display_name}, currently have a corn limit of {farm_data['corn_limit']}. The next upgrade will cost {price_corn} eggbux and it will upgrade to {farm_data['corn_limit'] + range_corn}. React with ✅ to upgrade the corn limit or ❌ to cancel.")
-            await msg.add_reaction("✅")
-            await msg.add_reaction("❌")
-            while True:
-                actual_time = end_time - time()
-                if actual_time <= 0:
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have not responded to the upgrade request.")
-                    break
-                reaction, user = await ctx.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == msg, timeout=40)
-                if reaction.emoji == "✅":
-                    farm_data = Farm.read(ctx.author.id)
-                    user_data = User.read(ctx.author.id)
-                    if user_data['points'] >= price_corn:
-                        farm_data['corn_limit'] += range_corn
-                        User.update_points(ctx.author.id, user_data['points'] - price_corn)
-                        Farm.update(ctx.author.id, corn_limit=farm_data['corn_limit'])
-                        await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have upgraded the corn limit.")
-                        break
-                    else:
-                        await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to upgrade the corn limit.")
-                elif reaction.emoji == "❌":
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the upgrade.")
-                    break
+        if not farm_data:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+            return
+        range_corn = int((farm_data['corn_limit'] * 50)  // 100)
+        if farm_data['corn_limit'] == max_corn_limit:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum corn limit.")
+            return
+        price_corn = farm_data['corn_limit'] * 2
+        confirmation = await confirmation_embed(ctx, ctx.author, f":seedling: {ctx.author.display_name}, you currently have a corn limit of **{farm_data['corn_limit']}**. The next upgrade will cost **{price_corn}** eggbux and will increase the corn limit by **{range_corn}**.")
+        if confirmation:
+            farm_data = Farm.read(ctx.author.id)
+            user_data = User.read(ctx.author.id)
+            if user_data['points'] >= price_corn:
+                farm_data['corn_limit'] += range_corn
+                User.update_points(ctx.author.id, user_data['points'] - price_corn)
+                Farm.update(ctx.author.id, corn_limit=farm_data['corn_limit'])
+                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have upgraded the corn limit.")
+            else:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to upgrade the corn limit.")
+        else:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the upgrade or the offer has expired.")
     
     @commands.hybrid_command(name="buycorn", aliases=["bc"], usage="buyCorn <quantity>", description="Buy corn for the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)

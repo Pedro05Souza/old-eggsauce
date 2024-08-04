@@ -92,6 +92,17 @@ async def name_maker():
         "Cru1zz",
         "the man",
         "Kefero",
-        "trainer beco"
+        "trainer beco",
+        "cracka",
+        "chicken_butt",
+        "the_fat_one",
+        "jeff",
+        "Mystical",
+        "TheLegend27",
+        "ant",
+        "cr7",
+        "messi",
+        "ronaldo007",
+        "neymar_jr2"	
     ]
     return name_list[randint(0, len(name_list) - 1)]

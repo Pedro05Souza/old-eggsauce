@@ -96,7 +96,7 @@ class BankCommands(commands.Cog):
         if user_data['points'] < upgrades_formula:
             await send_bot_embed(ctx, description=f":bank: {ctx.author.display_name}, you currently have {bank_data['upgrades'] - 1} upgrades. You need **{upgrades_formula}** eggbux to upgrade the bank.")
             return
-        confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to upgrade the bank to level {bank_data['upgrades']} for {upgrades_formula} eggbux?")
+        confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to upgrade the bank to level **{bank_data['upgrades']}** for **{upgrades_formula}** eggbux?")
         if confirmation:
             User.update_points(ctx.author.id, user_data['points'] - upgrades_formula)
             upgrades = bank_data['upgrades'] + 1
