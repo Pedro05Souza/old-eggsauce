@@ -4,7 +4,7 @@ from db.userDB import User
 from tools.chickens.chickeninfo import ChickenFood, max_corn_limit, max_plot_limit
 from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, confirmation_embed
 from tools.pointscore import pricing
-from tools.chickens.chickenshared import update_player_corn, calculate_corn
+from tools.chickens.chickenshared import update_player_corn, calculate_corn, update_user_farm
 from better_profanity import profanity
 import discord
 
@@ -158,6 +158,7 @@ class CornCommands(commands.Cog):
     async def feed_all_chickens(self, ctx):
         """Feed all the chickens"""
         farm_data = await update_player_corn(Farm.read(ctx.author.id), ctx.author)
+        farm_data = await update_user_farm(farm_data, ctx.author)
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0
         if farm_data:

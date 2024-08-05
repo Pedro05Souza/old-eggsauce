@@ -37,13 +37,13 @@ async def on_ready():
     logger.info(f"Bot is ready")
     logger.info(f"Logged in as {bot.user.name} - {bot.user.id}")
 
-def main():
+async def main():
     try:
-        bot.run(TOKEN) #Does not use a coroutine but is a blocking function - i.e. must be the last one to run
+        await bot.start(TOKEN, reconnect=True) #Does not reconnect on disconnect
     except asyncio.CancelledError:
-        logger.critical("Bot has been cancelled.")
+        pass
     except Exception as e:
         logging.critical(f"Error in main: {e}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

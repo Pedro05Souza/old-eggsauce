@@ -63,6 +63,9 @@ class ChickenCombat(commands.Cog):
                 await opponent.ctx.send(embed=msg_opponent)
                 await asyncio.sleep(3.5)
                 author_msg, user_msg = await self.check_if_same_guild(user, opponent, await make_embed_object(description=f"🔥 The match will begin soon."))
+                await asyncio.sleep(2.5)
+                await self.send_battle_decks(user, opponent, author_msg, user_msg)
+                await asyncio.sleep(6)
                 await self.define_chicken_matchups(user, opponent, "ranked", user_msg, author_msg, [], [])
                 self.user_queue.remove(user)
                 self.user_queue.remove(opponent)
@@ -84,6 +87,8 @@ class ChickenCombat(commands.Cog):
                     await user.ctx.send(embed=msg_user)
                     author_msg, user_msg = await self.check_if_same_guild(user, opponent, await make_embed_object(description=f"🔥 The match will begin soon."))
                     await asyncio.sleep(3.5)
+                    await self.send_battle_decks(user, opponent, author_msg, user_msg)
+                    await asyncio.sleep(6)
                     await self.define_chicken_matchups(user, opponent, "ranked", user_msg, author_msg, [], [])
 
     async def user_queue_generator(self, positive_search_rank, negative_search_rank, current_user, positive_search_overrall, negative_search_overrall):
@@ -101,11 +106,19 @@ class ChickenCombat(commands.Cog):
         user_list = self.user_queue_generator(positive_search, negative_search, current_user, positive_search_overrall, negative_search_overrall)
         return user_list
     
+    async def send_battle_decks(self, user, opponent, author_msg, user_msg):
+        opponent_deck = opponent.chickens
+        author_deck = user.chickens
+        both_deck = await make_embed_object(title=":crossed_swords: Battle decks:")
+        both_deck.add_field(name=f"{user.member.name}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in author_deck]), inline=False)
+        both_deck.add_field(name=f"{await self.check_user_name(opponent)}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in opponent_deck]), inline=False)
+        await self.check_if_same_guild_edit(user, opponent, user_msg, author_msg, both_deck)
+    
     async def search(self, current_user):
         attemps = 0
         saved_positive_score, saved_negative_score = current_user.score, current_user.score
         saved_positive_overrall, saved_negative_overrall = current_user.chicken_overrall_score, current_user.chicken_overrall_score
-        while attemps < 30:
+        while attemps != 30:
             if current_user.has_opponent:
                 return "opponent"
             if attemps == 15:   
@@ -221,13 +234,13 @@ class ChickenCombat(commands.Cog):
             EventData.remove(author.in_event)
             if not await self.check_if_user_is_bot(user):
                 EventData.remove(user.in_event)
-            await asyncio.sleep(5)
             if dead_chickens_author:
                 embed_per_round.add_field(name=f"{author.member.name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_author]), inline=False)
             if dead_chickens_user:
                 embed_per_round.add_field(name=f"{user_name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_user]), inline=False)
             await self.check_if_same_guild_edit(author, user, user_msg, author_msg, embed_per_round)
-            await self.rewards(winner, loser, author.ctx, match_type)
+            await asyncio.sleep(12)
+            await self.rewards(winner, loser, author.ctx, match_type, embed_per_round, user_msg, author_msg)
             return
         else:
             if accumulator == total_matches:
@@ -237,7 +250,7 @@ class ChickenCombat(commands.Cog):
                     embed_per_round.add_field(name=f"{user_name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_user]), inline=False)
                 await self.check_if_same_guild_edit(author, user, user_msg, author_msg, embed_per_round)
                 embed_per_round.clear_fields()
-                await asyncio.sleep(12)
+                await asyncio.sleep(15)
                 embed_per_round = await make_embed_object(description=f"🔥 The next round will start shortly.")
                 await self.check_if_same_guild_edit(author, user, user_msg, author_msg, embed_per_round)
                 await asyncio.sleep(6)
@@ -300,12 +313,12 @@ class ChickenCombat(commands.Cog):
             return [farm_data['mmr'], farm_data['highest_mmr'], farm_data['wins'], farm_data['losses']]
         return [user.score, 0, 0, 0]
 
-    async def rewards(self, winner, loser, ctx, match_type):
+    async def rewards(self, winner, loser, ctx, match_type, embed_per_round, winner_msg, loser_msg):
         """Rewards the winner of the combat."""
         if match_type == "ranked":
             farm_data_winner = await self.check_user_score(winner)
             farm_data_loser = await self.check_user_score(loser)
-            base_mmr_gain = 23
+            base_mmr_gain = 25
             multiplier = (loser.score + loser.chicken_overrall_score) / (winner.score + winner.chicken_overrall_score)
             mmr_gain = base_mmr_gain * multiplier
             mmr_gain = int(mmr_gain)
@@ -323,7 +336,8 @@ class ChickenCombat(commands.Cog):
                 increment_losses = farm_data_loser[3] + 1
                 Farm.update(loser.member.id, mmr=farm_data_loser[0], losses=increment_losses)
             msg = await make_embed_object(description=f"🎉 **{await self.check_user_name(winner)}** has won the combat and has gained **{mmr_gain}** MMR, while **{await self.check_user_name(loser)}** has lost the same amount.")
-            await self.check_if_same_guild(winner, loser, msg)
+            embed_per_round = msg
+            await self.check_if_same_guild_edit(winner, loser, winner_msg, loser_msg, embed_per_round)
             return
         elif match_type == "friendly":
             await send_bot_embed(ctx, description=f"🎉 **{await self.check_user_name(winner)}** has won the combat.")

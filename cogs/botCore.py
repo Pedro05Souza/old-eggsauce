@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from tools.shared import send_bot_embed, make_embed_object, is_dev, make_embed_object
+from tools.shared import send_bot_embed, make_embed_object, is_dev, make_embed_object, dev_list
 from db.botConfigDB import BotConfig
 from tools.pointscore import refund
 from tools.prices import Prices
@@ -57,9 +57,12 @@ class BotCore(commands.Cog):
 
     async def close_aiohttp_sessions(self):
         """Close all aiohttp ClientSession instances."""
-        if hasattr(self.bot, "http_session"):
-            await self.bot.http_session.close()
-            logger.info("Aiohttp session closed.")
+        if hasattr(self.bot, "http_session") and self.bot.http_session:
+            try:
+                await self.bot.http_session.close()
+                logger.info("Aiohttp session has been closed.")
+            except Exception as e:
+                logger.error(f"Error closing aiohttp session: {e}")
 
     async def cancel_all_async_tasks(self):
         """Cancel all running async tasks."""
@@ -81,8 +84,6 @@ class BotCore(commands.Cog):
             await send_bot_embed(ctx, description=":warning: Restarting...")
             logger.info(f"{ctx.author.name}, user id: {ctx.author.id} has attempted to restart the bot.")
             await self.restart_client()
-        else:
-            await send_bot_embed(ctx, description=":skull: Hell naw.")
 
     async def restart_every_day(self):
         while True:
@@ -154,6 +155,34 @@ class BotCore(commands.Cog):
             BotConfig.create(ctx.guild.id, None, ctx.channel.id)
             await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
 
+    async def log_and_raise_error(self, ctx, error):
+        logger.error(f"Error in command: {ctx.command.name}\n In server: {ctx.guild.name}\n In channel: {ctx.channel.name}\n By user: {ctx.author.name}\n Error: {error} \n Type: {type(error)}")
+        devs = dev_list()
+        user = self.bot.get_user(int(devs[1]))
+        if user:
+            msg = await make_embed_object(description=f":no_entry_sign: **{error}** a command has failed. The developers have been notified.")
+            await user.send(embed=msg)
+        raise error
+    
+    async def cooldown_error(self, ctx, error):
+        current_time = time()
+        if ctx.author.id not in self.last_cooldown_message_time or current_time - self.last_cooldown_message_time[ctx.author.id] >= 20:
+            msg = await make_embed_object(description=f":no_entry_sign: Slow down! Try the command again in {round(error.retry_after, 2)} seconds.")
+        try:
+            await ctx.author.send(embed=msg, delete_after=10)
+            return
+        except discord.Forbidden:
+            return
+        except Exception as e:
+            logger.error(f"Error sending cooldown message to {ctx.author.name}", e)
+            self.last_cooldown_message_time[ctx.author.id] = current_time
+
+    async def refund_price_command_on_error(self, ctx, error):
+        if ctx.command.name in Prices.__members__ and ctx.command.name != ("stealpoints") and Prices.__members__[ctx.command.name].value > 0:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
+            await refund(ctx.author, ctx)
+            return
+
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         await self.tutorial(guild)
@@ -176,34 +205,19 @@ class BotCore(commands.Cog):
         config_data = BotConfig.read(ctx.guild.id)
         if config_data and config_data['toggled_modules'] == "N":
             return
-        if isinstance(error, commands.CommandError) and not isinstance(error, (commands.CommandNotFound, commands.CheckFailure)):
-            if ctx is not None:
-                if hasattr(ctx, "predicate_result") and ctx.predicate_result:
-                    enumPricing = Prices.__members__
-                    if ctx.command.name in enumPricing and ctx.command.name != "stealpoints":
-                        if enumPricing[ctx.command.name].value > 0:
-                            await send_bot_embed(ctx, description=f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
-                            await refund(ctx.author, ctx)
-                            return
-        if ctx is not None and ctx.command is not None:
-            if isinstance(error, commands.CommandOnCooldown) and ctx.command.name not in ("stealpoints", "market"):
-                current_time = time()
-                if ctx.author.id not in self.last_cooldown_message_time or current_time - self.last_cooldown_message_time[ctx.author.id] >= 20:
-                     msg = await make_embed_object(description=f":no_entry_sign: Slow down! Try the command again in {round(error.retry_after, 2)} seconds.")
-                     try:
-                        await ctx.author.send(embed=msg, delete_after=5)
+        if isinstance(error, commands.CommandError) and not isinstance(error, commands.CommandNotFound):
+            if ctx is not None and ctx.command is not None:
+                if isinstance(error, commands.CheckFailure):
+                    if hasattr(ctx, "predicate_result") and ctx.predicate_result:
+                        await self.refund_price_command_on_error(ctx, error)
                         return
-                     except discord.Forbidden:
-                        await send_bot_embed(ctx, description=f":no_entry_sign: Slow down! Try the command again in {round(error.retry_after, 2)} seconds.")
+                elif isinstance(error, commands.CommandOnCooldown):
+                    if ctx.command.name not in ("stealpoints", "market"):
+                        await self.cooldown_error(ctx, error)
                         return
-                     except Exception as e:
-                        logger.error(f"Error sending cooldown message to {ctx.author.name}", e)
-                     self.last_cooldown_message_time[ctx.author.id] = current_time
-                return
-            if not isinstance(error, (commands.CommandOnCooldown, commands.CheckFailure)):
-                logger.error(f"Error in command: {ctx.command.name}\n In server: {ctx.guild.name}\n In channel: {ctx.channel.name}\n By user: {ctx.author.name}\n Error: {error}")
-                raise error
-    
+                else:
+                    await self.log_and_raise_error(ctx, error)
+
     @commands.Cog.listener()
     async def on_command_completion(self, ctx):
         if monitor_mode:

@@ -136,7 +136,7 @@ class ChickenEvents(commands.Cog):
                 await msg.add_reaction("✅")
                 await msg.add_reaction("❌")
                 try:
-                    reaction, jogador = await self.bot.wait_for("reaction_add", check=lambda reaction, jogador: jogador == user and reaction.message == msg, timeout=40)
+                    reaction, _ = await self.bot.wait_for("reaction_add", check=lambda reaction, jogador: jogador == user and reaction.message == msg, timeout=40)
                     if reaction.emoji == "✅":
                         chicken = author_data['chickens'][index]
                         user_data['chickens'].append(chicken)

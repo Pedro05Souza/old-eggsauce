@@ -209,7 +209,7 @@ class ChickenView(commands.Cog):
             user = ctx.author
         farm_data = Farm.read(user.id)
         if farm_data:
-            await get_user_bench(ctx, farm_data)
+            await get_user_bench(ctx, farm_data, user)
         else:
             await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have a farm.")
     
