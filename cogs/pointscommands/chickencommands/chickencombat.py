@@ -55,47 +55,46 @@ class ChickenCombat(commands.Cog):
 
     async def combat_handler(self, user, opponent, user_msg, author_msg, ctx, e):
         """Handles the combat between the two users."""
-        if isinstance(opponent, UserInQueue):
-            if str(user.member.id) + "_" + str(opponent.member.id) in self.map:
+        if isinstance(opponent, (UserInQueue, BotMatchMaking)):
+            if str(user.member.id) + "_" + str(await self.return_user_id(opponent)) in self.map:
                 return
             self.user_queue.remove(user)
+            opponent_mmr = 0
             self.user_queue.remove(opponent)
             opponent.has_opponent = True
             user.has_opponent = True
-            self.map = {str(user.member.id) + "_" + str(opponent.member.id): [user, opponent]}
-            opponent_data = Farm.read(opponent.member.id)
-            msg_user = await make_embed_object(description=f"🔎 **{user.member.name}**, **{opponent.member.name}** has been found as your opponent. **({opponent_data['mmr']} MMR)**")
-            msg_opponent = await make_embed_object(description=f"🔎 **{opponent.member.name}**, **{user.member.name}** has been found as your opponent. **({user.score} MMR)**")
+            self.map = {str(user.member.id) + "_" + str(await self.return_user_id(opponent)): [user, opponent]}
+            if not await self.check_if_user_is_bot(opponent):
+                opponent_data = Farm.read(opponent.member.id)
+                opponent_mmr = opponent_data['mmr']
+            else:
+                opponent_mmr = opponent.score
+            msg_user = await make_embed_object(description=f"🔎 **{user.member.name}**, **{await self.check_user_name(opponent)}** has been found as your opponent. **({opponent_mmr} MMR)**")
+            msg_opponent = await make_embed_object(description=f"🔎 **{await self.check_user_name(opponent)}**, **{user.member.name}** has been found as your opponent. **({user.score} MMR)**")
             await user.ctx.send(embed=msg_user)
-            await opponent.ctx.send(embed=msg_opponent)
+            if not await self.check_if_user_is_bot(opponent):
+                await opponent.ctx.send(embed=msg_opponent)
+                user_msg = author_msg
             await asyncio.sleep(3.5)
             author_msg, user_msg = await self.check_if_same_guild(user, opponent, await make_embed_object(description=f"🔥 The match will begin soon."))
             await asyncio.sleep(2.5)
             await self.send_battle_decks(user, opponent, author_msg, user_msg)
             await asyncio.sleep(6)
             await self.define_chicken_matchups(user, opponent, "ranked", user_msg, author_msg, [], [])
+        elif opponent == "opponent":
+            return
+        elif opponent == "No opponent found.":
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.member.name}, no opponent has been found. Please try again later.")
+            self.user_queue.remove(user)
+            EventData.remove(e)
+            self.queue.reset_cooldown(ctx)
+            return
+            
+    async def return_user_id(self, user):
+        if isinstance(user, UserInQueue):
+            return user.member.id
         else:
-            if isinstance(opponent, BotMatchMaking):
-                user.has_opponent = True
-                opponent.has_opponent = True
-                self.user_queue.remove(user)
-                self.user_queue.remove(opponent)
-                self.map = {str(user.member.id) + "_" + str(opponent.name): [user, opponent]}
-                msg_user = await make_embed_object(description=f"🔎 **{user.member.name}**, **{opponent.name}** has been found as your opponent. **({opponent.score}) MMR**")
-                await user.ctx.send(embed=msg_user)
-                author_msg, user_msg = await self.check_if_same_guild(user, opponent, await make_embed_object(description=f"🔥 The match will begin soon."))
-                await asyncio.sleep(3.5)
-                await self.send_battle_decks(user, opponent, author_msg, user_msg)
-                await asyncio.sleep(6)
-                await self.define_chicken_matchups(user, opponent, "ranked", user_msg, author_msg, [], [])
-            elif opponent == "opponent":
-                return
-            elif opponent == "No opponent found.":
-                await send_bot_embed(ctx, description=f":no_entry_sign: {user.member.name}, no opponent has been found. Please try again later.")
-                self.user_queue.remove(user)
-                EventData.remove(e)
-                self.queue.reset_cooldown(ctx)
-                return
+            return user.bot_id
             
     async def user_queue_generator(self, positive_search_rank, negative_search_rank, current_user, positive_search_overrall, negative_search_overrall):
         for user in self.user_queue:
@@ -189,39 +188,8 @@ class ChickenCombat(commands.Cog):
     async def matches(self, user, author, match, accumulator, total_matches, embed_per_round, match_type, user_msg, author_msg, dead_chickens_author, dead_chickens_user):
         """Determines which chickens wins in a match"""
         random_number = random()
-        win_rate_for_author = 0.5
-        win_rate_for_user = 0.5
-        rarity_chicken_author_position = list(rarities_weight.keys()).index(match[0]['rarity'])
-        rarity_chicken_user_position = list(rarities_weight.keys()).index(match[1]['rarity'])
-        upkeep_chicken_author_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(match[0]['upkeep_multiplier']))
-        upkeep_chicken_user_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(match[1]['upkeep_multiplier']))
-        happy_chicken_author = match[0]['happiness']
-        happy_chicken_user = match[1]['happiness']
-
-        if rarity_chicken_author_position > rarity_chicken_user_position:
-            difficulty = rarity_chicken_author_position - rarity_chicken_user_position
-            win_rate_for_author += 0.45 * difficulty
-        else:
-            difficulty = rarity_chicken_user_position - rarity_chicken_author_position
-            win_rate_for_user += 0.45 * difficulty
-
-        if upkeep_chicken_author_position > upkeep_chicken_user_position:
-            difficulty = upkeep_chicken_author_position - upkeep_chicken_user_position
-            win_rate_for_author += 0.05 * difficulty
-
-        else:
-            difficulty = upkeep_chicken_user_position - upkeep_chicken_author_position
-            win_rate_for_user += 0.05 * difficulty
-        
-        if happy_chicken_author > happy_chicken_user:
-            win_rate_for_author += 0.04
-        else:
-            win_rate_for_user += 0.04
-
-        real_win_rate = win_rate_for_author + win_rate_for_user
-        win_rate_for_author = win_rate_for_author / real_win_rate
-        win_rate_for_user = win_rate_for_user / real_win_rate
         user_name = await self.check_user_name(user)
+        win_rate_for_author, win_rate_for_user = await self.define_win_rate(match)
 
         if random_number < win_rate_for_author:
             embed_per_round.add_field(name=f"Battle:", value=f"🎉 {author.member.name}'s **{get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']} ({round(win_rate_for_author * 100)}%)** has won against {user_name}'s **{get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']} ({round(win_rate_for_user * 100)}%)**\n", inline=False)
@@ -262,6 +230,42 @@ class ChickenCombat(commands.Cog):
                 await asyncio.sleep(6)
                 embed_per_round.clear_fields()
                 await self.define_chicken_matchups(author, user, match_type, user_msg, author_msg, dead_chickens_author, dead_chickens_user)
+
+    async def define_win_rate(self, match):
+        win_rate_for_author = 0.5
+        win_rate_for_user = 0.5
+        rarity_chicken_author_position = list(rarities_weight.keys()).index(match[0]['rarity'])
+        rarity_chicken_user_position = list(rarities_weight.keys()).index(match[1]['rarity'])
+        upkeep_chicken_author_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(match[0]['upkeep_multiplier']))
+        upkeep_chicken_user_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(match[1]['upkeep_multiplier']))
+        happy_chicken_author = match[0]['happiness']
+        happy_chicken_user = match[1]['happiness']
+
+        if rarity_chicken_author_position > rarity_chicken_user_position:
+            difficulty = rarity_chicken_author_position - rarity_chicken_user_position
+            win_rate_for_author += 0.45 * difficulty
+        else:
+            difficulty = rarity_chicken_user_position - rarity_chicken_author_position
+            win_rate_for_user += 0.45 * difficulty
+
+        if upkeep_chicken_author_position > upkeep_chicken_user_position:
+            difficulty = upkeep_chicken_author_position - upkeep_chicken_user_position
+            win_rate_for_author += 0.05 * difficulty
+
+        else:
+            difficulty = upkeep_chicken_user_position - upkeep_chicken_author_position
+            win_rate_for_user += 0.05 * difficulty
+        
+        if happy_chicken_author > happy_chicken_user:
+            win_rate_for_author += 0.04
+        else:
+            win_rate_for_user += 0.04
+
+        real_win_rate = win_rate_for_author + win_rate_for_user
+        win_rate_for_author = win_rate_for_author / real_win_rate
+        win_rate_for_user = win_rate_for_user / real_win_rate
+        return win_rate_for_author, win_rate_for_user
+
     
     async def check_if_same_guild(self, author, user, embed):
         if await self.check_if_user_is_bot(user):
@@ -324,9 +328,15 @@ class ChickenCombat(commands.Cog):
         if match_type == "ranked":
             farm_data_winner = await self.check_user_score(winner)
             farm_data_loser = await self.check_user_score(loser)
-            base_mmr_gain = 25
+            base_mmr_gain = 28
             multiplier = (loser.score + loser.chicken_overrall_score) / (winner.score + winner.chicken_overrall_score)
+            mmr_diff = farm_data_loser[0] - farm_data_winner[0]
+            print(mmr_diff)
+            print(multiplier)
+            multiplier = 1 + abs(mmr_diff / 1000)
+            print(multiplier)
             mmr_gain = base_mmr_gain * multiplier
+            print(mmr_gain)
             mmr_gain = int(mmr_gain)
             mmr_gain = max(base_mmr_gain, mmr_gain)
             score = mmr_gain
