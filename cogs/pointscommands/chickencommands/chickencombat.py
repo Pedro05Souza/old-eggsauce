@@ -331,12 +331,8 @@ class ChickenCombat(commands.Cog):
             base_mmr_gain = 28
             multiplier = (loser.score + loser.chicken_overrall_score) / (winner.score + winner.chicken_overrall_score)
             mmr_diff = farm_data_loser[0] - farm_data_winner[0]
-            print(mmr_diff)
-            print(multiplier)
             multiplier = 1 + abs(mmr_diff / 1000)
-            print(multiplier)
             mmr_gain = base_mmr_gain * multiplier
-            print(mmr_gain)
             mmr_gain = int(mmr_gain)
             mmr_gain = max(base_mmr_gain, mmr_gain)
             score = mmr_gain
