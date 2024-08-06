@@ -166,7 +166,8 @@ score_determiner = {
     "HIGH": 1000,
     "REALLY HIGH": 1300,
     "EXTREMELY HIGH": 1600,
-    "MAXIMUM": 2160
+    "BEYOND HIGH": 2000,
+    "MAXED": 2160
 }
 
 farm_size_weights = {

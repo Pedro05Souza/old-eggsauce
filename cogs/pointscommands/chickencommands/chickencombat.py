@@ -129,6 +129,7 @@ class ChickenCombat(commands.Cog):
             if attemps == 15:   
                 bot = await bot_maker(current_user.score)
                 self.user_queue.append(bot)
+                print(bot.chickens)
             positive_search = saved_positive_score + 10
             negative_search = saved_negative_score - 10
             positive_search_overrall, negative_search_overrall = saved_positive_overrall + 50, saved_negative_overrall - 50

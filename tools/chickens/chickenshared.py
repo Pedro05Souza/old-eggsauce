@@ -142,7 +142,6 @@ async def define_chicken_overrall_score(chickens):
             chicken_overrall_score = 0
         return chicken_overrall_score
 
-    
 # updates
 
 async def drop_egg_for_player(farm_data, user_data):

@@ -59,9 +59,15 @@ async def define_bot_min_farm_size(player_mmr):
 async def define_chicken_rarity_list(player_mmr, all_rarities):
     """Changes the rarity list for the bot."""
     bot_deck = all_rarities.copy()
-    if player_mmr >= 2000:
-        player_mmr = 2000
-    chicken_selected = player_mmr * 17/2000
+    if player_mmr >= 1800:
+        chances = .33
+        rarities = ['ASCENDED', 'ETHEREAL', 'CHOSEN']
+        zip_list = zip(rarities, [chances] * len(rarities))
+        bot_deck = dict(zip_list)
+        for rarity, chance in zip_list:
+            bot_deck[rarity] = chance
+        return bot_deck
+    chicken_selected = player_mmr * len(all_rarities) / 2000
     chicken_selected = int(chicken_selected)
     for key, value in all_rarities.items():
         distribution = abs(value - chicken_selected)
