@@ -8,7 +8,8 @@ from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity,
 from tools.chickens.chickeninfo import rarities_weight, upkeep_weight, score_determiner, chicken_ranking
 from db.farmDB import Farm
 from db.userDB import User
-from random import sample, random
+from tools.tips import tips
+from random import sample, random, randint
 import asyncio
 import discord
 
@@ -47,50 +48,55 @@ class ChickenCombat(commands.Cog):
             self.user_queue.append(user)
             user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
             match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data['mmr'])}**.")
-            match_matching_obj.set_footer(text=f"Having a higher chicken overall will decrease the chances of finding an opponent, but also increase the rewards.")
-            await ctx.send(embed=match_matching_obj)
+            match_matching_obj.set_footer(text=tips[randint(0, len(tips) - 1)])
+            author_msg, user_msg = await self.check_if_same_guild(user, user, match_matching_obj)
             opponent = await self.search(user)
-            if type(opponent) == UserInQueue:
-                if str(user.member.id) + "_" + str(opponent.member.id) in self.map:
-                    return
-                opponent.has_opponent = True
+            await self.combat_handler(user, opponent, user_msg, author_msg, ctx, e)
+
+    async def combat_handler(self, user, opponent, user_msg, author_msg, ctx, e):
+        """Handles the combat between the two users."""
+        if isinstance(opponent, UserInQueue):
+            if str(user.member.id) + "_" + str(opponent.member.id) in self.map:
+                return
+            self.user_queue.remove(user)
+            self.user_queue.remove(opponent)
+            opponent.has_opponent = True
+            user.has_opponent = True
+            self.map = {str(user.member.id) + "_" + str(opponent.member.id): [user, opponent]}
+            opponent_data = Farm.read(opponent.member.id)
+            msg_user = await make_embed_object(description=f"🔎 **{user.member.name}**, **{opponent.member.name}** has been found as your opponent. **({opponent_data['mmr']} MMR)**")
+            msg_opponent = await make_embed_object(description=f"🔎 **{opponent.member.name}**, **{user.member.name}** has been found as your opponent. **({user.score} MMR)**")
+            await user.ctx.send(embed=msg_user)
+            await opponent.ctx.send(embed=msg_opponent)
+            await asyncio.sleep(3.5)
+            author_msg, user_msg = await self.check_if_same_guild(user, opponent, await make_embed_object(description=f"🔥 The match will begin soon."))
+            await asyncio.sleep(2.5)
+            await self.send_battle_decks(user, opponent, author_msg, user_msg)
+            await asyncio.sleep(6)
+            await self.define_chicken_matchups(user, opponent, "ranked", user_msg, author_msg, [], [])
+        else:
+            if isinstance(opponent, BotMatchMaking):
                 user.has_opponent = True
-                self.map = {str(user.member.id) + "_" + str(opponent.member.id): [user, opponent]}
-                opponent_data = Farm.read(opponent.member.id)
-                msg_user = await make_embed_object(description=f"🔎 **{user.member.name}**, **{opponent.member.name}** has been found as your opponent. **({opponent_data['mmr']} MMR)**")
-                msg_opponent = await make_embed_object(description=f"🔎 **{opponent.member.name}**, **{user.member.name}** has been found as your opponent. **({farm_data['mmr']} MMR)**")
+                opponent.has_opponent = True
+                self.user_queue.remove(user)
+                self.user_queue.remove(opponent)
+                self.map = {str(user.member.id) + "_" + str(opponent.name): [user, opponent]}
+                msg_user = await make_embed_object(description=f"🔎 **{user.member.name}**, **{opponent.name}** has been found as your opponent. **({opponent.score}) MMR**")
                 await user.ctx.send(embed=msg_user)
-                await opponent.ctx.send(embed=msg_opponent)
-                await asyncio.sleep(3.5)
                 author_msg, user_msg = await self.check_if_same_guild(user, opponent, await make_embed_object(description=f"🔥 The match will begin soon."))
-                await asyncio.sleep(2.5)
+                await asyncio.sleep(3.5)
                 await self.send_battle_decks(user, opponent, author_msg, user_msg)
                 await asyncio.sleep(6)
                 await self.define_chicken_matchups(user, opponent, "ranked", user_msg, author_msg, [], [])
+            elif opponent == "opponent":
+                return
+            elif opponent == "No opponent found.":
+                await send_bot_embed(ctx, description=f":no_entry_sign: {user.member.name}, no opponent has been found. Please try again later.")
                 self.user_queue.remove(user)
-                self.user_queue.remove(opponent)
-            else:
-                if opponent == "opponent":
-                    return
-                elif opponent == "No opponent found.":
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {user.member.name}, no opponent has been found. Please try again later.")
-                    self.user_queue.remove(user)
-                    EventData.remove(e)
-                    self.queue.reset_cooldown(ctx)
-                elif type(opponent) == BotMatchMaking:
-                    user.has_opponent = True
-                    opponent.has_opponent = True
-                    self.map = {str(user.member.id) + "_" + str(opponent.name): [user, opponent]}
-                    msg_user = await make_embed_object(description=f"🔎 **{user.member.name}**, **{opponent.name}** has been found as your opponent. **({opponent.score}) MMR**")
-                    self.user_queue.remove(user)
-                    self.user_queue.remove(opponent)
-                    await user.ctx.send(embed=msg_user)
-                    author_msg, user_msg = await self.check_if_same_guild(user, opponent, await make_embed_object(description=f"🔥 The match will begin soon."))
-                    await asyncio.sleep(3.5)
-                    await self.send_battle_decks(user, opponent, author_msg, user_msg)
-                    await asyncio.sleep(6)
-                    await self.define_chicken_matchups(user, opponent, "ranked", user_msg, author_msg, [], [])
-
+                EventData.remove(e)
+                self.queue.reset_cooldown(ctx)
+                return
+            
     async def user_queue_generator(self, positive_search_rank, negative_search_rank, current_user, positive_search_overrall, negative_search_overrall):
         for user in self.user_queue:
             if user.score >= negative_search_rank and user.score <= positive_search_rank:
@@ -122,7 +128,7 @@ class ChickenCombat(commands.Cog):
             if current_user.has_opponent:
                 return "opponent"
             if attemps == 15:   
-                bot = await bot_maker(current_user.chickens, current_user.score)
+                bot = await bot_maker(current_user.score)
                 self.user_queue.append(bot)
             positive_search = saved_positive_score + 10
             negative_search = saved_negative_score - 10

@@ -15,7 +15,7 @@ class BotMatchMaking():
     def __repr__(self) -> str:
         return f"{self.name} - {self.score}"
 
-async def bot_maker(user_chicken, user_score):
+async def bot_maker(user_score):
     """"Function to create a bot in the matchmaking."""
     bot = BotMatchMaking(await name_maker())
     bot_farm_size = randint(await define_bot_min_farm_size(user_score), 8)

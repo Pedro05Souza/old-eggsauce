@@ -158,7 +158,7 @@ class CornCommands(commands.Cog):
     async def feed_all_chickens(self, ctx):
         """Feed all the chickens"""
         farm_data = await update_player_corn(Farm.read(ctx.author.id), ctx.author)
-        farm_data = await update_user_farm(farm_data, ctx.author)
+        farm_data = await update_user_farm(ctx.author, farm_data)
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0
         if farm_data:
