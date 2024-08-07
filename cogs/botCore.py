@@ -14,6 +14,7 @@ import sys
 import os
 logger = logging.getLogger('botcore')
 monitor_mode = False
+prefix_cache = {}
 
 class BotCore(commands.Cog):
     def __init__(self, bot):
@@ -133,6 +134,8 @@ class BotCore(commands.Cog):
                     await send_bot_embed(ctx, description=":no_entry_sign: The prefix can't have more than one character.")
                     return
                 BotConfig.update_prefix(ctx.guild.id, prefix)
+                if ctx.guild.id in prefix_cache:
+                    prefix_cache[ctx.guild.id] = prefix
                 await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
@@ -140,6 +143,21 @@ class BotCore(commands.Cog):
         else:
             BotConfig.create(ctx.guild.id, prefix=prefix)
             await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
+    
+    @classmethod
+    def get_prefix_for_guild(cls, bot, message):
+     """Get the prefix for the guild."""
+     if message:
+        guild_id = message.guild.id
+        if guild_id in prefix_cache:
+            return prefix_cache[guild_id]
+        else:
+            bot_data = BotConfig.read(guild_id)
+            if bot_data:
+                prefix_cache[guild_id] = bot_data["prefix"]
+                return bot_data["prefix"]
+            else:
+                return "!"
             
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx):

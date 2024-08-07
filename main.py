@@ -1,7 +1,7 @@
 from discord.ext import commands
 from discord import Intents
 from dotenv import load_dotenv
-from db.botConfigDB import BotConfig
+from cogs.botcore import BotCore
 from pathlib import Path
 import logging
 import discord
@@ -12,15 +12,7 @@ logger = logging.getLogger('botcore')
 load_dotenv()   
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-def get_prefix_for_guild(bot, message):
-    """Get the prefix for the guild."""
-    if message:
-        bot_data = BotConfig.read(message.guild.id)
-        if bot_data['prefix']:
-            return bot_data['prefix']
-        return "!"
-
-bot = commands.Bot(command_prefix=get_prefix_for_guild, intents=Intents.all(), case_insensitive=True, help_command=None)
+bot = commands.Bot(command_prefix=BotCore.get_prefix_for_guild, intents=Intents.all(), case_insensitive=True, help_command=None)
 async def load_cogs():
     """Load all cogs in the cogs directory and its subdirectories."""
     cogs_dir = Path('./cogs')
@@ -28,9 +20,6 @@ async def load_cogs():
         module_path = filepath.relative_to(cogs_dir).with_suffix('').as_posix().replace('/', '.')
         logger.info(f"Loading... {module_path}")
         await bot.load_extension(f'cogs.{module_path}')
-
-asyncio.run(load_cogs())
-
 @bot.event
 async def on_ready():   
     await bot.change_presence(activity=discord.Game(name="🥚eggbux."))
@@ -46,4 +35,5 @@ async def main():
         logging.critical(f"Error in main: {e}")
 
 if __name__ == "__main__":
+    asyncio.run(load_cogs())
     asyncio.run(main()) 

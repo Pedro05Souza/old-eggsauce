@@ -79,7 +79,7 @@ class ChickenCombat(commands.Cog):
             author_msg, user_msg = await self.check_if_same_guild(user, opponent, await make_embed_object(description=f"🔥 The match will begin soon."))
             await asyncio.sleep(2.5)
             await self.send_battle_decks(user, opponent, author_msg, user_msg)
-            await asyncio.sleep(6)
+            await asyncio.sleep(10)
             await self.define_chicken_matchups(user, opponent, "ranked", user_msg, author_msg, [], [])
         elif opponent == "opponent":
             return
@@ -114,6 +114,7 @@ class ChickenCombat(commands.Cog):
     async def send_battle_decks(self, user, opponent, author_msg, user_msg):
         opponent_deck = opponent.chickens
         author_deck = user.chickens
+        all_ratities = list(rarities_weight.keys())
         both_deck = await make_embed_object(title=":crossed_swords: Battle decks:")
         both_deck.add_field(name=f"{user.member.name}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in author_deck]), inline=False)
         both_deck.add_field(name=f"{await self.check_user_name(opponent)}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in opponent_deck]), inline=False)
@@ -122,11 +123,17 @@ class ChickenCombat(commands.Cog):
             win_rate_for_author, win_rate_for_user = await self.define_win_rate(chicken, chicken2)
             user_wr += win_rate_for_author
             opponent_wr += win_rate_for_user
-        real_wr = user_wr + opponent_wr
-        user_wr = round(user_wr / real_wr, 2)
-        opponent_wr = round(opponent_wr / real_wr, 2)
-        user_wr = user_wr * 100
-        opponent_wr = opponent_wr * 100
+        if len(opponent_deck) > len(author_deck):
+            opponent_extra_chickens = opponent_deck[-(len(opponent_deck) - len(author_deck)):]
+            opponent_wr += sum([all_ratities.index(chicken['rarity']) * 0.05 for chicken in opponent_extra_chickens])
+        elif len(author_deck) > len(opponent_deck):
+            author_extra_chickens = author_deck[-(len(author_deck) - len(opponent_deck)):]
+            user_wr += sum([all_ratities.index(chicken['rarity']) * 0.05 for chicken in author_extra_chickens])
+        real_win_rate = user_wr + opponent_wr
+        user_wr = user_wr / real_win_rate
+        opponent_wr = opponent_wr / real_win_rate
+        user_wr = round(user_wr * 100)
+        opponent_wr = round(opponent_wr * 100)
         both_deck.add_field(name="Win chance:", value=f"{user.member.name}: **{user_wr}%**\n{await self.check_user_name(opponent)}: **{opponent_wr}%**", inline=False)
         await self.check_if_same_guild_edit(user, opponent, user_msg, author_msg, both_deck)
     
@@ -160,8 +167,6 @@ class ChickenCombat(commands.Cog):
         """Define the chicken matchups for the combat."""
         author_chickens = author.chickens
         user_chickens = user.chickens
-        author_chickens = sample(author_chickens, len(author_chickens))
-        user_chickens = sample(user_chickens, len(user_chickens))
         bench_chickens_author = []
         bench_chickens_user = []
         matchups = []
