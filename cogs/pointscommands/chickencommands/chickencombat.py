@@ -117,6 +117,17 @@ class ChickenCombat(commands.Cog):
         both_deck = await make_embed_object(title=":crossed_swords: Battle decks:")
         both_deck.add_field(name=f"{user.member.name}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in author_deck]), inline=False)
         both_deck.add_field(name=f"{await self.check_user_name(opponent)}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in opponent_deck]), inline=False)
+        user_wr, opponent_wr  = 0, 0
+        for chicken, chicken2 in zip(author_deck, opponent_deck):
+            win_rate_for_author, win_rate_for_user = await self.define_win_rate(chicken, chicken2)
+            user_wr += win_rate_for_author
+            opponent_wr += win_rate_for_user
+        real_wr = user_wr + opponent_wr
+        user_wr = round(user_wr / real_wr, 2)
+        opponent_wr = round(opponent_wr / real_wr, 2)
+        user_wr = user_wr * 100
+        opponent_wr = opponent_wr * 100
+        both_deck.add_field(name="Win chance:", value=f"{user.member.name}: **{user_wr}%**\n{await self.check_user_name(opponent)}: **{opponent_wr}%**", inline=False)
         await self.check_if_same_guild_edit(user, opponent, user_msg, author_msg, both_deck)
     
     async def search(self, current_user):
@@ -129,16 +140,13 @@ class ChickenCombat(commands.Cog):
             if attemps == 15:   
                 bot = await bot_maker(current_user.score)
                 self.user_queue.append(bot)
-                print(bot.chickens)
-            positive_search = saved_positive_score + 10
-            negative_search = saved_negative_score - 10
+            positive_search = saved_positive_score + 5
+            negative_search = saved_negative_score - 5
             positive_search_overrall, negative_search_overrall = saved_positive_overrall + 50, saved_negative_overrall - 50
             if positive_search_overrall < 0:
                 positive_search_overrall = 0
             if negative_search < 0:
                 negative_search = 0
-            if positive_search > 2000:
-                positive_search = 2000
             user_list = await self.increase_search_range(positive_search, negative_search, current_user, positive_search_overrall, negative_search_overrall)
             async for user in user_list:
                 return user
@@ -190,7 +198,7 @@ class ChickenCombat(commands.Cog):
         """Determines which chickens wins in a match"""
         random_number = random()
         user_name = await self.check_user_name(user)
-        win_rate_for_author, win_rate_for_user = await self.define_win_rate(match)
+        win_rate_for_author, win_rate_for_user = await self.define_win_rate(match[0], match[1])
 
         if random_number < win_rate_for_author:
             embed_per_round.add_field(name=f"Battle:", value=f"🎉 {author.member.name}'s **{get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']} ({round(win_rate_for_author * 100)}%)** has won against {user_name}'s **{get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']} ({round(win_rate_for_user * 100)}%)**\n", inline=False)
@@ -232,15 +240,15 @@ class ChickenCombat(commands.Cog):
                 embed_per_round.clear_fields()
                 await self.define_chicken_matchups(author, user, match_type, user_msg, author_msg, dead_chickens_author, dead_chickens_user)
 
-    async def define_win_rate(self, match):
+    async def define_win_rate(self, chicken1, chicken2):
         win_rate_for_author = 0.5
         win_rate_for_user = 0.5
-        rarity_chicken_author_position = list(rarities_weight.keys()).index(match[0]['rarity'])
-        rarity_chicken_user_position = list(rarities_weight.keys()).index(match[1]['rarity'])
-        upkeep_chicken_author_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(match[0]['upkeep_multiplier']))
-        upkeep_chicken_user_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(match[1]['upkeep_multiplier']))
-        happy_chicken_author = match[0]['happiness']
-        happy_chicken_user = match[1]['happiness']
+        rarity_chicken_author_position = list(rarities_weight.keys()).index(chicken1['rarity'])
+        rarity_chicken_user_position = list(rarities_weight.keys()).index(chicken2['rarity'])
+        upkeep_chicken_author_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(chicken1['upkeep_multiplier']))
+        upkeep_chicken_user_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(chicken2['upkeep_multiplier']))
+        happy_chicken_author = chicken1['happiness']
+        happy_chicken_user = chicken2['happiness']
 
         if rarity_chicken_author_position > rarity_chicken_user_position:
             difficulty = rarity_chicken_author_position - rarity_chicken_user_position
