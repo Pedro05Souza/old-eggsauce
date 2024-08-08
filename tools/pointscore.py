@@ -3,7 +3,6 @@ from db.botConfigDB import BotConfig
 from discord.ext import commands
 from tools.shared import send_bot_embed, make_embed_object, is_dev
 from tools.prices import Prices
-from functools import wraps
 import inspect
 import discord
 import logging

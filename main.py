@@ -12,7 +12,7 @@ logger = logging.getLogger('botcore')
 load_dotenv()   
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-bot = commands.Bot(command_prefix=BotCore.get_prefix_for_guild, intents=Intents.all(), case_insensitive=True, help_command=None)
+bot = commands.Bot(command_prefix=await BotCore.get_prefix_for_guild, intents=Intents.all(), case_insensitive=True, help_command=None)
 async def load_cogs():
     """Load all cogs in the cogs directory and its subdirectories."""
     cogs_dir = Path('./cogs')

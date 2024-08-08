@@ -16,42 +16,7 @@ steal_status = {}
 class InteractiveCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    async def drop_eggbux(self):
-        await asyncio.gather(*(self.drop_eggbux_for_guild(guild) for guild in self.bot.guilds))
-
-    async def drop_eggbux_for_guild(self, guild):
-        """Drops eggbux in the chat."""
-        server = BotConfig.read(server_id=guild.id)
-        if server:
-            channel = self.bot.get_channel(server["channel_id"])
-            chance = randint(0, 100)
-            minutesToClaim = 5
-            if chance <= 8:
-                quantEgg = randint(1, 750)
-                embed = discord.Embed(description=f":moneybag: A bag with **{quantEgg}** eggbux has been dropped in the chat!. Type **claim** to get it. Remember you only have **{minutesToClaim} minutes** to claim it.") 
-                await channel.send(embed=embed)
-                try:
-                    Message = await asyncio.wait_for(self.bot.wait_for('message', check=lambda message: message.content == "claim" or message.content == "CLAIM" and message.channel == channel), timeout=60*minutesToClaim)
-                    user_data = User.read(Message.author.id)
-                    if user_data:
-                        User.update_points(Message.author.id, user_data["points"] + quantEgg)
-                        embedClaim = discord.Embed(description=f"{Message.author.display_name} claimed {quantEgg} eggbux")
-                        await channel.send(embed=embedClaim)
-                    else:
-                        User.create(Message.author.id, quantEgg)
-                        embedClaim2 = discord.Embed(description=f"{Message.author.display_name} claimed {quantEgg} eggbux")
-                        await channel.send(embed=embedClaim2)
-                except asyncio.TimeoutError:
-                    embedTimeout = discord.Embed(description=f"The bag with {quantEgg} eggbux has expired.")
-                    await channel.send(embed=embedTimeout)
             
-    async def drop_periodically(self):
-        """Drops eggbux in the chat every 1000 seconds."""
-        while True:
-            await asyncio.sleep(3600 - time.time() % 3600)
-            await self.drop_eggbux()
-
     @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
