@@ -1,7 +1,7 @@
 from discord.ext import commands
 from discord import Intents
 from dotenv import load_dotenv
-#from cogs.botcore import BotCore
+from cogs.botcore import BotCore
 from pathlib import Path
 import logging
 import discord
@@ -12,7 +12,10 @@ logger = logging.getLogger('botcore')
 load_dotenv()   
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-bot = commands.Bot(command_prefix="!", intents=Intents.all(), case_insensitive=True, help_command=None)
+async def get_prefix_for_guild(bot, message):
+    return await BotCore.get_prefix_for_guild(bot, message)
+
+bot = commands.Bot(command_prefix=get_prefix_for_guild, intents=Intents.all(), case_insensitive=True, help_command=None)
 async def load_cogs():
     """Load all cogs in the cogs directory and its subdirectories."""
     cogs_dir = Path('./cogs')

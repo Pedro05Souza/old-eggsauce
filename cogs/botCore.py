@@ -135,7 +135,7 @@ class BotCore(commands.Cog):
                     await send_bot_embed(ctx, description=":no_entry_sign: The prefix can't have more than one character.")
                     return
                 BotConfig.update_prefix(ctx.guild.id, prefix)
-                update_guild_cache(ctx.guild.id, server_data, prefix=prefix)
+                await update_guild_cache(ctx.guild.id, server_data, prefix=prefix)
                 await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
@@ -149,8 +149,8 @@ class BotCore(commands.Cog):
      """Get the prefix for the guild."""
      if message:
         guild_id = message.guild.id
-        if get_guild_cache(guild_id):
-            return get_guild_cache(guild_id)["prefix"]
+        if await get_guild_cache(guild_id):
+            return await get_guild_cache(guild_id)["prefix"]
         else:
             bot_data = BotConfig.read(guild_id)
             if bot_data['prefix'] != "!":
@@ -166,7 +166,7 @@ class BotCore(commands.Cog):
         if BotConfig.read(ctx.guild.id):
             if ctx.author.guild_permissions.administrator:
                 BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
-                update_guild_cache(ctx.guild.id, server_data, channel_id=ctx.channel.id)
+                await update_guild_cache(ctx.guild.id, server_data, channel_id=ctx.channel.id)
                 await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
@@ -222,7 +222,7 @@ class BotCore(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        config_data = get_guild_cache(ctx.guild.id)
+        config_data = await get_guild_cache(ctx.guild.id)
         if config_data and config_data['toggled_modules'] == "N":
             return
         if isinstance(error, commands.CommandError) and not isinstance(error, commands.CommandNotFound):

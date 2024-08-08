@@ -134,12 +134,12 @@ def pricing():
         result = True
         ctx.predicate_result = result
         config_data = None
-        if get_guild_cache(ctx.guild.id):
+        if await get_guild_cache(ctx.guild.id):
             config_data = get_guild_cache(ctx.guild.id)
         else:
             config_data = BotConfig.read(ctx.guild.id)
             if config_data:
-                add_to_guild_cache(ctx.guild.id, config_data)
+                await add_to_guild_cache(ctx.guild.id, config_data)
         if dev_mode:
             if not is_dev(ctx):
                 await send_bot_embed(ctx, description=":warning: The bot is currently in development mode.")
