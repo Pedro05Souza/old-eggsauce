@@ -3,16 +3,18 @@
 
 guild_cache = {}
 
-async def modify_guild_cache(server_id, **kwargs):
+def modify_guild_cache(server_id, server_data, **kwargs):
     allowed_kw = ["prefix", "channel_id", "toggled_modules"]
+    if not guild_cache.get(server_id, None):
+        add_to_guild_cache(server_id, server_data)
     if all(kw in allowed_kw for kw in kwargs.keys()):
         guild_cache[server_id].update(kwargs)
         return True
     raise ValueError("Invalid keyword argument.")
 
-async def add_to_guild_cache(server_id, server_data):
+def add_to_guild_cache(server_id, server_data):
     guild_cache[server_id] = server_data
     return True
 
-async def get_guild_cache(server_id):
+def get_guild_cache(server_id):
     return guild_cache.get(server_id, None)

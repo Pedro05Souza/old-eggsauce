@@ -128,14 +128,14 @@ class BotCore(commands.Cog):
     @commands.command("setPrefix", aliases=["setP"])
     async def set_prefix(self, ctx, prefix: str):
         """Set the prefix for the bot."""
-        server_data = await get_guild_cache(ctx.guild.id) if await get_guild_cache(ctx.guild.id) else BotConfig.read(ctx.guild.id)
+        server_data = BotConfig.read(ctx.guild.id)
         if server_data:
             if ctx.author.guild_permissions.administrator:
                 if len(prefix) > 1:
                     await send_bot_embed(ctx, description=":no_entry_sign: The prefix can't have more than one character.")
                     return
                 BotConfig.update_prefix(ctx.guild.id, prefix)
-                await modify_guild_cache(ctx.guild.id, prefix=prefix)
+                modify_guild_cache(ctx.guild.id, server_data, prefix=prefix)
                 await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
@@ -153,7 +153,7 @@ class BotCore(commands.Cog):
             return get_guild_cache(guild_id)["prefix"]
         else:
             bot_data = BotConfig.read(guild_id)
-            if bot_data:
+            if bot_data['prefix'] != "!":
                 await add_to_guild_cache(guild_id, bot_data)
                 return bot_data["prefix"]
             else:
@@ -162,9 +162,11 @@ class BotCore(commands.Cog):
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx):
         """Set the channel where the bot will listen for commands."""
+        server_data = BotConfig.read(ctx.guild.id)
         if BotConfig.read(ctx.guild.id):
             if ctx.author.guild_permissions.administrator:
                 BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
+                modify_guild_cache(ctx.guild.id, server_data, channel_id=ctx.channel.id)
                 await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
@@ -243,7 +245,7 @@ class BotCore(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        await self.bot.tree.sync() # only sync if code modified
+        #await self.bot.tree.sync() # only sync if code modified
         await self.bot.loop.create_task(self.restart_every_day())
 
 async def setup(bot):

@@ -3,6 +3,7 @@ from db.botConfigDB import BotConfig
 from discord.ext import commands
 from tools.shared import send_bot_embed, make_embed_object, is_dev
 from tools.prices import Prices
+from tools.cache import get_guild_cache, add_to_guild_cache
 import inspect
 import discord
 import logging
@@ -132,7 +133,13 @@ def pricing():
         command = ctx.command.name 
         result = True
         ctx.predicate_result = result
-        config_data = BotConfig.read(ctx.guild.id)
+        config_data = None
+        if get_guild_cache(ctx.guild.id):
+            config_data = get_guild_cache(ctx.guild.id)
+        else:
+            config_data = BotConfig.read(ctx.guild.id)
+            if config_data:
+                add_to_guild_cache(ctx.guild.id, config_data)
         if dev_mode:
             if not is_dev(ctx):
                 await send_bot_embed(ctx, description=":warning: The bot is currently in development mode.")
