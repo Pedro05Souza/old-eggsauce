@@ -1,5 +1,6 @@
 # This file contains the cache for the bot. It is used to store data that is frequently accessed by the bot.
 # The cache is used to reduce the number of database queries and improve the bot's performance.
+# The cache is implemented as an LRU (Least Recently Used) cache, which evicts the least recently used items when the cache is full.
 
 from sys import getsizeof
 from collections import OrderedDict
@@ -30,6 +31,7 @@ class LRUGuildCache():
         if all(kw in allowed_kw for kw in kwargs):
             for key, value in kwargs.items():
                 self.cache[guild_id][key] = value
+            self.cache.move_to_end(guild_id)
             logger.info(f"Updated guild cache with {kwargs}.")
         else:
             raise ValueError("Invalid keyword arguments.")
@@ -58,5 +60,3 @@ def update_guild_cache(guild_id, guild_data, **kwargs):
     else:
         guild_cache.update(guild_id, **kwargs)
         logger.info(f"Updated {guild_id} in guild cache.")
-
-        

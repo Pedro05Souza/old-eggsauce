@@ -204,15 +204,39 @@ class DevCommands(commands.Cog):
      else:
         await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
-    @commands.command(name="reloadCog", aliases=["reload, rc"])
-    async def reload_cog(self, ctx, cog):
-        """Reload a cog."""
+    @commands.command(name="reloadBot")
+    async def reload_cog(self, ctx, folder, cog_name):
+     """Reload a cog."""
+     folders = {"p": "pointscommands", "c": "chickenscommands"}
+     if is_dev(ctx):
+        if folder not in folders:
+            cog_full_name = f"cogs.{cog_name}"
+        else:
+            cog_full_name = f"cogs.pointscommands/{folders[folder]}/{cog_name}"
+        if cog_full_name in self.bot.extensions:
+            try:
+                await self.bot.reload_extension(cog_full_name)
+                await send_bot_embed(ctx, description=f":warning: {cog_name} has been reloaded.")
+            except Exception as e:
+                await send_bot_embed(ctx, description=f":no_entry_sign: Failed to reload {cog_name}. Error: {e}")
+        else:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {cog_name} is not loaded.")
+     else:
+        await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+
+    @commands.command(name="unloadBot")
+    async def unload_cog(self, ctx, cog_name):
+        """Unload a cog."""
         if is_dev(ctx):
-            if cog in self.bot.cogs:
-                await self.bot.reload_extension(f"cogs.pointscommands.{cog}")
-                await send_bot_embed(ctx, description=f":warning: {cog} has been reloaded.")
+            cog_full_name = f"cogs.pointscommands.{cog_name}"
+            if cog_full_name in self.bot.extensions:
+                try:
+                    await self.bot.unload_extension(cog_full_name)
+                    await send_bot_embed(ctx, description=f":warning: {cog_name} has been unloaded.")
+                except Exception as e:
+                    await send_bot_embed(ctx, description=f":no_entry_sign: Failed to unload {cog_name}. Error: {e}")
             else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {cog} is not a valid cog.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {cog_name} is not loaded.")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 

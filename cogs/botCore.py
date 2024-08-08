@@ -222,7 +222,7 @@ class BotCore(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        config_data = BotConfig.read(ctx.guild.id)
+        config_data = get_guild_cache(ctx.guild.id)
         if config_data and config_data['toggled_modules'] == "N":
             return
         if isinstance(error, commands.CommandError) and not isinstance(error, commands.CommandNotFound):
@@ -245,7 +245,7 @@ class BotCore(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        #await self.bot.tree.sync() # only sync if code modified
+        await self.bot.tree.sync() # only sync if code modified
         await self.bot.loop.create_task(self.restart_every_day())
 
 async def setup(bot):

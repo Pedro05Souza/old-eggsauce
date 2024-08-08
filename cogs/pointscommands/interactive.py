@@ -571,10 +571,6 @@ class InteractiveCommands(commands.Cog):
                 highestdayAlive = tribute['days_alive']
                 winner = tribute
         return winner
-    
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.bot.loop.create_task(self.drop_periodically())
 
 async def setup(bot):
     await bot.add_cog(InteractiveCommands(bot))
