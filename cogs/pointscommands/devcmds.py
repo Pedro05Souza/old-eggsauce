@@ -1,13 +1,13 @@
 from discord.ext import commands
-from random import randint
 from db.userDB import User
 from tools.shared import send_bot_embed, is_dev
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.MarketDB import Market
 from tools.chickens.chickenshared import create_chicken
-from tools.chickens.chickeninfo import ChickenRarity, chicken_default_value
+from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import RollLimit
+from tools.cache import get_guild_cache_memory_consumption
 from .. import botcore
 import discord
 import tools
@@ -240,10 +240,13 @@ class DevCommands(commands.Cog):
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
-    @commands.command(name="test")
+    @commands.command(name="cache")
     async def test_command(self, ctx):
         if is_dev(ctx):
-            Farm.reset_mmr()
+            memory = await get_guild_cache_memory_consumption()
+            await send_bot_embed(ctx, description=f"```Guild memory consumption: {memory} bytes```")
+
+            
             
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

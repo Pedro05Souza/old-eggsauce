@@ -154,8 +154,8 @@ class BotCore(commands.Cog):
             return guild_cache["prefix"]
         else:
             bot_data = BotConfig.read(guild_id)
+            await add_to_guild_cache(guild_id, bot_data)
             if bot_data['prefix'] != "!":
-                await add_to_guild_cache(guild_id, bot_data)
                 return bot_data["prefix"]
             else:
                 return "!"

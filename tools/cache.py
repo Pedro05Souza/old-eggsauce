@@ -45,7 +45,7 @@ class LRUGuildCache():
         self.cache.clear()
         logger.info("Cache cleared.")
 
-guild_cache = LRUGuildCache(5000000) # 5MB, can hold up to 1k guilds.
+guild_cache = LRUGuildCache(8388608) # 8MB aprox 7.8k guilds
 
 async def get_guild_cache(guild_id):
     return await guild_cache.get(guild_id)
@@ -60,3 +60,6 @@ async def update_guild_cache(guild_id, guild_data, **kwargs):
     else:
         guild_cache.update(guild_id, **kwargs)
         logger.info(f"Updated {guild_id} in guild cache.")
+
+async def get_guild_cache_memory_consumption():
+    return asizeof.asizeof(guild_cache)

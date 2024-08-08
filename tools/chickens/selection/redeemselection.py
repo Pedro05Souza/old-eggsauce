@@ -36,7 +36,7 @@ class RedeemPlayerMenu(ui.Select):
                 chickens_sucessfully_redeemed.append(chicken)
                 farm_data['chickens'].append(chicken)
         await asyncio.sleep(1)
-        interaction.delete_original_response()
+        await interaction.delete_original_response()
         msg = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have redeemed the chickens: **{', '.join([get_rarity_emoji(chicken['rarity']) + ' ' + chicken['rarity'] + ' ' + chicken['name'] for chicken in chickens_sucessfully_redeemed])}**.")
         await interaction.followup.send(embed=msg)
         
