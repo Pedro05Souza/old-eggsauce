@@ -86,7 +86,6 @@ class BankCommands(commands.Cog):
     @pricing()
     async def upgrade_bank_limit(self, ctx):
         """Upgrades the bank limit."""
-        raise NotImplementedError("This command is not implemented yet.")
         user_data = User.read(ctx.author.id)
         bank_data = Bank.read(ctx.author.id)
         if not bank_data:

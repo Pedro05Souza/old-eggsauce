@@ -144,13 +144,14 @@ class BotCore(commands.Cog):
             BotConfig.create(ctx.guild.id, prefix=prefix)
             await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
     
-    @classmethod
-    async def get_prefix_for_guild(cls, bot, message):
+    @staticmethod
+    async def get_prefix_for_guild(bot, message):
      """Get the prefix for the guild."""
      if message:
         guild_id = message.guild.id
         if await get_guild_cache(guild_id):
-            return await get_guild_cache(guild_id)["prefix"]
+            guild_cache = await get_guild_cache(guild_id)
+            return guild_cache["prefix"]
         else:
             bot_data = BotConfig.read(guild_id)
             if bot_data['prefix'] != "!":

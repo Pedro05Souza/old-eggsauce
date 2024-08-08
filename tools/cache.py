@@ -2,11 +2,12 @@
 # The cache is used to reduce the number of database queries and improve the bot's performance.
 # The cache is implemented as an LRU (Least Recently Used) cache, which evicts the least recently used items when the cache is full.
 
-from sys import getsizeof
+from pympler import asizeof
 from collections import OrderedDict
 from dataclasses import dataclass, field
 import logging
 logger = logging.getLogger('botcore')
+
 @dataclass
 class LRUGuildCache():
     memory_limit: int
@@ -22,7 +23,7 @@ class LRUGuildCache():
         if key in self.cache:
             self.cache.move_to_end(key)
         self.cache[key] = value
-        if getsizeof(self.cache) > self.memory_limit:
+        if asizeof.asizeof(self.cache) > self.memory_limit:
             self._evict_if_needed()
 
     async def update(self, guild_id, **kwargs):
@@ -36,7 +37,7 @@ class LRUGuildCache():
             raise ValueError("Invalid keyword arguments.")
 
     async def _evict_if_needed(self):
-        while getsizeof(self.cache) > self.memory_limit:
+        while asizeof.asizeof(self.cache) > self.memory_limit:
             evicted_key, _ = self.cache.popitem(last=False)
             logger.info(f"Evicting {evicted_key} from guild cache to free up memory.")
     
@@ -44,7 +45,7 @@ class LRUGuildCache():
         self.cache.clear()
         logger.info("Cache cleared.")
 
-guild_cache = LRUGuildCache(1000000) # can hold up to 1MB of data, equivalent to 62.5k guilds
+guild_cache = LRUGuildCache(5000000) # 5MB, can hold up to 1k guilds.
 
 async def get_guild_cache(guild_id):
     return await guild_cache.get(guild_id)

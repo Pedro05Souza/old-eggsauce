@@ -135,7 +135,7 @@ def pricing():
         ctx.predicate_result = result
         config_data = None
         if await get_guild_cache(ctx.guild.id):
-            config_data = get_guild_cache(ctx.guild.id)
+            config_data = await get_guild_cache(ctx.guild.id)
         else:
             config_data = BotConfig.read(ctx.guild.id)
             if config_data:
