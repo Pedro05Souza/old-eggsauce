@@ -6,7 +6,7 @@ from db.botConfigDB import BotConfig
 from tools.pointscore import refund
 from tools.prices import Prices
 from tools.helpSelect import SelectModule, ShowPointsModules
-from tools.cache import get_guild_cache, add_to_guild_cache, modify_guild_cache
+from tools.cache import get_guild_cache, add_to_guild_cache, update_guild_cache
 from colorlog import ColoredFormatter
 from time import time
 import logging
@@ -135,7 +135,7 @@ class BotCore(commands.Cog):
                     await send_bot_embed(ctx, description=":no_entry_sign: The prefix can't have more than one character.")
                     return
                 BotConfig.update_prefix(ctx.guild.id, prefix)
-                modify_guild_cache(ctx.guild.id, server_data, prefix=prefix)
+                update_guild_cache(ctx.guild.id, server_data, prefix=prefix)
                 await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
@@ -166,7 +166,7 @@ class BotCore(commands.Cog):
         if BotConfig.read(ctx.guild.id):
             if ctx.author.guild_permissions.administrator:
                 BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
-                modify_guild_cache(ctx.guild.id, server_data, channel_id=ctx.channel.id)
+                update_guild_cache(ctx.guild.id, server_data, channel_id=ctx.channel.id)
                 await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
