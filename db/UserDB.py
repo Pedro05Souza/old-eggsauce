@@ -1,5 +1,7 @@
 from db.dbConfig import mongo_client
 from time import time
+from tools.cache.init import cache_initiator
+from tools.shared import update_scheduler
 import logging
 users_collection = mongo_client.db.user
 logger = logging.getLogger('botcore')
@@ -24,6 +26,7 @@ class User:
                     "roles" : "",
                     "salary_time": time()
                 }
+                update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, user_data=user))
                 users_collection.insert_one(user)
                 logger.info(f"User {user_id} has been created successfully.")
         except Exception as e:
@@ -36,6 +39,7 @@ class User:
         try:
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
+                update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
                 users_collection.delete_one({"user_id" : user_id})
             else:
                 logger.warning("User not found.")
@@ -49,6 +53,9 @@ class User:
         try:
             user_data = users_collection.find_one({"user_id" : user_id})
             if user_data:
+                user_data['points'] = points
+                user_data['roles'] = roles
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
                 if not isinstance(points, int): 
                     points = 0
                 users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})
@@ -62,6 +69,8 @@ class User:
         try:
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
+                user_data['points'] = points
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
                 if not isinstance(points, int):
                     points = 0
                 users_collection.update_one({"user_id": user_id}, {"$set": {"points": points}})
@@ -75,6 +84,8 @@ class User:
         try:
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
+                user_data['roles'] = roles
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
                 users_collection.update_one({"user_id": user_id}, {"$set": {"roles": roles}})
         except Exception as e:
             logger.error("Error encountered while trying to update user's roles.", e)
@@ -86,6 +97,8 @@ class User:
         try:
             user_data = users_collection.find_one({"user_id": user_id})
             if user_data:
+                user_data['salary_time'] = time()
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
                 users_collection.update_one({"user_id": user_id}, {"$set": {"salary_time": time()}})
         except Exception as e:
             logger.error("Error encountered while trying to update user's salary time.", e)

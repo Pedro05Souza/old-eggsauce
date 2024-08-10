@@ -1,5 +1,5 @@
 from discord.ext import commands
-from tools.shared import send_bot_embed, regular_command_cooldown, confirmation_embed
+from tools.shared import send_bot_embed, regular_command_cooldown, confirmation_embed, user_cache_retriever
 from db.bankDB import Bank
 from db.userDB import User
 from tools.pointscore import pricing
@@ -17,7 +17,8 @@ class BankCommands(commands.Cog):
     @pricing()
     async def deposit(self, ctx, amount):
         """Deposits points in the bank"""
-        user_data = User.read(ctx.author.id)
+        user_data = await user_cache_retriever(ctx.author.id)
+        user_data = user_data["user_data"]
         if amount.upper() == "ALL":
             amount = user_data["points"]
         else:
@@ -57,7 +58,8 @@ class BankCommands(commands.Cog):
     @pricing()
     async def withdraw(self, ctx, amount):
         """Withdraws points from the bank"""
-        bank_data = Bank.read(ctx.author.id)
+        bank_data = await user_cache_retriever(ctx.author.id)
+        bank_data = bank_data["bank_data"]
         if amount.upper() == "ALL":
             amount = bank_data["bank"]
         else:
@@ -86,8 +88,9 @@ class BankCommands(commands.Cog):
     @pricing()
     async def upgrade_bank_limit(self, ctx):
         """Upgrades the bank limit."""
-        user_data = User.read(ctx.author.id)
-        bank_data = Bank.read(ctx.author.id)
+        data = await user_cache_retriever(ctx.author.id)
+        user_data = data["user_data"]
+        bank_data = data["bank_data"]
         if not bank_data:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
             await self.register_bank(ctx.author)

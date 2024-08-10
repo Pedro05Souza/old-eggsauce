@@ -7,7 +7,7 @@ from tools.chickens.chickenhandlers import RollLimit
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
 from tools.chickens.chickeninfo import rollRates
 from tools.pointscore import pricing
-from tools.shared import make_embed_object, regular_command_cooldown, spam_command_cooldown, send_bot_embed
+from tools.shared import make_embed_object, regular_command_cooldown, spam_command_cooldown, send_bot_embed, user_cache_retriever
 import discord
 import asyncio
 
@@ -21,7 +21,9 @@ class ChickenCore(commands.Cog):
     @pricing()
     async def create_farm(self, ctx) -> None:
         """Farm some eggs"""
-        if Farm.read(ctx.author.id):
+        farm_data = await user_cache_retriever(ctx.author.id)
+        farm_data = farm_data["farm_data"]
+        if farm_data:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You already have a farm.")
         else:
             Farm.create(ctx.author.id, ctx)
@@ -51,7 +53,8 @@ class ChickenCore(commands.Cog):
     @pricing()
     async def eggpack(self, ctx) -> None:
         """Buy an egg pack"""
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = await user_cache_retriever(ctx.author.id)
+        farm_data = farm_data["farm_data"]
         if farm_data:
             await self.roll(ctx, 8, 'eggpack')
         else:
@@ -59,7 +62,8 @@ class ChickenCore(commands.Cog):
             
     async def roll(self, ctx, chickens_to_generate, action) -> None:
         """Market to buy chickens"""
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = await user_cache_retriever(ctx.author.id)
+        farm_data = farm_data["farm_data"]
         if farm_data:
             default_rolls = 10
             if action == "market":

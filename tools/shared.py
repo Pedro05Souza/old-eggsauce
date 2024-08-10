@@ -1,7 +1,8 @@
-import asyncio
 from dotenv import load_dotenv
+from tools.cache.init import cache_initiator
 import os
 import discord
+import asyncio
 
 spam_command_cooldown = .8
 regular_command_cooldown = 3.5
@@ -66,3 +67,37 @@ async def confirmation_embed(ctx, user: discord.Member, description):
             return False
      except asyncio.TimeoutError:
         return False
+
+async def user_cache_retriever(user_id):
+    """Retrieve the user cache"""
+    from db.userDB import User
+    from db.bankDB import Bank
+    from db.farmDB import Farm
+    user_cache = await cache_initiator.get_user_cache(user_id)
+    
+    if not user_cache:
+        user_data = User.read(user_id)
+        farm_data = Farm.read(user_id)
+        bank_data = Bank.read(user_id)
+        await cache_initiator.add_to_user_cache(user_id, user_data=user_data, farm_data=farm_data, bank_data=bank_data)
+        user_cache = await cache_initiator.get_user_cache(user_id)
+        return user_cache
+    return user_cache
+
+async def guild_cache_retriever(guild_id):
+    """Retrieve the guild cache"""
+    from db.botConfigDB import BotConfig
+    guild_cache = await cache_initiator.get_guild_cache(guild_id)
+    if not guild_cache:
+        guild_data = BotConfig.read(guild_id)
+        await cache_initiator.add_to_guild_cache(guild_id, prefix=guild_data['prefix'], toggled_modules=guild_data['toggled_modules'], channel_id=guild_data['channel_id'])
+        guild_cache = await cache_initiator.get_guild_cache(guild_id)
+        return guild_cache
+    return guild_cache
+
+def update_scheduler(func):
+    """Update the scheduler"""
+    if asyncio.get_event_loop().is_running():
+        asyncio.ensure_future(func())
+    else:
+        asyncio.run(func())

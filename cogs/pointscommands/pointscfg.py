@@ -1,6 +1,6 @@
 from discord.ext import commands
 from db.botConfigDB import BotConfig
-from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, get_user_title
+from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, get_user_title, user_cache_retriever, guild_cache_retriever
 from tools.tips import tips
 from db.bankDB import Bank
 from db.userDB import User
@@ -29,7 +29,8 @@ class PointsConfig(commands.Cog):
             "H": "Hostile",
             "N": "None"
         }
-        current_module = BotConfig.read(ctx.guild.id)['toggled_modules']
+        current_module = await guild_cache_retriever(ctx.guild.id)
+        current_module = current_module['toggled_modules']
         await send_bot_embed(ctx, description=f":warning: Points commands are currently set to: **{modules[current_module]}**")
 
     async def update_points(self, user: discord.Member):
@@ -205,8 +206,10 @@ class PointsConfig(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, user: discord.Member, before, after):
         """Listens to the voice state update event."""
-        user_data = User.read(user.id)
-        if not BotConfig.read(user.guild.id)['toggled_modules'] == "N":
+        user_data = await user_cache_retriever(user.id)
+        user_data = user_data["user_data"]
+        guild_data = await guild_cache_retriever(user.guild.id)
+        if not guild_data['toggled_modules'] == "N":
             if user.bot:
                 return
             if user_data and before.channel is None and after.channel is not None:

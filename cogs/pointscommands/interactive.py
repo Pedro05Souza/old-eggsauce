@@ -1,7 +1,6 @@
 from discord.ext import commands
-from db.botConfigDB import BotConfig
 from tools.pointscore import pricing, refund
-from tools.shared import send_bot_embed, regular_command_cooldown, spam_command_cooldown, tax
+from tools.shared import send_bot_embed, regular_command_cooldown, spam_command_cooldown, tax, user_cache_retriever
 from db.userDB import User
 from collections import Counter
 from random import randint, sample, choice
@@ -22,8 +21,10 @@ class InteractiveCommands(commands.Cog):
     @pricing()
     async def donate_points(self, ctx, user: discord.Member, amount: int):
         """Donates points to another user."""
-        user_data = User.read(ctx.author.id)
-        target_data = User.read(user.id)
+        user_data = await user_cache_retriever(ctx.author.id)
+        user_data = user_data["user_data"]
+        target_data = await user_cache_retriever(user.id)
+        target_data = target_data["user_data"]
         if user_data:
             if ctx.author.id == user.id:
                 await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't donate to yourself.")
@@ -47,7 +48,8 @@ class InteractiveCommands(commands.Cog):
     async def cassino(self, ctx, amount, cor: str):
         """Bet on a color in the roulette."""
         if amount.upper() == "ALL":
-            amount = User.read(ctx.author.id)["points"]
+            amount = await user_cache_retriever(ctx.author.id)
+            amount = amount["user_data"]["points"]
         else:
             amount = int(amount)
         cor = cor.upper()
@@ -56,7 +58,8 @@ class InteractiveCommands(commands.Cog):
         vermelhos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
         roleta = {i : "RED" if i in vermelhos else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
         if cor in coresPossiveis:
-            user_data = User.read(ctx.author.id)
+            user_data = await user_cache_retriever(ctx.author.id)
+            user_data = user_data["user_data"]
             if user_data["points"] >= amount and amount >= 50:
                 cassino = randint(0, 36)
                 corSorteada = roleta[cassino]
@@ -103,20 +106,22 @@ class InteractiveCommands(commands.Cog):
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from a bot.")
             await refund(ctx.author, ctx)
             return
-        user_data = User.read(ctx.author.id)
-        target_data = User.read(user.id)
+        user_data = await user_cache_retriever(ctx.author.id)
+        user_data = user_data["user_data"]
+        target_data = await user_cache_retriever(user.id)
+        target_data = target_data["user_data"]
         if user_data:
             if ctx.author.id == user.id:
                 await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from yourself.")
                 await refund(ctx.author, ctx)
                 return
-            user_points = User.read(user.id)["points"]
-            if user_points <= 150:
+            target_points = target_data["points"]
+            if target_points <= 150:
                 await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from a user with less than 150 eggbux.")
                 await refund(ctx.author, ctx)
                 return
             elif chance >= 10:
-                random_integer = randint(1, int(user_points//2))
+                random_integer = randint(1, int(target_points//2))
                 User.update_points(ctx.author.id, user_data['points'] + random_integer)
                 User.update_points(user.id, target_data['points'] - random_integer)
                 await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} stole {random_integer} eggbux from {user.display_name}")
@@ -154,6 +159,7 @@ class InteractiveCommands(commands.Cog):
         day = 1
         tributes = []
         min_tributes = 4
+        max_tributes = 25
         end_time = time.time() + wait_time
         messageHg = await send_bot_embed(ctx, description=f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
         for member in ctx.guild.members:
@@ -179,6 +185,12 @@ class InteractiveCommands(commands.Cog):
                 break
         if len(tributes) < min_tributes:
             await send_bot_embed(ctx, description=f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is **{min_tributes}**.")
+            hungergames_status.pop(guild_id)
+            for tribute in tributes:
+                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + default_game_value)
+            return
+        elif len(tributes) > max_tributes:
+            await send_bot_embed(ctx, description=f":no_entry_sign: The maximum number of tributes is **{max_tributes}**. The game has been cancelled.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
                     User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + default_game_value)

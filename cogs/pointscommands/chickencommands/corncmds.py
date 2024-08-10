@@ -2,7 +2,7 @@ from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
 from tools.chickens.chickeninfo import ChickenFood, max_corn_limit, max_plot_limit
-from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, confirmation_embed
+from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, confirmation_embed, user_cache_retriever
 from tools.pointscore import pricing
 from tools.chickens.chickenshared import update_player_corn, calculate_corn, update_user_farm
 from better_profanity import profanity
@@ -19,7 +19,9 @@ class CornCommands(commands.Cog):
         """Displays the user's corn field."""
         if user is None:
             user = ctx.author
-        if Farm.read(user.id):
+        farm_data = await user_cache_retriever(user.id)
+        farm_data = farm_data["farm_data"]
+        if farm_data:
             await ctx.send(embed=await self.show_plr_food_farm(ctx, user))
     
     @commands.hybrid_command(name="renamecornfield", aliases=["rcf"], usage="renameCornfield <nickname>", description="Rename the cornfield.")
@@ -137,8 +139,9 @@ class CornCommands(commands.Cog):
     @pricing()
     async def sell_corn(self, ctx, quantity: int):
         """Sell corn"""
-        farm_data = await update_player_corn(Farm.read(ctx.author.id), ctx.author)
-        user_data = User.read(ctx.author.id)
+        data = await user_cache_retriever(ctx.author.id)
+        farm_data = await update_player_corn(data['farm_data'], ctx.author)
+        user_data = data["user_data"]
         if farm_data:
             if quantity > farm_data['corn']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough corn to sell.")
@@ -157,7 +160,8 @@ class CornCommands(commands.Cog):
     @pricing()
     async def feed_all_chickens(self, ctx):
         """Feed all the chickens"""
-        farm_data = await update_player_corn(Farm.read(ctx.author.id), ctx.author)
+        data = await user_cache_retriever(ctx.author.id)
+        farm_data = await update_player_corn(data['farm_data'], ctx.author)
         farm_data = await update_user_farm(ctx.author, farm_data)
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0

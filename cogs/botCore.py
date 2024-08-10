@@ -1,12 +1,12 @@
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from tools.shared import send_bot_embed, make_embed_object, is_dev, make_embed_object, dev_list
+from tools.shared import send_bot_embed, make_embed_object, is_dev, make_embed_object, dev_list, guild_cache_retriever
 from db.botConfigDB import BotConfig
+from tools.cache.init import cache_initiator
 from tools.pointscore import refund
 from tools.prices import Prices
 from tools.helpSelect import SelectModule, ShowPointsModules
-from tools.cache import get_guild_cache, add_to_guild_cache, update_guild_cache
 from colorlog import ColoredFormatter
 from time import time
 import logging
@@ -113,7 +113,8 @@ class BotCore(commands.Cog):
     @commands.command("setModule", aliases=["setM"])
     async def set_module(self, ctx):
         """Set the module where the bot will pick commands from."""
-        if BotConfig.read(ctx.guild.id):
+        guild_data = await guild_cache_retriever(ctx.guild.id)
+        if guild_data:
             if ctx.author.id == ctx.guild.owner_id:
                 embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. :star: **Friendly**\n3. :gun: **Hostiles**\n4. :x: **None**\n\n**Important note**: \n**Friendly module:** contains Chicken commands, bank commands, interactive commands, AI commands and friendly commands and activates users gaining one currency every 10 seconds during call-time.\n**Hostile module:** contains hostile commands, bank commands and activates users gaining one currency every 10 seconds during call-time.\n\nSelect one of the modules to enable/disable it.")
                 view = ShowPointsModules(ctx.author.id)
@@ -128,14 +129,13 @@ class BotCore(commands.Cog):
     @commands.command("setPrefix", aliases=["setP"])
     async def set_prefix(self, ctx, prefix: str):
         """Set the prefix for the bot."""
-        server_data = BotConfig.read(ctx.guild.id)
-        if server_data:
+        guild_data = await guild_cache_retriever(ctx.guild.id)
+        if guild_data:
             if ctx.author.guild_permissions.administrator:
                 if len(prefix) > 1:
                     await send_bot_embed(ctx, description=":no_entry_sign: The prefix can't have more than one character.")
                     return
                 BotConfig.update_prefix(ctx.guild.id, prefix)
-                await update_guild_cache(ctx.guild.id, server_data, prefix=prefix)
                 await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
@@ -149,25 +149,17 @@ class BotCore(commands.Cog):
      """Get the prefix for the guild."""
      if message:
         guild_id = message.guild.id
-        if await get_guild_cache(guild_id):
-            guild_cache = await get_guild_cache(guild_id)
-            return guild_cache["prefix"]
-        else:
-            bot_data = BotConfig.read(guild_id)
-            await add_to_guild_cache(guild_id, bot_data)
-            if bot_data['prefix'] != "!":
-                return bot_data["prefix"]
-            else:
-                return "!"
+        guild_data = await guild_cache_retriever(guild_id)
+        if guild_data:
+            return guild_data['prefix']
             
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx):
         """Set the channel where the bot will listen for commands."""
-        server_data = BotConfig.read(ctx.guild.id)
-        if BotConfig.read(ctx.guild.id):
+        guild_data = await guild_cache_retriever(ctx.guild.id)
+        if guild_data:
             if ctx.author.guild_permissions.administrator:
                 BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
-                await update_guild_cache(ctx.guild.id, server_data, channel_id=ctx.channel.id)
                 await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
             else:
                 embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
@@ -223,7 +215,7 @@ class BotCore(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        config_data = await get_guild_cache(ctx.guild.id)
+        config_data = await guild_cache_retriever(ctx.guild.id)
         if config_data and config_data['toggled_modules'] == "N":
             return
         if isinstance(error, commands.CommandError) and not isinstance(error, commands.CommandNotFound):
@@ -247,7 +239,10 @@ class BotCore(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         await self.bot.tree.sync() # only sync if code modified
-        await self.bot.loop.create_task(self.restart_every_day())
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            await cache_initiator.start_cache_clearing_for_users()
+            await self.restart_every_day()
 
 async def setup(bot):
     await bot.add_cog(BotCore(bot))

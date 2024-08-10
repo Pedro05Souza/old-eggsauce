@@ -1,13 +1,13 @@
 from discord.ext import commands
 from db.userDB import User
-from tools.shared import send_bot_embed, is_dev
+from tools.shared import send_bot_embed, is_dev, user_cache_retriever
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.MarketDB import Market
 from tools.chickens.chickenshared import create_chicken
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import RollLimit
-from tools.cache import get_guild_cache_memory_consumption
+from tools.cache.init import cache_initiator
 from .. import botcore
 import discord
 import tools
@@ -241,12 +241,14 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command(name="cache")
-    async def test_command(self, ctx):
+    async def cache_memory_usage(self, ctx):
         if is_dev(ctx):
-            memory = await get_guild_cache_memory_consumption()
-            await send_bot_embed(ctx, description=f"```Guild memory consumption: {memory} bytes```")
+            user, guild = await cache_initiator.get_memory_usage()
+            await send_bot_embed(ctx, title="Cache memory usage:", description=f"User cache: {user} bytes\nGuild cache: {guild} bytes")
 
-            
-            
+    @commands.command(name="test")
+    async def aaa(self, ctx):
+        await user_cache_retriever(ctx.author.id)
+
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

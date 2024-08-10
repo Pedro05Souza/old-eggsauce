@@ -1,9 +1,7 @@
 from db.userDB import User
-from db.botConfigDB import BotConfig
 from discord.ext import commands
-from tools.shared import send_bot_embed, make_embed_object, is_dev
+from tools.shared import send_bot_embed, make_embed_object, is_dev, user_cache_retriever, guild_cache_retriever
 from tools.prices import Prices
-from tools.cache import get_guild_cache, add_to_guild_cache
 import inspect
 import discord
 import logging
@@ -133,13 +131,7 @@ def pricing():
         command = ctx.command.name 
         result = True
         ctx.predicate_result = result
-        config_data = None
-        if await get_guild_cache(ctx.guild.id):
-            config_data = await get_guild_cache(ctx.guild.id)
-        else:
-            config_data = BotConfig.read(ctx.guild.id)
-            if config_data:
-                await add_to_guild_cache(ctx.guild.id, config_data)
+        config_data = await guild_cache_retriever(ctx.guild.id)
         if dev_mode:
             if not is_dev(ctx):
                 await send_bot_embed(ctx, description=":warning: The bot is currently in development mode.")
@@ -151,7 +143,8 @@ def pricing():
             result = False
             return result    
         if command in Prices.__members__:
-            user_data = User.read(ctx.author.id)
+            user_data = await user_cache_retriever(ctx.author.id)
+            user_data = user_data["user_data"]
             if not user_data:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
                 result = False

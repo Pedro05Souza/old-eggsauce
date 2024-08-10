@@ -1,4 +1,6 @@
 from db.dbConfig import mongo_client
+from tools.shared import update_scheduler
+from tools.cache.init import cache_initiator
 import logging
 config_collection = mongo_client.db.botcfg
 logger = logging.getLogger('botcore')
@@ -21,6 +23,7 @@ class BotConfig:
                     "channel_id": channel_id,
                     "prefix": prefix,
                 }
+                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id))
                 config_collection.insert_one(toggle)
                 logger.info("Server created successfully.")
         except Exception as e:
@@ -41,6 +44,7 @@ class BotConfig:
                     "toggle_modules": toggled_modules,
                 }
                 config_collection.insert_one(toggle)
+                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, toggled_modules=toggled_modules))
                 logger.info("Toggle created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a toggle.", e)
@@ -60,6 +64,7 @@ class BotConfig:
                     "channel_id": channel_id,
                 }
                 config_collection.insert_one(toggle)
+                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, channel_id=channel_id))
                 logger.info("Channel created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a channel.", e)
@@ -78,6 +83,7 @@ class BotConfig:
                     "prefix": prefix,
                 }
                 config_collection.insert_one(prefix)
+                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server, prefix=prefix))
                 logger.info("Prefix created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a prefix.", e)
@@ -90,6 +96,7 @@ class BotConfig:
             prefix_data = config_collection.find_one({"server_id": server_id})
             if prefix_data:
                 config_collection.update_one({"server_id": server_id}, {"$set": {"prefix": prefix}})
+                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, prefix=prefix))
                 logger.info("Prefix updated successfully.")
             else:
                 logger.warning("Prefix not found.")
@@ -103,6 +110,7 @@ class BotConfig:
             toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
                 config_collection.update_one({"server_id": server_id}, {"$set": {"toggled_modules": toggled_modules}})
+                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, toggled_modules=toggled_modules))
                 logger.info("Toggle updated successfully.")
             else:
                 logger.warning("Toggle not found.")
@@ -116,6 +124,7 @@ class BotConfig:
             toggle_data = config_collection.find_one({"server_id" : server_id})
             if toggle_data:
                 config_collection.update_one({"server_id": toggle_data["server_id"]}, {"$set": {"channel_id": channel_id}})
+                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, channel_id=channel_id))
                 logger.info("Channel updated successfully.")
             else:
                 logger.warning("Channel not found.")
@@ -129,6 +138,7 @@ class BotConfig:
             config_data = config_collection.find_one({"server_id": server_id})
             if config_data:
                 config_collection.delete_one({"server_id" : server_id})
+                update_scheduler(lambda: cache_initiator.delete_from_user_cache(server_id))
                 logger.info("Server deleted successfully.")
             else:
                 logger.warning("Server not found.")

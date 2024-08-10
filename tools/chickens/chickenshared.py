@@ -5,6 +5,7 @@ from db.farmDB import Farm
 from db.userDB import User
 from db.MarketDB import Market
 from tools.chickens.chickenhandlers import EventData
+from tools.shared import user_cache_retriever
 from tools.chickens.chickeninfo import *
 from tools.shared import send_bot_embed, make_embed_object
 from tools.tips import tips
@@ -56,7 +57,8 @@ def get_rarity_emoji(rarity):
 
 async def get_usr_farm(ctx, user: discord.Member):
         """Get the user's farm"""
-        farm_data = await update_user_farm(user, Farm.read(user.id))
+        data = await user_cache_retriever(user.id)
+        farm_data = await update_user_farm(user, data['farm_data'])
         if farm_data:
             farm_data = await get_player_chicken(ctx, user, farm_data)
             await update_farmer(user, farm_data)
@@ -206,7 +208,8 @@ async def update_user_farm(user, farm_data):
     last_drop_time = time() - farm_data['last_chicken_drop']
     updated_farm_data = farm_data
     hours_passed_since_last_egg_drop = min(last_drop_time // 7200, 24)
-    user_data = User.read(user.id)
+    user_data = await user_cache_retriever(user.id)
+    user_data = user_data['user_data']
     taxes = 0
     for _ in range(int(hours_passed_since_last_egg_drop)):
         updated_farm_data = await drop_egg_for_player(farm_data, user_data)
@@ -221,7 +224,8 @@ async def update_user_farm(user, farm_data):
 async def update_farmer(user, farm_data):
     last_drop_time = time() - farm_data['last_farmer_drop']
     hours_passed_since_feed = 0
-    bank_data = Bank.read(user.id)
+    bank_data = await user_cache_retriever(user.id)
+    bank_data = bank_data['bank_data']
     bank_amount = bank_data['bank']
     if farm_data['farmer'] == "Sustainable Farmer":
         hours_passed_since_feed = min(last_drop_time // load_farmer_upgrades('Sustainable Farmer')[0], 2)

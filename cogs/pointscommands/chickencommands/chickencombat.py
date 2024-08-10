@@ -1,7 +1,7 @@
 from discord.ext import commands
 from dataclasses import dataclass
 from tools.pointscore import pricing
-from tools.shared import send_bot_embed, make_embed_object, queue_command_cooldown, confirmation_embed
+from tools.shared import send_bot_embed, make_embed_object, queue_command_cooldown, confirmation_embed, user_cache_retriever
 from tools.chickens.combatbot import BotMatchMaking, bot_maker
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit, max_bench
@@ -9,7 +9,7 @@ from tools.chickens.chickeninfo import rarities_weight, upkeep_weight, score_det
 from db.farmDB import Farm
 from db.userDB import User
 from tools.tips import tips
-from random import sample, random, randint
+from random import random, randint
 import asyncio
 import discord
 
@@ -34,7 +34,8 @@ class ChickenCombat(commands.Cog):
     @pricing()
     async def queue(self, ctx):
         """Match making for chicken combat."""
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = await user_cache_retriever(ctx.author.id)
+        farm_data = farm_data["farm_data"]
         if farm_data:
             if await verify_events(ctx, ctx.author):
                 return
@@ -391,8 +392,10 @@ class ChickenCombat(commands.Cog):
         """Determines the rewards for the rank."""
         current_rank = await rank_determiner(mmr)
         highest_rank = await rank_determiner(highest_mmr)
-        farm_data = Farm.read(winner.member.id)
-        user_data = User.read(winner.member.id)
+        farm_data = await user_cache_retriever(winner.member.id)
+        farm_data = farm_data["farm_data"]
+        user_data = await user_cache_retriever(winner.member.id)
+        user_data = user_data["user_data"]
         if chicken_ranking[current_rank] > chicken_ranking[highest_rank]:
             chicken_rewarded, points_gained = await self.rewards_per_rank(chicken_ranking[current_rank])
             chicken_rewarded = await create_chicken(chicken_rewarded, "rewards")
@@ -433,8 +436,10 @@ class ChickenCombat(commands.Cog):
         if user.id == ctx.author.id:
             await send_bot_embed(ctx, description=":no_entry_sign: You can't combat yourself.")
             return
-        farm_data = Farm.read(ctx.author.id)
-        user_data = Farm.read(user.id)
+        farm_data = await user_cache_retriever(ctx.author.id)
+        farm_data = farm_data["farm_data"]
+        user_data = await user_cache_retriever(user.id)
+        user_data = user_data["farm_data"]
         if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
             return
         if farm_data and user_data:

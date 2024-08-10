@@ -1,5 +1,7 @@
 from db.dbConfig import mongo_client
 from time import time
+from tools.cache.init import cache_initiator
+from tools.shared import update_scheduler
 import logging
 farm_collection = mongo_client.db.farm
 logger = logging.getLogger('botcore')
@@ -35,6 +37,7 @@ class Farm:
                     "losses": 0,
                     "redeemables": []
                 }
+                update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, farm_data=farm))
                 farm_collection.insert_one(farm)
                 logger.info(f"Farm for {user_id} has been created successfully.")
         except Exception as e:
@@ -47,6 +50,7 @@ class Farm:
         try:
             farm_data = farm_collection.find_one({"user_id": user_id})
             if farm_data:
+                update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
                 farm_collection.delete_one({"user_id": user_id})
                 logger.info("Farm has been deleted successfully.")
             else:
@@ -65,6 +69,8 @@ class Farm:
                     for key, value in kwargs.items():
                         if key in possible_keywords:
                             farm_collection.update_one({"user_id": user_id}, {"$set" : {key: value}})
+                            farm_data[key] = value
+                    update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
                 else:
                     logger.warning("Keyword arguments aren't being passed.")
         except Exception as e:
@@ -76,6 +82,8 @@ class Farm:
         try:
             farm_data = farm_collection.find_one({"user_id": user_id})
             if farm_data:
+                farm_data['last_chicken_drop'] = time()
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"last_chicken_drop": time()}})
         except Exception as e:
             logger.error("Error encountered while trying to update farm's last drop.", e)
@@ -87,6 +95,8 @@ class Farm:
         try:
             farm_data = farm_collection.find_one({"user_id": user_id})
             if farm_data:
+                farm_data['last_farmer_drop'] = time()
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}})
         except Exception as e:
             logger.error("Error encountered while trying to update farm's last drop.", e)
@@ -98,6 +108,8 @@ class Farm:
         try:
             farm_data = farm_collection.find_one({"user_id": user_id})
             if farm_data:
+                farm_data['last_corn_drop'] = time()
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
                 farm_collection.update_one({"user_id": user_id}, {"$set": {"last_corn_drop": time()}})
         except Exception as e:
             logger.error("Error encountered while trying to update farm's last drop.", e)

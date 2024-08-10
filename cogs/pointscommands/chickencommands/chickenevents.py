@@ -6,7 +6,7 @@ from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import *
 from tools.pointscore import pricing
-from tools.shared import send_bot_embed, confirmation_embed, regular_command_cooldown
+from tools.shared import send_bot_embed, confirmation_embed, regular_command_cooldown, user_cache_retriever
 import asyncio
 import logging
 import discord
@@ -24,7 +24,8 @@ class ChickenEvents(commands.Cog):
         """Deletes a chicken from the farm"""
         if await verify_events(ctx, ctx.author):
             return
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = await user_cache_retriever(ctx.author.id)
+        farm_data = farm_data["farm_data"]
         if farm_data:
             if not farm_data['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")

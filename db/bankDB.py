@@ -1,4 +1,7 @@
 from db.dbConfig import mongo_client
+from tools.cache.init import cache_initiator
+from tools.shared import update_scheduler
+import asyncio
 import logging
 bank_collection = mongo_client.db.bank
 logger = logging.getLogger('botcore')
@@ -21,6 +24,7 @@ class Bank:
                     "upgrades": 1,
                     #"credit_score": 0
                 }
+                update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, bank_data=user))
                 bank_collection.insert_one(user)
                 logger.info(f"User {user_id} has been created successfully.")
         except Exception as e:
@@ -33,6 +37,7 @@ class Bank:
         try:
             user_data = bank_collection.find_one({"user_id": user_id})
             if user_data:
+                asyncio.run(cache_initiator.delete_user_cache(user_id))
                 bank_collection.delete_one({"user_id": user_id})
                 logger.info("User has been deleted successfully.")
             else:
@@ -40,14 +45,15 @@ class Bank:
         except Exception as e:
             logger.error("Error encountered while deleting the user.", e)
             return None
-
-
+        
     @staticmethod
     def update(user_id: int, points: int):
         """Update a user in the database."""
         try:
             user_data = bank_collection.find_one({"user_id": user_id})
             if user_data:
+                user_data['bank'] = points
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, bank_data=user_data))
                 bank_collection.update_one({"user_id": user_id}, {"$set": {"bank": points}})
                 logger.info("User has been updated successfully.")
             else:
@@ -62,6 +68,8 @@ class Bank:
         try:
             user_data = bank_collection.find_one({"user_id": user_id})
             if user_data:
+                user_data['upgrades'] = upgrades
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, bank_data=user_data))
                 bank_collection.update_one({"user_id": user_id}, {"$set": {"upgrades": upgrades}})
                 logger.info("User has been updated successfully.")
             else:
@@ -69,8 +77,7 @@ class Bank:
         except Exception as e:
             logger.error("Error encountered while updating the user.", e)
             return None
-
-
+        
     @staticmethod
     def read(user_id: int):
         """Read a user from the database."""
