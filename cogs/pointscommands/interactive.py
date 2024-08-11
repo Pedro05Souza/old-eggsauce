@@ -1,6 +1,6 @@
 from discord.ext import commands
 from tools.pointscore import pricing, refund
-from tools.shared import send_bot_embed, regular_command_cooldown, spam_command_cooldown, tax, user_cache_retriever
+from tools.shared import *
 from db.userDB import User
 from collections import Counter
 from random import randint, sample, choice
@@ -22,7 +22,8 @@ class InteractiveCommands(commands.Cog):
     async def donate_points(self, ctx, user: discord.Member, amount: int):
         """Donates points to another user."""
         user_data = ctx.data["user_data"]
-        target_data = ctx.data["user_data"]
+        target_data = await user_cache_retriever(user.id)
+        target_data = target_data["user_data"]
         if user_data:
             if ctx.author.id == user.id:
                 await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't donate to yourself.")
@@ -36,7 +37,7 @@ class InteractiveCommands(commands.Cog):
                     amount = int(amount)
                     User.update_points(ctx.author.id, user_data["points"] - amount)
                     User.update_points(user.id, target_data["points"] + amount)
-                    await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} donated {amount} eggbux to {user.display_name}. The donation was taxed by **{int(tax * 100)}%** eggbux.")
+                    await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} donated **{amount}** eggbux to {user.display_name}. The donation was taxed by **{int(tax * 100)}%** eggbux.")
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
              
@@ -133,17 +134,33 @@ class InteractiveCommands(commands.Cog):
     @pricing()
     async def hungergames(self, ctx, *args):
         """Starts a hunger games event."""
-        global hungergames_status
-        default_game_value = 50
         guild_id = ctx.guild.id
+        cooldown = await self.hunger_games_starter(ctx, guild_id, args)
+        day = 1
+        tributes = []
+        messageHg = await send_bot_embed(ctx, description=f":hourglass: The hunger games will start in **{cooldown} seconds.** React with ✅ to join.")
+        for member in ctx.guild.members:
+            tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
+        await messageHg.add_reaction("✅")
+        if await self.match_starter(ctx, tributes, guild_id, cooldown):
+            await send_bot_embed(ctx, description=f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
+            alive_tributes = tributes
+            while len(alive_tributes) > 1:
+                await self.day_events(ctx, alive_tributes, day, guild_id, tributes)
+                await self.day_switch_events(ctx, alive_tributes, day, tributes)
+            winner = await self.get_winner(tributes)
+            await self.on_match_end(ctx, tributes, winner, guild_id)
+
+    async def hunger_games_starter(self, ctx, guild_id, args):
+        global hungergames_status
+        cooldown = hunger_games_wait_time
         if guild_id in hungergames_status:
             await send_bot_embed(ctx, description=":no_entry_sign: A hunger games is already in progress.")
             return
-        wait_time = 5
         if args and args[0].isdigit():
             args = [int(arg) for arg in args] 
             if ctx.guild.owner.id == ctx.author.id:
-                wait_time = args[0] * 60  
+                cooldown = args[0] * 60  
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have permission to set a custom time for the hunger games. The default time is 60 seconds.")
         hungergames_status[guild_id] = {
@@ -151,23 +168,43 @@ class InteractiveCommands(commands.Cog):
         "dead_tribute": None,
         "bear_disabled": False
         }
-        day = 1
-        tributes = []
-        min_tributes = 4
-        max_tributes = 25
-        end_time = time.time() + wait_time
-        messageHg = await send_bot_embed(ctx, description=f":hourglass: The hunger games will start in **{wait_time} seconds.** React with ✅ to join.")
-        for member in ctx.guild.members:
-            tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
-        await messageHg.add_reaction("✅")
+        return cooldown
+    
+    async def day_events(self, ctx, alive_tributes, day, guild_id, tributes):
+        shuffle_tributes = sample(alive_tributes, len(alive_tributes))
+        alive_tributes = shuffle_tributes
+        await send_bot_embed(ctx, title=f"Day {day}", description=f"**Tributes remaining: {len(alive_tributes)}**")
+        for tribute in alive_tributes:
+            if tribute['is_alive']:
+                await asyncio.sleep(3)
+                random_tribute = await self.pick_random_tribute(tribute, alive_tributes)
+                event_possibilities = await self.check_event_possibilities(tribute, random_tribute, alive_tributes, await self.loot_tribute_Body(tributes), guild_id)
+                random_event = await self.choose_random_event(event_possibilities)
+                await self.event_actions(ctx, tribute, random_tribute, alive_tributes, random_event)
+                alive_tributes = await self.check_alive_tributes(alive_tributes)
+                if len(alive_tributes) == 1:
+                    break
+
+    async def day_switch_events(self, ctx, alive_tributes, day, tributes):
+        dead_day = day - 1 if day > 0 else 0
+        fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == dead_day]
+        if fallen_tributes:
+            await send_bot_embed(ctx, description=f"**Fallen tributes:** **{', '.join([tribute['tribute'].display_name for tribute in fallen_tributes])}**")
+        await self.increase_days_alive(alive_tributes)
+        await self.remove_plr_team_on_death(tributes)
+        await self.update_tribute_event(alive_tributes)
+        day += 1
+        
+    async def match_starter(self, ctx, tributes, guild_id, cooldown):
+        end_time = time.time() + cooldown
         while True:
             actual_time = end_time - time.time()
             if actual_time <= 0:
                 break
             try:
-                reaction, user = await self.bot.wait_for("reaction_add", timeout=actual_time)
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=cooldown)
                 if reaction.emoji == "✅":
-                    allowplay = self.check_tribute_play(discord.utils.get(ctx.guild.members, id=user.id), default_game_value)
+                    allowplay = await self.check_tribute_play(discord.utils.get(ctx.guild.members, id=user.id), hunger_games_match_value_per_tribute)
                     if allowplay:
                         if not any(tribute['tribute'] == user for tribute in tributes):
                             tributes.append({"tribute": user, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
@@ -178,51 +215,29 @@ class InteractiveCommands(commands.Cog):
                         await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have enough eggbux to join the hunger games.")
             except asyncio.TimeoutError:
                 break
+        
         if len(tributes) < min_tributes:
             await send_bot_embed(ctx, description=f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is **{min_tributes}**.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
-                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + default_game_value)
-            return
+                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + hunger_games_match_value_per_tribute)
+            return False
         elif len(tributes) > max_tributes:
             await send_bot_embed(ctx, description=f":no_entry_sign: The maximum number of tributes is **{max_tributes}**. The game has been cancelled.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
-                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + default_game_value)
-            return
-        else:
-            await send_bot_embed(ctx, description=f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
-            alive_tributes = tributes
-            while len(alive_tributes) > 1:
-                shuffle_tributes = sample(alive_tributes, len(alive_tributes))
-                alive_tributes = shuffle_tributes
-                await send_bot_embed(ctx, title=f"Day {day}", description=f"**Tributes remaining: {len(alive_tributes)}**")
-                for tribute in alive_tributes:
-                    if tribute['is_alive']:
-                        await asyncio.sleep(3)
-                        random_tribute = self.pick_random_tribute(tribute, alive_tributes)
-                        event_possibilities = self.check_event_possibilities(tribute, random_tribute, alive_tributes, self.loot_tribute_Body(tributes), guild_id)
-                        random_event = self.choose_random_event(event_possibilities)
-                        await self.event_actions(ctx, tribute, random_tribute, alive_tributes, random_event)
-                        alive_tributes = self.check_alive_tributes(alive_tributes)
-                        if len(alive_tributes) == 1:
-                            break
-                dead_day = day - 1 if day > 0 else 0
-                fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == dead_day]
-                if fallen_tributes:
-                    await send_bot_embed(ctx, description=f"**Fallen tributes:** **{', '.join([tribute['tribute'].display_name for tribute in fallen_tributes])}**")
-                self.increase_days_alive(alive_tributes)
-                self.remove_plr_team_on_death(tributes)
-                self.update_tribute_event(alive_tributes)
-                day += 1
-            winner = alive_tributes[0]
-            prizeMultiplier = len(tributes) * 50
+                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + hunger_games_match_value_per_tribute)
+            return False
+        return True
+    
+    async def on_match_end(self, ctx, tributes, winner, guild_id):
+            prizeMultiplier = len(tributes) * hunger_games_prize_multiplier
             await send_bot_embed(ctx, description=f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
             User.update_points(winner['tribute'].id, User.read(winner['tribute'].id)["points"] + prizeMultiplier)
             hungergames_status.pop(guild_id)
             await self.statistics(ctx, tributes)
 
-    def check_tribute_play(self, tribute, default_game_value):
+    async def check_tribute_play(self, tribute, default_game_value):
         """Check if the tribute has enough points to play."""
         tribute_data = User.read(tribute.id)
         if tribute_data and tribute_data["points"] >= default_game_value:
@@ -231,13 +246,13 @@ class InteractiveCommands(commands.Cog):
         else:
             return False
         
-    def increase_days_alive(self, tributes):
+    async def increase_days_alive(self, tributes):
         """Increase the days alive of the tributes."""
         for tribute in tributes:
             if tribute['is_alive']:
                 tribute['days_alive'] += 1
      
-    def check_alive_tributes(self, tributes):
+    async def check_alive_tributes(self, tributes):
         """Check the alive tributes."""
         alive_tributes = []
         for tribute in tributes:
@@ -245,7 +260,7 @@ class InteractiveCommands(commands.Cog):
                 alive_tributes.append(tribute)
         return alive_tributes
                 
-    def events(self):
+    async def events(self):
         """Returns the events that can happen in the hunger games."""
         events = {
         0: "has been killed by a bear.",
@@ -279,16 +294,16 @@ class InteractiveCommands(commands.Cog):
         }
         return events
 
-    def choose_random_event(self, events):
+    async def choose_random_event(self, events):
         """Choose a random event from the list of events."""
-        return  choice(events)
+        return choice(events)
     
-    def update_tribute_event(self, tributes):
+    async def update_tribute_event(self, tributes):
         """Update the tribute event."""
         for tribute in tributes:
             tribute['has_event'] = False
 
-    def pick_random_tribute(self, tribute1, tributes):
+    async def pick_random_tribute(self, tribute1, tributes):
         """Pick a random tribute."""
         aux_tributes = tributes.copy()
         aux_tributes.remove(tribute1)
@@ -299,7 +314,7 @@ class InteractiveCommands(commands.Cog):
     
     async def event_actions(self, ctx, tribute1, tribute2, tributes, chosen_event):
         """Perform the actions of the event."""
-        events = self.events()
+        events = await self.events()
         if not tribute1['has_event']:
             tribute1['has_event'] = True
             match (chosen_event):
@@ -308,7 +323,7 @@ class InteractiveCommands(commands.Cog):
                     tribute1['Killed_by'] = "Bear"
                     await send_bot_embed(ctx, description=f":skull_crossbones: **{tribute1['tribute'].display_name}** {events[chosen_event]}")
                 case 1:
-                    team = self.create_team(tribute1, tribute2, tributes)
+                    team = await self.create_team(tribute1, tribute2, tributes)
                     await send_bot_embed(ctx, description=f":people_hugging: **{tribute1['tribute'].display_name}** {events[chosen_event]} **{tribute2['tribute'].display_name}** creating team **{team}**!")
                 case 2:
                     tribute1['inventory'].append("knife")
@@ -418,9 +433,10 @@ class InteractiveCommands(commands.Cog):
                     await send_bot_embed(ctx, description=f"**{tribute1['tribute'].display_name}** {events[chosen_event]}")
 
 
-    def check_event_possibilities(self, tribute1, tribute2, tributes, dead_tributes, guild_id):
+    async def check_event_possibilities(self, tribute1, tribute2, tributes, dead_tributes, guild_id):
         """Check the event possibilities."""
         global hungergames_status
+
         list_events = list(range(20))
 
         collect_requirements = {
@@ -478,7 +494,7 @@ class InteractiveCommands(commands.Cog):
             if len(tributes) == 2 and tribute1['team'] == tribute2['team'] and tribute1['team'] is not None and tribute2['team'] is not None:
                 list_events = [21, 22]
 
-            existing_teams = self.check_existing_teams(tributes)
+            existing_teams = await self.check_existing_teams(tributes)
 
             if len(existing_teams) >= 2 and tribute2['team'] is not None and tribute1['team'] is not None and tribute1['team'] != tribute2['team']:
                 list_events = [event for event in list_events]
@@ -503,7 +519,7 @@ class InteractiveCommands(commands.Cog):
             list_events = [event for event in list_events if event not in tribute2_events]
         return list_events
 
-    def remove_plr_team_on_death(self, tributes):
+    async def remove_plr_team_on_death(self, tributes):
         """Remove the player's team on death."""
         teams_to_remove = set()
 
@@ -515,14 +531,14 @@ class InteractiveCommands(commands.Cog):
             if tribute['team'] in teams_to_remove and tribute['is_alive']:
                 tribute['team'] = None
 
-    def steal_item(self, tribute1, tribute2):
+    async def steal_item(self, tribute1, tribute2):
         """Steal an item from a tribute."""
         item = choice(tribute2['inventory'])
         tribute1['inventory'].append(item)
         tribute2['inventory'].remove(item)
         return item
     
-    def loot_tribute_Body(self, tributes):
+    async def loot_tribute_Body(self, tributes):
         """Loot the body of a fallen tribute."""
         dead_tributes = [dead_tribute for dead_tribute in tributes if not dead_tribute['is_alive'] and len(dead_tribute['inventory']) > 0]
         if len(dead_tributes) >= 1:
@@ -548,29 +564,29 @@ class InteractiveCommands(commands.Cog):
         view = PaginationView(sorted_data)
         await view.send(ctx, title="Match results:", description="Match statistics for each tribute:", color=0xff0000)
     
-    def create_team(self, tribute1, tribute2, tributes):
+    async def create_team(self, tribute1, tribute2, tributes):
         """Create a team."""
-        teams = self.check_existing_teams(tributes)
+        teams = await self.check_existing_teams(tributes)
         teamNumber = randint(1, 100)
         if teamNumber not in teams.keys():
             tribute1['team'] = teamNumber
             tribute2['team'] = teamNumber
             return teamNumber
         else:
-            self.create_team(tribute1, tribute2, tributes)
+            await self.create_team(tribute1, tribute2, tributes)
 
-    def check_existing_teams(self, tributes):
+    async def check_existing_teams(self, tributes):
         """Check the existing teams."""
         teams = Counter([tribute['team'] for tribute in tributes if tribute['team'] is not None])
         return teams
     
-    def get_tribute_team(self, tribute1, tributes):
+    async def get_tribute_team(self, tribute1, tributes):
         """Get the tribute team."""
         for tribute in tributes:
             if tribute1['team'] == tribute['team']:
                 return tribute1['team']
     
-    def get_winner(self, tributes):
+    async def get_winner(self, tributes):
         """Get the winner of the hunger games."""
         highestdayAlive = 0
         for tribute in tributes:

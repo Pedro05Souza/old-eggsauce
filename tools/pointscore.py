@@ -54,6 +54,11 @@ async def refund(user: discord.Member, ctx):
 async def treat_exceptions(ctx, comando, user_data, config_data):
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
     if is_slash_command:
+        if Prices[comando].value > user_data["points"]:
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have enough points to use this command.")
+            return False
+        if Prices[comando].value == 0:
+            return True
         new_points = user_data["points"] - Prices[comando].value
         User.update_points(ctx.author.id, new_points)
         return True
@@ -73,6 +78,7 @@ async def treat_exceptions(ctx, comando, user_data, config_data):
     if len(command_args) < expected_args_count:
         await send_bot_embed(ctx, description=":no_entry_sign: Insufficient amount of arguments.")
         return False
+    
     elif len(command_args) > len(parameters) and varargs_index is None:
         await send_bot_embed(ctx, description=":no_entry_sign: Excessive amount of arguments.")
         return False
@@ -81,12 +87,14 @@ async def treat_exceptions(ctx, comando, user_data, config_data):
     if not channel['channel_id']:
         await send_bot_embed(ctx, description=":no_entry_sign: The bot has not been configured properly. Type **!setChannel** in the desired channel.")
         return False
+    
     if ctx.channel.id != channel['channel_id']:
         commands_object = ctx.bot.get_channel(channel['channel_id'])
         channel_mention = commands_object.mention
         embed = await make_embed_object(title=":no_entry_sign: Invalid channel", description=f"Please use the commands channel: **{channel_mention}**")
         await ctx.author.send(embed=embed)
         return False
+    
     i = 0
     for index, param in enumerate(parameters):
         param_type = param.annotation

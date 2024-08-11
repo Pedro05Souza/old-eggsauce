@@ -1,7 +1,6 @@
 from tools.cache.guildcache import GuildCache
 from tools.cache.usercache import UserCache
 import logging
-import asyncio
 
 logger = logging.getLogger('botcore')
 
@@ -12,7 +11,7 @@ class CacheInitiator:
         self.guild_cache = GuildCache(memory_limit_guild)
 
     async def start_cache_clearing_for_users(self):
-        await self.user_cache.clear_users_cache_periondically(3600)  # 1 hour
+        await self.user_cache.clear_users_cache_periondically(1800)  # 1 hour
 
     async def get_user_cache(self, user_id):
         return await self.user_cache.get(user_id)
@@ -40,10 +39,10 @@ class CacheInitiator:
         await self.guild_cache.put(guild_id, **kwargs)
 
     async def update_guild_cache(self, guild_id, **kwargs):
-        if self.guild_cache.get(guild_id) is None:
+        if await self.guild_cache.get(guild_id) is None:
             await self.add_to_guild_cache(guild_id, **kwargs)
         else:
-            self.guild_cache.put(guild_id, **kwargs)
+            await self.guild_cache.put(guild_id, **kwargs)
 
     async def remove_from_guild_cache(self, guild_id):
         await self.guild_cache.delete(guild_id)

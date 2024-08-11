@@ -4,7 +4,7 @@ from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRa
 from tools.chickens.chickenshared import *
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.selection.chickenselection import ChickenSelectView
-from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object, user_cache_retriever
+from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object, user_cache_retriever, return_data
 from tools.pointscore import pricing
 from better_profanity import profanity
 import discord
@@ -19,9 +19,8 @@ class ChickenView(commands.Cog):
     @pricing()
     async def check_chicken_info(self, ctx, index: int, user: discord.Member = None):
         """Check the information of a chicken."""
-        if user is None:
-            user = ctx.author
-        farm_data = ctx.data["farm_data"]
+        farm_data, _ = await return_data(ctx, user)
+        farm_data = farm_data["farm_data"]
         if farm_data:
             if index > len(farm_data['chickens']) or index < 0:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, the chicken index is invalid.")
@@ -69,9 +68,8 @@ class ChickenView(commands.Cog):
     @pricing()
     async def player_rank(self, ctx, user: discord.Member = None):
         """Shows your current rank."""
-        if user is None:
-            user = ctx.author
-        farm_data = ctx.data["farm_data"]
+        farm_data, _ = await return_data(ctx, user)
+        farm_data = farm_data["farm_data"]
         if farm_data:
             rank = await rank_determiner(farm_data['mmr'])
             msg = await make_embed_object(title=f":crossed_swords: {user.display_name}'s battle stats:")
@@ -101,9 +99,8 @@ class ChickenView(commands.Cog):
     @pricing()
     async def farm_profit(self, ctx, user: discord.Member = None):
         """Check the farm profit"""
-        if not user:
-            user = ctx.author
-        farm_data = await update_user_farm(user, ctx.data["farm_data"])
+        farm_data, user = await return_data(ctx, user)
+        farm_data = await update_user_farm(user, farm_data['farm_data'])
         if farm_data:
             totalProfit = 0
             totalcorn = 0
@@ -205,10 +202,7 @@ class ChickenView(commands.Cog):
     @pricing()
     async def view_bench(self, ctx, user: discord.Member = None):
         """View the bench"""
-        if not user:
-            user = ctx.author
-        data = ctx.data
-        farm_data = data["farm_data"]
+        farm_data, user = await return_data(ctx, user)
         if farm_data:
             await get_user_bench(ctx, farm_data, user)
         else:

@@ -1,7 +1,6 @@
 from discord.ext import commands
-from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, get_user_title, user_cache_retriever, guild_cache_retriever
+from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, get_user_title, user_cache_retriever, guild_cache_retriever, return_data
 from tools.tips import tips
-from db.bankDB import Bank
 from db.userDB import User
 from random import randint
 from tools.pointscore import pricing, refund
@@ -87,10 +86,9 @@ class PointsConfig(commands.Cog):
     @pricing()
     async def points(self, ctx, user: discord.Member = None):
         """Shows the amount of points the user has."""
-        if user is None:
-            user = ctx.author
+        data, user = await return_data(ctx, user)
         user_data = await self.update_user_points(user)
-        bank_data = ctx.data["bank_data"]
+        bank_data = data["bank_data"]
         if user_data:
             if bank_data:
                 msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {bank_data['bank']}")

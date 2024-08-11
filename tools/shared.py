@@ -3,11 +3,20 @@ from tools.cache.init import cache_initiator
 import os
 import discord
 import concurrent.futures
+import threading
 import asyncio
+import logging
 
+logger = logging.getLogger('botcore')
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 spam_command_cooldown = .8
 regular_command_cooldown = 3.5
 queue_command_cooldown = 90
+hunger_games_wait_time = 60
+hunger_games_match_value_per_tribute = 75
+hunger_games_prize_multiplier = 50
+min_tributes = 4
+max_tributes = 50
 tax = .15
 
 async def send_bot_embed(ctx, ephemeral=False, **kwargs):
@@ -106,8 +115,18 @@ def update_scheduler(func):
         asyncio.run(func())
 
 def request_threading(func):
-    """Request a function to be run in a separate thread."""
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        future = executor.submit(func)
-        return future.result()
+    """Request a function to be run in a separate thread. Mostly used for database operations."""
+    future = executor.submit(func)
+    return future.result()
+
+def retrieve_threads():
+    """Retrieve the number of threads."""
+    logger.info(f"Number of currently activate threads in the program: {threading.active_count()}")
+
+async def return_data(ctx, user=None):
+    """Return the farm data of the user."""
+    if not user:
+        return ctx.data, ctx.author
+    else:
+        return await user_cache_retriever(user.id), user
     

@@ -23,7 +23,7 @@ class BotConfig:
                     "channel_id": channel_id,
                     "prefix": prefix,
                 }
-                request_threading(lambda: update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id)))
+                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id))
                 request_threading(lambda: config_collection.insert_one(toggle))
                 logger.info("Server created successfully.")
         except Exception as e:
@@ -44,7 +44,7 @@ class BotConfig:
                     "toggle_modules": toggled_modules,
                 }
                 request_threading(lambda: config_collection.insert_one(toggle))
-                request_threading(lambda: update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, toggled_modules=toggled_modules)))
+                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, toggled_modules=toggled_modules))
                 logger.info("Toggle created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a toggle.", e)
@@ -64,7 +64,7 @@ class BotConfig:
                     "channel_id": channel_id,
                 }
                 request_threading(lambda: config_collection.insert_one(toggle))
-                request_threading(lambda: update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, channel_id=channel_id)))
+                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, channel_id=channel_id))
                 logger.info("Channel created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a channel.", e)
@@ -83,7 +83,7 @@ class BotConfig:
                     "prefix": prefix,
                 }
                 request_threading(lambda: config_collection.insert_one(prefix))
-                request_threading(lambda: update_scheduler(lambda: cache_initiator.add_to_guild_cache(server, prefix=prefix)))
+                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server, prefix=prefix))
                 logger.info("Prefix created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a prefix.", e)
@@ -96,7 +96,7 @@ class BotConfig:
             prefix_data = config_collection.find_one({"server_id": server_id})
             if prefix_data:
                 request_threading(lambda: config_collection.update_one({"server_id": server_id}, {"$set": {"prefix": prefix}}))
-                request_threading(lambda: update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, prefix=prefix)))
+                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, prefix=prefix))
                 logger.info("Prefix updated successfully.")
             else:
                 logger.warning("Prefix not found.")
@@ -110,7 +110,7 @@ class BotConfig:
             toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
                 request_threading(lambda: config_collection.update_one({"server_id": server_id}, {"$set": {"toggled_modules": toggled_modules}}))
-                request_threading(lambda: update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, toggled_modules=toggled_modules)))
+                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, toggled_modules=toggled_modules))
                 logger.info("Toggle updated successfully.")
             else:
                 logger.warning("Toggle not found.")

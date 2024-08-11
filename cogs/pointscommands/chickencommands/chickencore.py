@@ -7,7 +7,7 @@ from tools.chickens.chickenhandlers import RollLimit
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
 from tools.chickens.chickeninfo import rollRates
 from tools.pointscore import pricing
-from tools.shared import make_embed_object, regular_command_cooldown, spam_command_cooldown, send_bot_embed, user_cache_retriever
+from tools.shared import make_embed_object, regular_command_cooldown, spam_command_cooldown, send_bot_embed, return_data
 import discord
 import asyncio
 
@@ -33,8 +33,7 @@ class ChickenCore(commands.Cog):
     @pricing()
     async def farm(self, ctx, user: discord.Member = None) -> None:
         """Check the chickens in the farm"""
-        if user is None:
-            user = ctx.author
+        _, user = await return_data(ctx, user)
         msg = await get_usr_farm(ctx, user)
         if not msg:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have a farm or any chickens.")

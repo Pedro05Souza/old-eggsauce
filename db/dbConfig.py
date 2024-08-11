@@ -106,7 +106,31 @@ db = mongo_client.botDiscord
 # }
 # }
 
-# mongo_client.db.command ("collMod", "farm", validator=current_schema)
+# current_schema = {
+#     "$jsonSchema":{
+#         "bsonType": "object",
+#         "required": ["server_id"],
+#         "properties": {
+#             "server_id": {
+#                 "bsonType": "long",
+#                 "description": "must be a long."
+#             },
+#             "toggled_modules": {
+#                 "bsonType": ["string", "null"],
+#                 "description": "must be a string or null."
+#             },
+#             "channel_id": {
+#                 "bsonType": ["long", "null"],
+#                 "description": "must be a long or null."
+#             },
+#             "prefix": {
+#                 "bsonType": ["string", "null"],
+#                 "description": "must be a string or null."
+#             }
+#         }
+#     }
+# }
+# mongo_client.db.command ("collMod", "botcfg", validator=current_schema)
 # for collection in mongo_client.db.list_collection_names():
 #     collection_info = mongo_client.db.list_collections(filter={"name": collection})
 #     for info in collection_info:

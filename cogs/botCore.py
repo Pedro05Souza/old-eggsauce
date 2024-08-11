@@ -93,7 +93,7 @@ class BotCore(commands.Cog):
     
     async def tutorial(self, target):
         """Sends a tutorial message to the user."""
-        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!commands** to visualize every command i have to offer. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Type **!setPrefix** to select the prefix of the bot.\n5. Have fun! :tada:")
+        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!help** to visualize every command i have to offer. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Type **!setPrefix** to select the prefix of the bot.\n5. Have fun! :tada:")
         for channel in target.text_channels:
             if channel.permissions_for(target.me).send_messages:
                 await channel.send(embed=embed)
@@ -151,6 +151,8 @@ class BotCore(commands.Cog):
         guild_id = message.guild.id
         guild_data = await guild_cache_retriever(guild_id)
         if guild_data:
+            if not guild_data['prefix']:
+                return "!"
             return guild_data['prefix']
             
     @commands.command("setChannel", alias=["setC"])

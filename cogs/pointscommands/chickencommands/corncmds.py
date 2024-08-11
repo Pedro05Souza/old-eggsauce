@@ -2,7 +2,7 @@ from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
 from tools.chickens.chickeninfo import ChickenFood, max_corn_limit, max_plot_limit
-from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, confirmation_embed, user_cache_retriever
+from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, confirmation_embed, return_data
 from tools.pointscore import pricing
 from tools.chickens.chickenshared import update_player_corn, calculate_corn, update_user_farm
 from better_profanity import profanity
@@ -17,9 +17,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def corn_field(self, ctx, user: discord.Member = None):
         """Displays the user's corn field."""
-        if user is None:
-            user = ctx.author
-        farm_data = ctx.data["farm_data"]
+        farm_data, user = await return_data(ctx, user)
         if farm_data:
             await ctx.send(embed=await self.show_plr_food_farm(ctx, user))
     
@@ -45,9 +43,7 @@ class CornCommands(commands.Cog):
 
     async def show_plr_food_farm(self, ctx, user: discord.Member):
         """Show the player's food farm"""
-        farm_data = ctx.data["farm_data"]
-        if user is None:
-            user = ctx.author
+        farm_data, user = await return_data(ctx, user)
         farm_data = await update_player_corn(farm_data, user)
         if farm_data:
             food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in 1 hour: {calculate_corn(farm_data)}\n:seedling: **Plots**: {farm_data['plot']}")

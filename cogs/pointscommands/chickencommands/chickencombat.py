@@ -104,7 +104,6 @@ class ChickenCombat(commands.Cog):
                 if not await self.check_if_user_is_bot(user):
                     if user.member.id == current_user.member.id:
                         continue
-                if user.chicken_overrall_score >= negative_search_overrall and user.chicken_overrall_score <= positive_search_overrall:
                     yield user
 
     async def increase_search_range(self, positive_search, negative_search, current_user, positive_search_overrall, negative_search_overrall): 
@@ -141,12 +140,13 @@ class ChickenCombat(commands.Cog):
         attemps = 0
         saved_positive_score, saved_negative_score = current_user.score, current_user.score
         saved_positive_overrall, saved_negative_overrall = current_user.chicken_overrall_score, current_user.chicken_overrall_score
-        while attemps != 30:
+        while attemps != 25:
             if current_user.has_opponent:
                 return "opponent"
-            if attemps == 15:   
+            if attemps == 24:   
                 bot = await bot_maker(current_user.score)
                 self.user_queue.append(bot)
+                return bot
             positive_search = saved_positive_score + 5
             negative_search = saved_negative_score - 5
             positive_search_overrall, negative_search_overrall = saved_positive_overrall + 50, saved_negative_overrall - 50
@@ -158,7 +158,7 @@ class ChickenCombat(commands.Cog):
             async for user in user_list:
                 return user
             attemps += 1
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(1)
             saved_negative_score, saved_positive_score = negative_search, positive_search
             saved_positive_overrall, saved_negative_overrall = positive_search_overrall, negative_search_overrall
         return "No opponent found."
