@@ -47,11 +47,13 @@ def verify_points(comando, user_data):
 async def refund(user: discord.Member, ctx):
     try:
         price = Prices[ctx.command.name].value
-        await User.update_points(user.id, User.read(user.id)["points"] + price)
+        user_data = await user_cache_retriever(user.id)
+        user_data = user_data["user_data"]
+        await User.update_points(user.id, user_data["points"] + price)
     except Exception as e:
         logger.error(f"An error occurred while refunding the user: {e}")
 
-async def treat_exceptions(ctx, comando, user_data, config_data):
+async def treat_exceptions(ctx, comando, user_data, config_data, data):
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
     if is_slash_command:
         if Prices[comando].value > user_data["points"]:
@@ -60,6 +62,7 @@ async def treat_exceptions(ctx, comando, user_data, config_data):
         if Prices[comando].value == 0:
             return True
         new_points = user_data["points"] - Prices[comando].value
+        data["user_data"]["points"] = new_points
         User.update_points(ctx.author.id, new_points)
         return True
     message_content = ctx.message.content
@@ -128,7 +131,10 @@ async def treat_exceptions(ctx, comando, user_data, config_data):
         except commands.errors.CommandInvokeError:
             await send_bot_embed(ctx, description=":no_entry_sign: An error occurred while executing the command.")
             return False
+    if Prices[comando].value == 0:
+        return True
     new_points = user_data['points'] - Prices[comando].value
+    data["user_data"]['points'] = new_points
     User.update_points(ctx.author.id, new_points)
     return True
 
@@ -155,7 +161,6 @@ def pricing():
         if command in Prices.__members__:
             data = await user_cache_retriever(ctx.author.id)
             user_data = data["user_data"]
-            ctx.data = data
 
             if not user_data:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
@@ -169,7 +174,9 @@ def pricing():
                 return result
             
             if verify_points(command, user_data):
-                result = await treat_exceptions(ctx,command, user_data, config_data)
+                result = await treat_exceptions(ctx,command, user_data, config_data, data)
+                ctx.data = data
+                print(ctx.data['user_data'])
                 ctx.predicate_result = result
                 return result
             

@@ -104,6 +104,7 @@ class InteractiveCommands(commands.Cog):
             await refund(ctx.author, ctx)
             return
         user_data = ctx.data["user_data"]
+        print(f"ctx data: {ctx.data}")
         target_data = await user_cache_retriever(user.id)
         target_data = target_data["user_data"]
         if user_data:

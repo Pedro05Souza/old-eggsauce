@@ -38,9 +38,9 @@ class ChickenCombat(commands.Cog):
         if farm_data:
             if await verify_events(ctx, ctx.author):
                 return
-            farm_data['chickens'] = await self.define_eight_chickens_for_match(farm_data['chickens'])
+            author_chickens = await self.define_eight_chickens_for_match(farm_data['chickens'])
             e = EventData(ctx.author)
-            user = UserInQueue(ctx.author, farm_data['chickens'], ctx, e, farm_data['mmr'])
+            user = UserInQueue(ctx.author, author_chickens, ctx, e, farm_data['mmr'])
             if not user.chickens:
                 await send_bot_embed(ctx, description=":no_entry_sign: You need to have chickens to participate in combat.")
                 EventData.remove(user.in_event)

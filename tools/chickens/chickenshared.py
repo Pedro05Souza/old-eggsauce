@@ -96,13 +96,11 @@ async def verify_events(ctx, user: discord.Member):
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} is already in an event.")
             return True
         return False
-     
-        
+      
 async def get_user_bench(ctx, farm_data, user: discord.Member):
      """Gets the user's bench"""
      bench = farm_data['bench']
      await send_bot_embed(ctx, title=f":chair: {user.display_name}'s bench:", description="\n\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
-
 
 async def rank_determiner(mmr):
      """Determines the players rank."""

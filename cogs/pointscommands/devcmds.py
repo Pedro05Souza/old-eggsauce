@@ -115,6 +115,9 @@ class DevCommands(commands.Cog):
             farm_data = Farm.read(user.id)
             if farm_data:
                 chicken = await create_chicken(rarity, "dev")
+                if not chicken:
+                    await send_bot_embed(ctx, description=":no_entry_sign: Invalid rarity.")
+                    return
                 farm_data['chickens'].append(chicken)
                 Farm.update(user.id, chickens=farm_data['chickens'])
                 await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")

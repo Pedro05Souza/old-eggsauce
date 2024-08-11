@@ -68,7 +68,7 @@ class ChickenView(commands.Cog):
     @pricing()
     async def player_rank(self, ctx, user: discord.Member = None):
         """Shows your current rank."""
-        farm_data, _ = await return_data(ctx, user)
+        farm_data, user = await return_data(ctx, user)
         farm_data = farm_data["farm_data"]
         if farm_data:
             rank = await rank_determiner(farm_data['mmr'])
@@ -203,6 +203,7 @@ class ChickenView(commands.Cog):
     async def view_bench(self, ctx, user: discord.Member = None):
         """View the bench"""
         farm_data, user = await return_data(ctx, user)
+        farm_data = farm_data["farm_data"]
         if farm_data:
             await get_user_bench(ctx, farm_data, user)
         else:

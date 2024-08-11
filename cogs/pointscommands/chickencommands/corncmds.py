@@ -44,7 +44,7 @@ class CornCommands(commands.Cog):
     async def show_plr_food_farm(self, ctx, user: discord.Member):
         """Show the player's food farm"""
         farm_data, user = await return_data(ctx, user)
-        farm_data = await update_player_corn(farm_data, user)
+        farm_data = await update_player_corn(farm_data['farm_data'], user)
         if farm_data:
             food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in 1 hour: {calculate_corn(farm_data)}\n:seedling: **Plots**: {farm_data['plot']}")
             food_embed.set_thumbnail(url=user.display_avatar)
