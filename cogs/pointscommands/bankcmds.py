@@ -17,8 +17,7 @@ class BankCommands(commands.Cog):
     @pricing()
     async def deposit(self, ctx, amount):
         """Deposits points in the bank"""
-        user_data = await user_cache_retriever(ctx.author.id)
-        user_data = user_data["user_data"]
+        user_data = ctx.data["user_data"]
         if amount.upper() == "ALL":
             amount = user_data["points"]
         else:
@@ -28,7 +27,7 @@ class BankCommands(commands.Cog):
                 await send_bot_embed(ctx, description=f"{ctx.author.display_name}, please enter a valid amount.")
                 return
         if amount > 0:
-            bank_data = Bank.read(ctx.author.id)
+            bank_data = ctx.data["bank_data"]
             if bank_data:
                 if amount > user_data["points"]:
                     await send_bot_embed(ctx, description=f"{ctx.author.display_name}, you don't have enough eggbux.")
@@ -58,8 +57,7 @@ class BankCommands(commands.Cog):
     @pricing()
     async def withdraw(self, ctx, amount):
         """Withdraws points from the bank"""
-        bank_data = await user_cache_retriever(ctx.author.id)
-        bank_data = bank_data["bank_data"]
+        bank_data = ctx.data["bank_data"]
         if amount.upper() == "ALL":
             amount = bank_data["bank"]
         else:
@@ -88,9 +86,8 @@ class BankCommands(commands.Cog):
     @pricing()
     async def upgrade_bank_limit(self, ctx):
         """Upgrades the bank limit."""
-        data = await user_cache_retriever(ctx.author.id)
-        user_data = data["user_data"]
-        bank_data = data["bank_data"]
+        user_data = ctx.data["user_data"]
+        bank_data = ctx.data["bank_data"]
         if not bank_data:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
             await self.register_bank(ctx.author)

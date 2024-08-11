@@ -1,6 +1,6 @@
 from discord.ext import commands
 from db.userDB import User
-from tools.shared import send_bot_embed, is_dev, user_cache_retriever
+from tools.shared import send_bot_embed, is_dev
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.MarketDB import Market
@@ -245,10 +245,6 @@ class DevCommands(commands.Cog):
         if is_dev(ctx):
             user, guild = await cache_initiator.get_memory_usage()
             await send_bot_embed(ctx, title="Cache memory usage:", description=f"User cache: {user} bytes\nGuild cache: {guild} bytes")
-
-    @commands.command(name="test")
-    async def aaa(self, ctx):
-        await user_cache_retriever(ctx.author.id)
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

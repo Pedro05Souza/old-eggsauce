@@ -19,8 +19,7 @@ class CornCommands(commands.Cog):
         """Displays the user's corn field."""
         if user is None:
             user = ctx.author
-        farm_data = await user_cache_retriever(user.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             await ctx.send(embed=await self.show_plr_food_farm(ctx, user))
     
@@ -29,7 +28,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def rename_corn_field(self, ctx, nickname: str):
         """Rename the cornfield"""
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             censor = profanity.contains_profanity(nickname)
             if censor:
@@ -46,7 +45,7 @@ class CornCommands(commands.Cog):
 
     async def show_plr_food_farm(self, ctx, user: discord.Member):
         """Show the player's food farm"""
-        farm_data = Farm.read(user.id)
+        farm_data = ctx.data["farm_data"]
         if user is None:
             user = ctx.author
         farm_data = await update_player_corn(farm_data, user)
@@ -60,7 +59,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def buy_plot(self, ctx):
         """Buy a plot for corn production"""
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = ctx.data["farm_data"]
         if not farm_data:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
             return
@@ -88,7 +87,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def upgrade_corn_limit(self, ctx):
         """Upgrades the player corn limit."""
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = ctx.data["farm_data"]
         if not farm_data:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
             return
@@ -116,8 +115,8 @@ class CornCommands(commands.Cog):
     @pricing()
     async def buy_corn(self, ctx, quantity: int):
         """Buy corn for the chickens"""
-        farm_data = Farm.read(ctx.author.id)
-        user_data = User.read(ctx.author.id)
+        farm_data = await update_player_corn(ctx.data['farm_data'], ctx.author)
+        user_data = ctx.data["user_data"]
         if quantity < 30:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the minimum amount of corn you can buy is 30.")
             return
@@ -139,9 +138,8 @@ class CornCommands(commands.Cog):
     @pricing()
     async def sell_corn(self, ctx, quantity: int):
         """Sell corn"""
-        data = await user_cache_retriever(ctx.author.id)
-        farm_data = await update_player_corn(data['farm_data'], ctx.author)
-        user_data = data["user_data"]
+        farm_data = await update_player_corn(ctx.data['farm_data'], ctx.author)
+        user_data = ctx.data["user_data"]
         if farm_data:
             if quantity > farm_data['corn']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough corn to sell.")
@@ -160,8 +158,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def feed_all_chickens(self, ctx):
         """Feed all the chickens"""
-        data = await user_cache_retriever(ctx.author.id)
-        farm_data = await update_player_corn(data['farm_data'], ctx.author)
+        farm_data = await update_player_corn(ctx.data['farm_data'], ctx.author)
         farm_data = await update_user_farm(ctx.author, farm_data)
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0

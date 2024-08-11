@@ -24,8 +24,7 @@ class ChickenEvents(commands.Cog):
         """Deletes a chicken from the farm"""
         if await verify_events(ctx, ctx.author):
             return
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             if not farm_data['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
@@ -43,8 +42,9 @@ class ChickenEvents(commands.Cog):
         """Trade a chicken(s) with another user"""
         if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
             return
-        farm_author = Farm.read(ctx.author.id)
-        farm_target = Farm.read(user.id)
+        farm_author = ctx.data["farm_data"]
+        farm_target = await user_cache_retriever(user.id)
+        farm_target = farm_target["farm_data"]
         if farm_author and farm_target:
             if not farm_author['chickens'] or not farm_target['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, {user.display_name} doesn't have any chickens.")
@@ -99,8 +99,9 @@ class ChickenEvents(commands.Cog):
         """Gift a chicken to another user"""
         if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
             return
-        author_data = Farm.read(ctx.author.id)
-        user_data = Farm.read(user.id)
+        author_data = ctx.data["farm_data"]
+        user_data = await user_cache_retriever(user.id)
+        user_data = user_data["farm_data"]
         if author_data and user_data:
             index -= 1
             g = EventData(ctx.author)
@@ -170,7 +171,7 @@ class ChickenEvents(commands.Cog):
         """Evolves a chicken if having 2 of the same rarity"""
         if await verify_events(ctx, ctx.author):
             return
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             e = EventData(ctx.author)
             if not farm_data['chickens']:
@@ -233,8 +234,8 @@ class ChickenEvents(commands.Cog):
             await message.add_reaction(emoji)
         try:
             reaction, user = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == message, timeout=40)
-            user_data = User.read(user.id)
-            farm_data = Farm.read(user.id)
+            user_data = ctx.data["user_data"]
+            farm_data = ctx.data["farm_data"]
             if user_data['points'] >= farmer_price:
                 farm_size = get_max_chicken_limit(farm_data)
                 if len(farm_data['chickens']) >= farm_size and len(farm_data['chickens']) > 8:
@@ -272,7 +273,7 @@ class ChickenEvents(commands.Cog):
     @pricing()
     async def transcend(self, ctx) -> None:
         """Transcend chicken"""
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = ctx.data["farm_data"]
         if all(chicken for chicken in farm_data['chickens'] if chicken['rarity'] == 'ASCENDED'):
             if len(farm_data['chickens']) < 8:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to have 8 ascended chickens to transcend.")

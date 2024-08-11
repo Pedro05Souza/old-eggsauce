@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from tools.cache.init import cache_initiator
 import os
 import discord
+import concurrent.futures
 import asyncio
 
 spam_command_cooldown = .8
@@ -76,12 +77,14 @@ async def user_cache_retriever(user_id):
     user_cache = await cache_initiator.get_user_cache(user_id)
     
     if not user_cache:
+        print("db")
         user_data = User.read(user_id)
         farm_data = Farm.read(user_id)
         bank_data = Bank.read(user_id)
         await cache_initiator.add_to_user_cache(user_id, user_data=user_data, farm_data=farm_data, bank_data=bank_data)
         user_cache = await cache_initiator.get_user_cache(user_id)
         return user_cache
+    print("cache")
     return user_cache
 
 async def guild_cache_retriever(guild_id):
@@ -96,8 +99,15 @@ async def guild_cache_retriever(guild_id):
     return guild_cache
 
 def update_scheduler(func):
-    """Update the scheduler"""
+    """Schedules a coroutine to be run in the event loop."""
     if asyncio.get_event_loop().is_running():
         asyncio.ensure_future(func())
     else:
         asyncio.run(func())
+
+def request_threading(func):
+    """Request a function to be run in a separate thread."""
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future = executor.submit(func)
+        return future.result()
+    

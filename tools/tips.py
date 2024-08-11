@@ -31,7 +31,7 @@ tips = {
     27: "Your chickens wait for you to feed them.",
     28: "This bot was made by a human.",
     29: "The formula for the eggs produced by a chicken is: (eggs_per_hour * happiness) / 100.",
-    30: "The formula for the eggs produced by a chicken is: (eggs_per_hour * upkeep_multiplier)",
+    30: "The farm maintance upkeep constitutes of the rarity of the chickens, the number of plots and limit of corn.",                                                      
     31: "You need to pay hourly for the upkeep of your chickens.",
     32: "The upkeep multiplier for the chickens regulates the eggs produced.",
     33: "You can evolve two chickens of the same type to the next rarity",

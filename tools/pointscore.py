@@ -137,35 +137,44 @@ def pricing():
                 await send_bot_embed(ctx, description=":warning: The bot is currently in development mode.")
                 result = False
                 return result
+            
         if config_data['toggled_modules'] == "N":
             embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
             await ctx.author.send(embed=embed)
             result = False
-            return result    
+            return result
+            
         if command in Prices.__members__:
-            user_data = await user_cache_retriever(ctx.author.id)
-            user_data = user_data["user_data"]
+            data = await user_cache_retriever(ctx.author.id)
+            user_data = data["user_data"]
+            ctx.data = data
+
             if not user_data:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
                 result = False
                 ctx.predicate_result = result
                 return result
+            
             if not await set_points_commands_submodules(ctx, config_data):
                 result = False
                 ctx.predicate_result = result
                 return result
+            
             if verify_points(command, user_data):
                 result = await treat_exceptions(ctx,command, user_data, config_data)
                 ctx.predicate_result = result
                 return result
+            
             else:
                 await send_bot_embed(ctx, description=":no_entry_sign: You do not have enough points to use this command.")
                 result = False
                 ctx.predicate_result = result
-                return result
+                return result 
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: Unknown points command.")
+            result = False
         return result
+    
     try:
         return commands.check(predicate)
     except Exception as e:

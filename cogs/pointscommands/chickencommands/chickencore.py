@@ -21,8 +21,7 @@ class ChickenCore(commands.Cog):
     @pricing()
     async def create_farm(self, ctx) -> None:
         """Farm some eggs"""
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You already have a farm.")
         else:
@@ -53,8 +52,7 @@ class ChickenCore(commands.Cog):
     @pricing()
     async def eggpack(self, ctx) -> None:
         """Buy an egg pack"""
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             await self.roll(ctx, 8, 'eggpack')
         else:
@@ -62,23 +60,21 @@ class ChickenCore(commands.Cog):
             
     async def roll(self, ctx, chickens_to_generate, action) -> None:
         """Market to buy chickens"""
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             default_rolls = 10
             if action == "market":
-                plrObj = RollLimit.read(ctx.author.id)
-                if not plrObj:  
+                if not RollLimit.read_key(ctx.author.id):
                     if farm_data['farmer'] == "Executive Farmer":
                         farmer_upgrades = load_farmer_upgrades("Executive Farmer")
                         farmer_upgd = farmer_upgrades[0]
-                        plrObj = RollLimit(ctx.author.id, default_rolls + farmer_upgd)
+                        RollLimit.create(ctx.author.id, farmer_upgd + default_rolls)
                     else:
-                        plrObj = RollLimit(ctx.author.id, default_rolls)
-                if plrObj.current == 0:
+                        RollLimit.create(ctx.author.id, default_rolls)
+                if RollLimit.read(ctx.author.id) == 0:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today.")
                     return
-                plrObj.current -= 1
+                RollLimit.update(ctx.author.id, RollLimit.read(ctx.author.id) - 1)
             if farm_data['farmer'] == "Generous Farmer":
                 default_rolls += load_farmer_upgrades("Generous Farmer")[0]
             generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)

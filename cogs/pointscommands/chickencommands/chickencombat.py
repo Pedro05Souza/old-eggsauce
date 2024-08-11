@@ -34,8 +34,7 @@ class ChickenCombat(commands.Cog):
     @pricing()
     async def queue(self, ctx):
         """Match making for chicken combat."""
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             if await verify_events(ctx, ctx.author):
                 return
@@ -436,8 +435,8 @@ class ChickenCombat(commands.Cog):
         if user.id == ctx.author.id:
             await send_bot_embed(ctx, description=":no_entry_sign: You can't combat yourself.")
             return
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        data = ctx.data
+        farm_data = data["farm_data"]
         user_data = await user_cache_retriever(user.id)
         user_data = user_data["farm_data"]
         if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):

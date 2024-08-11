@@ -1,5 +1,5 @@
 from db.dbConfig import mongo_client
-from tools.shared import update_scheduler
+from tools.shared import update_scheduler, request_threading
 from tools.cache.init import cache_initiator
 import logging
 config_collection = mongo_client.db.botcfg
@@ -23,8 +23,8 @@ class BotConfig:
                     "channel_id": channel_id,
                     "prefix": prefix,
                 }
-                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id))
-                config_collection.insert_one(toggle)
+                request_threading(lambda: update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id)))
+                request_threading(lambda: config_collection.insert_one(toggle))
                 logger.info("Server created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a server.", e)
@@ -43,8 +43,8 @@ class BotConfig:
                     "server_id": server_id,
                     "toggle_modules": toggled_modules,
                 }
-                config_collection.insert_one(toggle)
-                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, toggled_modules=toggled_modules))
+                request_threading(lambda: config_collection.insert_one(toggle))
+                request_threading(lambda: update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, toggled_modules=toggled_modules)))
                 logger.info("Toggle created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a toggle.", e)
@@ -63,8 +63,8 @@ class BotConfig:
                     "server_id": server_id,
                     "channel_id": channel_id,
                 }
-                config_collection.insert_one(toggle)
-                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, channel_id=channel_id))
+                request_threading(lambda: config_collection.insert_one(toggle))
+                request_threading(lambda: update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, channel_id=channel_id)))
                 logger.info("Channel created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a channel.", e)
@@ -82,8 +82,8 @@ class BotConfig:
                     "server_id": server,
                     "prefix": prefix,
                 }
-                config_collection.insert_one(prefix)
-                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server, prefix=prefix))
+                request_threading(lambda: config_collection.insert_one(prefix))
+                request_threading(lambda: update_scheduler(lambda: cache_initiator.add_to_guild_cache(server, prefix=prefix)))
                 logger.info("Prefix created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a prefix.", e)
@@ -95,8 +95,8 @@ class BotConfig:
         try:
             prefix_data = config_collection.find_one({"server_id": server_id})
             if prefix_data:
-                config_collection.update_one({"server_id": server_id}, {"$set": {"prefix": prefix}})
-                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, prefix=prefix))
+                request_threading(lambda: config_collection.update_one({"server_id": server_id}, {"$set": {"prefix": prefix}}))
+                request_threading(lambda: update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, prefix=prefix)))
                 logger.info("Prefix updated successfully.")
             else:
                 logger.warning("Prefix not found.")
@@ -109,8 +109,8 @@ class BotConfig:
         try:
             toggle_data = config_collection.find_one({"server_id": server_id})
             if toggle_data:
-                config_collection.update_one({"server_id": server_id}, {"$set": {"toggled_modules": toggled_modules}})
-                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, toggled_modules=toggled_modules))
+                request_threading(lambda: config_collection.update_one({"server_id": server_id}, {"$set": {"toggled_modules": toggled_modules}}))
+                request_threading(lambda: update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, toggled_modules=toggled_modules)))
                 logger.info("Toggle updated successfully.")
             else:
                 logger.warning("Toggle not found.")
@@ -123,7 +123,7 @@ class BotConfig:
         try:
             toggle_data = config_collection.find_one({"server_id" : server_id})
             if toggle_data:
-                config_collection.update_one({"server_id": toggle_data["server_id"]}, {"$set": {"channel_id": channel_id}})
+                request_threading(lambda: config_collection.update_one({"server_id": toggle_data["server_id"]}, {"$set": {"channel_id": channel_id}}))
                 update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, channel_id=channel_id))
                 logger.info("Channel updated successfully.")
             else:
@@ -137,7 +137,7 @@ class BotConfig:
         try:
             config_data = config_collection.find_one({"server_id": server_id})
             if config_data:
-                config_collection.delete_one({"server_id" : server_id})
+                request_threading(lambda: config_collection.delete_one({"server_id" : server_id}))
                 update_scheduler(lambda: cache_initiator.delete_from_user_cache(server_id))
                 logger.info("Server deleted successfully.")
             else:
@@ -149,7 +149,7 @@ class BotConfig:
     def read_all_channels():
         """Read all channels from the database."""
         try:
-            channels = config_collection.find()
+            channels = request_threading(lambda: config_collection.find())
             return channels
         except Exception as e:
             logger.error("Error encountered while reading all channels.", e)
@@ -159,7 +159,7 @@ class BotConfig:
     def read(server_id: int):
         """Read a server from the database."""
         try:
-            config_data = config_collection.find_one({"server_id": server_id})
+            config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id}))
             if config_data:
                 return config_data
             else:

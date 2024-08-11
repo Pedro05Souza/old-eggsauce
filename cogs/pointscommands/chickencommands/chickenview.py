@@ -21,7 +21,7 @@ class ChickenView(commands.Cog):
         """Check the information of a chicken."""
         if user is None:
             user = ctx.author
-        farm_data = await user_cache_retriever(user.id)
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             if index > len(farm_data['chickens']) or index < 0:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, the chicken index is invalid.")
@@ -71,7 +71,7 @@ class ChickenView(commands.Cog):
         """Shows your current rank."""
         if user is None:
             user = ctx.author
-        farm_data = await user_cache_retriever(user.id)
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             rank = await rank_determiner(farm_data['mmr'])
             msg = await make_embed_object(title=f":crossed_swords: {user.display_name}'s battle stats:")
@@ -103,7 +103,7 @@ class ChickenView(commands.Cog):
         """Check the farm profit"""
         if not user:
             user = ctx.author
-        farm_data = await update_user_farm(user, Farm.read(user.id))
+        farm_data = await update_user_farm(user, ctx.data["farm_data"])
         if farm_data:
             totalProfit = 0
             totalcorn = 0
@@ -133,8 +133,7 @@ class ChickenView(commands.Cog):
     @pricing()
     async def rename_farm(self, ctx, nickname: str):
         """Rename the farm"""
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             censor = profanity.contains_profanity(nickname)
             if censor:
@@ -155,8 +154,7 @@ class ChickenView(commands.Cog):
     async def rename_chicken(self, ctx, index: int, nickname: str):
         """Rename a chicken in the farm"""
         index -= 1
-        farm_data = user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             censor = profanity.contains_profanity(nickname)
             if censor:
@@ -191,8 +189,7 @@ class ChickenView(commands.Cog):
     @pricing()
     async def switch_chicken(self, ctx, index: int, index2: int):
         """Switches chickens"""
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         if farm_data:
             if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
@@ -210,8 +207,8 @@ class ChickenView(commands.Cog):
         """View the bench"""
         if not user:
             user = ctx.author
-        farm_data = await user_cache_retriever(user.id)
-        farm_data = farm_data["farm_data"]
+        data = ctx.data
+        farm_data = data["farm_data"]
         if farm_data:
             await get_user_bench(ctx, farm_data, user)
         else:
@@ -222,8 +219,7 @@ class ChickenView(commands.Cog):
     @pricing()
     async def add_bench(self, ctx, index: int):
         """Adds a chicken to the bench"""
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         index -= 1
         if farm_data:
             e = EventData(ctx.author)
@@ -248,8 +244,7 @@ class ChickenView(commands.Cog):
     @pricing()
     async def remove_bench(self, ctx, index: int):
         """Removes a chicken from the bench"""
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         index -= 1
         if farm_data:
             e = EventData(ctx.author)
@@ -274,8 +269,7 @@ class ChickenView(commands.Cog):
         """Switches a chicken from the farm to the bench"""
         if await verify_events(ctx, ctx.author):
             return
-        farm_data = await user_cache_retriever(ctx.author.id)
-        farm_data = farm_data["farm_data"]
+        farm_data = ctx.data["farm_data"]
         index_farm -= 1
         index_bench_int -= 1
         if farm_data:

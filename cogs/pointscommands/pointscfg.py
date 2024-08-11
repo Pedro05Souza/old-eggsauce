@@ -1,12 +1,10 @@
 from discord.ext import commands
-from db.botConfigDB import BotConfig
 from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, get_user_title, user_cache_retriever, guild_cache_retriever
 from tools.tips import tips
 from db.bankDB import Bank
 from db.userDB import User
 from random import randint
 from tools.pointscore import pricing, refund
-from db.botConfigDB import BotConfig
 import math
 import time
 import discord
@@ -92,7 +90,7 @@ class PointsConfig(commands.Cog):
         if user is None:
             user = ctx.author
         user_data = await self.update_user_points(user)
-        bank_data = Bank.read(user.id)
+        bank_data = ctx.data["bank_data"]
         if user_data:
             if bank_data:
                 msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {bank_data['bank']}")

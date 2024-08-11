@@ -71,10 +71,9 @@ class FriendlyCommands(commands.Cog):
     async def user_profile(self, ctx, user: discord.Member = None):
         if not user:
             user = ctx.author
-        data = await user_cache_retriever(user.id)
-        user_data = data["user_data"]
-        bank_data = data["bank_data"]
-        farm_data = data["farm_data"]
+        user_data = ctx.data["user_data"]
+        bank_data = ctx.data["bank_data"]
+        farm_data = ctx.data["farm_data"]
         market_data = Market.get_user_offers(user.id)
         if not user_data:
             await send_bot_embed(ctx, description=f"{user.display_name} doesn't have a profile.")

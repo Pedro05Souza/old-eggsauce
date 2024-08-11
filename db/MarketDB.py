@@ -1,5 +1,6 @@
 from db.dbConfig import mongo_client
 from time import time
+from tools.shared import request_threading
 import logging
 import uuid
 market_collection = mongo_client.db.market
@@ -24,7 +25,7 @@ class Market:
                     "author_id": author_id,
                     "created_at": time()
                 }
-                market_collection.insert_one(offer)
+                request_threading(lambda: market_collection.insert_one(offer))
                 logger.info(f"Offer has been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the offer.", e)
@@ -34,7 +35,7 @@ class Market:
     def get(offer_id: int):
         """Get an item from the market."""
         try:
-            offer_data = market_collection.find_one({"offer_id": offer_id})
+            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id}))
             if offer_data:
                 return offer_data
             else:
@@ -54,7 +55,7 @@ class Market:
                 if kwargs:
                     for key, value in kwargs.items():
                         if key in possible_keywords:
-                            market_collection.update_one({"offer_id": offer_id}, {"$set": {key: value}})
+                            request_threading(lambda: market_collection.update_one({"offer_id": offer_id}, {"$set": {key: value}}))
                 else:
                     logger.warning("Keyword arguments aren't being passed.")
             else:
@@ -67,9 +68,9 @@ class Market:
     def delete(offer_id: int):
         """Delete an item from the market."""
         try:
-            offer_data = market_collection.find_one({"offer_id": offer_id})
+            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id}))
             if offer_data:
-                market_collection.delete_one({"offer_id": offer_id})
+                request_threading(lambda: market_collection.delete_one({"offer_id": offer_id}))
                 logger.info(f"Offer {offer_id} has been deleted successfully.")
             else:
                 logger.warning(f"Offer {offer_id} does not exist.")
@@ -81,7 +82,7 @@ class Market:
     def get_user_offers(author_id: int):
         """Get all offers from a user."""
         try:
-            offers = market_collection.find({"author_id": author_id})
+            offers = request_threading(lambda: market_collection.find({"author_id": author_id}))
             if offers:
                 return list(offers)
             else:
@@ -116,7 +117,7 @@ class Market:
                 else:
                     query["chicken.rarity"] = value
         try:
-            offers = market_collection.find(query).sort("price", 1).limit(10)
+            offers = request_threading(lambda: market_collection.find(query).sort("price", 1).limit(10))
             if offers:
                 return list(offers)
             else:
@@ -130,7 +131,7 @@ class Market:
     def count_all_offers():
         """Count all offers in the market."""
         try:
-            count = market_collection.count_documents({})
+            count = request_threading(lambda: market_collection.count_documents({}))
             return count
         except Exception as e:
             logger.error("Error encountered while counting the offers.", e)
@@ -140,7 +141,7 @@ class Market:
     def create_many(chickenlist, author_id):
         """Create multiple items in the market."""
         try:
-            market_collection.insert_many(chickenlist)
+            request_threading(lambda: market_collection.insert_many(chickenlist))
             logger.info(f"Offers have been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the offers.", e)

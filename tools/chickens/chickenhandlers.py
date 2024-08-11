@@ -3,30 +3,41 @@ logger = logging.getLogger('botcore')
 
 # Shared event classes for the chicken commands        
 class RollLimit:
-    obj_list = []
-    def __init__(self, user_id, current, chickens=None):
-        RollLimit.obj_list.append(self)
-        self.user_id = user_id
-        self.current = current
-        self.chickens = chickens
+    obj_list = {}
 
-    @staticmethod
-    def read(user_id):
-        for obj in RollLimit.obj_list:
-            if obj.user_id == user_id:
-                return obj
-        return None
+    @classmethod
+    def read(cls, user_id):
+        return cls.obj_list.get(user_id)
     
-    @staticmethod
-    def remove(obj):
+
+    @classmethod
+    def read_key(cls, key):
+        if key in cls.obj_list.keys():
+            return True
+        return False
+
+    @classmethod
+    def remove(cls, obj):
         try:
-            RollLimit.obj_list.remove(obj)
+            cls.obj_list.pop(obj.user_id)
         except Exception as e:
             logger.error("Error removing object from list.", e)
     
-    @staticmethod
-    def remove_all():
-        RollLimit.obj_list.clear()
+    @classmethod
+    def update(cls, user_id, current):
+        obj = cls.obj_list.get(user_id)
+        if obj:
+            cls.obj_list[user_id] = current
+        else:
+            cls.obj_list[user_id] = current
+
+    @classmethod
+    def create(cls, user_id, current):
+        cls.obj_list[user_id] = current
+
+    @classmethod
+    def remove_all(cls):
+        cls.obj_list.clear()
 
 class EventData():
     current_users_in_event = {}
