@@ -6,10 +6,9 @@ import concurrent.futures
 import threading
 import asyncio
 import logging
-import gc
 
 logger = logging.getLogger('botcore')
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=5) # 5 threads to pick from the pool
 spam_command_cooldown = .8
 regular_command_cooldown = 3.5
 queue_command_cooldown = 90
@@ -109,7 +108,7 @@ async def guild_cache_retriever(guild_id):
     return guild_cache
 
 def update_scheduler(func):
-    """Schedules a coroutine to be run in the event loop with optional priority."""
+    """Schedules a coroutine to be run in the event loop with top priority."""
     loop = asyncio.get_event_loop()
     if loop.is_running():
             loop.call_soon(asyncio.ensure_future, func())
@@ -133,7 +132,7 @@ async def return_data(ctx, user=None):
         return await user_cache_retriever(user.id), user
 
 async def desync_warning(ctx, data):
-    """Warn the developers if any user has two instances that are different from each other."""
+    """Warn the developers if user cache is desynchronized from the database."""
     user_cache = await user_cache_retriever(ctx.author.id)
     if data != user_cache:
         await send_bot_embed(ctx, description=":warning: Your data is desynchronized. Please wait a few seconds and try again.")

@@ -38,8 +38,8 @@ async def bot_maker(user_score):
          rarity = cumulative_distribution[index][1]
         bot_chickens.append(await create_chicken(rarity, "bot"))
     bot.chickens = bot_chickens
-    negative_score = user_score * .8
-    positive_score = user_score * 1.2
+    negative_score = user_score * .9
+    positive_score = user_score * 1.1
     negative_score = int(negative_score)
     positive_score = int(positive_score)
     bot.score = randint(negative_score, positive_score)
@@ -59,7 +59,7 @@ async def define_bot_min_farm_size(player_mmr):
 async def define_chicken_rarity_list(player_mmr, all_rarities):
     """Changes the rarity list for the bot."""
     bot_deck = all_rarities.copy()
-    if player_mmr >= 1800:
+    if player_mmr >= 1900:
         chances = .33
         rarities = ['ASCENDED', 'ETHEREAL', 'CHOSEN']
         zip_list = zip(rarities, [chances] * len(rarities))

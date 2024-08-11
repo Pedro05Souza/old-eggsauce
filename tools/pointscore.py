@@ -38,12 +38,9 @@ async def set_points_commands_submodules(ctx, config_data):
         return False
 
 def verify_points(comando, user_data):
-    price = Prices[comando].value 
-    if user_data:
-        return user_data["points"] >= price
-    else:
-        return False
-    
+    price = Prices[comando].value
+    return user_data["points"] >= price
+
 async def refund(user: discord.Member, ctx):
     try:
         price = Prices[ctx.command.name].value
@@ -56,15 +53,11 @@ async def refund(user: discord.Member, ctx):
 async def treat_exceptions(ctx, comando, user_data, config_data, data):
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
     if is_slash_command:
-        if Prices[comando].value > user_data["points"]:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have enough points to use this command.")
-            return False
-        if Prices[comando].value == 0:
-            return True
         new_points = user_data["points"] - Prices[comando].value
         data["user_data"]["points"] = new_points
         User.update_points(ctx.author.id, new_points)
         return True
+    
     message_content = ctx.message.content
     command_args = message_content.split()[1:] 
         
@@ -77,7 +70,8 @@ async def treat_exceptions(ctx, comando, user_data, config_data, data):
     
     expected_args_count = len(parameters) - len(optional_params_indices)
     if varargs_index is not None:
-        expected_args_count -= 1 
+        expected_args_count -= 1
+
     if len(command_args) < expected_args_count:
         await send_bot_embed(ctx, description=":no_entry_sign: Insufficient amount of arguments.")
         return False
@@ -176,7 +170,6 @@ def pricing():
             if verify_points(command, user_data):
                 result = await treat_exceptions(ctx,command, user_data, config_data, data)
                 ctx.data = data
-                print(ctx.data['user_data'])
                 ctx.predicate_result = result
                 return result
             
@@ -184,7 +177,7 @@ def pricing():
                 await send_bot_embed(ctx, description=":no_entry_sign: You do not have enough points to use this command.")
                 result = False
                 ctx.predicate_result = result
-                return result 
+                return result
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: Unknown points command.")
             result = False

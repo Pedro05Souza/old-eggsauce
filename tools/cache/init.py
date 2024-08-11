@@ -11,7 +11,7 @@ class CacheInitiator:
         self.guild_cache = GuildCache(memory_limit_guild)
 
     async def start_cache_clearing_for_users(self):
-        await self.user_cache.clear_users_cache_periondically(1800)  # 1 hour
+        await self.user_cache.clear_users_cache_periondically(900) # 15 minutes
 
     async def get_user_cache(self, user_id):
         return await self.user_cache.get(user_id)
@@ -20,7 +20,6 @@ class CacheInitiator:
         await self.user_cache.put(user_id, **kwargs)
 
     async def update_user_cache(self, user_id, **kwargs):
-        print(kwargs)
         if await self.user_cache.get(user_id) is None:
             await self.add_to_user_cache(user_id, **kwargs)
         else:

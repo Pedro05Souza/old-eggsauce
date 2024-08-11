@@ -3,6 +3,7 @@ from pympler import asizeof
 
 
 class GuildCache(BotCache):
+    
     def __init__(self, memory_limit: int):
         super().__init__(memory_limit)
 
@@ -15,7 +16,6 @@ class GuildCache(BotCache):
             await super().put(key, **kwargs)
         else:
             raise ValueError("Invalid keyword arguments.")
-
 
     async def _evict_if_needed(self):
         await super()._evict_if_needed()

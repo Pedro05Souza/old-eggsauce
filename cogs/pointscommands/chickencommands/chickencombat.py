@@ -446,10 +446,12 @@ class ChickenCombat(commands.Cog):
             e2 = EventData(user)
             confirmation = await confirmation_embed(ctx, user, f"{user.name}, do you accept the friendly combat request from {ctx.author.name}?")
             if confirmation:
-                farm_data['chickens'] = await self.define_eight_chickens_for_match(farm_data['chickens'])
-                user_data['chickens'] = await self.define_eight_chickens_for_match(user_data['chickens'])
-                author = UserInQueue(ctx.author, farm_data['chickens'], ctx, e, farm_data['mmr'])
-                user = UserInQueue(user, user_data['chickens'], ctx, e2, user_data['mmr'])
+                temp_farm_data_author = farm_data['chickens']
+                temp_farm_data_user = user_data['chickens']
+                temp_farm_data_author = await self.define_eight_chickens_for_match(farm_data['chickens'])
+                temp_farm_data_user = await self.define_eight_chickens_for_match(user_data['chickens'])
+                author = UserInQueue(ctx.author, temp_farm_data_author, ctx, e, farm_data['mmr'])
+                user = UserInQueue(user,temp_farm_data_user, ctx, e2, user_data['mmr'])
                 author.chicken_overrall_score = await define_chicken_overrall_score(author.chickens)
                 user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
                 author_msg, user_msg = await self.check_if_same_guild(author, user, await make_embed_object(description=f"🔥 The mach will begin soon."))

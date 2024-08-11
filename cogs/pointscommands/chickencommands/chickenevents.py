@@ -219,6 +219,7 @@ class ChickenEvents(commands.Cog):
     async def farmer(self, ctx) -> None:
         """The farmer automatically feeds the chickens"""
         farmer_price = 5000
+        eggs_needed = 10000
         description = [
             f":moneybag: Rich Farmer: Increase the egg value of the chickens by **{load_farmer_upgrades('Rich Farmer')[0]}%** and increases the hourly corn production by **{load_farmer_upgrades('Rich Farmer')[1]}%**\n",
             f":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces upkeep by **{load_farmer_upgrades('Guardian Farmer')}%**.\n",
@@ -226,7 +227,7 @@ class ChickenEvents(commands.Cog):
             f":crossed_swords: Warrior Farmer: Gives **{load_farmer_upgrades('Warrior Farmer')}** more farm slots.\n",
             f":leaves: Sustainable Farmer: Auto-feeds the chickens every **{load_farmer_upgrades('Sustainable Farmer')[0] // 3600}** hours, the happiness generated is a number between **{load_farmer_upgrades('Sustainable Farmer')[1][0]}-{load_farmer_upgrades('Sustainable Farmer')[1][1]}%**. The farmer uses the money from your bank account.\n",
             f":tickets: Generous Farmer: Increases the maximum chickens generated in the market by **{load_farmer_upgrades('Generous Farmer')[0]}** slots.\n"
-            f"\n\nAll the farmer roles have a cost of **{farmer_price}** eggbux and you can only buy one of them. **Buying a farmer when you already have one will override the existing one.**\nReact with the corresponding emoji to purchase the role."
+            f"\n\nAll the farmer roles have a cost of **{farmer_price}** eggbux and you can only buy one of them. **Buying a farmer when you already have one will override the existing one. You need at least **{eggs_needed}** total eggs produced by your farm in order to buy them.\nReact with the corresponding emoji to purchase the role."
         ]
         message = await send_bot_embed(ctx, title=":farmer: Farmer roles:\n", description="\n".join(description))
         emojis = ["💰", "🛡️", "💼", "⚔️", "🍃", "🎟️"]
@@ -237,6 +238,9 @@ class ChickenEvents(commands.Cog):
             user_data = ctx.data["user_data"]
             farm_data = ctx.data["farm_data"]
             if user_data['points'] >= farmer_price:
+                if farm_data['total_eggs'] < eggs_needed:
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to produce at least {eggs_needed} eggs in order to purchase a farmer role.")
+                    return
                 farm_size = get_max_chicken_limit(farm_data)
                 if len(farm_data['chickens']) >= farm_size and len(farm_data['chickens']) > 8:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} you have a Warrior farmer, you need to sell the extra farm slots to buy another farmer.")
