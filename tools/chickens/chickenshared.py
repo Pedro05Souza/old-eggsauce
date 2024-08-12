@@ -6,6 +6,7 @@ from db.userDB import User
 from db.MarketDB import Market
 from tools.chickens.chickenhandlers import EventData
 from tools.shared import user_cache_retriever
+from tools.cache.init import cache_initiator
 from tools.chickens.chickeninfo import *
 from tools.shared import send_bot_embed, make_embed_object
 from tools.tips import tips
@@ -60,6 +61,7 @@ async def get_usr_farm(ctx, user: discord.Member):
         data = await user_cache_retriever(user.id)
         farm_data = await update_user_farm(user, data['farm_data'])
         if farm_data:
+            await cache_initiator.update_user_cache(user.id, farm_data=farm_data, bank_data=data['bank_data'], user_data=data['user_data'])
             farm_data = await get_player_chicken(ctx, user, farm_data)
             await update_farmer(user, farm_data)
             if len(farm_data['chickens']) == 0:
@@ -108,7 +110,6 @@ async def rank_determiner(mmr):
          if mmr >= value:
              return key
      return len(chicken_ranking) - 1
-
 
 async def create_chicken(rarity, author):
      """"Create a chicken"""
@@ -212,16 +213,16 @@ async def update_user_farm(user, farm_data):
     updated_farm_data = farm_data
     hours_passed_since_last_egg_drop = min(last_drop_time // 7200, 24)
     user_data = await user_cache_retriever(user.id)
-    user_data = user_data['user_data']
+    copy_user_data = user_data.copy()
+    copy_user_data = copy_user_data['user_data']
     taxes = 0
     for _ in range(int(hours_passed_since_last_egg_drop)):
-        updated_farm_data = await drop_egg_for_player(farm_data, user_data)
+        updated_farm_data = await drop_egg_for_player(farm_data, copy_user_data)
         taxes += await farm_maintence_tax(updated_farm_data)
     if hours_passed_since_last_egg_drop != 0:
+        await update_user_points(user_data['user_data'], user_data['bank_data'], updated_farm_data, taxes)
         Farm.update_chicken_drop(user.id)
         Farm.update(user.id, chickens=updated_farm_data['chickens'], eggs_generated=updated_farm_data['eggs_generated'])
-        user_data['points'] -= taxes
-        User.update_points(user_data['user_id'], user_data['points'])
     return updated_farm_data
 
 async def update_farmer(user, farm_data):
@@ -266,9 +267,10 @@ async def devolve_chicken(chicken):
 async def update_player_corn(farm_data, user: discord.Member):
     last_drop_time = time() - farm_data['last_corn_drop']
     updated_farm_data = farm_data
+    farm_data_copy = farm_data.copy()
     hours_passed_since_last_drop = min(last_drop_time // 7200, 10)
     for _ in range(int(hours_passed_since_last_drop)):
-        updated_farm_data = await generate_corncrops(farm_data)
+        updated_farm_data = await generate_corncrops(farm_data_copy)
     if hours_passed_since_last_drop != 0:
         Farm.update_corn_drop(user.id)
         Farm.update(user.id, corn=updated_farm_data['corn'])
@@ -339,4 +341,26 @@ async def farm_maintence_tax(farm_data):
     total_tax = plot_tax + corn_tax + chicken_tax
     return int(total_tax)
 
+async def update_user_points(user_data, bank_data, farm_data, taxes):
+     if user_data['points'] >= taxes:
+         user_data['points'] -= taxes
+         User.update_points(user_data['user_id'], user_data['points'])
+     elif bank_data['bank'] >= taxes:
+         bank_data['bank'] -= taxes
+         Bank.update(user_data['user_id'], bank_data['bank'])
+     elif user_data['points'] + bank_data['bank'] >= taxes:
+            difference = taxes - user_data['points']
+            user_data['points'] = 0
+            bank_data['bank'] -= difference
+            Bank.update(user_data['user_id'], bank_data['bank'])
+            User.update_points(user_data['user_id'], user_data['points'])
+     else:
+         money_earned = await quick_sell_chicken(farm_data)
+         User.update_points(user_data['user_id'], user_data['points'] + money_earned)
      
+async def quick_sell_chicken(farm_data):
+    """Quick sell a chicken"""
+    random_chicken = farm_data['chickens'][randint(0, len(farm_data['chickens']) - 1)]
+    farm_data['chickens'].remove(random_chicken)
+    money_earned = get_chicken_price(random_chicken)
+    return money_earned

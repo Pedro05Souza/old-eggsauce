@@ -12,7 +12,7 @@ class BotConfig:
     def create(server_id: int, toggled_modules: list = None, channel_id: int = None, prefix: str = None):
         """Create a server in the database."""
         try:
-            toggle_data = config_collection.find_one({"server_id" : toggled_modules})
+            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
                 logger.warning("This server already exists.")
                 return None
@@ -34,7 +34,7 @@ class BotConfig:
     def create_toggle(server_id:int, toggled_modules: list):
         """Create a toggle in the database."""
         try:
-            toggle_data = config_collection.find_one({"server_id": server_id})
+            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
                 logger.warning("This toggle already exists.")
                 return None
@@ -54,7 +54,7 @@ class BotConfig:
     def create_channel(server_id:int, channel_id: int):
         """Create a channel in the database."""
         try:
-            toggle_data = config_collection.find_one({"server_id": server_id})
+            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
                 logger.warning("This channel already exists.")
                 return None
@@ -73,7 +73,7 @@ class BotConfig:
     @staticmethod
     def create_prefix(server: int, prefix: str):
         try:
-            prefix_data = config_collection.find_one({"server_id": server})
+            prefix_data = request_threading(lambda: config_collection.find_one({"server_id": server})).result()
             if prefix_data:
                 logger.warning("This prefix already exists.")
                 return None
@@ -93,7 +93,7 @@ class BotConfig:
     def update_prefix(server_id: int, prefix: str):
         """Update a prefix in the database."""
         try:
-            prefix_data = config_collection.find_one({"server_id": server_id})
+            prefix_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if prefix_data:
                 request_threading(lambda: config_collection.update_one({"server_id": server_id}, {"$set": {"prefix": prefix}}))
                 update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, prefix=prefix))
@@ -107,7 +107,7 @@ class BotConfig:
     def update_toggled_modules(server_id: int, toggled_modules: list):
         """Update a toggle in the database."""
         try:
-            toggle_data = config_collection.find_one({"server_id": server_id})
+            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
                 request_threading(lambda: config_collection.update_one({"server_id": server_id}, {"$set": {"toggled_modules": toggled_modules}}))
                 update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, toggled_modules=toggled_modules))
@@ -121,7 +121,7 @@ class BotConfig:
     def update_channel_id(server_id: int, channel_id: int):
         """Update a channel in the database."""
         try:
-            toggle_data = config_collection.find_one({"server_id" : server_id})
+            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
                 request_threading(lambda: config_collection.update_one({"server_id": toggle_data["server_id"]}, {"$set": {"channel_id": channel_id}}))
                 update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, channel_id=channel_id))
@@ -135,7 +135,7 @@ class BotConfig:
     def delete(server_id: int):
         """Delete a toggle from the database."""
         try:
-            config_data = config_collection.find_one({"server_id": server_id})
+            config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if config_data:
                 request_threading(lambda: config_collection.delete_one({"server_id" : server_id}))
                 update_scheduler(lambda: cache_initiator.delete_from_user_cache(server_id))
@@ -149,7 +149,7 @@ class BotConfig:
     def read_all_channels():
         """Read all channels from the database."""
         try:
-            channels = request_threading(lambda: config_collection.find())
+            channels = request_threading(lambda: config_collection.find()).result()
             return channels
         except Exception as e:
             logger.error("Error encountered while reading all channels.", e)
@@ -159,7 +159,7 @@ class BotConfig:
     def read(server_id: int):
         """Read a server from the database."""
         try:
-            config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id}))
+            config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if config_data:
                 return config_data
             else:

@@ -153,8 +153,12 @@ def pricing():
             return result
             
         if command in Prices.__members__:
-            data = await user_cache_retriever(ctx.author.id)
-            user_data = data["user_data"]
+            
+            try:
+                data = await user_cache_retriever(ctx.author.id)
+                user_data = data["user_data"]
+            except KeyError:
+                raise MissingCacheProperty(f"The user cache is missing the user_data property. {data}")
 
             if not user_data:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
@@ -188,3 +192,10 @@ def pricing():
     except Exception as e:
         logger.error(f"An error occurred while checking the predicate: {e}")
         return False
+    
+
+class MissingCacheProperty(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+

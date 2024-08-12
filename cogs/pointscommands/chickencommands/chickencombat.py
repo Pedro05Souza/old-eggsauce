@@ -399,7 +399,7 @@ class ChickenCombat(commands.Cog):
             chicken_rewarded, points_gained = await self.rewards_per_rank(chicken_ranking[current_rank])
             chicken_rewarded = await create_chicken(chicken_rewarded, "rewards")
             msg = await make_embed_object(title=f"🎉 {winner.member.name}'s rank rewards", description=f"You've managed to upgrade your rank, here are the following rewards:\n\n :money_with_wings: **{points_gained}** eggbux.")
-            User.update_points (winner.member.id, user_data['points'] + points_gained)
+            User.update_points(winner.member.id, user_data['points'] + points_gained)
             if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data) and len(farm_data['bench'] )>= max_bench:
                 msg.description += f"\n\n:warning: You've reached the maximum amount of chickens in your farm. The **{get_rarity_emoji(chicken_rewarded['rarity'])}** **{chicken_rewarded['rarity']}** **{chicken_rewarded['name']}** has been added to the reedemable rewards. Type **redeemables** to claim it."
                 farm_data['redeemables'].append(chicken_rewarded)
@@ -422,7 +422,7 @@ class ChickenCombat(commands.Cog):
         chicken_list = list(rarities_weight.keys())
         rank_dictionary = zip(rank_list[1:], chicken_list[9:])
         rank_dictionary = dict(rank_dictionary)
-        points_gained = rank * 2
+        points_gained = rank * 6
         for key in rank_list:
             if rank == key:
                 return rank_dictionary[key], points_gained

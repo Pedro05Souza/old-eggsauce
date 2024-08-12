@@ -1,6 +1,6 @@
 from db.dbConfig import mongo_client
 from tools.cache.init import cache_initiator
-from tools.shared import update_scheduler, request_threading
+from tools.shared import update_scheduler, request_threading, desync_warning
 import logging
 bank_collection = mongo_client.db.bank
 logger = logging.getLogger('botcore')
@@ -11,7 +11,7 @@ class Bank:
     def create(user_id: int, points: int):
         """Create a user in the database."""
         try:
-            user_data = bank_collection.find_one({"user_id": user_id})
+            user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 logger.warning(f"User {user_id} already exists.")
                 return None
@@ -35,7 +35,7 @@ class Bank:
     def delete(user_id: int):
         """Delete a user from the database."""
         try:
-            user_data = bank_collection.find_one({"user_id": user_id})
+            user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
                 request_threading(lambda: bank_collection.delete_one({"user_id": user_id}))
@@ -50,7 +50,7 @@ class Bank:
     def update(user_id: int, points: int):
         """Update a user in the database."""
         try:
-            user_data = bank_collection.find_one({"user_id": user_id})
+            user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 user_data['bank'] = points
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, bank_data=user_data))
@@ -66,7 +66,7 @@ class Bank:
     def update_upgrades(user_id: int, upgrades: int):
         """Update a user in the database."""
         try:
-            user_data = bank_collection.find_one({"user_id": user_id})
+            user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 user_data['upgrades'] = upgrades
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, bank_data=user_data))
@@ -82,7 +82,7 @@ class Bank:
     def read(user_id: int):
         """Read a user from the database."""
         try:
-            user_data = bank_collection.find_one({"user_id": user_id})
+            user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 return user_data
         except Exception as e:
@@ -93,7 +93,7 @@ class Bank:
     def read_highest_10_bank():
         """Read a user from the database."""
         try:
-            user_data = bank_collection.find().sort("bank", -1).limit(10)
+            user_data = request_threading(lambda: bank_collection.find().sort("bank", -1).limit(10)).result()
             if user_data:
                 return user_data
         except Exception as e:
@@ -103,7 +103,7 @@ class Bank:
     def readAll():
         """Read all users from the database."""
         try:
-            user_data = bank_collection.find()
+            user_data = request_threading(lambda: bank_collection.find()).result()
             if user_data:
                 return user_data
         except Exception as e:

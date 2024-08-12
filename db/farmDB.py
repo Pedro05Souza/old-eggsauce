@@ -12,7 +12,7 @@ class Farm:
     def create(user_id: int, ctx):
         """Create a farm for the user."""
         try:
-            farm_data = farm_collection.find_one({"user_id": user_id})
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
                 logger.warning(f"Farm for {user_id} already exists.")
                 return None
@@ -38,7 +38,7 @@ class Farm:
                     "redeemables": []
                 }
                 update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, farm_data=farm))
-                farm_collection.insert_one(farm)
+                request_threading(lambda: farm_collection.insert_one(farm))
                 logger.info(f"Farm for {user_id} has been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the farm.", e)
@@ -48,7 +48,7 @@ class Farm:
     def delete(user_id: int):
         """Delete a farm from the database."""
         try:
-            farm_data = farm_collection.find_one({"user_id": user_id})
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
                 update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
                 request_threading(farm_collection.delete_one({"user_id": user_id}))
@@ -63,7 +63,7 @@ class Farm:
         """Update a farm's status in the database."""
         possible_keywords = ["farm_name","plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses", "redeemables"]
         try:
-            farm_data = farm_collection.find_one({"user_id": user_id})
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
                 if kwargs:
                     for key, value in kwargs.items():
@@ -80,20 +80,20 @@ class Farm:
     def update_chicken_drop(user_id: int):
         """Update a farm's last drop in the database."""
         try:
-            farm_data = farm_collection.find_one({"user_id": user_id})
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
                 farm_data['last_chicken_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
                 request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_chicken_drop": time()}}))
         except Exception as e:
-            logger.error("Error encountered while trying to update farm's last drop.", e)
+            logger.error(f"Error encountered while trying to update farm's last drop. {e}")
             return None
         
     @staticmethod
     def update_farmer_drop(user_id: int):
         """Update a farm's last drop in the database."""
         try:
-            farm_data = farm_collection.find_one({"user_id": user_id})
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
                 farm_data['last_farmer_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
@@ -106,7 +106,7 @@ class Farm:
     def update_corn_drop(user_id: int):
         """Update a farm's last drop in the database."""
         try:
-            farm_data = farm_collection.find_one({"user_id": user_id})
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
                 farm_data['last_corn_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
@@ -119,7 +119,7 @@ class Farm:
     def read(user_id: int):
         """Read a farm's data from the database."""
         try:
-            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id}))
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
                 return farm_data
             else:
@@ -133,7 +133,7 @@ class Farm:
     def readAll():
         """Read all farms from the database."""
         try:
-            farms = request_threading(lambda: farm_collection.find())
+            farms = request_threading(lambda: farm_collection.find()).result()
             if farms:
                 return farms
             else:
@@ -147,7 +147,7 @@ class Farm:
     def deleteAll():
         """Delete all farms from the database."""
         try:
-            request_threading(lambda: farm_collection.delete_many({}))
+            request_threading(lambda: farm_collection.delete_many({})).result()
             logger.info("All farms have been deleted successfully.")
         except Exception as e:
             logger.error("Error encountered while deleting all farms.", e)
@@ -157,7 +157,7 @@ class Farm:
     def reset_mmr():
         """Reset all farms' mmr in the database."""
         try:
-            farms = request_threading(lambda: farm_collection.find())
+            farms = request_threading(lambda: farm_collection.find()).result()
             if farms:
                 for farm in farms:
                     farm_collection.update_one({"user_id": farm["user_id"]}, {"$set": {"mmr": 0, "highest_mmr": 0}})

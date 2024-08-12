@@ -23,6 +23,7 @@ async def load_cogs():
         module_path = filepath.relative_to(cogs_dir).with_suffix('').as_posix().replace('/', '.')
         logger.info(f"Loading... {module_path}")
         await bot.load_extension(f'cogs.{module_path}')
+        
 @bot.event
 async def on_ready():   
     await bot.change_presence(activity=discord.Game(name="🥚eggbux."))

@@ -6,6 +6,7 @@ logger = logging.getLogger('botcore')
 
 
 class CacheInitiator:
+
     def __init__(self, memory_limit_user: int, memory_limit_guild: int):
         self.user_cache = UserCache(memory_limit_user)
         self.guild_cache = GuildCache(memory_limit_guild)
@@ -49,6 +50,9 @@ class CacheInitiator:
 
     async def get_memory_usage(self):
         return await self.user_cache.get_user_cache_memory_consuption(), await self.guild_cache.get_guild_cache_memory_consuption()
+    
+    async def start_cache_clearing_for_guilds(self):
+        await self.guild_cache.clear_guild_cache_periodically(1800)  # 30 minutes
     
 cache_initiator = CacheInitiator(16777216, 8388608)  # 16MB, 8MB # can hold up to 7.8k guilds and 1.6k users
 

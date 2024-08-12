@@ -244,6 +244,7 @@ class BotCore(commands.Cog):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             await cache_initiator.start_cache_clearing_for_users()
+            await cache_initiator.start_cache_clearing_for_guilds()
             await self.restart_every_day()
 
 async def setup(bot):

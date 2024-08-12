@@ -12,7 +12,7 @@ class Market:
     def create(offer_id, chicken, price: int, description: str, author_id):
         """Create an item in the market."""
         try:
-            offer_data = market_collection.find_one({"offer_id": offer_id})
+            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
             if offer_data:
                 logger.warning(f"Offer {offer_id} already exists.")
                 return None
@@ -35,7 +35,7 @@ class Market:
     def get(offer_id: int):
         """Get an item from the market."""
         try:
-            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id}))
+            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
             if offer_data:
                 return offer_data
             else:
@@ -50,7 +50,7 @@ class Market:
         """Update an item in the market."""
         possible_keywords = ["chicken", "description", "author_id"]
         try:
-            offer_data = market_collection.find_one({"offer_id": offer_id})
+            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
             if offer_data:
                 if kwargs:
                     for key, value in kwargs.items():
@@ -68,7 +68,7 @@ class Market:
     def delete(offer_id: int):
         """Delete an item from the market."""
         try:
-            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id}))
+            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
             if offer_data:
                 request_threading(lambda: market_collection.delete_one({"offer_id": offer_id}))
                 logger.info(f"Offer {offer_id} has been deleted successfully.")
@@ -82,7 +82,7 @@ class Market:
     def get_user_offers(author_id: int):
         """Get all offers from a user."""
         try:
-            offers = request_threading(lambda: market_collection.find({"author_id": author_id}))
+            offers = request_threading(lambda: market_collection.find({"author_id": author_id})).result()
             if offers:
                 return list(offers)
             else:
@@ -117,7 +117,7 @@ class Market:
                 else:
                     query["chicken.rarity"] = value
         try:
-            offers = request_threading(lambda: market_collection.find(query).sort("price", 1).limit(10))
+            offers = request_threading(lambda: market_collection.find(query).sort("price", 1).limit(10)).result()
             if offers:
                 return list(offers)
             else:
@@ -131,7 +131,7 @@ class Market:
     def count_all_offers():
         """Count all offers in the market."""
         try:
-            count = request_threading(lambda: market_collection.count_documents({}))
+            count = request_threading(lambda: market_collection.count_documents({})).result()
             return count
         except Exception as e:
             logger.error("Error encountered while counting the offers.", e)

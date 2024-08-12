@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger('botcore')
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=5) # 5 threads to pick from the pool
+lock = threading.Lock()
 spam_command_cooldown = .8
 regular_command_cooldown = 3.5
 queue_command_cooldown = 90
@@ -92,13 +93,14 @@ async def user_cache_retriever(user_id):
         bank_data = Bank.read(user_id)
         await cache_initiator.add_to_user_cache(user_id, user_data=user_data, farm_data=farm_data, bank_data=bank_data)
         user_cache = await cache_initiator.get_user_cache(user_id)
-        return user_cache
+        return user_cache.copy()
     print("cache")
-    return user_cache
+    return user_cache.copy()
 
 async def guild_cache_retriever(guild_id):
     """Retrieve the guild cache"""
     from db.botConfigDB import BotConfig
+    
     guild_cache = await cache_initiator.get_guild_cache(guild_id)
     if not guild_cache:
         guild_data = BotConfig.read(guild_id)
@@ -117,12 +119,13 @@ def update_scheduler(func):
 
 def request_threading(func):
     """Request a function to be run in a separate thread. Mostly used for database operations."""
-    future = executor.submit(func)
-    return future.result()
+    with lock:
+        future = executor.submit(func)
+        return future
 
 def retrieve_threads():
     """Retrieve the number of threads."""
-    logger.info(f"Number of currently activate threads in the program: {threading.active_count()}")
+    return len(threading.enumerate())
 
 async def return_data(ctx, user=None):
     """Return the farm data of the user."""

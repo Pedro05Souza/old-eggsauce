@@ -1,6 +1,6 @@
 from discord.ext import commands
 from db.userDB import User
-from tools.shared import send_bot_embed, is_dev
+from tools.shared import make_embed_object, send_bot_embed, is_dev, retrieve_threads
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.MarketDB import Market
@@ -243,11 +243,14 @@ class DevCommands(commands.Cog):
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
-    @commands.command(name="cache")
-    async def cache_memory_usage(self, ctx):
+    @commands.command(name="devpanel")
+    async def developer_panel(self, ctx):
         if is_dev(ctx):
             user, guild = await cache_initiator.get_memory_usage()
-            await send_bot_embed(ctx, title="Cache memory usage:", description=f"User cache: {user} bytes\nGuild cache: {guild} bytes")
+            embed_obj = await make_embed_object(title="⚙️ Developer Panel")
+            embed_obj.add_field(name="🔧 Cache Memory Usage:", value=f"User Cache: {user} bytes\nGuild Cache: {guild} bytes")
+            embed_obj.add_field(name="🧰 Current active threads:", value=f"{retrieve_threads()}")
+            await ctx.send(embed=embed_obj)
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

@@ -35,7 +35,7 @@ tips = {
     31: "You need to pay hourly for the upkeep of your chickens.",
     32: "The upkeep multiplier for the chickens regulates the eggs produced.",
     33: "You can evolve two chickens of the same type to the next rarity",
-    34: "Everytime you don't have money to maintain your chickens, one of them will randomly be picked to be deleted.",
+    34: "Everytime you don't have money to maintain your chickens, one of them will randomly be picked and quick sold to pay the debt.",
     35: f"You can put your chickens in the bench to avoid them from being deleted. The limit is {max_bench} chickens.",
     36: "You can see the bench with the !bench command.",
     37: "Somewhere in the world, a chicken is being born.",
