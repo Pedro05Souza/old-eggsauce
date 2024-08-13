@@ -2,6 +2,7 @@ from db.userDB import User
 from discord.ext import commands
 from tools.shared import send_bot_embed, make_embed_object, is_dev, user_cache_retriever, guild_cache_retriever
 from tools.prices import Prices
+from tools.cache.init import cache_initiator
 import inspect
 import discord
 import logging
@@ -153,12 +154,16 @@ def pricing():
             return result
             
         if command in Prices.__members__:
-            
-            try:
-                data = await user_cache_retriever(ctx.author.id)
+            data = await user_cache_retriever(ctx.author.id)
+            all_keys = ["user_data", "farm_data", "bank_data"]
+            if not data:
+                await send_bot_embed(ctx, description=":no_entry_sign: Your data has not been synchronized. Please try again later.")
+                raise CacheNotFound(f"The user cache is not found. {data}", ctx.author.id)
+            if not all(key in data for key in all_keys): # cache properties can be nullable
+                await send_bot_embed(ctx, description=":no_entry_sign: Your data is not synchronized. Please try again later.")
+                raise MissingCacheProperty(f"The user cache is missing properties and likely is not synchronized. {data}", ctx.author.id)
+            else:
                 user_data = data["user_data"]
-            except KeyError:
-                raise MissingCacheProperty(f"The user cache is missing the user_data property. {data}")
 
             if not user_data:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
@@ -195,7 +200,14 @@ def pricing():
     
 
 class MissingCacheProperty(Exception):
-    def __init__(self, message):
+    def __init__(self, message, user_id):
         self.message = message
+        cache_initiator.delete_from_user_cache(user_id)
+        super().__init__(self.message)
+
+class CacheNotFound(Exception):
+    def __init__(self, message, user_id):
+        self.message = message
+        cache_initiator.delete_from_user_cache(user_id)
         super().__init__(self.message)
 

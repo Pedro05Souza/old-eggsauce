@@ -93,15 +93,15 @@ async def user_cache_retriever(user_id):
         bank_data = Bank.read(user_id)
         await cache_initiator.add_to_user_cache(user_id, user_data=user_data, farm_data=farm_data, bank_data=bank_data)
         user_cache = await cache_initiator.get_user_cache(user_id)
-        return user_cache.copy()
+        return user_cache
     print("cache")
-    return user_cache.copy()
+    return user_cache
 
 async def guild_cache_retriever(guild_id):
     """Retrieve the guild cache"""
     from db.botConfigDB import BotConfig
-    
     guild_cache = await cache_initiator.get_guild_cache(guild_id)
+    
     if not guild_cache:
         guild_data = BotConfig.read(guild_id)
         await cache_initiator.add_to_guild_cache(guild_id, prefix=guild_data['prefix'], toggled_modules=guild_data['toggled_modules'], channel_id=guild_data['channel_id'])
