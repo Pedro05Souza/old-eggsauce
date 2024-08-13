@@ -117,7 +117,7 @@ def update_scheduler(func):
     else:
         asyncio.run(func())
 
-def request_threading(func):
+def request_threading(func):  
     """Request a function to be run in a separate thread. Mostly used for database operations."""
     with lock:
         future = executor.submit(func)

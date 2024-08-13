@@ -6,39 +6,45 @@ from pympler import asizeof
 from collections import OrderedDict
 from dataclasses import dataclass, field
 import logging
+import asyncio
 logger = logging.getLogger('botcore')
 
 @dataclass
 class BotCache():
     memory_limit: int
     cache: OrderedDict = field(default_factory=OrderedDict)
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock) # Lock to prevent data discrepancies
 
     async def get(self, key):
-        if key in self.cache:
-            self.cache.move_to_end(key)
-            return self.cache[key]
-        return None
+        async with self.lock:
+            if key in self.cache:
+                self.cache.move_to_end(key)
+                return self.cache[key]
+            return None
     
     async def put(self, id, **kwargs):
-        if id not in self.cache:
-            self.cache[id] = {}
-        for key, value in kwargs.items():
-            self.cache[id][key] = value
-            self.cache.move_to_end(id)
-        if asizeof.asizeof(self.cache) > self.memory_limit:
-            await self._evict_if_needed()
+        async with self.lock:
+            if id not in self.cache:
+                self.cache[id] = {}
+            for key, value in kwargs.items():
+                self.cache[id][key] = value
+                self.cache.move_to_end(id)
+            if asizeof.asizeof(self.cache) > self.memory_limit:
+                await self._evict_if_needed()
         
     async def delete(self, key):
-        dict_value = self.cache.pop(key, None)
-        if dict_value is None:
-            logger.warning(f"Key {key} not found in cache.")
-        else:
-            logger.info(f"Deleted {key} from cache.")
+        async with self.lock:
+            dict_value = self.cache.pop(key, None)
+            if dict_value is None:
+                logger.warning(f"Key {key} not found in cache.")
+            else:
+                logger.info(f"Deleted {key} from cache.")
 
     async def _evict_if_needed(self):
-        while asizeof.asizeof(self.cache) > self.memory_limit:
-            evicted_key, _ = self.cache.popitem(last=False)
-            logger.info(f"Evicting {evicted_key} cache to free up memory.")
+        async with self.lock:
+            while asizeof.asizeof(self.cache) > self.memory_limit:
+                evicted_key, _ = self.cache.popitem(last=False)
+                logger.info(f"Evicting {evicted_key} cache to free up memory.")
     
     async def clear(self):
         self.cache.clear()

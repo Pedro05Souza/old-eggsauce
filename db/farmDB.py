@@ -68,7 +68,7 @@ class Farm:
                 if kwargs:
                     for key, value in kwargs.items():
                         if key in possible_keywords:
-                            request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set" : {key: value}}))
+                            request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set" : {key: value}})).result()
                             farm_data[key] = value
                     update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
                 else:
@@ -84,7 +84,7 @@ class Farm:
             if farm_data:
                 farm_data['last_chicken_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_chicken_drop": time()}}))
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_chicken_drop": time()}})).result()
         except Exception as e:
             logger.error(f"Error encountered while trying to update farm's last drop. {e}")
             return None
@@ -97,7 +97,7 @@ class Farm:
             if farm_data:
                 farm_data['last_farmer_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}}))
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}})).result()
         except Exception as e:
             logger.error("Error encountered while trying to update farm's last drop.", e)
             return
@@ -110,7 +110,7 @@ class Farm:
             if farm_data:
                 farm_data['last_corn_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_corn_drop": time()}}))
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_corn_drop": time()}})).result()
         except Exception as e:
             logger.error("Error encountered while trying to update farm's last drop.", e)
             return None

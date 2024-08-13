@@ -25,7 +25,7 @@ class Bank:
                     #"credit_score": 0
                 }
                 update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, bank_data=user))
-                request_threading(lambda: bank_collection.insert_one(user)) 
+                request_threading(lambda: bank_collection.insert_one(user)).result()
                 logger.info(f"User {user_id} has been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the user.", e)
@@ -38,7 +38,7 @@ class Bank:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
-                request_threading(lambda: bank_collection.delete_one({"user_id": user_id}))
+                request_threading(lambda: bank_collection.delete_one({"user_id": user_id})).result()
                 logger.info("User has been deleted successfully.")
             else:
                 logger.warning("User not found.")
@@ -54,7 +54,7 @@ class Bank:
             if user_data:
                 user_data['bank'] = points
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, bank_data=user_data))
-                request_threading(lambda: bank_collection.update_one({"user_id": user_id}, {"$set": {"bank": points}}))
+                request_threading(lambda: bank_collection.update_one({"user_id": user_id}, {"$set": {"bank": points}})).result()
                 logger.info("User has been updated successfully.")
             else:
                 logger.warning("User not found.")
@@ -70,7 +70,7 @@ class Bank:
             if user_data:
                 user_data['upgrades'] = upgrades
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, bank_data=user_data))
-                request_threading(lambda: bank_collection.update_one({"user_id": user_id}, {"$set": {"upgrades": upgrades}}))
+                request_threading(lambda: bank_collection.update_one({"user_id": user_id}, {"$set": {"upgrades": upgrades}})).result()
                 logger.info("User has been updated successfully.")
             else:
                 logger.warning("User not found.")

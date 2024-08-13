@@ -227,7 +227,7 @@ class ChickenEvents(commands.Cog):
             f":crossed_swords: Warrior Farmer: Gives **{load_farmer_upgrades('Warrior Farmer')}** more farm slots.\n",
             f":leaves: Sustainable Farmer: Auto-feeds the chickens every **{load_farmer_upgrades('Sustainable Farmer')[0] // 3600}** hours, the happiness generated is a number between **{load_farmer_upgrades('Sustainable Farmer')[1][0]}-{load_farmer_upgrades('Sustainable Farmer')[1][1]}%**. The farmer uses the money from your bank account.\n",
             f":tickets: Generous Farmer: Increases the maximum chickens generated in the market by **{load_farmer_upgrades('Generous Farmer')[0]}** slots.\n"
-            f"\n\nAll the farmer roles have a cost of **{farmer_price}** eggbux and you can only buy one of them. **Buying a farmer when you already have one will override the existing one. You need at least **{eggs_needed}** total eggs produced by your farm in order to buy them.\nReact with the corresponding emoji to purchase the role."
+            f"\n\nAll the farmer roles have a cost of **{farmer_price}** eggbux and you can only buy one of them. Buying a farmer when you already have one will override the existing one. You need at least **{eggs_needed}** total eggs produced by your farm in order to buy them.\nReact with the corresponding emoji to purchase the role."
         ]
         message = await send_bot_embed(ctx, title=":farmer: Farmer roles:\n", description="\n".join(description))
         emojis = ["💰", "🛡️", "💼", "⚔️", "🍃", "🎟️"]

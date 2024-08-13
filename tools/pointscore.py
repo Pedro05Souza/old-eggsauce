@@ -137,15 +137,14 @@ def pricing():
     async def predicate(ctx):
         """Check if the user is able to use any of the points commands."""
         global dev_mode
+        if dev_mode and not is_dev(ctx):
+            await send_bot_embed(ctx, description=":warning: The bot is currently in development mode.")
+            result = False
+            return result
         command = ctx.command.name 
         result = True
         ctx.predicate_result = result
         config_data = await guild_cache_retriever(ctx.guild.id)
-        if dev_mode:
-            if not is_dev(ctx):
-                await send_bot_embed(ctx, description=":warning: The bot is currently in development mode.")
-                result = False
-                return result
             
         if config_data['toggled_modules'] == "N":
             embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
@@ -154,43 +153,49 @@ def pricing():
             return result
             
         if command in Prices.__members__:
-            data = await user_cache_retriever(ctx.author.id)
-            all_keys = ["user_data", "farm_data", "bank_data"]
-            if not data:
-                await send_bot_embed(ctx, description=":no_entry_sign: Your data has not been synchronized. Please try again later.")
-                raise CacheNotFound(f"The user cache is not found. {data}", ctx.author.id)
-            if not all(key in data for key in all_keys): # cache properties can be nullable
-                await send_bot_embed(ctx, description=":no_entry_sign: Your data is not synchronized. Please try again later.")
-                raise MissingCacheProperty(f"The user cache is missing properties and likely is not synchronized. {data}", ctx.author.id)
-            else:
-                user_data = data["user_data"]
+            if not ctx.command.get_cooldown_retry_after(ctx):
+                data = await user_cache_retriever(ctx.author.id)
+                all_keys = ["user_data", "farm_data", "bank_data"]
+                if not data:
+                    await send_bot_embed(ctx, description=":warning: Your data has not been synchronized. Please try again later. This should be fixed automatically.")
+                    raise CacheNotFound(f"The user cache is not found. {data}")
+                if not all(key in data for key in all_keys): # cache properties can be nullable
+                    await send_bot_embed(ctx, description=":warning: Your data is missing core properties and likely is not synchronized. Please try again later. This should be fixed automatically.")
+                    raise MissingCacheProperty(f"The user cache is missing core properties and likely is not synchronized. Here are the following keys: {data.keys()}")
+                else:
+                    user_data = data["user_data"]
 
-            if not user_data:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
-                result = False
-                ctx.predicate_result = result
-                return result
-            
-            if not await set_points_commands_submodules(ctx, config_data):
-                result = False
-                ctx.predicate_result = result
-                return result
-            
-            if verify_points(command, user_data):
-                result = await treat_exceptions(ctx,command, user_data, config_data, data)
-                ctx.data = data
-                ctx.predicate_result = result
-                return result
-            
+                if not user_data:
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
+                    result = False
+                    ctx.predicate_result = result
+                    return result
+                
+                if not await set_points_commands_submodules(ctx, config_data):
+                    result = False
+                    ctx.predicate_result = result
+                    return result
+                
+                if verify_points(command, user_data):
+                    result = await treat_exceptions(ctx,command, user_data, config_data, data)
+                    ctx.data = data
+                    ctx.predicate_result = result
+                    return result
+                
+                else:
+                    await send_bot_embed(ctx, description=":no_entry_sign: You do not have enough points to use this command.")
+                    result = False
+                    ctx.predicate_result = result
+                    return result
             else:
-                await send_bot_embed(ctx, description=":no_entry_sign: You do not have enough points to use this command.")
                 result = False
                 ctx.predicate_result = result
                 return result
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: Unknown points command.")
             result = False
-        return result
+            ctx.predicate_result = result
+            return result
     
     try:
         return commands.check(predicate)
@@ -198,16 +203,13 @@ def pricing():
         logger.error(f"An error occurred while checking the predicate: {e}")
         return False
     
-
 class MissingCacheProperty(Exception):
-    def __init__(self, message, user_id):
+    def __init__(self, message):
         self.message = message
-        cache_initiator.delete_from_user_cache(user_id)
         super().__init__(self.message)
 
 class CacheNotFound(Exception):
-    def __init__(self, message, user_id):
+    def __init__(self, message):
         self.message = message
-        cache_initiator.delete_from_user_cache(user_id)
         super().__init__(self.message)
 

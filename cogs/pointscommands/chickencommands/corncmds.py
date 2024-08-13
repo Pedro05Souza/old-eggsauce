@@ -1,7 +1,7 @@
 from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
-from tools.chickens.chickeninfo import ChickenFood, max_corn_limit, max_plot_limit
+from tools.chickens.chickeninfo import ChickenFood, max_corn_limit, max_plot_limit, chicken_drop_per_hour
 from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, confirmation_embed, return_data
 from tools.pointscore import pricing
 from tools.chickens.chickenshared import update_player_corn, calculate_corn, update_user_farm
@@ -17,9 +17,9 @@ class CornCommands(commands.Cog):
     @pricing()
     async def corn_field(self, ctx, user: discord.Member = None):
         """Displays the user's corn field."""
-        farm_data, user = await return_data(ctx, user)
-        if farm_data:
-            await ctx.send(embed=await self.show_plr_food_farm(ctx, user))
+        data, user = await return_data(ctx, user)
+        if data:
+            await ctx.send(embed=await self.show_plr_food_farm(user, data))
     
     @commands.hybrid_command(name="renamecornfield", aliases=["rcf"], usage="renameCornfield <nickname>", description="Rename the cornfield.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -41,12 +41,11 @@ class CornCommands(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You don't have a farm.")
 
-    async def show_plr_food_farm(self, ctx, user: discord.Member):
+    async def show_plr_food_farm(self, user: discord.Member, data):
         """Show the player's food farm"""
-        farm_data, user = await return_data(ctx, user)
-        farm_data = await update_player_corn(farm_data['farm_data'], user)
+        farm_data = await update_player_corn(user, data)
         if farm_data:
-            food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in 1 hour: {calculate_corn(farm_data)}\n:seedling: **Plots**: {farm_data['plot']}")
+            food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in **{chicken_drop_per_hour // 3600}** hour(s): {calculate_corn(farm_data)}\n:seedling: **Plots**: {farm_data['plot']}")
             food_embed.set_thumbnail(url=user.display_avatar)
             return food_embed
     
@@ -111,7 +110,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def buy_corn(self, ctx, quantity: int):
         """Buy corn for the chickens"""
-        farm_data = await update_player_corn(ctx.data['farm_data'], ctx.author)
+        farm_data = await update_player_corn(ctx.author, ctx.data)
         user_data = ctx.data["user_data"]
         if quantity < 30:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the minimum amount of corn you can buy is 30.")
@@ -154,8 +153,8 @@ class CornCommands(commands.Cog):
     @pricing()
     async def feed_all_chickens(self, ctx):
         """Feed all the chickens"""
-        farm_data = await update_player_corn(ctx.data['farm_data'], ctx.author)
-        farm_data = await update_user_farm(ctx.author, farm_data)
+        farm_data = await update_player_corn(ctx.author, ctx.data)
+        farm_data = await update_user_farm(ctx.author, ctx.data)
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0
         if farm_data:

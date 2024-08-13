@@ -27,7 +27,7 @@ class User:
                     "salary_time": time()
                 }
                 update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, user_data=user))
-                request_threading(lambda: users_collection.insert_one(user))
+                request_threading(lambda: users_collection.insert_one(user)).result()
                 logger.info(f"User {user_id} has been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the user.", e)
@@ -40,7 +40,7 @@ class User:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
-                request_threading(lambda: users_collection.delete_one({"user_id" : user_id}))
+                request_threading(lambda: users_collection.delete_one({"user_id" : user_id})).result()
             else:
                 logger.warning("User not found.")
         except Exception as e:
@@ -58,7 +58,7 @@ class User:
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
                 if not isinstance(points, int): 
                     points = 0
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}}))
+                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})).result()
         except Exception as e:
             logger.error("Error encountered while trying to update user's status.", e)
             return None
@@ -84,7 +84,7 @@ class User:
             if user_data:
                 user_data['roles'] = roles
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"roles": roles}}))
+                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"roles": roles}})).result()
         except Exception as e:
             logger.error("Error encountered while trying to update user's roles.", e)
             return None
@@ -97,7 +97,7 @@ class User:
             if user_data:
                 user_data['salary_time'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"salary_time": time()}}))
+                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"salary_time": time()}})).result()
         except Exception as e:
             logger.error("Error encountered while trying to update user's salary time.", e)
             return None
@@ -139,7 +139,7 @@ class User:
     def resetAll():
         """Resets all users from the database."""
         try:
-            request_threading(lambda: users_collection.update_many({}, {"$set": {"points": 0, "roles": ""}}))
+            request_threading(lambda: users_collection.update_many({}, {"$set": {"points": 0, "roles": ""}})).result()
         except Exception as e:
             logger.error("Error encountered while trying to reset all users.", e)
             return None

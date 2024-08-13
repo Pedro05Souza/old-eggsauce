@@ -9,6 +9,7 @@ max_bench = 5
 max_corn_limit = 2553
 max_plot_limit = 20
 corn_per_plot = 100
+chicken_drop_per_hour = 7200
 
 rollRates = {
         "COMMON": 5000,

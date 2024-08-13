@@ -8,7 +8,6 @@ from tools.pointscore import refund
 from tools.prices import Prices
 from tools.helpSelect import SelectModule, ShowPointsModules
 from colorlog import ColoredFormatter
-from time import time
 import logging
 import asyncio
 import sys
@@ -178,26 +177,13 @@ class BotCore(commands.Cog):
             msg = await make_embed_object(description=f":no_entry_sign: **{error}** a command has failed. The developers have been notified.")
             await user.send(embed=msg)
         raise error
-    
-    async def cooldown_error(self, ctx, error):
-        current_time = time()
-        if ctx.author.id not in self.last_cooldown_message_time or current_time - self.last_cooldown_message_time[ctx.author.id] >= 20:
-            msg = await make_embed_object(description=f":no_entry_sign: Slow down! Try the command again in {round(error.retry_after, 2)} seconds.")
-        try:
-            await ctx.author.send(embed=msg, delete_after=10)
-            return
-        except discord.Forbidden:
-            return
-        except Exception as e:
-            logger.error(f"Error sending cooldown message to {ctx.author.name}", e)
-            self.last_cooldown_message_time[ctx.author.id] = current_time
 
     async def refund_price_command_on_error(self, ctx, error):
         if ctx.command.name in Prices.__members__ and ctx.command.name != ("stealpoints") and Prices.__members__[ctx.command.name].value > 0:
             await send_bot_embed(ctx, description=f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
             await refund(ctx.author, ctx)
             return
-
+        
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         await self.tutorial(guild)
@@ -227,9 +213,7 @@ class BotCore(commands.Cog):
                         await self.refund_price_command_on_error(ctx, error)
                         return
                 elif isinstance(error, commands.CommandOnCooldown):
-                    if ctx.command.name not in ("stealpoints", "market"):
-                        await self.cooldown_error(ctx, error)
-                        return
+                     pass
                 else:
                     await self.log_and_raise_error(ctx, error)
 

@@ -99,8 +99,8 @@ class ChickenView(commands.Cog):
     @pricing()
     async def farm_profit(self, ctx, user: discord.Member = None):
         """Check the farm profit"""
-        farm_data, user = await return_data(ctx, user)
-        farm_data = await update_user_farm(user, farm_data['farm_data'])
+        data, user = await return_data(ctx, user)
+        farm_data = await update_user_farm(user, data)
         if farm_data:
             totalProfit = 0
             totalcorn = 0
@@ -119,7 +119,7 @@ class ChickenView(commands.Cog):
             taxes = await farm_maintence_tax(farm_data)
             result = totalProfit - taxes
             if totalProfit > 0:
-                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per hour :money_with_wings:.\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**\n 🚜 Farm maintenance: **{taxes}**")
+                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per **{chicken_drop_per_hour // 3600}** hour(s) :money_with_wings:.\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**\n 🚜 Farm maintenance: **{taxes}**")
             elif totalProfit == 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss.")
         else:

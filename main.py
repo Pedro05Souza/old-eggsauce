@@ -31,5 +31,6 @@ async def on_ready():
     logger.info(f"Logged in as {bot.user.name} - {bot.user.id}")
 
 if __name__ == "__main__":
-    asyncio.run(load_cogs())
-    bot.run(TOKEN)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(load_cogs())
+    loop.run_until_complete(bot.run(TOKEN))

@@ -33,8 +33,8 @@ class ChickenCore(commands.Cog):
     @pricing()
     async def farm(self, ctx, user: discord.Member = None) -> None:
         """Check the chickens in the farm"""
-        _, user = await return_data(ctx, user)
-        msg = await get_usr_farm(ctx, user)
+        data, user = await return_data(ctx, user)
+        msg = await get_usr_farm(ctx, user, data)
         if not msg:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have a farm or any chickens.")
             return

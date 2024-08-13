@@ -5,8 +5,6 @@ from db.farmDB import Farm
 from db.userDB import User
 from db.MarketDB import Market
 from tools.chickens.chickenhandlers import EventData
-from tools.shared import user_cache_retriever
-from tools.cache.init import cache_initiator
 from tools.chickens.chickeninfo import *
 from tools.shared import send_bot_embed, make_embed_object
 from tools.tips import tips
@@ -56,14 +54,13 @@ def load_farmer_upgrades(farmer):
 def get_rarity_emoji(rarity):
     return defineRarityEmojis[rarity]
 
-async def get_usr_farm(ctx, user: discord.Member):
+async def get_usr_farm(ctx, user: discord.Member, data):
         """Get the user's farm"""
-        data = await user_cache_retriever(user.id)
-        farm_data = await update_user_farm(user, data['farm_data'])
+        farm_data = await update_user_farm(user, data)
         if farm_data:
-            await cache_initiator.update_user_cache(user.id, farm_data=farm_data, bank_data=data['bank_data'], user_data=data['user_data'])
-            farm_data = await get_player_chicken(ctx, user, farm_data)
-            await update_farmer(user, farm_data)
+            #await cache_initiator.update_user_cache(user.id, farm_data=farm_data, bank_data=data['bank_data'], user_data=data['user_data'])
+            farm_data = await get_player_chicken(ctx, user, data)
+            await update_farmer(user, data)
             if len(farm_data['chickens']) == 0:
                 return
             msg = await make_embed_object(
@@ -206,30 +203,30 @@ async def feed_eggs_auto(farm_data, bank_amount):
             return 0
         return total_upkeep
 
-async def update_user_farm(user, farm_data):
+async def update_user_farm(user, data):
+    farm_data = data['farm_data']
     if not farm_data:
         return None
     last_drop_time = time() - farm_data['last_chicken_drop']
     updated_farm_data = farm_data
-    hours_passed_since_last_egg_drop = min(last_drop_time // 7200, 24)
-    user_data = await user_cache_retriever(user.id)
+    hours_passed_since_last_egg_drop = min(last_drop_time // chicken_drop_per_hour, 24)
+    user_data = data['user_data']
     copy_user_data = user_data.copy()
-    copy_user_data = copy_user_data['user_data']
     taxes = 0
     for _ in range(int(hours_passed_since_last_egg_drop)):
         updated_farm_data = await drop_egg_for_player(farm_data, copy_user_data)
         taxes += await farm_maintence_tax(updated_farm_data)
     if hours_passed_since_last_egg_drop != 0:
-        await update_user_points(user_data['user_data'], user_data['bank_data'], updated_farm_data, taxes)
+        await update_user_points(user_data, data['bank_data'], updated_farm_data, taxes)
         Farm.update_chicken_drop(user.id)
         Farm.update(user.id, chickens=updated_farm_data['chickens'], eggs_generated=updated_farm_data['eggs_generated'])
     return updated_farm_data
 
-async def update_farmer(user, farm_data):
+async def update_farmer(user, data):
+    farm_data = data['farm_data']
     last_drop_time = time() - farm_data['last_farmer_drop']
     hours_passed_since_feed = 0
-    bank_data = await user_cache_retriever(user.id)
-    bank_data = bank_data['bank_data']
+    bank_data = data['bank_data']
     bank_amount = bank_data['bank']
     if farm_data['farmer'] == "Sustainable Farmer":
         hours_passed_since_feed = min(last_drop_time // load_farmer_upgrades('Sustainable Farmer')[0], 2)
@@ -264,11 +261,12 @@ async def devolve_chicken(chicken):
             chicken['upkeep_multiplier'] = 0
             return
 
-async def update_player_corn(farm_data, user: discord.Member):
+async def update_player_corn(user, data):
+    farm_data = data['farm_data']
     last_drop_time = time() - farm_data['last_corn_drop']
     updated_farm_data = farm_data
     farm_data_copy = farm_data.copy()
-    hours_passed_since_last_drop = min(last_drop_time // 7200, 10)
+    hours_passed_since_last_drop = min(last_drop_time // chicken_drop_per_hour, 10)
     for _ in range(int(hours_passed_since_last_drop)):
         updated_farm_data = await generate_corncrops(farm_data_copy)
     if hours_passed_since_last_drop != 0:
@@ -300,8 +298,9 @@ async def generate_corncrops(farm_data):
             farm_data['corn'] = corn_dict['corn']
             return farm_data
         
-async def get_player_chicken(ctx, user: discord.Member, farm_data):
+async def get_player_chicken(ctx, user: discord.Member, data):
      """Retrieves the player's chickens from market offers."""
+     farm_data = data['farm_data']
      market_data = Market.get_user_offers(user.id)
      offers_list = []
      chickens_added = []
