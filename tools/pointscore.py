@@ -2,12 +2,10 @@ from db.userDB import User
 from discord.ext import commands
 from tools.shared import send_bot_embed, make_embed_object, is_dev, user_cache_retriever, guild_cache_retriever
 from tools.prices import Prices
-from tools.cache.init import cache_initiator
 import inspect
 import discord
 import logging
 logger = logging.getLogger('botcore')
-cooldown_tracker = {}
 dev_mode = False
 
 # This class is responsible for handling the prices of the commands.

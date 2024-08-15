@@ -222,7 +222,7 @@ class ChickenEvents(commands.Cog):
         eggs_needed = 10000
         description = [
             f":moneybag: Rich Farmer: Increase the egg value of the chickens by **{load_farmer_upgrades('Rich Farmer')[0]}%** and increases the hourly corn production by **{load_farmer_upgrades('Rich Farmer')[1]}%**\n",
-            f":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces upkeep by **{load_farmer_upgrades('Guardian Farmer')}%**.\n",
+            f":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces farm taxes by **{load_farmer_upgrades('Guardian Farmer')}%**.\n",
             f":briefcase: Executive Farmer: Gives you **{load_farmer_upgrades('Executive Farmer')[0]}** more daily rolls in the market and chickens generated in the market comes with **{load_farmer_upgrades('Executive Farmer')[1]}%** discount. \n",
             f":crossed_swords: Warrior Farmer: Gives **{load_farmer_upgrades('Warrior Farmer')}** more farm slots.\n",
             f":leaves: Sustainable Farmer: Auto-feeds the chickens every **{load_farmer_upgrades('Sustainable Farmer')[0] // 3600}** hours, the happiness generated is a number between **{load_farmer_upgrades('Sustainable Farmer')[1][0]}-{load_farmer_upgrades('Sustainable Farmer')[1][1]}%**. The farmer uses the money from your bank account.\n",

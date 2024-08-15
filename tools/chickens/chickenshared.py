@@ -335,9 +335,14 @@ async def farm_maintence_tax(farm_data):
     player_corn_size = farm_data['corn_limit']
     corn_tax = math.sqrt(player_corn_size) * 4
     chicken_rarity_weight = sum([rarities_weight[chicken['rarity']] for chicken in farm_data['chickens']])
-    chicken_rarity_weight = chicken_rarity_weight * 2
-    chicken_tax =  chicken_rarity_weight / get_max_chicken_limit(farm_data)
+    chicken_upkeep_weight = sum(chicken['upkeep_multiplier'] for chicken in farm_data['chickens'])
+    chicken_upkeep_weight = 2 ** chicken_upkeep_weight
+    total_chicken_weight = chicken_rarity_weight + chicken_upkeep_weight
+    total_chicken_weight *= 2
+    chicken_tax = total_chicken_weight / get_max_chicken_limit(farm_data)
     total_tax = plot_tax + corn_tax + chicken_tax
+    if farm_data['farmer'] == 'Guardian Farmer':
+        total_tax = total_tax - (total_tax * load_farmer_upgrades('Guardian Farmer') / 100)
     return int(total_tax)
 
 async def update_user_points(user_data, bank_data, farm_data, taxes):
