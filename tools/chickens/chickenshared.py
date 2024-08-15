@@ -146,25 +146,10 @@ async def drop_egg_for_player(farm_data, user_data):
         """Drops eggs for player"""
         user_dictionary = {}
         farm_dictionary = {}
-        total_profit = 0
         if not farm_data['chickens']:
             return farm_data
         farm_data_copy = farm_data['chickens'].copy()
-        for chicken in farm_data_copy:
-            if chicken['rarity'] == 'DEAD':
-                continue
-            chicken_loss = int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])
-            chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
-            total_profit += (chicken_profit * chicken['happiness']) // 100
-            chicken['eggs_generated'] += chicken_profit	
-            chicken['happiness'] -= randint(1,5)
-            if chicken['happiness'] < 0:
-                chicken['happiness'] = 0
-            if chicken['happiness'] == 0:
-                await devolve_chicken(chicken)
-        if farm_data['farmer'] == 'Rich Farmer':
-            to_increase = (total_profit * load_farmer_upgrades('Rich Farmer'))[0] // 100
-            total_profit += to_increase
+        total_profit = await give_total_farm_profit(farm_data)
         farm_data['eggs_generated'] += total_profit
         user_data['points'] += total_profit
         farm_data['chickens'] = farm_data_copy
@@ -364,3 +349,29 @@ async def quick_sell_chicken(farm_data):
     farm_data['chickens'].remove(random_chicken)
     money_earned = get_chicken_price(random_chicken)
     return money_earned
+
+async def give_total_farm_profit(farm_data):
+     total_profit = 0
+     for chicken in farm_data['chickens']:
+        if chicken['rarity'] == 'DEAD':
+            continue
+        chicken_loss = int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])
+        chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
+        total_profit += (chicken_profit * chicken['happiness']) // 100
+        chicken['eggs_generated'] += chicken_profit
+        chicken = await decrease_chicken_happiness(chicken)
+        if chicken['happiness'] == 0:
+             await devolve_chicken(chicken)
+
+     if farm_data['farmer'] == 'Rich Farmer':
+            to_increase = (total_profit * load_farmer_upgrades('Rich Farmer'))[0] // 100
+            total_profit += to_increase
+
+     return total_profit
+
+async def decrease_chicken_happiness(chicken):
+    """Decrease the chicken happiness"""
+    happiness_decreased = randint(1, 4)
+    chicken['happiness'] = max(chicken['happiness'] - happiness_decreased, 0)
+    return chicken
+     

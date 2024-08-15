@@ -96,7 +96,7 @@ class ChickenCombat(commands.Cog):
         else:
             return user.bot_id
             
-    async def user_queue_generator(self, positive_search_rank, negative_search_rank, current_user, positive_search_overrall, negative_search_overrall):
+    async def user_queue_generator(self, positive_search_rank, negative_search_rank, current_user):
         for user in self.user_queue:
             if user.score >= negative_search_rank and user.score <= positive_search_rank:
                 if user.has_opponent:
@@ -106,8 +106,8 @@ class ChickenCombat(commands.Cog):
                         continue
                     yield user
 
-    async def increase_search_range(self, positive_search, negative_search, current_user, positive_search_overrall, negative_search_overrall): 
-        user_list = self.user_queue_generator(positive_search, negative_search, current_user, positive_search_overrall, negative_search_overrall)
+    async def increase_search_range(self, positive_search, negative_search, current_user): 
+        user_list = self.user_queue_generator(positive_search, negative_search, current_user)
         return user_list
     
     async def send_battle_decks(self, user, opponent, author_msg, user_msg):
@@ -139,7 +139,6 @@ class ChickenCombat(commands.Cog):
     async def search(self, current_user):
         attemps = 0
         saved_positive_score, saved_negative_score = current_user.score, current_user.score
-        saved_positive_overrall, saved_negative_overrall = current_user.chicken_overrall_score, current_user.chicken_overrall_score
         while attemps != 25:
             if current_user.has_opponent:
                 return "opponent"
@@ -451,7 +450,7 @@ class ChickenCombat(commands.Cog):
                 temp_farm_data_author = await self.define_eight_chickens_for_match(farm_data['chickens'])
                 temp_farm_data_user = await self.define_eight_chickens_for_match(user_data['chickens'])
                 author = UserInQueue(ctx.author, temp_farm_data_author, ctx, e, farm_data['mmr'])
-                user = UserInQueue(user,temp_farm_data_user, ctx, e2, user_data['mmr'])
+                user = UserInQueue(user, temp_farm_data_user, ctx, e2, user_data['mmr'])
                 author.chicken_overrall_score = await define_chicken_overrall_score(author.chickens)
                 user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
                 author_msg, user_msg = await self.check_if_same_guild(author, user, await make_embed_object(description=f"🔥 The mach will begin soon."))
