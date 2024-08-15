@@ -156,9 +156,7 @@ async def drop_egg_for_player(farm_data, user_data):
             chicken_loss = int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])
             chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
             total_profit += (chicken_profit * chicken['happiness']) // 100
-            chicken['eggs_generated'] += chicken_profit
-            if chicken['eggs_generated'] > 999999999:
-                 chicken['eggs_generated'] = 999999999	
+            chicken['eggs_generated'] += chicken_profit	
             chicken['happiness'] -= randint(1,5)
             if chicken['happiness'] < 0:
                 chicken['happiness'] = 0
@@ -168,8 +166,6 @@ async def drop_egg_for_player(farm_data, user_data):
             to_increase = (total_profit * load_farmer_upgrades('Rich Farmer'))[0] // 100
             total_profit += to_increase
         farm_data['eggs_generated'] += total_profit
-        if farm_data['eggs_generated'] > 999999999:
-            farm_data['eggs_generated'] = 999999999
         user_data['points'] += total_profit
         farm_data['chickens'] = farm_data_copy
         farm_dictionary = {
@@ -336,7 +332,7 @@ async def farm_maintence_tax(farm_data):
     corn_tax = math.sqrt(player_corn_size) * 4
     chicken_rarity_weight = sum([rarities_weight[chicken['rarity']] for chicken in farm_data['chickens']])
     chicken_upkeep_weight = sum(chicken['upkeep_multiplier'] for chicken in farm_data['chickens'])
-    chicken_upkeep_weight = 2 ** chicken_upkeep_weight
+    chicken_upkeep_weight *= 10
     total_chicken_weight = chicken_rarity_weight + chicken_upkeep_weight
     total_chicken_weight *= 2
     chicken_tax = total_chicken_weight / get_max_chicken_limit(farm_data)
