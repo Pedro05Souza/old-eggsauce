@@ -1,4 +1,4 @@
-from tools.chickens.chickeninfo import *
+from tools.settings import corn_per_plot, max_plot_limit, max_bench
 
 tips = {
     0: "You earn 1 eggbux every 10 seconds of call time.",

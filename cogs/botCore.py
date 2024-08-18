@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from tools.shared import send_bot_embed, make_embed_object, is_dev, make_embed_object, dev_list, guild_cache_retriever

@@ -1,10 +1,11 @@
 from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
-from tools.chickens.chickeninfo import ChickenFood, max_corn_limit, max_plot_limit, chicken_drop_per_hour
-from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, confirmation_embed, return_data
+from tools.chickens.chickeninfo import ChickenFood
+from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, return_data
+from tools.settings import regular_command_cooldown, max_corn_limit, max_plot_limit, farm_drop
 from tools.pointscore import pricing
-from tools.chickens.chickenshared import update_player_corn, calculate_corn, update_user_farm
+from tools.chickens.chickenshared import preview_corn_produced
 from better_profanity import profanity
 import discord
 
@@ -43,11 +44,13 @@ class CornCommands(commands.Cog):
 
     async def show_plr_food_farm(self, user: discord.Member, data):
         """Show the player's food farm"""
-        farm_data = await update_player_corn(user, data)
+        farm_data = data["farm_data"]
         if farm_data:
-            food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in **{chicken_drop_per_hour // 3600}** hour(s): {calculate_corn(farm_data)}\n:seedling: **Plots**: {farm_data['plot']}")
+            food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in **{farm_drop // 3600}** hour(s): **{await preview_corn_produced(farm_data)}** :money_with_wings:\n:seedling: **Plots**: {farm_data['plot']}")
             food_embed.set_thumbnail(url=user.display_avatar)
             return food_embed
+        else:
+            return await make_embed_object(title=f":no_entry_sign: {user.display_name}", description=f":no_entry_sign: {user.display_name} You don't have a farm.")
     
     @commands.hybrid_command(name="buyplot", aliases=["bp"], usage="buyPlot", description="Buy a plot to increase the corn production.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -77,6 +80,7 @@ class CornCommands(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to buy the plot.")
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the purchase or the offer has expired.")
+            
     @commands.hybrid_command(name="upgradecornlimit", aliases=["ucl"], usage="upgradeCornLimit", description="Upgrade the corn limit.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
@@ -110,7 +114,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def buy_corn(self, ctx, quantity: int):
         """Buy corn for the chickens"""
-        farm_data = await update_player_corn(ctx.author, ctx.data)
+        farm_data = ctx.data["farm_data"]
         user_data = ctx.data["user_data"]
         if quantity < 30:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the minimum amount of corn you can buy is 30.")
@@ -133,7 +137,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def sell_corn(self, ctx, quantity: int):
         """Sell corn"""
-        farm_data = await update_player_corn(ctx.data['farm_data'], ctx.author)
+        farm_data = ctx.data["farm_data"]
         user_data = ctx.data["user_data"]
         if farm_data:
             if quantity > farm_data['corn']:
@@ -153,8 +157,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def feed_all_chickens(self, ctx):
         """Feed all the chickens"""
-        farm_data = await update_player_corn(ctx.author, ctx.data)
-        farm_data = await update_user_farm(ctx.author, ctx.data)
+        farm_data = ctx.data["farm_data"]
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0
         if farm_data:

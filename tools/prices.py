@@ -34,6 +34,9 @@ class Prices(Enum):
     upgradecornlimit = 0
     switchchicken = 0
     chickencorn = 0
+    viewoffers = 0
+    offerchicken = 0
+    searchchicken = 0
     salary = 0
     hungergames = 0
     tradechicken = 0
@@ -54,7 +57,7 @@ class Prices(Enum):
     farmer = 0
     eggrank = 0
     balls = 100
-    love = 150
+    love = 150 
     eggpack = 350
     mog = 350
     unmute = 500

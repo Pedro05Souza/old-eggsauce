@@ -1,10 +1,11 @@
 from discord.ext import commands
 from db.farmDB import Farm
-from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, max_bench, chicken_ranking
+from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, chicken_ranking
 from tools.chickens.chickenshared import *
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.selection.chickenselection import ChickenSelectView
-from tools.shared import send_bot_embed, regular_command_cooldown, make_embed_object, user_cache_retriever, return_data
+from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever, return_data
+from tools.settings import regular_command_cooldown, farm_drop, max_bench
 from tools.pointscore import pricing
 from better_profanity import profanity
 import discord
@@ -100,7 +101,7 @@ class ChickenView(commands.Cog):
     async def farm_profit(self, ctx, user: discord.Member = None):
         """Check the farm profit"""
         data, user = await return_data(ctx, user)
-        farm_data = await update_user_farm(user, data)
+        farm_data = data["farm_data"]
         if farm_data:
             totalProfit = 0
             totalcorn = 0
@@ -119,7 +120,7 @@ class ChickenView(commands.Cog):
             taxes = await farm_maintence_tax(farm_data)
             result = totalProfit - taxes
             if totalProfit > 0:
-                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per **{chicken_drop_per_hour // 3600}** hour(s) :money_with_wings:.\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**\n 🚜 Farm maintenance: **{taxes}**")
+                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per **{farm_drop // 3600}** hour(s) :money_with_wings:.\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**\n 🚜 Farm maintenance: **{taxes}**")
             elif totalProfit == 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss.")
         else:

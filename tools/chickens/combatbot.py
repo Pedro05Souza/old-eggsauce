@@ -1,5 +1,6 @@
 from random import randint, random
 from tools.chickens.chickenshared import ChickenRarity, create_chicken, define_chicken_overrall_score
+from tools.settings import default_farm_size
 import bisect
 
 class BotMatchMaking():
@@ -18,7 +19,7 @@ class BotMatchMaking():
 async def bot_maker(user_score):
     """"Function to create a bot in the matchmaking."""
     bot = BotMatchMaking(await name_maker())
-    bot_farm_size = randint(await define_bot_min_farm_size(user_score), 8)
+    bot_farm_size = randint(await define_bot_min_farm_size(user_score), default_farm_size)
     all_rarities = list(ChickenRarity.__members__)
     all_rarities.remove("DEAD")
     all_rarities_dict = {rarity: position for position, rarity in enumerate(all_rarities)}
@@ -51,10 +52,10 @@ async def bot_maker(user_score):
 async def define_bot_min_farm_size(player_mmr):
     """Defines the minimum farm size for the bot."""
     if player_mmr >= 2000:
-        return 8
+        return default_farm_size
     for i in range(0, 2100, 100):
         if player_mmr <= i:
-            return min(8, max(2, int(i / 100)))
+            return min(default_farm_size, max(2, int(i / 100)))
         
 async def define_chicken_rarity_list(player_mmr, all_rarities):
     """Changes the rarity list for the bot."""

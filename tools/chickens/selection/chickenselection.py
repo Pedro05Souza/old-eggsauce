@@ -12,12 +12,18 @@ from tools.shared import make_embed_object, send_bot_embed
 class ChickenSelectView(ui.View):
     """View for selecting chickens from the market or farm to buy or delete them."""
     def __init__(self, chickens, author, action, message, *args, **kwargs):
+        super().__init__(*args, **kwargs, timeout=60)
+        menu = self.action_handler(chickens, author, action, message, *args, **kwargs)
+        self.add_item(menu)
+
+    def action_handler(self, chickens, author, action, message, *args, **kwargs):
+        """Method to handle the action of the view."""
         role = kwargs.get("role", None)
         t = kwargs.get("trade_data", None)
         instance_bot = kwargs.get("instance_bot", None)
         allowed_kw = ["role", "trade_data", "instance_bot", "offer_id"]
         kwargs = {k: kwargs[k] for k in kwargs if k not in allowed_kw}
-        super().__init__(*args, **kwargs, timeout=60)
+        menu = None
         if action == "M":
             self.timeout = 120
             menu = ChickenMarketMenu(chickens, author, message)
@@ -42,7 +48,8 @@ class ChickenSelectView(ui.View):
         elif action == "R":
             self.timeout = 120
             menu = RedeemPlayerMenu(chickens, author, message)
-        self.add_item(menu)
+        return menu
+
     
     async def on_timeout(self) -> None:
         """Method to execute when the view times out."""

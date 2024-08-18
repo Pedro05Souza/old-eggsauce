@@ -24,6 +24,7 @@ def connect(uri):
 
 mongo_client = connect(uri)
 db = mongo_client.botDiscord
+
 # current_schema = {
 #     "$jsonSchema":{
 #         "bsonType": "object",

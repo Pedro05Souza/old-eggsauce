@@ -7,7 +7,8 @@ from tools.chickens.chickenhandlers import RollLimit
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
 from tools.chickens.chickeninfo import rollRates
 from tools.pointscore import pricing
-from tools.shared import make_embed_object, regular_command_cooldown, spam_command_cooldown, send_bot_embed, return_data
+from tools.shared import make_embed_object, send_bot_embed, return_data
+from tools.settings import spam_command_cooldown, regular_command_cooldown
 import discord
 import asyncio
 

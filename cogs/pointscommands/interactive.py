@@ -5,6 +5,7 @@ from db.userDB import User
 from collections import Counter
 from random import randint, sample, choice
 from tools.pagination import PaginationView
+from tools.settings import regular_command_cooldown, spam_command_cooldown, hunger_games_wait_time, tax, min_tributes, max_tributes, hunger_games_prize_multiplier, hunger_games_match_value_per_tribute
 import logging
 import time
 import asyncio

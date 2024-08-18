@@ -9,6 +9,7 @@ logger = logging.getLogger('botcore')
 # This class is responsible for handling user data in the database.
 
 class User:
+    
     @staticmethod
     def create(user_id : int, points : int):
         """Create a user in the database."""

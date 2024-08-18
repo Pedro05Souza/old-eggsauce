@@ -10,15 +10,6 @@ import logging
 logger = logging.getLogger('botcore')
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=5) # 5 threads to pick from the pool
 lock = threading.Lock()
-spam_command_cooldown = .8
-regular_command_cooldown = 3.5
-queue_command_cooldown = 90
-hunger_games_wait_time = 60
-hunger_games_match_value_per_tribute = 75
-hunger_games_prize_multiplier = 50
-min_tributes = 4
-max_tributes = 50
-tax = .15
 
 async def send_bot_embed(ctx, ephemeral=False, **kwargs):
     """Create an embed without a title."""
@@ -81,8 +72,8 @@ async def confirmation_embed(ctx, user: discord.Member, description):
 
 async def user_cache_retriever(user_id):
     """Retrieve the user cache"""
-    from db.userDB import User
-    from db.bankDB import Bank
+    from db.userDB import User # this is like this to avoid circular imports
+    from db.bankDB import Bank # its terrible but it works
     from db.farmDB import Farm
     user_cache = await cache_initiator.get_user_cache(user_id)
     
@@ -99,7 +90,7 @@ async def user_cache_retriever(user_id):
 
 async def guild_cache_retriever(guild_id):
     """Retrieve the guild cache"""
-    from db.botConfigDB import BotConfig
+    from db.botConfigDB import BotConfig # same as above
     guild_cache = await cache_initiator.get_guild_cache(guild_id)
     
     if not guild_cache:
@@ -128,18 +119,11 @@ def retrieve_threads():
     return len(threading.enumerate())
 
 async def return_data(ctx, user=None):
-    """Return the farm data of the user."""
+    """Return the user data and the user object. This is only used in case of a command that has an optional user parameter."""
     if not user:
         return ctx.data, ctx.author
     else:
         return await user_cache_retriever(user.id), user
 
-async def desync_warning(ctx, data):
-    """Warn the developers if user cache is desynchronized from the database."""
-    user_cache = await user_cache_retriever(ctx.author.id)
-    if data != user_cache:
-        await send_bot_embed(ctx, description=":warning: Your data is desynchronized. Please wait a few seconds and try again.")
-        return True
-    return False
 
     

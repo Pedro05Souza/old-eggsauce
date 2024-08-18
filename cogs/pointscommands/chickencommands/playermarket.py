@@ -3,6 +3,9 @@ from db.farmDB import Farm
 from db.MarketDB import Market
 from tools.shared import send_bot_embed, make_embed_object
 from tools.chickens.chickenshared import get_rarity_emoji, verify_events, offer_expire_time
+from tools.shared import send_bot_embed
+from tools.settings import regular_command_cooldown
+from tools.pointscore import pricing
 from tools.shared import confirmation_embed
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
@@ -16,6 +19,8 @@ class PlayerMarket(commands.Cog):
         self.bot = bot
     
     @commands.hybrid_command(name="offerchicken", aliases=["offer"], brief="Register a chicken to the player market.", description="Register a chicken to the player market.", usage="<index> OPTIONAL <description>")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
     async def register_offer(self, ctx, index: int, price: int, *, desc: str = None):
         """Register a chicken to the player market."""
         index -= 1
@@ -74,7 +79,9 @@ class PlayerMarket(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the offer registration.")
                 EventData.remove(r)
     
-    @commands.hybrid_command(name="playeroffers", aliases=["offers"], description="Shows your current market offers.", usage="viewplrmarket OPTIONAL [user]")
+    @commands.hybrid_command(name="viewoffers", aliases=["offers"], description="Shows your current market offers.", usage="viewplrmarket OPTIONAL [user]")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
     async def view_offers(self, ctx, user: discord.Member = None):
         """Shows the player's current market offers."""
         if user is None:
@@ -87,6 +94,8 @@ class PlayerMarket(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, has no active market offers.")
 
     @commands.hybrid_command(name="searchchicken", aliases=["search"], description="Search for a chicken in the player market.", usage="OPTIONAL <chicken rarity> OPTIONAL <upkeep rarity> OPTIONAL <price> OPTIONAL [user]")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
     async def search_chicken(self, ctx, chicken_rarity: str = None, upkeep_rarity: int = None, price: int = None, author: discord.Member = None):
         """Search for 10 chickens offered by other players."""
         search_param = [chicken_rarity, upkeep_rarity, price, author]

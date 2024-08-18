@@ -1,10 +1,12 @@
 from discord.ext import commands
 from dataclasses import dataclass
 from tools.pointscore import pricing
-from tools.shared import send_bot_embed, make_embed_object, queue_command_cooldown, confirmation_embed, user_cache_retriever
+from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, user_cache_retriever
+from tools.settings import queue_command_cooldown
 from tools.chickens.combatbot import BotMatchMaking, bot_maker
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit, max_bench
+from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit
+from tools.settings import max_bench
 from tools.chickens.chickeninfo import rarities_weight, upkeep_weight, score_determiner, chicken_ranking
 from db.farmDB import Farm
 from db.userDB import User
@@ -60,7 +62,8 @@ class ChickenCombat(commands.Cog):
                 return
             self.user_queue.remove(user)
             opponent_mmr = 0
-            self.user_queue.remove(opponent)
+            if not await self.check_if_user_is_bot(opponent):
+                self.user_queue.remove(opponent)
             opponent.has_opponent = True
             user.has_opponent = True
             self.map = {str(user.member.id) + "_" + str(await self.return_user_id(opponent)): [user, opponent]}
@@ -101,10 +104,9 @@ class ChickenCombat(commands.Cog):
             if user.score >= negative_search_rank and user.score <= positive_search_rank:
                 if user.has_opponent:
                     continue
-                if not await self.check_if_user_is_bot(user):
-                    if user.member.id == current_user.member.id:
-                        continue
-                    yield user
+                if user.member.id == current_user.member.id:
+                    continue
+                yield user
 
     async def increase_search_range(self, positive_search, negative_search, current_user): 
         user_list = self.user_queue_generator(positive_search, negative_search, current_user)
@@ -113,27 +115,9 @@ class ChickenCombat(commands.Cog):
     async def send_battle_decks(self, user, opponent, author_msg, user_msg):
         opponent_deck = opponent.chickens
         author_deck = user.chickens
-        all_ratities = list(rarities_weight.keys())
         both_deck = await make_embed_object(title=":crossed_swords: Battle decks:")
         both_deck.add_field(name=f"{user.member.name}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in author_deck]), inline=False)
         both_deck.add_field(name=f"{await self.check_user_name(opponent)}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in opponent_deck]), inline=False)
-        user_wr, opponent_wr  = 0, 0
-        for chicken, chicken2 in zip(author_deck, opponent_deck):
-            win_rate_for_author, win_rate_for_user = await self.define_win_rate(chicken, chicken2)
-            user_wr += win_rate_for_author
-            opponent_wr += win_rate_for_user
-        if len(opponent_deck) > len(author_deck):
-            opponent_extra_chickens = opponent_deck[-(len(opponent_deck) - len(author_deck)):]
-            opponent_wr += sum([all_ratities.index(chicken['rarity']) * 0.05 for chicken in opponent_extra_chickens])
-        elif len(author_deck) > len(opponent_deck):
-            author_extra_chickens = author_deck[-(len(author_deck) - len(opponent_deck)):]
-            user_wr += sum([all_ratities.index(chicken['rarity']) * 0.05 for chicken in author_extra_chickens])
-        real_win_rate = user_wr + opponent_wr
-        user_wr = user_wr / real_win_rate
-        opponent_wr = opponent_wr / real_win_rate
-        user_wr = round(user_wr * 100)
-        opponent_wr = round(opponent_wr * 100)
-        both_deck.add_field(name="Win chance:", value=f"{user.member.name}: **{user_wr}%**\n{await self.check_user_name(opponent)}: **{opponent_wr}%**", inline=False)
         await self.check_if_same_guild_edit(user, opponent, user_msg, author_msg, both_deck)
     
     async def search(self, current_user):
@@ -144,22 +128,17 @@ class ChickenCombat(commands.Cog):
                 return "opponent"
             if attemps == 24:   
                 bot = await bot_maker(current_user.score)
-                self.user_queue.append(bot)
                 return bot
             positive_search = saved_positive_score + 5
             negative_search = saved_negative_score - 5
-            positive_search_overrall, negative_search_overrall = saved_positive_overrall + 50, saved_negative_overrall - 50
-            if positive_search_overrall < 0:
-                positive_search_overrall = 0
             if negative_search < 0:
                 negative_search = 0
-            user_list = await self.increase_search_range(positive_search, negative_search, current_user, positive_search_overrall, negative_search_overrall)
+            user_list = await self.increase_search_range(positive_search, negative_search, current_user)
             async for user in user_list:
                 return user
             attemps += 1
             await asyncio.sleep(1)
             saved_negative_score, saved_positive_score = negative_search, positive_search
-            saved_positive_overrall, saved_negative_overrall = positive_search_overrall, negative_search_overrall
         return "No opponent found."
     
     async def define_chicken_matchups(self, author, user, match_type, user_msg, author_msg, dead_chickens_author, dead_chickens_user):

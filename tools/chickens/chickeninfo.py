@@ -2,15 +2,6 @@ from enum import Enum
 
 # Chicken information module
 
-chicken_default_value = 400
-default_farm_size = 8
-offer_expire_time = 48
-max_bench = 5
-max_corn_limit = 2553
-max_plot_limit = 20
-corn_per_plot = 100
-chicken_drop_per_hour = 7200
-
 rollRates = {
         "COMMON": 5000,
         "UNCOMMON": 2500,

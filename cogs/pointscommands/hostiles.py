@@ -1,6 +1,7 @@
 from discord.ext import commands
 from tools.pointscore import pricing, refund
-from tools.shared import send_bot_embed, regular_command_cooldown
+from tools.shared import send_bot_embed
+from tools.settings import regular_command_cooldown
 from db.userDB import User
 from random import choice
 import discord

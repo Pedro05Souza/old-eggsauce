@@ -1,5 +1,6 @@
 from discord.ext import commands
-from tools.shared import send_bot_embed, make_embed_object, regular_command_cooldown, get_user_title, user_cache_retriever, guild_cache_retriever, return_data
+from tools.shared import send_bot_embed, make_embed_object, get_user_title, user_cache_retriever, guild_cache_retriever, return_data
+from tools.settings import regular_command_cooldown, user_salary_drop
 from tools.tips import tips
 from db.userDB import User
 from random import randint
@@ -50,7 +51,9 @@ class PointsConfig(commands.Cog):
 
     async def add_points(self, type, user_id):
         add_points = (math.ceil(time.time()) - type) // 10
-        total_points = User.read(user_id)["points"] + add_points
+        user_data = await user_cache_retriever(user_id)
+        user_data = user_data["user_data"]
+        total_points = user_data["points"] + add_points
         return total_points
     
     async def count_points(self, user: discord.Member):
@@ -87,7 +90,7 @@ class PointsConfig(commands.Cog):
     async def points(self, ctx, user: discord.Member = None):
         """Shows the amount of points the user has."""
         data, user = await return_data(ctx, user)
-        user_data = await self.update_user_points(user)
+        user_data = await self.update_user_points(user, data)
         bank_data = data["bank_data"]
         if user_data:
             if bank_data:
@@ -103,25 +106,25 @@ class PointsConfig(commands.Cog):
         else:   
             await send_bot_embed(ctx, description=f"{user.display_name} has no eggbux :cry:")
 
-    async def update_user_points(self, user: discord.Member):
+    async def update_user_points(self, user: discord.Member, data):
         """Updates the user's points."""
-        user_data = User.read(user.id)
+        user_data = data['user_data']
         if user_data:
             points = await self.update_points(user)
             if points is not None:
                 user_data['points'] = points
                 User.update_points(user.id, points)
             last_title_drop = time.time() - user_data["salary_time"]
-            hours_passed = min(last_title_drop // 3600, 12)
+            hours_passed = min(last_title_drop // user_salary_drop, 12)
             hours_passed = int(hours_passed)
             salary = await self.salary_role(user_data)
-            if hours_passed >= 1 and user_data["roles"] != "":
+            if hours_passed > 0 and user_data["roles"] != "":
                 user_data['points'] += salary * hours_passed
                 User.update_points(user.id, user_data['points'])
                 User.update_salary_time(user.id)
                 logger.info(f"{user.display_name} has received {salary * hours_passed} eggbux from their title.")
             return user_data
-
+        
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
@@ -146,10 +149,10 @@ class PointsConfig(commands.Cog):
             if actual_time <= 0:
                 await message.clear_reactions()
                 break
-            check = lambda reaction, user: reaction.emoji == "✅" and reaction.message.id == message.id
+            check = lambda reaction, _: reaction.emoji == "✅" and reaction.message.id == message.id
             reaction, user = await self.bot.wait_for("reaction_add", check=check)
             if reaction.emoji == "✅":
-                user_data = User.read(user.id)
+                user_data = await user_cache_retriever(user.id)
                 if user_data["roles"] == "":
                     await self.buy_roles(ctx, user, rolePrices["T"], "T", roles["T"], user_data)
                 elif user_data["roles"][-1] == "T":
@@ -187,9 +190,8 @@ class PointsConfig(commands.Cog):
     @pricing()
     async def salary(self, ctx, user: discord.Member = None):
         """Check the salary of a user."""
-        if user is None:
-            user = ctx.author
-        user_data = User.read(user.id)
+        data, user = await return_data(ctx, user)
+        user_data = data["user_data"]
         if user_data:
             if user_data["roles"] != "":
                 await send_bot_embed(ctx, description=f":moneybag: {user.display_name} has the title of **{await get_user_title(user_data)}** and earns {await self.salary_role(user_data)} eggbux..")

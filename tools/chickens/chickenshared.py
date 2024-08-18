@@ -7,6 +7,7 @@ from db.MarketDB import Market
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickeninfo import *
 from tools.shared import send_bot_embed, make_embed_object
+from tools.settings import chicken_default_value, default_farm_size, offer_expire_time, corn_per_plot, farm_drop
 from tools.tips import tips
 from random import randint
 import discord
@@ -14,7 +15,7 @@ import logging
 import math
 logger = logging.getLogger('botcore')
 
-# Shared functions for the chicken commands
+# Shared functions between the chicken commands
             
 def determine_chicken_upkeep(chicken):
     percentage = uniform(0, .75)
@@ -43,7 +44,7 @@ def load_farmer_upgrades(farmer):
         """Load the farmer upgrades"""
         farmer_dict = {
             "Rich Farmer": [10, 20],
-            "Guardian Farmer": 3,
+            "Guardian Farmer": 5,
             "Executive Farmer" : [8, 20],
             "Warrior Farmer": 3,
             "Generous Farmer": [3],
@@ -56,9 +57,8 @@ def get_rarity_emoji(rarity):
 
 async def get_usr_farm(ctx, user: discord.Member, data):
         """Get the user's farm"""
-        farm_data = await update_user_farm(user, data)
+        farm_data = ctx.data['farm_data']
         if farm_data:
-            #await cache_initiator.update_user_cache(user.id, farm_data=farm_data, bank_data=data['bank_data'], user_data=data['user_data'])
             farm_data = await get_player_chicken(ctx, user, data)
             await update_farmer(user, data)
             if len(farm_data['chickens']) == 0:
@@ -142,28 +142,22 @@ async def define_chicken_overrall_score(chickens):
 
 # updates
 
-async def drop_egg_for_player(farm_data, user_data):
+async def drop_egg_for_player(farm_data):
         """Drops eggs for player"""
-        user_dictionary = {}
         farm_dictionary = {}
         if not farm_data['chickens']:
             return farm_data
         farm_data_copy = farm_data['chickens'].copy()
         total_profit = await give_total_farm_profit(farm_data)
         farm_data['eggs_generated'] += total_profit
-        user_data['points'] += total_profit
         farm_data['chickens'] = farm_data_copy
         farm_dictionary = {
                            "chickens" : farm_data['chickens'],
                            "eggs_generated" : farm_data['eggs_generated']
         }
-        user_dictionary = {
-                            "points" : user_data['points']
-          }
         farm_data['chickens'] = farm_dictionary['chickens']
         farm_data['eggs_generated'] = farm_dictionary['eggs_generated']
-        user_data['points'] = user_dictionary['points']
-        return farm_data
+        return farm_data, total_profit
                     
 async def feed_eggs_auto(farm_data, bank_amount): 
     """Feed the chickens automatically"""
@@ -190,15 +184,13 @@ async def update_user_farm(user, data):
         return None
     last_drop_time = time() - farm_data['last_chicken_drop']
     updated_farm_data = farm_data
-    hours_passed_since_last_egg_drop = min(last_drop_time // chicken_drop_per_hour, 24)
+    hours_passed_since_last_egg_drop = min(last_drop_time //farm_drop, 24)
     user_data = data['user_data']
-    copy_user_data = user_data.copy()
-    taxes = 0
+    taxes = await farm_maintence_tax(farm_data, hours_passed=hours_passed_since_last_egg_drop)
     for _ in range(int(hours_passed_since_last_egg_drop)):
-        updated_farm_data = await drop_egg_for_player(farm_data, copy_user_data)
-        taxes += await farm_maintence_tax(updated_farm_data)
+        updated_farm_data, total_profit = await drop_egg_for_player(farm_data)
     if hours_passed_since_last_egg_drop != 0:
-        await update_user_points(user_data, data['bank_data'], updated_farm_data, taxes)
+        await update_user_points(user_data, data['bank_data'], updated_farm_data, taxes, total_profit)
         Farm.update_chicken_drop(user.id)
         Farm.update(user.id, chickens=updated_farm_data['chickens'], eggs_generated=updated_farm_data['eggs_generated'])
     return updated_farm_data
@@ -245,39 +237,27 @@ async def devolve_chicken(chicken):
 async def update_player_corn(user, data):
     farm_data = data['farm_data']
     last_drop_time = time() - farm_data['last_corn_drop']
-    updated_farm_data = farm_data
-    farm_data_copy = farm_data.copy()
-    hours_passed_since_last_drop = min(last_drop_time // chicken_drop_per_hour, 10)
-    for _ in range(int(hours_passed_since_last_drop)):
-        updated_farm_data = await generate_corncrops(farm_data_copy)
+    hours_passed_since_last_drop = min(last_drop_time // farm_drop, 24)
+    corn_produced = farm_data['corn']
     if hours_passed_since_last_drop != 0:
+        corn_produced = await calculate_corn(farm_data, hours_passed_since_last_drop)
         Farm.update_corn_drop(user.id)
-        Farm.update(user.id, corn=updated_farm_data['corn'])
-    return updated_farm_data
+        Farm.update(user.id, corn=corn_produced)
+    return corn_produced
 
-def calculate_corn(farm_data):
+async def calculate_corn(farm_data, hours_passed):
     """Calculate the corn generated by the farm"""
+    corn_produced = farm_data['plot'] * corn_per_plot
+    player_corn_limit = farm_data['corn_limit']
+    corn_produced *= hours_passed
     if farm_data['farmer'] == 'Rich Farmer':
-         to_increase = corn_per_plot * (load_farmer_upgrades('Rich Farmer')[1]) / 100
-         production = corn_per_plot + to_increase
-         production = int(production)
-         return farm_data['plot'] * production
-    return farm_data['plot'] * corn_per_plot
+        corn_produced += corn_produced * load_farmer_upgrades('Rich Farmer')[1] / 100
+    corn_produced += farm_data['corn']
+    corn_produced = min(corn_produced, player_corn_limit)
+    return corn_produced
 
-async def generate_corncrops(farm_data):
-        """Generate corn crops"""
-        corn_dict = {}
-        if farm_data:
-            totalCorn = calculate_corn(farm_data)
-            corn = farm_data['corn']
-            corn += totalCorn
-            if corn > farm_data['corn_limit']:
-                corn = farm_data['corn_limit']
-            corn_dict = {
-                 "corn" : corn
-            }
-            farm_data['corn'] = corn_dict['corn']
-            return farm_data
+async def preview_corn_produced(farm_data):
+     return farm_data['plot'] * corn_per_plot
         
 async def get_player_chicken(ctx, user: discord.Member, data):
      """Retrieves the player's chickens from market offers."""
@@ -309,8 +289,11 @@ async def get_player_chicken(ctx, user: discord.Member, data):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you can't add the following chickens to your farm: \n\n{chicken_desc}\n They have been automatically put back in the market.")
      return farm_data
 
-async def farm_maintence_tax(farm_data):
+async def farm_maintence_tax(farm_data, **kwargs):
     """Check if the farm is in maintence"""
+    hours_passed = None
+    if kwargs:
+        hours_passed = kwargs['hours_passed']
     player_plot = farm_data['plot']
     plot_tax = player_plot * 10
     player_corn_size = farm_data['corn_limit']
@@ -322,26 +305,30 @@ async def farm_maintence_tax(farm_data):
     total_chicken_weight *= 2
     chicken_tax = total_chicken_weight / get_max_chicken_limit(farm_data)
     total_tax = plot_tax + corn_tax + chicken_tax
+    if hours_passed:
+        total_tax *= hours_passed
     if farm_data['farmer'] == 'Guardian Farmer':
         total_tax = total_tax - (total_tax * load_farmer_upgrades('Guardian Farmer') / 100)
     return int(total_tax)
 
-async def update_user_points(user_data, bank_data, farm_data, taxes):
-     if user_data['points'] >= taxes:
+async def update_user_points(user_data, bank_data, farm_data, taxes, total_profit):
+    """Update the user's points"""
+    user_data['points'] += total_profit
+    if user_data['points'] >= taxes:
          user_data['points'] -= taxes
          User.update_points(user_data['user_id'], user_data['points'])
-     elif bank_data['bank'] >= taxes:
-         bank_data['bank'] -= taxes
-         Bank.update(user_data['user_id'], bank_data['bank'])
-     elif user_data['points'] + bank_data['bank'] >= taxes:
-            difference = taxes - user_data['points']
-            user_data['points'] = 0
-            bank_data['bank'] -= difference
-            Bank.update(user_data['user_id'], bank_data['bank'])
-            User.update_points(user_data['user_id'], user_data['points'])
-     else:
-         money_earned = await quick_sell_chicken(farm_data)
-         User.update_points(user_data['user_id'], user_data['points'] + money_earned)
+    elif bank_data['bank'] >= taxes:
+        bank_data['bank'] -= taxes
+        Bank.update(user_data['user_id'], bank_data['bank'])
+    elif user_data['points'] + bank_data['bank'] >= taxes:
+        difference = taxes - user_data['points']
+        user_data['points'] = 0
+        bank_data['bank'] -= difference
+        Bank.update(user_data['user_id'], bank_data['bank'])
+        User.update_points(user_data['user_id'], user_data['points'])
+    else:
+        money_earned = await quick_sell_chicken(farm_data)
+        User.update_points(user_data['user_id'], user_data['points'] + money_earned)
      
 async def quick_sell_chicken(farm_data):
     """Quick sell a chicken"""

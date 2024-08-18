@@ -8,6 +8,7 @@ logger = logging.getLogger('botcore')
 
 
 class Farm:
+
     @staticmethod
     def create(user_id: int, ctx):
         """Create a farm for the user."""
@@ -63,14 +64,17 @@ class Farm:
         """Update a farm's status in the database."""
         possible_keywords = ["farm_name","plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses", "redeemables"]
         try:
+            query = {}
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
                 if kwargs:
                     for key, value in kwargs.items():
                         if key in possible_keywords:
-                            request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set" : {key: value}})).result()
+                            query[key] = value
                             farm_data[key] = value
-                    update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
+                    if query:
+                        update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
+                        request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": query})).result()
                 else:
                     logger.warning("Keyword arguments aren't being passed.")
         except Exception as e:

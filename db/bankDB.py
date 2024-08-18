@@ -1,6 +1,6 @@
 from db.dbConfig import mongo_client
 from tools.cache.init import cache_initiator
-from tools.shared import update_scheduler, request_threading, desync_warning
+from tools.shared import update_scheduler, request_threading
 import logging
 bank_collection = mongo_client.db.bank
 logger = logging.getLogger('botcore')

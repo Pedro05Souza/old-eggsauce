@@ -1,6 +1,7 @@
 from db.userDB import User
 from discord.ext import commands
 from tools.shared import send_bot_embed, make_embed_object, is_dev, user_cache_retriever, guild_cache_retriever
+from tools.chickens.chickenshared import update_user_farm, update_player_corn
 from tools.prices import Prices
 import inspect
 import discord
@@ -31,12 +32,12 @@ async def set_points_commands_submodules(ctx, config_data):
     
     cogs_to_check = module_cogs.get(active_module, [])
     if ctx.cog.qualified_name in cogs_to_check:
-        return True
+        return True 
     else:
         await send_bot_embed(ctx, description=":warning: The module is not enabled in this server.")
         return False
 
-def verify_points(comando, user_data):
+async def verify_points(comando, user_data):
     price = Prices[comando].value
     return user_data["points"] >= price
 
@@ -52,6 +53,8 @@ async def refund(user: discord.Member, ctx):
 async def treat_exceptions(ctx, comando, user_data, config_data, data):
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
     if is_slash_command:
+        if Prices[comando].value == 0:
+            return True
         new_points = user_data["points"] - Prices[comando].value
         data["user_data"]["points"] = new_points
         User.update_points(ctx.author.id, new_points)
@@ -108,7 +111,6 @@ async def treat_exceptions(ctx, comando, user_data, config_data, data):
                 else:
                     arg = param_type(arg)
             if arg is not None and not isinstance(arg, param_type):
-                await send_bot_embed(ctx, description=f":no_entry_sign: Invalid argument type. Expected {param_type.__name__}.")
                 return False
             if '*' not in str(param) and index not in optional_params_indices:
                 i += 1
@@ -133,12 +135,14 @@ async def treat_exceptions(ctx, comando, user_data, config_data, data):
 
 def pricing():
     async def predicate(ctx):
-        """Check if the user is able to use any of the points commands."""
+        """Decorator predicate for the points commands. This is the core of the bot's interactive system."""
         global dev_mode
+
         if dev_mode and not is_dev(ctx):
             await send_bot_embed(ctx, description=":warning: The bot is currently in development mode.")
             result = False
             return result
+        
         command = ctx.command.name 
         result = True
         ctx.predicate_result = result
@@ -154,9 +158,9 @@ def pricing():
             if not ctx.command.get_cooldown_retry_after(ctx):
                 data = await user_cache_retriever(ctx.author.id)
                 all_keys = ["user_data", "farm_data", "bank_data"]
+                
                 if not data:
-                    await send_bot_embed(ctx, description=":warning: Your data has not been synchronized. Please try again later. This should be fixed automatically.")
-                    raise CacheNotFound(f"The user cache is not found. {data}")
+                    await send_bot_embed(ctx, description=":warning: You're not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
                 if not all(key in data for key in all_keys): # cache properties can be nullable
                     await send_bot_embed(ctx, description=":warning: Your data is missing core properties and likely is not synchronized. Please try again later. This should be fixed automatically.")
                     raise MissingCacheProperty(f"The user cache is missing core properties and likely is not synchronized. Here are the following keys: {data.keys()}")
@@ -174,12 +178,14 @@ def pricing():
                     ctx.predicate_result = result
                     return result
                 
-                if verify_points(command, user_data):
+                if await verify_points(command, user_data):
                     result = await treat_exceptions(ctx,command, user_data, config_data, data)
                     ctx.data = data
                     ctx.predicate_result = result
+                    if result and ctx.data['farm_data']:
+                        ctx.data['farm_data'] = await update_user_farm(ctx.author, data)
+                        ctx.data['farm_data']['corn'] = await update_player_corn(ctx.author, data)
                     return result
-                
                 else:
                     await send_bot_embed(ctx, description=":no_entry_sign: You do not have enough points to use this command.")
                     result = False
@@ -202,11 +208,6 @@ def pricing():
         return False
     
 class MissingCacheProperty(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
-
-class CacheNotFound(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)

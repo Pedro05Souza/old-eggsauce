@@ -6,7 +6,8 @@ from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import *
 from tools.pointscore import pricing
-from tools.shared import send_bot_embed, confirmation_embed, regular_command_cooldown, user_cache_retriever
+from tools.shared import send_bot_embed, confirmation_embed, user_cache_retriever
+from tools.settings import regular_command_cooldown
 import asyncio
 import logging
 import discord
@@ -29,7 +30,7 @@ class ChickenEvents(commands.Cog):
             if not farm_data['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
                 return
-            message = await get_usr_farm(ctx, ctx.author)
+            message = await get_usr_farm(ctx, ctx.author, ctx.data)
             view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author, action="D")
             await ctx.send(embed=message,view=view)
         else:
@@ -43,8 +44,10 @@ class ChickenEvents(commands.Cog):
         if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
             return
         farm_author = ctx.data["farm_data"]
-        farm_target = await user_cache_retriever(user.id)
+        user_cache_data = await user_cache_retriever(user.id)
+        farm_target = user_cache_data["farm_data"]
         farm_target = farm_target["farm_data"]
+
         if farm_author and farm_target:
             if not farm_author['chickens'] or not farm_target['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, {user.display_name} doesn't have any chickens.")
@@ -63,7 +66,7 @@ class ChickenEvents(commands.Cog):
             try:
                 reaction, _ = await self.bot.wait_for("reaction_add", check=lambda reaction, usr: usr == user and reaction.message == msg, timeout=40)
                 if reaction.emoji == "✅":
-                        await self.trade_chickens(ctx, user, t, farm_author, farm_target)
+                        await self.trade_chickens(ctx, user, t, farm_author, farm_target, user_cache_data)
                         return
                 elif reaction.emoji == "❌":
                     await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the trade request.")
@@ -75,16 +78,16 @@ class ChickenEvents(commands.Cog):
                 EventData.remove(t)
                 EventData.remove(t2)
 
-    async def trade_chickens(self, ctx, User: discord.Member, t, author_data, user_data) -> None:
+    async def trade_chickens(self, ctx, User: discord.Member, t, farm_author, farm_target, user_cache_data) -> None:
         """Trade the chickens"""
-        authorEmbed = await get_usr_farm(ctx, ctx.author)
-        userEmbed = await get_usr_farm(ctx, User)
-        trade_data = [author_data['chickens'], user_data['chickens']]
+        authorEmbed = await get_usr_farm(ctx, ctx.author, ctx.data)
+        userEmbed = await get_usr_farm(ctx, User, user_cache_data)
+        trade_data = [farm_author['chickens'], farm_target['chickens']]
         trade_data[0] = [chicken for chicken in trade_data[0] if chicken['rarity'] != "DEAD" and chicken['rarity'] != "ETHEREAL"]
         trade_data[1] = [chicken for chicken in trade_data[1] if chicken['rarity'] != "DEAD" and chicken['rarity'] != "ETHEREAL"]
         members_data = [ctx.author, User]
         embeds = [authorEmbed, userEmbed]
-        if len(user_data['chickens']) == 1 and user_data['chickens'][0]['rarity'] == "ETHEREAL":
+        if len(farm_target['chickens']) == 1 and farm_target['chickens'][0]['rarity'] == "ETHEREAL":
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade an ethereal chicken.")
             return
         view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="author", trade_data=t)
@@ -238,7 +241,7 @@ class ChickenEvents(commands.Cog):
             user_data = ctx.data["user_data"]
             farm_data = ctx.data["farm_data"]
             if user_data['points'] >= farmer_price:
-                if farm_data['total_eggs'] < eggs_needed:
+                if farm_data['eggs_generated'] < eggs_needed:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to produce at least {eggs_needed} eggs in order to purchase a farmer role.")
                     return
                 farm_size = get_max_chicken_limit(farm_data)
