@@ -1,3 +1,7 @@
+"""
+This file contains the corn commands for the chicken food farm.
+"""
+
 from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
@@ -5,7 +9,7 @@ from tools.chickens.chickeninfo import ChickenFood
 from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, return_data
 from tools.settings import regular_command_cooldown, max_corn_limit, max_plot_limit, farm_drop
 from tools.pointscore import pricing
-from tools.chickens.chickenshared import preview_corn_produced
+from tools.chickens.chickenshared import preview_corn_produced, update_player_corn
 from better_profanity import profanity
 import discord
 
@@ -20,7 +24,7 @@ class CornCommands(commands.Cog):
         """Displays the user's corn field."""
         data, user = await return_data(ctx, user)
         if data:
-            await ctx.send(embed=await self.show_plr_food_farm(user, data))
+            await ctx.send(embed=await self.show_plr_food_farm(ctx, user, data))
     
     @commands.hybrid_command(name="renamecornfield", aliases=["rcf"], usage="renameCornfield <nickname>", description="Rename the cornfield.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -28,29 +32,27 @@ class CornCommands(commands.Cog):
     async def rename_corn_field(self, ctx, nickname: str):
         """Rename the cornfield"""
         farm_data = ctx.data["farm_data"]
-        if farm_data:
-            censor = profanity.contains_profanity(nickname)
-            if censor:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} The cornfield name contains profanity.")
-                return
-            if len(nickname) > 20:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} The cornfield name must have a maximum of 15 characters.")
-                return
-            farm_data['plant_name'] = nickname
-            Farm.update(ctx.author.id, plant_name=nickname)
-            await send_bot_embed(ctx, description=f"{ctx.author.display_name} Your cornfield has been renamed to {nickname}.")
-        else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You don't have a farm.")
+        censor = profanity.contains_profanity(nickname)
+        if censor:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} The cornfield name contains profanity.")
+            return
+        if len(nickname) > 20:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} The cornfield name must have a maximum of 15 characters.")
+            return
+        farm_data['plant_name'] = nickname
+        Farm.update(ctx.author.id, plant_name=nickname)
+        await send_bot_embed(ctx, description=f"{ctx.author.display_name} Your cornfield has been renamed to {nickname}.")
 
-    async def show_plr_food_farm(self, user: discord.Member, data):
+    async def show_plr_food_farm(self, ctx, user: discord.Member, data):
         """Show the player's food farm"""
-        farm_data = data["farm_data"]
-        if farm_data:
-            food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in **{farm_drop // 3600}** hour(s): **{await preview_corn_produced(farm_data)}** :money_with_wings:\n:seedling: **Plots**: {farm_data['plot']}")
-            food_embed.set_thumbnail(url=user.display_avatar)
-            return food_embed
-        else:
+        if not data.get("farm_data", None):
             return await make_embed_object(title=f":no_entry_sign: {user.display_name}", description=f":no_entry_sign: {user.display_name} You don't have a farm.")
+        farm_data = data["farm_data"]
+        if user.id != ctx.author.id:
+            farm_data['corn'] = await update_player_corn(user, farm_data)
+        food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in **{farm_drop // 3600}** hour(s): **{await preview_corn_produced(farm_data)}** :money_with_wings:\n:seedling: **Plots**: {farm_data['plot']}")
+        food_embed.set_thumbnail(url=user.display_avatar)
+        return food_embed
     
     @commands.hybrid_command(name="buyplot", aliases=["bp"], usage="buyPlot", description="Buy a plot to increase the corn production.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -58,9 +60,6 @@ class CornCommands(commands.Cog):
     async def buy_plot(self, ctx):
         """Buy a plot for corn production"""
         farm_data = ctx.data["farm_data"]
-        if not farm_data:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
-            return
         actual_plot = farm_data['plot']
         if actual_plot == max_plot_limit:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum number of plots.")
@@ -87,9 +86,6 @@ class CornCommands(commands.Cog):
     async def upgrade_corn_limit(self, ctx):
         """Upgrades the player corn limit."""
         farm_data = ctx.data["farm_data"]
-        if not farm_data:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
-            return
         range_corn = int((farm_data['corn_limit'] * 50)  // 100)
         if farm_data['corn_limit'] == max_corn_limit:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum corn limit.")
@@ -119,18 +115,17 @@ class CornCommands(commands.Cog):
         if quantity < 30:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the minimum amount of corn you can buy is 30.")
             return
-        if farm_data and user_data:
-            corn_price = quantity // 2
-            if user_data['points'] < corn_price:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to buy the corn.")
-                return
-            if farm_data['corn'] + quantity > farm_data['corn_limit']:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't buy more corn than your corn limit.")
-                return
-            farm_data['corn'] += quantity
-            User.update_points(ctx.author.id, user_data['points'] - corn_price)
-            Farm.update(ctx.author.id, corn=farm_data['corn'])
-            await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have bought {quantity} corn for {corn_price} eggbux.")
+        corn_price = quantity // 2
+        if user_data['points'] < corn_price:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to buy the corn.")
+            return
+        if farm_data['corn'] + quantity > farm_data['corn_limit']:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't buy more corn than your corn limit.")
+            return
+        farm_data['corn'] += quantity
+        User.update_points(ctx.author.id, user_data['points'] - corn_price)
+        Farm.update(ctx.author.id, corn=farm_data['corn'])
+        await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have bought {quantity} corn for {corn_price} eggbux.")
 
     @commands.hybrid_command(name="sellcorn", aliases=["sf"], usage="sellCorn <quantity>", description="Sell corn for the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -139,18 +134,17 @@ class CornCommands(commands.Cog):
         """Sell corn"""
         farm_data = ctx.data["farm_data"]
         user_data = ctx.data["user_data"]
-        if farm_data:
-            if quantity > farm_data['corn']:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough corn to sell.")
-                return
-            if quantity < 30:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the minimum amount of corn you can sell is 30.")
-                return
-            corn_price = quantity // 3
-            farm_data['corn'] -= quantity
-            User.update_points(ctx.author.id, user_data['points'] + corn_price)
-            Farm.update(ctx.author.id, corn=farm_data['corn'])
-            await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have sold {quantity} corn for {corn_price} eggbux.")
+        if quantity > farm_data['corn']:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough corn to sell.")
+            return
+        if quantity < 30:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the minimum amount of corn you can sell is 30.")
+            return
+        corn_price = quantity // 3
+        farm_data['corn'] -= quantity
+        User.update_points(ctx.author.id, user_data['points'] + corn_price)
+        Farm.update(ctx.author.id, corn=farm_data['corn'])
+        await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have sold {quantity} corn for {corn_price} eggbux.")
 
     @commands.hybrid_command(name="feedallchicken", aliases=["fac"], usage="feedallchicken", description="Feed a chicken.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -160,33 +154,31 @@ class CornCommands(commands.Cog):
         farm_data = ctx.data["farm_data"]
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0
-        if farm_data:
-            if farm_data['corn'] == 0:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have any corn.")
-                return
-            total_cost = 0
-            all_happiness = 0
-            for chicken in farm_data['chickens']:
-                if chicken['happiness'] == 100:
-                    all_happiness += 1
-                    continue
-                cost_to_feed = ChickenFood[chicken['rarity']].value
-                if farm_data['corn'] > cost_to_feed:
-                    total_cost += cost_to_feed
-                    chicken['happiness'] = 100
-                    chickens_fed += 1
-                    all_happiness += 1
-                    farm_data['corn'] -= cost_to_feed
-                else:
-                    break
-            if total_cost == 0 and all_happiness != len(farm_data['chickens']):
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't afford to feed any chickens.")
-                return
-            elif total_cost == 0 and all_happiness == len(farm_data['chickens']):
-                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, all the chickens are already fed.")
-                return
-            Farm.update(ctx.author.id, corn=farm_data['corn'], chickens=farm_data['chickens'])
-            await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, **{chickens_fed}** out of **{total_chickens}** chickens have been fed.\n:corn:The corn cost was {total_cost}.")
+        if farm_data['corn'] == 0:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have any corn.")
+            return
+        total_cost = 0
+        all_happiness = 0
+        for chicken in farm_data['chickens']:
+            if chicken['happiness'] == 100:
+                all_happiness += 1
+                continue
+            cost_to_feed = ChickenFood[chicken['rarity']].value
+            if farm_data['corn'] >= cost_to_feed:
+                total_cost += cost_to_feed
+                chicken['happiness'] = 100
+                chickens_fed += 1
+                all_happiness += 1
+                farm_data['corn'] -= cost_to_feed
+            else:
+                break
+        if total_cost == 0 and all_happiness != len(farm_data['chickens']):
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't afford to feed any chickens.")
+            return
+        elif total_cost == 0 and all_happiness == len(farm_data['chickens']):
+            await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, all the chickens are already fed.")
+        Farm.update(ctx.author.id, corn=farm_data['corn'], chickens=farm_data['chickens'])
+        await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, **{chickens_fed}** out of **{total_chickens}** chickens have been fed.\n:corn:The corn cost was {total_cost}.")
 
 async def setup(bot):
     await bot.add_cog(CornCommands(bot))

@@ -1,3 +1,6 @@
+"""
+This module contains the bank commands.
+"""
 from discord.ext import commands
 from tools.shared import send_bot_embed, confirmation_embed
 from tools.settings import regular_command_cooldown

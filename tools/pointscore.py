@@ -6,8 +6,10 @@ from tools.prices import Prices
 import inspect
 import discord
 import logging
+import time
 logger = logging.getLogger('botcore')
 dev_mode = False
+cooldown_tracker = {}
 
 # This class is responsible for handling the prices of the commands.
 
@@ -41,6 +43,46 @@ async def verify_points(comando, user_data):
     price = Prices[comando].value
     return user_data["points"] >= price
 
+async def verify_if_farm_command(command):
+    chicken_cogs = ["ChickenCore", "ChickenEvents", "ChickenView", "CornCommands", "PlayerMarket", "ChickenCombat"]
+    cog = command.cog
+
+    if cog.qualified_name in chicken_cogs:
+        return True
+    return False
+
+async def verify_bank_command(command):
+    bank_cogs = ["BankCommands"]
+    cog = command.cog
+
+    if cog.qualified_name in bank_cogs:
+        return True
+    return False
+
+async def cooldown_user_tracker(user_id):
+    if user_id in cooldown_tracker:
+        if cooldown_tracker[user_id] == 15:
+            del cooldown_tracker[user_id]
+            return True
+        else:
+            cooldown_tracker[user_id] += 1
+            return False
+    else:
+        cooldown_tracker[user_id] = 1
+        return True
+
+async def verify_correct_channel(ctx, config_data):
+        if ctx.channel.id != config_data['channel_id']:
+            commands_object = ctx.bot.get_channel(config_data['channel_id'])
+            channel_mention = commands_object.mention
+            embed = await make_embed_object(title=":no_entry_sign: Invalid channel", description=f"Please use the right commands channel: **{channel_mention}**")
+            if ctx.interaction is not None:
+                await ctx.interaction.response.send_message(embed=embed, ephemeral=True)
+            else:
+                await ctx.author.send(embed=embed)
+            return False
+        return True
+            
 async def refund(user: discord.Member, ctx):
     try:
         price = Prices[ctx.command.name].value
@@ -53,6 +95,8 @@ async def refund(user: discord.Member, ctx):
 async def treat_exceptions(ctx, comando, user_data, config_data, data):
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
     if is_slash_command:
+        if not await verify_correct_channel(ctx, config_data):
+            return False
         if Prices[comando].value == 0:
             return True
         new_points = user_data["points"] - Prices[comando].value
@@ -82,16 +126,11 @@ async def treat_exceptions(ctx, comando, user_data, config_data, data):
         await send_bot_embed(ctx, description=":no_entry_sign: Excessive amount of arguments.")
         return False
     
-    channel = config_data
-    if not channel['channel_id']:
+    if not config_data['channel_id']:
         await send_bot_embed(ctx, description=":no_entry_sign: The bot has not been configured properly. Type **!setChannel** in the desired channel.")
         return False
     
-    if ctx.channel.id != channel['channel_id']:
-        commands_object = ctx.bot.get_channel(channel['channel_id'])
-        channel_mention = commands_object.mention
-        embed = await make_embed_object(title=":no_entry_sign: Invalid channel", description=f"Please use the commands channel: **{channel_mention}**")
-        await ctx.author.send(embed=embed)
+    if not await verify_correct_channel(ctx, config_data):
         return False
     
     i = 0
@@ -141,11 +180,12 @@ def pricing():
         if dev_mode and not is_dev(ctx):
             await send_bot_embed(ctx, description=":warning: The bot is currently in development mode.")
             result = False
+            ctx.predicate_result = result
             return result
-        
-        command = ctx.command.name 
-        result = True
-        ctx.predicate_result = result
+
+        result = False
+        command_name = ctx.command.name
+        command_ctx = ctx.command 
         config_data = await guild_cache_retriever(ctx.guild.id)
             
         if config_data['toggled_modules'] == "N":
@@ -154,13 +194,11 @@ def pricing():
             result = False
             return result
             
-        if command in Prices.__members__:
+        if command_name in Prices.__members__:
             if not ctx.command.get_cooldown_retry_after(ctx):
                 data = await user_cache_retriever(ctx.author.id)
                 all_keys = ["user_data", "farm_data", "bank_data"]
-                
-                if not data:
-                    await send_bot_embed(ctx, description=":warning: You're not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
+
                 if not all(key in data for key in all_keys): # cache properties can be nullable
                     await send_bot_embed(ctx, description=":warning: Your data is missing core properties and likely is not synchronized. Please try again later. This should be fixed automatically.")
                     raise MissingCacheProperty(f"The user cache is missing core properties and likely is not synchronized. Here are the following keys: {data.keys()}")
@@ -174,25 +212,44 @@ def pricing():
                     return result
                 
                 if not await set_points_commands_submodules(ctx, config_data):
+                    ctx.predicate_result = result
+                    if not result:
+                        return result
+                    
+                if await verify_if_farm_command(command_ctx):
+                    if not data['farm_data']:
+                        if await cooldown_user_tracker(ctx.author.id):
+                            await send_bot_embed(ctx, description=":no_entry_sign: You don't have a farm. Type **!createfarm** to create one.")
+                        result = command_name == "createfarm"
+                        print(result)
+                        ctx.predicate_result = result
+                        if not result:
+                            return result
+                    
+                if await verify_bank_command(command_ctx):
+                    if not data['bank_data']:
+                        if await cooldown_user_tracker(ctx.author.id):
+                            await send_bot_embed(ctx, description=":no_entry_sign: You don't have a bank account. Use any bank command and the bot will create one for you.")
+                        result = command_name == "createbank"
+                        ctx.predicate_result = result
+                        return result
+                
+                if await verify_points(command_name, user_data):
+                    result = await treat_exceptions(ctx, command_name, user_data, config_data, data)
+                    ctx.data = data
+                    ctx.predicate_result = result
+                    if result and ctx.data['farm_data']:
+                        ctx.data['farm_data'] = await update_user_farm(ctx, ctx.author, data)
+                        ctx.data['farm_data']['corn'] = await update_player_corn(ctx.author, data['farm_data'])
+                    return result
+                else:
+                    if await cooldown_user_tracker(ctx.author.id):
+                        await send_bot_embed(ctx, description=":no_entry_sign: You don't have enough points to use this command.")
                     result = False
                     ctx.predicate_result = result
                     return result
                 
-                if await verify_points(command, user_data):
-                    result = await treat_exceptions(ctx,command, user_data, config_data, data)
-                    ctx.data = data
-                    ctx.predicate_result = result
-                    if result and ctx.data['farm_data']:
-                        ctx.data['farm_data'] = await update_user_farm(ctx.author, data)
-                        ctx.data['farm_data']['corn'] = await update_player_corn(ctx.author, data)
-                    return result
-                else:
-                    await send_bot_embed(ctx, description=":no_entry_sign: You do not have enough points to use this command.")
-                    result = False
-                    ctx.predicate_result = result
-                    return result
             else:
-                result = False
                 ctx.predicate_result = result
                 return result
         else:

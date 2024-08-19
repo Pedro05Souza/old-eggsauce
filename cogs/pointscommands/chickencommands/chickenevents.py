@@ -1,3 +1,7 @@
+"""
+This module handles events between users and their chickens.
+"""
+
 from discord.ext import commands
 from db.farmDB import Farm
 from db.userDB import User
@@ -26,15 +30,12 @@ class ChickenEvents(commands.Cog):
         if await verify_events(ctx, ctx.author):
             return
         farm_data = ctx.data["farm_data"]
-        if farm_data:
-            if not farm_data['chickens']:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
-                return
-            message = await get_usr_farm(ctx, ctx.author, ctx.data)
-            view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author, action="D")
-            await ctx.send(embed=message,view=view)
-        else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you do not have a farm.")
+        if not farm_data['chickens']:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
+            return
+        message = await get_usr_farm(ctx, ctx.author, ctx.data)
+        view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author, action="D")
+        await ctx.send(embed=message,view=view)
 
     @commands.hybrid_command(name="tradechicken", aliases=["tc", "trade"], usage="tradeChicken <user>", description="Trade a chicken(s) with another user.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -48,7 +49,7 @@ class ChickenEvents(commands.Cog):
         farm_target = user_cache_data["farm_data"]
         farm_target = farm_target["farm_data"]
 
-        if farm_author and farm_target:
+        if farm_target:
             if not farm_author['chickens'] or not farm_target['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, {user.display_name} doesn't have any chickens.")
                 return
@@ -77,6 +78,8 @@ class ChickenEvents(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has not responded to the trade request.")
                 EventData.remove(t)
                 EventData.remove(t2)
+        else:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} don't have a farm.")
 
     async def trade_chickens(self, ctx, User: discord.Member, t, farm_author, farm_target, user_cache_data) -> None:
         """Trade the chickens"""
@@ -105,7 +108,7 @@ class ChickenEvents(commands.Cog):
         author_data = ctx.data["farm_data"]
         user_data = await user_cache_retriever(user.id)
         user_data = user_data["farm_data"]
-        if author_data and user_data:
+        if user_data:
             index -= 1
             g = EventData(ctx.author)
             g2 = EventData(user)
@@ -165,7 +168,7 @@ class ChickenEvents(commands.Cog):
                 EventData.remove(g)
                 EventData.remove(g2)
         else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you or {user.display_name} don't have a farm.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} don't have a farm.")
     
     @commands.hybrid_command(name="evolvechicken", aliases=["ec", "fuse"], usage="evolveChicken <index> <index2>", description="Evolve a chicken if having 2 of the same rarity.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -175,46 +178,45 @@ class ChickenEvents(commands.Cog):
         if await verify_events(ctx, ctx.author):
             return
         farm_data = ctx.data["farm_data"]
-        if farm_data:
-            e = EventData(ctx.author)
-            if not farm_data['chickens']:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
-                EventData.remove(e)
-                return
-            if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
-                EventData.remove(e)
-                return
-            if index == index2:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve a chicken with itself.")
-                EventData.remove(e)
-                return
-            chicken_selected = farm_data['chickens'][index - 1]
-            chicken_removed = farm_data['chickens'][index2 - 1]
-            if chicken_selected['rarity'] != chicken_removed['rarity']:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chickens must be of the same rarity to evolve.")
-                EventData.remove(e)
-                return
-            if chicken_selected['rarity'] == "ASCENDED" or chicken_removed['rarity'] == "ASCENDED" or chicken_selected['rarity'] == "ETHEREAL" or chicken_removed['rarity'] == "ETHEREAL":
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve an ascended or ethereal chicken.")
-                EventData.remove(e)
-                return
-            if chicken_selected['rarity'] == "DEAD" or chicken_removed['rarity'] == "DEAD":
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve a dead chicken.")
-                EventData.remove(e)
-                return
-            confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to evolve your **{get_rarity_emoji(chicken_selected['rarity'])}{chicken_selected['rarity']} {chicken_selected['name']}** to a higher rarity?")
-            if confirmation:
-                rarity_list = list(ChickenRarity.__members__)
-                chicken_selected['rarity'] = rarity_list[rarity_list.index(chicken_selected['rarity']) + 1]
-                chicken_selected['upkeep_multiplier'] = determine_chicken_upkeep(chicken_selected)
-                farm_data['chickens'].remove(chicken_removed)
-                Farm.update(ctx.author.id, chickens=farm_data['chickens'])
-                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, the chicken has been evolved to {chicken_selected['rarity']} {chicken_selected['name']}.")
-                EventData.remove(e)
-            else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the evolution.")
-                EventData.remove(e)
+        e = EventData(ctx.author)
+        if not farm_data['chickens']:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
+            EventData.remove(e)
+            return
+        if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+            EventData.remove(e)
+            return
+        if index == index2:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve a chicken with itself.")
+            EventData.remove(e)
+            return
+        chicken_selected = farm_data['chickens'][index - 1]
+        chicken_removed = farm_data['chickens'][index2 - 1]
+        if chicken_selected['rarity'] != chicken_removed['rarity']:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chickens must be of the same rarity to evolve.")
+            EventData.remove(e)
+            return
+        if chicken_selected['rarity'] == "ASCENDED" or chicken_removed['rarity'] == "ASCENDED" or chicken_selected['rarity'] == "ETHEREAL" or chicken_removed['rarity'] == "ETHEREAL":
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve an ascended or ethereal chicken.")
+            EventData.remove(e)
+            return
+        if chicken_selected['rarity'] == "DEAD" or chicken_removed['rarity'] == "DEAD":
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve a dead chicken.")
+            EventData.remove(e)
+            return
+        confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to evolve your **{get_rarity_emoji(chicken_selected['rarity'])}{chicken_selected['rarity']} {chicken_selected['name']}** to a higher rarity?")
+        if confirmation:
+            rarity_list = list(ChickenRarity.__members__)
+            chicken_selected['rarity'] = rarity_list[rarity_list.index(chicken_selected['rarity']) + 1]
+            chicken_selected['upkeep_multiplier'] = determine_chicken_upkeep(chicken_selected)
+            farm_data['chickens'].remove(chicken_removed)
+            Farm.update(ctx.author.id, chickens=farm_data['chickens'])
+            await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, the chicken has been evolved to {chicken_selected['rarity']} {chicken_selected['name']}.")
+            EventData.remove(e)
+        else:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the evolution.")
+            EventData.remove(e)
 
     @commands.hybrid_command(name="farmer", aliases =["farmers"], usage="farmer", description="The farmers helps increase the productivity of the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)

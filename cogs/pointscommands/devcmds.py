@@ -1,3 +1,7 @@
+"""
+This file contains the developer commands for the bot.
+"""
+
 from discord.ext import commands
 from db.userDB import User
 from tools.shared import make_embed_object, send_bot_embed, is_dev, retrieve_threads
@@ -251,13 +255,6 @@ class DevCommands(commands.Cog):
             embed_obj.add_field(name="🔧 Cache Memory Usage:", value=f"User Cache: {user} bytes\nGuild Cache: {guild} bytes")
             embed_obj.add_field(name="🧰 Current active threads:", value=f"{retrieve_threads()}")
             await ctx.send(embed=embed_obj)
-
-    @commands.command(name="rcp")
-    async def remove_cache_property(self, ctx):
-        if is_dev(ctx):
-            user_id = ctx.author.id
-            user_cache = await cache_initiator.get_user_cache(user_id)
-            if user_cache:
-                user_cache.pop("user_data")
+            
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

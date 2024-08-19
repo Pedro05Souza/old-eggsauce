@@ -1,3 +1,7 @@
+"""
+This module contains the player market commands for the chicken system.
+"""
+
 from discord.ext import commands
 from db.farmDB import Farm
 from db.MarketDB import Market

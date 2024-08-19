@@ -57,8 +57,6 @@ class User:
                 user_data['points'] = points
                 user_data['roles'] = roles
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                if not isinstance(points, int): 
-                    points = 0
                 request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})).result()
         except Exception as e:
             logger.error("Error encountered while trying to update user's status.", e)
@@ -68,6 +66,8 @@ class User:
     def update_points(user_id : int, points : int):
         """Update a user's points in the database."""
         try:
+            if points < 0:
+                points = 0
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 user_data['points'] = points

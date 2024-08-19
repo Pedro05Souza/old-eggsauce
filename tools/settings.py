@@ -3,6 +3,7 @@
 Settings for the bot. Highly customizable.
 
 This module contains various configuration settings for the bot, including cooldowns, prices, and limits.
+
 """
 # Cooldown settings (in seconds)
 
@@ -26,8 +27,12 @@ offer_expire_time = 48 # controls the time it takes for an offer to expire (in h
 max_bench = 5 # controls the maximum number of chickens that can be on the bench
 max_corn_limit = 2553 # controls the maximum corn limit
 max_plot_limit = 20 # controls the maximum plot limit
-corn_per_plot = 100 # controls the amount of corn that can be planted per plot
+corn_per_plot = 100 # controls the amount of corn that can be produced per plot
 farm_drop = 7200 # controls the time it takes for the chickens in a farm to drop eggs (in seconds)
+roll_per_hour = 3600 # controls the time it takes for the user to reset their rolls in the market (in seconds)
+max_plot_tax_value = 200 # controls the maximum tax value for the plots
+max_corn_tax_value = 150 # controls the maximum tax value for the corn
+max_farm_tax_value = 300 # controls the maximum tax value for the farm
 
 # Hybrid command settings
 

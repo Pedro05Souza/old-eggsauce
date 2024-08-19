@@ -1,4 +1,6 @@
-# #THIS MODULE IS DEPRECATED
+"""
+This module is currently deprecated, it can be used as a reference for future implementations.
+"""
 # from discord.ext import commands
 # from tools.pointscore import pricing, refund
 # from tools.shared import send_bot_embed, regular_command_cooldown

@@ -1,4 +1,7 @@
-# # THIS MODULE IS DEPRECATED
+"""
+This module is currently deprecated, it can be used as a reference for future implementations.
+"""
+
 # from threading import Thread
 # from openai import OpenAI
 # import openai

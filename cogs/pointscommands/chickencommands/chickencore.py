@@ -1,14 +1,19 @@
+"""
+This module contains the core commands and processes for the chicken system in order for it to work properly.
+"""
+
+
 from random import uniform
 from time import time
 from discord.ext import commands
 from db.farmDB import Farm
 from tools.chickens.selection.chickenselection import ChickenSelectView
 from tools.chickens.chickenhandlers import RollLimit
-from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
+from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm, update_user_farm
 from tools.chickens.chickeninfo import rollRates
 from tools.pointscore import pricing
 from tools.shared import make_embed_object, send_bot_embed, return_data
-from tools.settings import spam_command_cooldown, regular_command_cooldown
+from tools.settings import spam_command_cooldown, regular_command_cooldown, roll_per_hour
 import discord
 import asyncio
 
@@ -27,7 +32,7 @@ class ChickenCore(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You already have a farm.")
         else:
             Farm.create(ctx.author.id, ctx)
-            await send_bot_embed(ctx, description=f"{ctx.author.display_name} You have created a farm.")
+            await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} You have created a farm.")
 
     @commands.hybrid_command(name="farm", aliases=["f"], usage="farm OPTIONAL [user]", description="Check the chickens in the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -37,7 +42,7 @@ class ChickenCore(commands.Cog):
         data, user = await return_data(ctx, user)
         msg = await get_usr_farm(ctx, user, data)
         if not msg:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have a farm or any chickens.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have any chickens.")
             return
         await ctx.send(embed=msg)
 
@@ -61,28 +66,25 @@ class ChickenCore(commands.Cog):
     async def roll(self, ctx, chickens_to_generate, action) -> None:
         """Market to buy chickens"""
         farm_data = ctx.data["farm_data"]
-        if farm_data:
-            default_rolls = 10
-            if action == "market":
-                if not RollLimit.read_key(ctx.author.id):
-                    if farm_data['farmer'] == "Executive Farmer":
-                        farmer_upgrades = load_farmer_upgrades("Executive Farmer")
-                        farmer_upgd = farmer_upgrades[0]
-                        RollLimit.create(ctx.author.id, farmer_upgd + default_rolls)
-                    else:
-                        RollLimit.create(ctx.author.id, default_rolls)
-                if RollLimit.read(ctx.author.id) == 0:
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today.")
-                    return
-                RollLimit.update(ctx.author.id, RollLimit.read(ctx.author.id) - 1)
-            if farm_data['farmer'] == "Generous Farmer":
-                default_rolls += load_farmer_upgrades("Generous Farmer")[0]
-            generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
-            message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux." for index, chicken in enumerate(generated_chickens)]))
-            view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message)
-            await ctx.send(embed=message, view=view)
-        else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you don't have a farm.")
+        default_rolls = 10
+        if action == "market":
+            if not RollLimit.read_key(ctx.author.id):
+                if farm_data['farmer'] == "Executive Farmer":
+                    farmer_upgrades = load_farmer_upgrades("Executive Farmer")
+                    farmer_upgd = farmer_upgrades[0]
+                    RollLimit.create(ctx.author.id, farmer_upgd + default_rolls)
+                else:
+                    RollLimit.create(ctx.author.id, default_rolls)
+            if RollLimit.read(ctx.author.id) == 0:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today.")
+                return
+            RollLimit.update(ctx.author.id, RollLimit.read(ctx.author.id) - 1)
+        if farm_data['farmer'] == "Generous Farmer":
+            default_rolls += load_farmer_upgrades("Generous Farmer")[0]
+        generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
+        message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux." for index, chicken in enumerate(generated_chickens)]))
+        view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message)
+        await ctx.send(embed=message, view=view)
                          
     def roll_rates_sum(self) -> tuple:
         """Roll the sum of the rates of the chicken rarities"""
@@ -109,10 +111,10 @@ class ChickenCore(commands.Cog):
         self.bot.loop.create_task(self.reset_periodically())
     
     async def reset_periodically(self):
-        """Reset the roll limit every hour"""
+        """Reset the roll limit every determined time"""
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            await asyncio.sleep(3600 - time() % 3600)
+            await asyncio.sleep(roll_per_hour - time() % roll_per_hour)
             RollLimit.remove_all()
 
 async def setup(bot):

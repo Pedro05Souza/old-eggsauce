@@ -1,3 +1,7 @@
+"""
+This module contains the view commands for the chicken system.
+"""
+
 from discord.ext import commands
 from db.farmDB import Farm
 from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, chicken_ranking
@@ -103,6 +107,8 @@ class ChickenView(commands.Cog):
         data, user = await return_data(ctx, user)
         farm_data = data["farm_data"]
         if farm_data:
+            if user.id != ctx.author.id:
+                farm_data = await update_user_farm(ctx, user, data)
             totalProfit = 0
             totalcorn = 0
             if len(farm_data['chickens']) == 0:
@@ -132,19 +138,16 @@ class ChickenView(commands.Cog):
     async def rename_farm(self, ctx, nickname: str):
         """Rename the farm"""
         farm_data = ctx.data["farm_data"]
-        if farm_data:
-            censor = profanity.contains_profanity(nickname)
-            if censor:
-                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't use profanity in the farm name.")
-                return
-            if len(nickname) > 20:
-                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name} The farm name must have a maximum of 20 characters.")
-                return
-            farm_data['farm_name'] = nickname
-            Farm.update(ctx.author.id, farm_name=nickname)
-            await send_bot_embed(ctx,description= f"{ctx.author.display_name} Your farm has been renamed to {nickname}.")
-        else:
-            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name} You do not have a farm.")
+        censor = profanity.contains_profanity(nickname)
+        if censor:
+            await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't use profanity in the farm name.")
+            return
+        if len(nickname) > 20:
+            await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name} The farm name must have a maximum of 20 characters.")
+            return
+        farm_data['farm_name'] = nickname
+        Farm.update(ctx.author.id, farm_name=nickname)
+        await send_bot_embed(ctx,description= f"{ctx.author.display_name} Your farm has been renamed to {nickname}.")
 
     @commands.hybrid_command(name="renamechicken", aliases=["rc"], usage="renameChicken <index> <nickname>", description="Rename a chicken in the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -153,34 +156,32 @@ class ChickenView(commands.Cog):
         """Rename a chicken in the farm"""
         index -= 1
         farm_data = ctx.data["farm_data"]
-        if farm_data:
-            censor = profanity.contains_profanity(nickname)
-            if censor:
-                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't use profanity in the chicken name.")
+        censor = profanity.contains_profanity(nickname)
+        if censor:
+            await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't use profanity in the chicken name.")
+            return
+        if not farm_data['chickens']:
+                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                 return
-            if not farm_data['chickens']:
-                    await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
-                    return
-            if len(nickname) > 15:
-                    await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, the chicken name must have a maximum of 15 characters.")
-                    return
-            if index > len(farm_data['chickens']) or index < 0:
-                    await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
-                    return
-            check_nickname = nickname.upper()
-            if check_nickname in ChickenRarity.__members__:
-                    await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't rename a chicken with a rarity name.")
-                    return
-            chicken_arr = farm_data['chickens']
-            for i, chicken in enumerate(chicken_arr):
-                if index == i:
-                    chicken_arr[i]['name'] = nickname
-                    break
-            farm_data['chickens'] = chicken_arr
-            Farm.update(ctx.author.id, chickens=farm_data['chickens'])
-            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chicken has been renamed to {nickname}.")
-        else:
-            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+        if len(nickname) > 15:
+                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, the chicken name must have a maximum of 15 characters.")
+                return
+        if index > len(farm_data['chickens']) or index < 0:
+                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                return
+        check_nickname = nickname.upper()
+        if check_nickname in ChickenRarity.__members__:
+                await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't rename a chicken with a rarity name.")
+                return
+        chicken_arr = farm_data['chickens']
+        for i, chicken in enumerate(chicken_arr):
+            if index == i:
+                chicken_arr[i]['name'] = nickname
+                break
+        farm_data['chickens'] = chicken_arr
+        Farm.update(ctx.author.id, chickens=farm_data['chickens'])
+        await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chicken has been renamed to {nickname}.")
+
     
     @commands.hybrid_command(name="switchchicken", aliases=["switch"], usage="switchChicken <index> <index2>", description="Switch the position of two chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -188,15 +189,12 @@ class ChickenView(commands.Cog):
     async def switch_chicken(self, ctx, index: int, index2: int):
         """Switches chickens"""
         farm_data = ctx.data["farm_data"]
-        if farm_data:
-            if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
-                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
-                return
-            farm_data['chickens'][index - 1], farm_data['chickens'][index2 - 1] = farm_data['chickens'][index2 - 1], farm_data['chickens'][index - 1]
-            Farm.update(ctx.author.id, chickens=farm_data['chickens'])
-            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
-        else:
-            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+        if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+            return
+        farm_data['chickens'][index - 1], farm_data['chickens'][index2 - 1] = farm_data['chickens'][index2 - 1], farm_data['chickens'][index - 1]
+        Farm.update(ctx.author.id, chickens=farm_data['chickens'])
+        await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
     
     @commands.hybrid_command(name="bench", aliases=["b"], usage="b", description="You can store chickens in the bench.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -217,23 +215,20 @@ class ChickenView(commands.Cog):
         """Adds a chicken to the bench"""
         farm_data = ctx.data["farm_data"]
         index -= 1
-        if farm_data:
-            e = EventData(ctx.author)
-            if index > len(farm_data['chickens']) or index < 0:
-                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
-                EventData.remove(e)
-                return
-            if len(farm_data['bench']) >= max_bench:
-                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the bench is full.")
-                EventData.remove(e)
-                return
-            farm_data['bench'].append(farm_data['chickens'][index])
-            farm_data['chickens'].pop(index)
+        e = EventData(ctx.author)
+        if index > len(farm_data['chickens']) or index < 0:
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             EventData.remove(e)
-            Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
-            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, **{get_rarity_emoji(farm_data['bench'][-1]['rarity'])}{farm_data['bench'][-1]['rarity']} {farm_data['bench'][-1]['name']}** has been added to the bench.")
-        else:
-            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
+            return
+        if len(farm_data['bench']) >= max_bench:
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the bench is full.")
+            EventData.remove(e)
+            return
+        farm_data['bench'].append(farm_data['chickens'][index])
+        farm_data['chickens'].pop(index)
+        EventData.remove(e)
+        Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
+        await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, **{get_rarity_emoji(farm_data['bench'][-1]['rarity'])}{farm_data['bench'][-1]['rarity']} {farm_data['bench'][-1]['name']}** has been added to the bench.")
     
     @commands.hybrid_command(name="removebench", aliases=["rb"], usage="removebench <index>", description="Remove a chicken from the bench to the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -242,21 +237,20 @@ class ChickenView(commands.Cog):
         """Removes a chicken from the bench"""
         farm_data = ctx.data["farm_data"]
         index -= 1
-        if farm_data:
-            e = EventData(ctx.author)
-            if index > len(farm_data['bench']) or index < 0:
-                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
-                EventData.remove(e)
-                return
-            if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
-                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum chicken limit.")
-                EventData.remove(e)
-                return
-            farm_data['chickens'].append(farm_data['bench'][index])
-            farm_data['bench'].pop(index)
-            Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
-            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the **{get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']}** has been removed from the bench.")
+        e = EventData(ctx.author)
+        if index > len(farm_data['bench']) or index < 0:
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             EventData.remove(e)
+            return
+        if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum chicken limit.")
+            EventData.remove(e)
+            return
+        farm_data['chickens'].append(farm_data['bench'][index])
+        farm_data['bench'].pop(index)
+        Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
+        await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the **{get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']}** has been removed from the bench.")
+        EventData.remove(e)
     
     @commands.hybrid_command(name="switchbench", aliases=["sb"], usage="switchb <index_farm> <index_bench>", description="Switch a chicken from the farm to the bench.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -268,16 +262,15 @@ class ChickenView(commands.Cog):
         farm_data = ctx.data["farm_data"]
         index_farm -= 1
         index_bench_int -= 1
-        if farm_data:
-            e = EventData(ctx.author)
-            if index_farm > len(farm_data['chickens']) or index_farm < 0 or index_bench_int > len(farm_data['bench']) or index_bench_int < 0:
-                await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
-                EventData.remove(e)
-                return
-            farm_data['chickens'][index_farm], farm_data['bench'][index_bench_int] = farm_data['bench'][index_bench_int], farm_data['chickens'][index_farm]
-            Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
-            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
+        e = EventData(ctx.author)
+        if index_farm > len(farm_data['chickens']) or index_farm < 0 or index_bench_int > len(farm_data['bench']) or index_bench_int < 0:
+            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             EventData.remove(e)
+            return
+        farm_data['chickens'][index_farm], farm_data['bench'][index_bench_int] = farm_data['bench'][index_bench_int], farm_data['chickens'][index_farm]
+        Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
+        await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
+        EventData.remove(e)
 
     @commands.hybrid_command(name="redeemables", aliases=["redeem"], usage="reedemables", description="Check the reedemable items.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)

@@ -1,3 +1,8 @@
+"""
+This module contains shared functions that are used across multiple modules.
+"""
+
+
 from dotenv import load_dotenv
 from tools.cache.init import cache_initiator
 import os
@@ -50,7 +55,7 @@ async def get_user_title(user_data):
             return userRoles[user_data["roles"][-1]]
 
 async def confirmation_embed(ctx, user: discord.Member, description):
-     """Confirmation embed for modularization"""
+     """Confirmation embed for modularization. Use this method whenenver another command needs confirmation from the user."""
      embed = await make_embed_object(title=f":warning: {user.display_name}, you need to confirm this first:", description=description)
      embed.set_footer(text="React with ✅ to confirm or ❌ to cancel.")
      if isinstance(ctx, discord.Interaction):
@@ -89,7 +94,7 @@ async def user_cache_retriever(user_id):
     return user_cache
 
 async def guild_cache_retriever(guild_id):
-    """Retrieve the guild cache"""
+    """Retrieve the guild cache."""
     from db.botConfigDB import BotConfig # same as above
     guild_cache = await cache_initiator.get_guild_cache(guild_id)
     
@@ -101,7 +106,9 @@ async def guild_cache_retriever(guild_id):
     return guild_cache
 
 def update_scheduler(func):
-    """Schedules a coroutine to be run in the event loop with top priority."""
+    """Schedules a coroutine to be run in the event loop with top priority.
+    Always use this for updating the cache.
+    """
     loop = asyncio.get_event_loop()
     if loop.is_running():
             loop.call_soon(asyncio.ensure_future, func())
@@ -115,7 +122,7 @@ def request_threading(func):
         return future
 
 def retrieve_threads():
-    """Retrieve the number of threads."""
+    """Retrieve the number of threads for visualization purposes."""
     return len(threading.enumerate())
 
 async def return_data(ctx, user=None):

@@ -1,3 +1,7 @@
+"""
+This file contains all the friendly commands.   
+"""
+
 from discord.ext import commands
 from db.MarketDB import Market
 from tools.shared import return_data, send_bot_embed, make_embed_object, get_user_title

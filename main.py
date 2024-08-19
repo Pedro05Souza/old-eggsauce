@@ -23,8 +23,8 @@ def setup_intents():
     intents.message_content = True
     return intents
 
-
 bot = commands.Bot(command_prefix=get_prefix_for_guild, intents=setup_intents(), case_insensitive=True, help_command=None)
+
 async def load_cogs():
     """Load all cogs in the cogs directory and its subdirectories."""
     cogs_dir = Path('./cogs')
