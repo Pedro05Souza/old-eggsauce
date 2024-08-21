@@ -9,9 +9,6 @@ class UserCache(BotCache):
     def __init__(self, memory_limit):
         super().__init__(memory_limit)
     
-    async def get(self, key):
-        return await super().get(key)
-
     async def put(self, key, **kwargs):
         allowed_kw = ["farm_data", "bank_data", "user_data"]
         if all(kw in allowed_kw for kw in kwargs):
@@ -19,9 +16,6 @@ class UserCache(BotCache):
         else:
             raise ValueError("Invalid keyword arguments.")
         
-    async def _evict_if_needed(self):
-        await super()._evict_if_needed()
-
     async def clear_users_cache_periondically(self, interval):
         while True:
             await asyncio.sleep(interval)

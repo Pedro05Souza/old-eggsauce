@@ -111,7 +111,7 @@ def update_scheduler(func):
     """
     loop = asyncio.get_event_loop()
     if loop.is_running():
-            loop.call_soon(asyncio.ensure_future, func())
+        loop.call_soon(asyncio.ensure_future, func())
     else:
         asyncio.run(func())
 

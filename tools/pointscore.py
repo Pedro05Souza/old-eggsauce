@@ -2,11 +2,11 @@ from db.userDB import User
 from discord.ext import commands
 from tools.shared import send_bot_embed, make_embed_object, is_dev, user_cache_retriever, guild_cache_retriever
 from tools.chickens.chickenshared import update_user_farm, update_player_corn
+from tools.cache.init import cache_initiator
 from tools.prices import Prices
 import inspect
 import discord
 import logging
-import time
 logger = logging.getLogger('botcore')
 dev_mode = False
 cooldown_tracker = {}
@@ -201,7 +201,9 @@ def pricing():
 
                 if not all(key in data for key in all_keys): # cache properties can be nullable
                     await send_bot_embed(ctx, description=":warning: Your data is missing core properties and likely is not synchronized. Please try again later. This should be fixed automatically.")
-                    raise MissingCacheProperty(f"The user cache is missing core properties and likely is not synchronized. Here are the following keys: {data.keys()}")
+                    data_copy = data.copy()
+                    await cache_initiator.delete_from_user_cache(ctx.author.id)
+                    raise MissingCacheProperty(f"The user cache is missing core properties and likely is not synchronized. Here are the following keys: {data_copy.keys()}")
                 else:
                     user_data = data["user_data"]
 
@@ -221,7 +223,6 @@ def pricing():
                         if await cooldown_user_tracker(ctx.author.id):
                             await send_bot_embed(ctx, description=":no_entry_sign: You don't have a farm. Type **!createfarm** to create one.")
                         result = command_name == "createfarm"
-                        print(result)
                         ctx.predicate_result = result
                         if not result:
                             return result

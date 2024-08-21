@@ -146,8 +146,6 @@ async def define_chicken_overrall_score(chickens):
 async def drop_egg_for_player(farm_data):
         """Drops eggs for player"""
         farm_dictionary = {}
-        if not farm_data.get('chickens', None):
-            return farm_data
         farm_data_copy = farm_data['chickens'].copy()
         total_profit = await give_total_farm_profit(farm_data)
         farm_data['eggs_generated'] += total_profit
@@ -183,15 +181,20 @@ async def update_user_farm(ctx, user, data):
     if not data.get('farm_data', None):
         return None
     farm_data = data['farm_data']
+    if len(farm_data['chickens']) == 0:
+        return farm_data
     last_drop_time = time() - farm_data['last_chicken_drop']
     updated_farm_data = farm_data
     hours_passed_since_last_egg_drop = min((last_drop_time // farm_drop), 24)
+    total_money_earned = 0
     user_data = data['user_data']
     for _ in range(int(hours_passed_since_last_egg_drop)):
-        updated_farm_data, total_profit = await drop_egg_for_player(farm_data)
+        updated_farm_data, total_profit_per_iter = await drop_egg_for_player(farm_data)
+        total_money_earned += total_profit_per_iter
+        farm_data = updated_farm_data
     if hours_passed_since_last_egg_drop != 0:
         taxes = await farm_maintence_tax(farm_data, hours_passed=hours_passed_since_last_egg_drop)
-        await update_user_points(ctx, user_data, data['bank_data'], updated_farm_data, taxes, total_profit)
+        await update_user_points(ctx, user_data, data['bank_data'], updated_farm_data, taxes, total_money_earned)
         Farm.update_chicken_drop(user.id)
         Farm.update(user.id, chickens=updated_farm_data['chickens'], eggs_generated=updated_farm_data['eggs_generated'])
     return updated_farm_data
@@ -308,6 +311,9 @@ async def farm_maintence_tax(farm_data, **kwargs):
     corn_tax =  max_corn_tax_value * corn_limit_delta_multiplier 
 
     chicken_rarity_weight = sum([rarities_weight[chicken['rarity']] for chicken in farm_data['chickens']])
+    if chicken_rarity_weight <= 150:
+         return 0
+    
     chicken_rarity_weight /= 2200
     chicken_tax = chicken_rarity_weight
     chicken_tax = max_farm_tax_value * chicken_tax
@@ -370,7 +376,6 @@ async def give_total_farm_profit(farm_data):
      if farm_data['farmer'] == 'Rich Farmer':
             to_increase = (total_profit * load_farmer_upgrades('Rich Farmer'))[0] // 100
             total_profit += to_increase
-
      return total_profit
 
 async def decrease_chicken_happiness(chicken):

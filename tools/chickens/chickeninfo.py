@@ -138,28 +138,28 @@ rarities_weight = {
 }
 
 upkeep_weight = {
-    "HORRIFIC" : -30,
-    "TERRIBLE": -20,
-    "AWFUL" : -10,
-    "BAD" : 0,
-    "NORMAL" : 10,
-    "DECENT" : 20,
-    "GOOD" : 30,
-    "GREAT" : 40,
-    "AMAZING" : 50,
-    "AWESOME" : 60,
-    "PERFECT" : 70
+    "HORRIFIC" : -15,
+    "TERRIBLE": -10,
+    "AWFUL" : -5,
+    "BAD" : 0, 
+    "NORMAL" : 5,
+    "DECENT" : 10,
+    "GOOD" : 15,
+    "GREAT" : 20,
+    "AMAZING" : 25,
+    "AWESOME" : 30,
+    "PERFECT" : 35
 }
 
 score_determiner = {
-    "REALLY LOW": 100,
-    "LOW": 350,
-    "MEDIUM": 500,
-    "HIGH": 1000,
-    "REALLY HIGH": 1300,
-    "EXTREMELY HIGH": 1600,
-    "BEYOND HIGH": 2000,
-    "MAXED": 2160
+    "REALLY LOW": -120,        
+    "LOW": 200,             
+    "MEDIUM": 450,       
+    "HIGH": 700,              
+    "REALLY HIGH": 1000,      
+    "EXTREMELY HIGH": 1250,    
+    "BEYOND HIGH": 1600, 
+    "MAXED": 1880          
 }
 
 farm_size_weights = {

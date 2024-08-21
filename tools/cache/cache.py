@@ -11,7 +11,7 @@ logger = logging.getLogger('botcore')
 
 @dataclass
 class BotCache():
-    memory_limit: int
+    memory_limit_bytes: int
     cache: OrderedDict = field(default_factory=OrderedDict)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock) # Lock to prevent data discrepancies
 
@@ -29,7 +29,7 @@ class BotCache():
             for key, value in kwargs.items():
                 self.cache[id][key] = value
                 self.cache.move_to_end(id)
-            if asizeof.asizeof(self.cache) > self.memory_limit:
+            if asizeof.asizeof(self.cache) > self.memory_limit_bytes:
                 await self._evict_if_needed()
         
     async def delete(self, key):
@@ -42,7 +42,7 @@ class BotCache():
 
     async def _evict_if_needed(self):
         async with self.lock:
-            while asizeof.asizeof(self.cache) > self.memory_limit:
+            while asizeof.asizeof(self.cache) > self.memory_limit_bytes:
                 evicted_key, _ = self.cache.popitem(last=False)
                 logger.info(f"Evicting {evicted_key} cache to free up memory.")
     

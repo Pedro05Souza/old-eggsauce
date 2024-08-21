@@ -32,27 +32,23 @@ class BankCommands(commands.Cog):
                 return
         if amount > 0:
             bank_data = ctx.data["bank_data"]
-            if bank_data:
-                if amount > user_data["points"]:
-                    await send_bot_embed(ctx, description=f"{ctx.author.display_name}, you don't have enough eggbux.")
-                    return
-                bankAmount = bank_data['bank']
-                maxAmount = 10000 * bank_data['upgrades']
-                if bankAmount >= maxAmount: 
+            if amount > user_data["points"]:
+                await send_bot_embed(ctx, description=f"{ctx.author.display_name}, you don't have enough eggbux.")
+                return
+            bankAmount = bank_data['bank']
+            maxAmount = 10000 * bank_data['upgrades']
+            if bankAmount >= maxAmount: 
+                await send_bot_embed(ctx, description=f":bank: {ctx.author.display_name}, you can't have more than **{maxAmount}** eggbux in the bank.")
+                return
+            if bankAmount + amount > maxAmount:
+                amount = maxAmount - bankAmount
+                if amount <= 0:
                     await send_bot_embed(ctx, description=f":bank: {ctx.author.display_name}, you can't have more than **{maxAmount}** eggbux in the bank.")
                     return
-                if bankAmount + amount > maxAmount:
-                    amount = maxAmount - bankAmount
-                    if amount <= 0:
-                        await send_bot_embed(ctx, description=f":bank: {ctx.author.display_name}, you can't have more than **{maxAmount}** eggbux in the bank.")
-                        return
-                Bank.update(ctx.author.id, bankAmount + amount)
-                User.update_points(ctx.author.id, user_data["points"] - amount)
-                await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name}, you deposited {amount} eggbux in the bank.")
-                return
-            else:
-                await send_bot_embed(ctx, description=f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
-                await self.register_bank(ctx.author)
+            Bank.update(ctx.author.id, bankAmount + amount)
+            User.update_points(ctx.author.id, user_data["points"] - amount)
+            await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name}, you deposited {amount} eggbux in the bank.")
+            return
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, please enter a valid amount.")
 
@@ -73,17 +69,14 @@ class BankCommands(commands.Cog):
         if amount <= 0:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, please enter a valid amount.")
             return
-        if bank_data:
-            currentAmount = bank_data['bank']
-            if currentAmount >= amount:
-                await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name} You withdrew {amount} eggbux from the bank.")
-                Bank.update(ctx.author.id, currentAmount - amount)
-                User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + amount)
-            else:
-                await send_bot_embed(ctx, description=f"{ctx.author.display_name} You don't have enough eggbux in the bank.")
+        currentAmount = bank_data['bank']
+        if currentAmount >= amount:
+            await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name} You withdrew {amount} eggbux from the bank.")
+            Bank.update(ctx.author.id, currentAmount - amount)
+            User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + amount)
         else:
-            await send_bot_embed(ctx, description=f"{ctx.author.display_name}, since you didn't have an account, one was created for you. Try again.")
-            await self.register_bank(ctx.author)
+            await send_bot_embed(ctx, description=f"{ctx.author.display_name} You don't have enough eggbux in the bank.")
+            return
     
     @commands.hybrid_command("upgradebanklimit", aliases=["ubl"], brief="Upgrades the bank", description="Upgrades the bank. The bank can be upgraded up to 5 times.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -110,6 +103,19 @@ class BankCommands(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, you have cancelled the bank upgrade.")
             return
+        
+    @commands.hybrid_command("createbank", aliases=["cb"], brief="Creates a bank account", description="Creates a bank account.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def create_bank_account(self, ctx):
+        """Creates a bank account."""
+        bank_data = ctx.data["bank_data"]
+        if bank_data:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you already have a bank account.")
+            return
+        await self.register_bank(ctx.author)
+        await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have successfully created a bank account.")
+        return
         
 async def setup(bot):
     await bot.add_cog(BankCommands(bot))

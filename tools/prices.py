@@ -39,6 +39,7 @@ class Prices(Enum):
     searchchicken = 0
     salary = 0
     hungergames = 0
+    createbank = 0
     tradechicken = 0
     buyplot = 0
     transcend = 0

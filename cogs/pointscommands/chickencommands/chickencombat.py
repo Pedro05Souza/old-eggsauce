@@ -366,8 +366,8 @@ class ChickenCombat(commands.Cog):
         return
         
     async def score_string(self, score):
-        for key, value in score_determiner.items():
-            if score <= value:
+        for key, value in reversed(score_determiner.items()):
+            if score >= value:
                 return key
             
     async def rank_rewards(self, ctx, mmr, highest_mmr, winner):
