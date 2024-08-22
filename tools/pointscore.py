@@ -2,7 +2,6 @@ from db.userDB import User
 from discord.ext import commands
 from tools.shared import send_bot_embed, make_embed_object, is_dev, user_cache_retriever, guild_cache_retriever
 from tools.chickens.chickenshared import update_user_farm, update_player_corn
-from tools.cache.init import cache_initiator
 from tools.prices import Prices
 import inspect
 import discord
@@ -22,8 +21,8 @@ async def set_points_commands_submodules(ctx, config_data):
     friendly_cogs = ["FriendlyCommands", "ChickenCore", "ChickenEvents", "ChickenView", "InteractiveCommands", "AICommands", "CornCommands", "PlayerMarket", "ChickenCombat"]
     hostile_cog = ["HostileCommands"]
     module_cogs = {
-        "F": friendly_cogs + shared_cogs,
-        "H": hostile_cog + shared_cogs,
+        "F": set(friendly_cogs + shared_cogs),
+        "H": set(hostile_cog + shared_cogs),
     }
     if active_module == "T":
         return True
@@ -197,15 +196,7 @@ def pricing():
         if command_name in Prices.__members__:
             if not ctx.command.get_cooldown_retry_after(ctx):
                 data = await user_cache_retriever(ctx.author.id)
-                all_keys = ["user_data", "farm_data", "bank_data"]
-
-                if not all(key in data for key in all_keys): # cache properties can be nullable
-                    await send_bot_embed(ctx, description=":warning: Your data is missing core properties and likely is not synchronized. Please try again later. This should be fixed automatically.")
-                    data_copy = data.copy()
-                    await cache_initiator.delete_from_user_cache(ctx.author.id)
-                    raise MissingCacheProperty(f"The user cache is missing core properties and likely is not synchronized. Here are the following keys: {data_copy.keys()}")
-                else:
-                    user_data = data["user_data"]
+                user_data = data["user_data"]
 
                 if not user_data:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
@@ -258,15 +249,8 @@ def pricing():
             result = False
             ctx.predicate_result = result
             return result
-    
     try:
         return commands.check(predicate)
     except Exception as e:
         logger.error(f"An error occurred while checking the predicate: {e}")
         return False
-    
-class MissingCacheProperty(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
-

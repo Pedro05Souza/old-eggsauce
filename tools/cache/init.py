@@ -21,7 +21,7 @@ class CacheInitiator:
         await self.user_cache.put(user_id, **kwargs)
 
     async def update_user_cache(self, user_id, **kwargs):
-        if await self.user_cache.get(user_id) is None:
+        if not await self.user_cache.get(user_id):
             await self.add_to_user_cache(user_id, **kwargs)
         else:
             await self.user_cache.put(user_id, **kwargs)

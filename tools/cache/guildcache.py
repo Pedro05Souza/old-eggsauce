@@ -11,7 +11,7 @@ class GuildCache(BotCache):
         super().__init__(memory_limit)
 
     async def put(self, key, **kwargs):
-        allowed_kw = ["prefix", "channel_id", "toggled_modules"]
+        allowed_kw = {"prefix", "channel_id", "toggled_modules"}
         if all(kw in allowed_kw for kw in kwargs):
             await super().put(key, **kwargs)
         else:

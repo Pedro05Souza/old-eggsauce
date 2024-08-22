@@ -29,8 +29,8 @@ class BotCache():
             for key, value in kwargs.items():
                 self.cache[id][key] = value
                 self.cache.move_to_end(id)
-            if asizeof.asizeof(self.cache) > self.memory_limit_bytes:
-                await self._evict_if_needed()
+        if asizeof.asizeof(self.cache) > self.memory_limit_bytes:
+            await self._evict_if_needed()
         
     async def delete(self, key):
         async with self.lock:

@@ -10,7 +10,7 @@ class UserCache(BotCache):
         super().__init__(memory_limit)
     
     async def put(self, key, **kwargs):
-        allowed_kw = ["farm_data", "bank_data", "user_data"]
+        allowed_kw = {"farm_data", "bank_data", "user_data"}
         if all(kw in allowed_kw for kw in kwargs):
             await super().put(key, **kwargs)
         else:

@@ -108,8 +108,16 @@ class CornCommands(commands.Cog):
     @commands.hybrid_command(name="buycorn", aliases=["bc"], usage="buyCorn <quantity>", description="Buy corn for the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def buy_corn(self, ctx, quantity: int):
+    async def buy_corn(self, ctx, quantity):
         """Buy corn for the chickens"""
+        if quantity == ("all" or "ALL"):
+            quantity = ctx.data["farm_data"]['corn_limit'] - ctx.data["farm_data"]['corn']
+        else:
+            try:
+                quantity = int(quantity)
+            except ValueError:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the quantity must be a number or 'all'.")
+                return
         farm_data = ctx.data["farm_data"]
         user_data = ctx.data["user_data"]
         if quantity < 30:

@@ -77,20 +77,24 @@ async def confirmation_embed(ctx, user: discord.Member, description):
 
 async def user_cache_retriever(user_id):
     """Retrieve the user cache"""
+    keys = {"farm_data", "bank_data", "user_data"}
+    user_cache = await cache_initiator.get_user_cache(user_id)
+    if not user_cache or not all(key in user_cache for key in keys):
+        print("db")
+        return await read_and_update_cache(user_id)
+    print("cache")
+    return user_cache
+
+async def read_and_update_cache(user_id):
+    """Read the user data and update the cache."""
     from db.userDB import User # this is like this to avoid circular imports
     from db.bankDB import Bank # its terrible but it works
     from db.farmDB import Farm
+    user_data = User.read(user_id)
+    farm_data = Farm.read(user_id)
+    bank_data = Bank.read(user_id)
+    await cache_initiator.add_to_user_cache(user_id, user_data=user_data, farm_data=farm_data, bank_data=bank_data)
     user_cache = await cache_initiator.get_user_cache(user_id)
-    
-    if not user_cache:
-        print("db")
-        user_data = User.read(user_id)
-        farm_data = Farm.read(user_id)
-        bank_data = Bank.read(user_id)
-        await cache_initiator.add_to_user_cache(user_id, user_data=user_data, farm_data=farm_data, bank_data=bank_data)
-        user_cache = await cache_initiator.get_user_cache(user_id)
-        return user_cache
-    print("cache")
     return user_cache
 
 async def guild_cache_retriever(guild_id):

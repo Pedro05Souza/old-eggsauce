@@ -1,5 +1,6 @@
 from tools.chickens.chickenshared import *
 from tools.chickens.chickenhandlers import EventData
+from tools.shared import user_cache_retriever
 from tools.chickens.selection.deleteselection import ChickenDeleteMenu
 from tools.chickens.selection.redeemselection import RedeemPlayerMenu
 from tools.chickens.selection.tradeselection import ChickenAuthorTradeMenu, ChickenUserTradeMenu
@@ -79,11 +80,12 @@ class ChickenMarketMenu(ui.Select):
             return await send_bot_embed(interaction, description=":no_entry_sign: You can't buy chickens for another user.", ephemeral=True)
         index = self.values[0]
         chicken_selected = self.chickens[int(index)]
-        farm_data = Farm.read(interaction.user.id)
-        user_data = User.read(interaction.user.id)
+        data = await user_cache_retriever(interaction.user.id)
+        farm_data = data["farm_data"]
+        user_data = data["user_data"]
         price = get_chicken_price(chicken_selected, farm_data['farmer'])
         if price > user_data['points']:
-            await interaction.response.send_message(f":no_entry_sign: You don't have enough eggbux to buy this chicken.", ephemeral=True)
+            await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: You don't have enough eggbux to buy this chicken.")
             self.options = [
                 SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken, farm_data['farmer'])}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
                 for index, chicken in enumerate(self.chickens)

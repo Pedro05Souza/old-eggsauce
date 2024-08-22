@@ -50,6 +50,7 @@ class ChickenCore(commands.Cog):
     @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
     async def market(self, ctx) -> None:
+        """Market to buy chickens"""	
         await self.roll(ctx, 8, "market")
 
     @commands.hybrid_command(name="eggpack", aliases=["ep"], usage="eggpack", description="Buy an egg pack.")

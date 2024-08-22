@@ -51,9 +51,8 @@ class ChickenCombat(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You need to have chickens to participate in combat.")
             EventData.remove(user.in_event)
             return
-        self.user_queue.append(user)
+        await self.user_queue.append(user)
         user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
-        print(user.chicken_overrall_score)
         match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data['mmr'])}**.")
         match_matching_obj.set_footer(text=tips[randint(0, len(tips) - 1)])
         author_msg, user_msg = await self.check_if_same_guild(user, user, match_matching_obj)

@@ -179,28 +179,6 @@ class DevCommands(commands.Cog):
         if is_dev(ctx):
             botcore.monitor_mode = not botcore.monitor_mode
             print("Monitor mode is now: ", botcore.monitor_mode)
-
-    @commands.command(name="pointslogs")
-    async def points_logs(self, ctx):
-        """Check the total number of points in circulation."""
-        if is_dev(ctx):
-            total_points = 0
-            accounts_with_5k_wallet = 0
-            for user in User.readAll():
-                if user['points'] >= 500000:
-                    continue
-                total_points += user['points']
-                if user['points'] >= 5000:
-                    accounts_with_5k_wallet += 1
-            for bank in Bank.readAll():
-                if bank['bank'] >= 500000:
-                    continue
-                total_points += bank['bank']
-                if bank['bank'] >= 5000:
-                    accounts_with_5k_wallet += 1 
-            await send_bot_embed(ctx, description=f"```Total points in circulation: {total_points}```\n\nAccounts with 5k or more points: **{accounts_with_5k_wallet}**")
-        else:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command(name="marketLogs")
     async def market_logs(self, ctx):

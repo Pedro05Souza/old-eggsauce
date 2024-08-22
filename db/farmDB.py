@@ -62,8 +62,7 @@ class Farm:
     @staticmethod
     def update(user_id: int, **kwargs):
         """Update a farm's status in the database."""
-        possible_keywords = ["farm_name","plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses", "redeemables"]
-        possible_keywords = set(possible_keywords)
+        possible_keywords = {"farm_name","plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses", "redeemables"}
         try:
             query = {}
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()

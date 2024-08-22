@@ -178,7 +178,7 @@ async def feed_eggs_auto(farm_data, bank_amount):
         return total_upkeep
 
 async def update_user_farm(ctx, user, data):
-    if not data.get('farm_data', None):
+    if not data['farm_data']:
         return None
     farm_data = data['farm_data']
     if len(farm_data['chickens']) == 0:
@@ -186,6 +186,7 @@ async def update_user_farm(ctx, user, data):
     last_drop_time = time() - farm_data['last_chicken_drop']
     updated_farm_data = farm_data
     hours_passed_since_last_egg_drop = min((last_drop_time // farm_drop), 24)
+    hours_passed_since_last_egg_drop = 1
     total_money_earned = 0
     user_data = data['user_data']
     for _ in range(int(hours_passed_since_last_egg_drop)):
