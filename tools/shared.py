@@ -82,6 +82,11 @@ async def user_cache_retriever(user_id):
     if not user_cache or not all(key in user_cache for key in keys):
         print("db")
         return await read_and_update_cache(user_id)
+    
+    if not all(key in user_cache for key in keys):
+        await cache_initiator.delete_from_user_cache(user_id)
+        return None
+    
     print("cache")
     return user_cache
 

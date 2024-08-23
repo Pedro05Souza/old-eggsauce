@@ -194,16 +194,18 @@ def pricing():
             return result
             
         if command_name in Prices.__members__:
+            
             if not ctx.command.get_cooldown_retry_after(ctx):
                 data = await user_cache_retriever(ctx.author.id)
-                user_data = data["user_data"]
 
-                if not user_data:
+                if not data:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
                     result = False
                     ctx.predicate_result = result
                     return result
                 
+                user_data = data['user_data']
+
                 if not await set_points_commands_submodules(ctx, config_data):
                     ctx.predicate_result = result
                     if not result:
