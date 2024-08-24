@@ -1,22 +1,102 @@
-from discord.ext import commands
-from tools.shared import send_bot_embed, make_embed_object, get_user_title, user_cache_retriever, guild_cache_retriever, return_data
-from tools.settings import regular_command_cooldown, user_salary_drop
-from tools.tips import tips
-from db.userDB import User
-from random import randint
-from tools.pointscore import pricing, refund
-import math
-import time
-import discord
-import logging
-logger = logging.getLogger('botcore')
+"""
+This file contains all the base commands in the bot.  
+"""
 
-class PointsConfig(commands.Cog):
+from discord.ext import commands
+from db.MarketDB import Market
+from tools.tips import tips
+from tools.shared import guild_cache_retriever, return_data, send_bot_embed, make_embed_object, get_user_title, user_cache_retriever
+from tools.settings import regular_command_cooldown
+from tools.chickens.chickenshared import rank_determiner
+from db.userDB import User
+from db.bankDB import Bank
+from tools.pagination import PaginationView
+from tools.prices import Prices
+from tools.pointscore import pricing, refund
+from random import choice, randint
+import os
+import discord
+import time
+
+class BaseCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.join_time = {}
-        self.init_time = math.ceil(time.time())
 
+    @commands.command()
+    @pricing()
+    async def balls(self, ctx):
+        """Bot sends balls."""
+        await send_bot_embed(ctx, description=f":soccer: balls")
+
+    @commands.hybrid_command("mog", brief="Mog a user", parameters=["user: discord.Member"], examples=["mog @user"], description="Mog a user.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def mog(self, ctx, user: discord.Member):
+            """Mog a user."""
+            path = choice(os.listdir("images/mogged/"))
+            await ctx.send(file=discord.File("images/mogged/"+path))
+            await ctx.send(f"{user.mention} bye bye 🤫🧏‍♂️")
+    
+    @commands.hybrid_command(name="shop", brief="Shows the shop.", description="Shows all the points commands and their prices.", usage="shop")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def shop(self, ctx):
+        """Shows the shop."""
+        data = []
+        for member in Prices.__members__:
+            if Prices.__members__[member].value > 0:
+                data.append({"title": member, "value": str(Prices.__members__[member].value) + " eggbux"})
+        view = PaginationView(data)
+        await view.send(ctx, title="Shop", description="Buy commands with your eggbux:", color=0x00ff00)
+
+    # @commands.hybrid_command(name="leaderboard", brief="Shows the leaderboard.", description="Shows the leaderboard..", usage="leaderboard")
+    # @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    # @pricing()
+    # async def leaderboard(self, ctx):
+    #     """Shows the leaderboard."""
+    #     users = User.readAll()
+    #     user_data = []
+    #     guild = ctx.guild
+    #     for user in users:
+    #         member = discord.utils.get(guild.members, id=user["user_id"])
+    #         if member is not None and member in guild.members:
+    #             user_data.append({"username": member.display_name, "points": user["points"], "user_id": user["user_id"]})
+    #     for user in user_data:
+    #         if Bank.read(user['user_id']) is not None:
+    #             user["points"] += Bank.read(user["user_id"])['bank']
+    #     user_data = sorted(user_data, key=lambda x: x['points'], reverse=True)
+    #     data = []
+    #     for index, user in enumerate(user_data):
+    #         data.append({"title": f"#{index + 1}-{user['username']}", "value": f":egg: Eggbux: {user['points']}"})
+    #     view = PaginationView(data, thumbnail="https://cdn.discordapp.com/attachments/747917669772165121/1259261871744090142/Trophy-3.png?ex=668b0a82&is=6689b902&hm=f74e5d322d1315103dfd6b744127de67c380dc25c86c9afd17b98a126efe7e85&")
+    #     await view.send(ctx, title="Leaderboard", description="Eggbux's ranking", color=0x00ff00)
+    
+    @commands.hybrid_command(name="profile", brief="Shows the user's profile.", description="Shows the user's profile with all the upgrades.", usage="profile OPTIONAL [user]")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def user_profile(self, ctx, user: discord.Member = None):
+        """Shows the user's profile."""
+        data, user = await return_data(ctx, user)
+        user_data = data["user_data"]
+        bank_data = data["bank_data"]
+        farm_data = data["farm_data"]
+        market_data = Market.get_user_offers(user.id)
+        if not user_data:
+            await send_bot_embed(ctx, description=f"{user.display_name} doesn't have a profile.")
+            return
+        msg = await make_embed_object(title=f"{user.display_name}'s Profile:\n")
+        msg.add_field(name=":coin: Title:", value=await get_user_title(user_data), inline=True)
+        msg.add_field(name=":chicken: Farm Size:", value=len(farm_data['chickens']) if farm_data else 0, inline=True)
+        msg.add_field(name=":farmer: Farmer:", value=farm_data['farmer'] if farm_data else "No Farmer.", inline=True)
+        msg.add_field(name=":bank: Bank upgrades:", value=bank_data['upgrades'] - 1 if bank_data else 0, inline=True)
+        msg.add_field(name=":corn: Corn limit:", value=farm_data['corn_limit'] if farm_data else 0, inline=True)
+        msg.add_field(name=":moneybag: Corn plot:", value=farm_data['plot'] if farm_data else 0, inline=True)
+        msg.add_field(name=":scroll: Activate offers:", value=len(market_data) if market_data else 0, inline=True)
+        msg.add_field(name="Chicken Rank:", value=await rank_determiner(farm_data['mmr']))
+        msg.set_footer(text=f"User ID: {user.id}. Created at: {user.created_at}")
+        msg.set_thumbnail(url=user.display_avatar.url)
+        await ctx.send(embed=msg)
+    
     @commands.hybrid_command(name="modulestatus", aliases=["status"], brief="Check the status of ptscmds.", usage="points_toggle", description="Check if the points commands are enabled or disabled in the server.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     async def points_status(self, ctx):
@@ -30,50 +110,7 @@ class PointsConfig(commands.Cog):
         current_module = await guild_cache_retriever(ctx.guild.id)
         current_module = current_module['toggled_modules']
         await send_bot_embed(ctx, description=f":warning: Points commands are currently set to: **{modules[current_module]}**")
-
-    async def update_points(self, user: discord.Member):
-        """Updates the points of the user every 10 seconds."""
-        userId = user.id
-        if not user.voice and userId in self.join_time.keys():
-            total_points = await self.add_points(self.join_time[userId], userId)
-            self.join_time.pop(userId)
-            return total_points
-        
-        if userId in self.join_time.keys():
-            total_points = await self.add_points(self.join_time[userId], userId)
-            self.join_time[userId] = math.ceil(time.time())
-            return total_points
-        
-        if userId not in self.join_time.keys() and user.voice:
-           total_points = await self.add_points(self.init_time, userId)
-           self.join_time[userId] = math.ceil(time.time())
-           return total_points
-
-    async def add_points(self, type, user_id):
-        add_points = (math.ceil(time.time()) - type) // 10
-        user_data = await user_cache_retriever(user_id)
-        user_data = user_data["user_data"]
-        total_points = user_data["points"] + add_points
-        return total_points
-    
-    async def count_points(self, user: discord.Member):
-        """Counts the points of the user every time he enters a voice channel."""
-        userId = user.id
-        if user.bot:
-            return
-        if userId not in self.join_time.keys():
-            self.join_time[userId] = math.ceil(time.time())
-        else:
-            return
-
-    async def automatic_register(self, user: discord.Member):
-        """Automatically registers the user in the database."""
-        if User.read(user.id) and user.bot:
-            return
-        else:
-            User.create(user.id, 0)
-            logger.info(f"{user.display_name} has been registered.")
-            
+                
     @commands.hybrid_command(name="register", aliases=["reg"], brief="Registers the user in the database.", usage="register", description="Registers the user in the database.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     async def register(self, ctx):
@@ -90,7 +127,7 @@ class PointsConfig(commands.Cog):
     async def points(self, ctx, user: discord.Member = None):
         """Shows the amount of points the user has."""
         data, user = await return_data(ctx, user)
-        user_data = await self.update_user_points(user, data)
+        user_data = data["user_data"]
         bank_data = data["bank_data"]
         if user_data:
             if bank_data:
@@ -105,25 +142,6 @@ class PointsConfig(commands.Cog):
                 await ctx.send(embed=msg)
         else:   
             await send_bot_embed(ctx, description=f"{user.display_name} has no eggbux :cry:")
-
-    async def update_user_points(self, user: discord.Member, data):
-        """Updates the user's points."""
-        user_data = data['user_data']
-        if user_data:
-            points = await self.update_points(user)
-            if points is not None:
-                user_data['points'] = points
-                User.update_points(user.id, points)
-            last_title_drop = time.time() - user_data["salary_time"]
-            hours_passed = min(last_title_drop // user_salary_drop, 12)
-            hours_passed = int(hours_passed)
-            salary = await self.salary_role(user_data)
-            if hours_passed > 0 and user_data["roles"] != "":
-                user_data['points'] += salary * hours_passed
-                User.update_points(user.id, user_data['points'])
-                User.update_salary_time(user.id)
-                logger.info(f"{user.display_name} has received {salary * hours_passed} eggbux from their title.")
-            return user_data
         
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -171,19 +189,6 @@ class PointsConfig(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have enough eggbux to buy the role **{roleName}**.")
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} already has the role **{roleName}**.")
-
-    async def salary_role(self, user_data):
-        """Returns the salary of a user based on their roles."""
-        salarios = {
-            "T": 20,
-            "L": 40,
-            "M": 60,
-            "H": 80
-        }
-        if user_data['roles'] != "":
-            return salarios[user_data["roles"][-1]]
-        else:
-            return 0
     
     @commands.hybrid_command(name="salary", aliases=["sal"], brief="Check the salary of a user.", usage="salary OPTIONAL [user]", description="Check the salary of a user. If not user, shows author's salary.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -200,26 +205,6 @@ class PointsConfig(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} isn't registered in the database.")
             await refund(ctx.author, ctx)
-            
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, user: discord.Member, before, after):
-        """Listens to the voice state update event."""
-        user_data = await user_cache_retriever(user.id)
-        user_data = user_data["user_data"]
-        guild_data = await guild_cache_retriever(user.guild.id)
-        if not guild_data['toggled_modules'] == "N":
-            if user.bot:
-                return
-            if user_data and before.channel is None and after.channel is not None:
-                await self.count_points(user)
-            elif not user_data and before.channel is None and after.channel is not None:
-                await self.automatic_register(user)
-                await self.count_points(user)
-            elif user_data and before.channel is not None and after.channel is None:
-                await self.update_points(user)
-            elif not user_data and before.channel is not None and after.channel is None:
-                await self.automatic_register(user)
-                await self.update_points(user)
 
 async def setup(bot):
-    await bot.add_cog(PointsConfig(bot))
+    await bot.add_cog(BaseCommands(bot))

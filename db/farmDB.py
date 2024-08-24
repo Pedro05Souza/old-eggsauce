@@ -128,7 +128,7 @@ class Farm:
                 return farm_data
             else:
                 logger.warning("Farm not found.")
-                return False
+                return None
         except Exception as e:
             logger.error("Error encountered while reading the farm.", e)
             return None

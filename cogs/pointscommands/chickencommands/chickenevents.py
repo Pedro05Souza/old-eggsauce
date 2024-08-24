@@ -47,7 +47,6 @@ class ChickenEvents(commands.Cog):
         farm_author = ctx.data["farm_data"]
         user_cache_data = await user_cache_retriever(user.id)
         farm_target = user_cache_data["farm_data"]
-        farm_target = farm_target["farm_data"]
 
         if farm_target:
             if not farm_author['chickens'] or not farm_target['chickens']:
@@ -79,7 +78,7 @@ class ChickenEvents(commands.Cog):
                 EventData.remove(t)
                 EventData.remove(t2)
         else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} don't have a farm.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
 
     async def trade_chickens(self, ctx, User: discord.Member, t, farm_author, farm_target, user_cache_data) -> None:
         """Trade the chickens"""
@@ -168,8 +167,8 @@ class ChickenEvents(commands.Cog):
                 EventData.remove(g)
                 EventData.remove(g2)
         else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} don't have a farm.")
-    
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
+            
     @commands.hybrid_command(name="evolvechicken", aliases=["ec", "fuse"], usage="evolveChicken <index> <index2>", description="Evolve a chicken if having 2 of the same rarity.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
@@ -287,7 +286,7 @@ class ChickenEvents(commands.Cog):
             if len(farm_data['chickens']) < 8:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to have 8 ascended chickens to transcend.")
                 return
-            transcended_chicken = await create_chicken("ETHEREAL", "transced")
+            transcended_chicken = await create_chicken("ETHEREAL", "transcend")
             farm_data['chickens'] = [transcended_chicken]
             Farm.update(ctx.author.id, chickens=farm_data['chickens'])
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have transcended your chickens to an **{get_rarity_emoji('ETHEREAL')} ETHEREAL Chicken.**")

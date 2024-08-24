@@ -17,7 +17,9 @@ class BotMatchMaking():
         return f"{self.name} - {self.score}"
 
 async def bot_maker(user_score):
-    """"Function to create a bot in the matchmaking."""
+    """"
+    Function to create a bot in the matchmaking.
+    """
     bot = BotMatchMaking(await name_maker())
     bot_farm_size = randint(await define_bot_min_farm_size(user_score), default_farm_size)
     all_rarities = list(ChickenRarity.__members__)
@@ -50,7 +52,9 @@ async def bot_maker(user_score):
     return bot
 
 async def define_bot_min_farm_size(player_mmr):
-    """Defines the minimum farm size for the bot."""
+    """
+    Defines the minimum farm size for the bot.
+    """
     if player_mmr >= 2000:
         return default_farm_size
     for i in range(0, 2100, 100):
@@ -58,7 +62,9 @@ async def define_bot_min_farm_size(player_mmr):
             return min(default_farm_size, max(2, int(i / 100)))
         
 async def define_chicken_rarity_list(player_mmr, all_rarities):
-    """Changes the rarity list for the bot."""
+    """
+    Changes the rarity list for the bot to pick from.
+    """
     bot_deck = all_rarities.copy()
     if player_mmr >= 2000:
         chances = .33
@@ -68,7 +74,7 @@ async def define_chicken_rarity_list(player_mmr, all_rarities):
         for rarity, chance in zip_list:
             bot_deck[rarity] = chance
         return bot_deck
-    elif player_mmr < 1750:
+    elif player_mmr <= 1750:
         bot_deck.pop('ETHEREAL')
         all_rarities.pop('ETHEREAL')
     chicken_selected = player_mmr * len(all_rarities) / 2000
@@ -84,7 +90,9 @@ async def define_chicken_rarity_list(player_mmr, all_rarities):
     return bot_deck
 
 async def name_maker():
-    """Defines the bot's username."""
+    """
+    Defines the bot's username.
+    """
     name_list = [
         "blud",
         "Alejandro",

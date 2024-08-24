@@ -17,7 +17,9 @@ executor = concurrent.futures.ThreadPoolExecutor(max_workers=5) # 5 threads to p
 lock = threading.Lock()
 
 async def send_bot_embed(ctx, ephemeral=False, **kwargs):
-    """Create an embed without a title."""
+    """
+    Bot embed for modularization. Use this method whenever another command needs to send an embed.
+    """
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     if isinstance(ctx, discord.Interaction):
         message = await ctx.response.send_message(embed=embed, ephemeral=ephemeral)
@@ -26,12 +28,16 @@ async def send_bot_embed(ctx, ephemeral=False, **kwargs):
     return message
 
 async def make_embed_object(**kwargs):
-    """Create an embed with a title."""
+    """
+    Create an embed object.
+    """
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     return embed
 
 def is_dev(ctx):
-    """Check if the user is a developer."""
+    """
+    Check if the user is a developer.
+    """
     load_dotenv()
     devs = os.getenv("DEVS").split(",")
     return str(ctx.author.id) in devs
@@ -43,6 +49,9 @@ def dev_list():
     return devs
 
 async def get_user_title(user_data):
+        """
+        Get the user title.
+        """
         userRoles = {
             "T" : "Egg Novice",
             "L" : "Egg Apprentice",
@@ -55,7 +64,9 @@ async def get_user_title(user_data):
             return userRoles[user_data["roles"][-1]]
 
 async def confirmation_embed(ctx, user: discord.Member, description):
-     """Confirmation embed for modularization. Use this method whenenver another command needs confirmation from the user."""
+     """
+     Confirmation embed for modularization. Use this method whenenver another command needs confirmation from the user.
+     """
      embed = await make_embed_object(title=f":warning: {user.display_name}, you need to confirm this first:", description=description)
      embed.set_footer(text="React with ✅ to confirm or ❌ to cancel.")
      if isinstance(ctx, discord.Interaction):
@@ -76,22 +87,22 @@ async def confirmation_embed(ctx, user: discord.Member, description):
         return False
 
 async def user_cache_retriever(user_id):
-    """Retrieve the user cache"""
+    """
+    Retrieve the user cache.
+    """
     keys = {"farm_data", "bank_data", "user_data"}
     user_cache = await cache_initiator.get_user_cache(user_id)
     if not user_cache or not all(key in user_cache for key in keys):
         print("db")
-        return await read_and_update_cache(user_id)
-    
-    if not all(key in user_cache for key in keys):
-        await cache_initiator.delete_from_user_cache(user_id)
-        return None
-    
+        user_cache = await read_and_update_cache(user_id)
+        return user_cache    
     print("cache")
     return user_cache
 
 async def read_and_update_cache(user_id):
-    """Read the user data and update the cache."""
+    """
+    Reads the user data from the database and updates the cache.
+    """
     from db.userDB import User # this is like this to avoid circular imports
     from db.bankDB import Bank # its terrible but it works
     from db.farmDB import Farm
@@ -103,7 +114,9 @@ async def read_and_update_cache(user_id):
     return user_cache
 
 async def guild_cache_retriever(guild_id):
-    """Retrieve the guild cache."""
+    """
+    Retrieve the guild cache.
+    """
     from db.botConfigDB import BotConfig # same as above
     guild_cache = await cache_initiator.get_guild_cache(guild_id)
     
@@ -115,8 +128,9 @@ async def guild_cache_retriever(guild_id):
     return guild_cache
 
 def update_scheduler(func):
-    """Schedules a coroutine to be run in the event loop with top priority.
-    Always use this for updating the cache.
+    """
+    Schedules a coroutine to be run in the event loop with top priority.
+    This should always be called when performing cache updates.
     """
     loop = asyncio.get_event_loop()
     if loop.is_running():
@@ -125,18 +139,26 @@ def update_scheduler(func):
         asyncio.run(func())
 
 def request_threading(func):  
-    """Request a function to be run in a separate thread. Mostly used for database operations."""
+    """
+    Request a function to be run in a separate thread. Mostly used for database operations.
+    """
     with lock:
         future = executor.submit(func)
         return future
 
 def retrieve_threads():
-    """Retrieve the number of threads for visualization purposes."""
+    """
+    Retrieve the number of threads for visualization purposes.
+    """
     return len(threading.enumerate())
 
 async def return_data(ctx, user=None):
-    """Return the user data and the user object. This is only used in case of a command that has an optional user parameter."""
+    """
+    Return the user data and the user object. This is only used in case of a command that has an user parameter.
+    """
     if not user:
+        return ctx.data, ctx.author
+    elif user.id == ctx.author.id:
         return ctx.data, ctx.author
     else:
         return await user_cache_retriever(user.id), user

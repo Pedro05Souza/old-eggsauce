@@ -36,5 +36,5 @@ max_farm_tax_value = 300 # controls the maximum tax value for the farm
 
 # Hybrid command settings
 
-tax = .15 # controls the donate command tax and buying a chicken tax
-user_salary_drop = 3600 # controls the time it takes for the user to drop eggs (in seconds)
+tax = .15 # controls the donate command tax and buying a chicken from the player market tax
+user_salary_drop = 3600 # controls the time it takes for the user to gain their salary (in seconds)

@@ -29,7 +29,7 @@ class PlayerMarket(commands.Cog):
         """Register a chicken to the player market."""
         index -= 1
         description = ""
-        farm_data = Farm.read(ctx.author.id)
+        farm_data = ctx.data['farm_data']
         if farm_data:
             if await verify_events(ctx, ctx.author):
              return
