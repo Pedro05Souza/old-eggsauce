@@ -2,6 +2,7 @@ from db.dbConfig import mongo_client
 from time import time
 from tools.cache.init import cache_initiator
 from tools.shared import update_scheduler, request_threading
+from typing import Union
 import logging
 farm_collection = mongo_client.db.farm
 logger = logging.getLogger('botcore')
@@ -10,7 +11,7 @@ logger = logging.getLogger('botcore')
 class Farm:
 
     @staticmethod
-    def create(user_id: int, ctx):
+    def create(user_id: int, ctx) -> None:
         """Create a farm for the user."""
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
@@ -46,7 +47,7 @@ class Farm:
             return None
     
     @staticmethod
-    def delete(user_id: int):
+    def delete(user_id: int) -> None:
         """Delete a farm from the database."""
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
@@ -60,7 +61,7 @@ class Farm:
             logger.error("Error encountered while deleting the farm.", e)
 
     @staticmethod
-    def update(user_id: int, **kwargs):
+    def update(user_id: int, **kwargs) -> None:
         """Update a farm's status in the database."""
         possible_keywords = {"farm_name","plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses", "redeemables"}
         try:
@@ -81,7 +82,7 @@ class Farm:
             logger.error("Error encountered while trying to update user farm.", e)
             
     @staticmethod
-    def update_chicken_drop(user_id: int):
+    def update_chicken_drop(user_id: int) -> None:
         """Update a farm's last drop in the database."""
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
@@ -94,7 +95,7 @@ class Farm:
             return None
         
     @staticmethod
-    def update_farmer_drop(user_id: int):
+    def update_farmer_drop(user_id: int) -> None:
         """Update a farm's last drop in the database."""
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
@@ -107,7 +108,7 @@ class Farm:
             return
         
     @staticmethod
-    def update_corn_drop(user_id: int):
+    def update_corn_drop(user_id: int) -> None:
         """Update a farm's last drop in the database."""
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
@@ -120,7 +121,7 @@ class Farm:
             return None
 
     @staticmethod
-    def read(user_id: int):
+    def read(user_id: int) -> Union[dict, None]:
         """Read a farm's data from the database."""
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
@@ -134,7 +135,7 @@ class Farm:
             return None
         
     @staticmethod
-    def readAll():
+    def readAll() -> Union[list, None]:
         """Read all farms from the database."""
         try:
             farms = request_threading(lambda: farm_collection.find()).result()
@@ -142,13 +143,13 @@ class Farm:
                 return farms
             else:
                 logger.warning("No farms found.")
-                return False
+                return None
         except Exception as e:
             logger.error("Error encountered while reading all farms.", e)
             return None
     
     @staticmethod
-    def deleteAll():
+    def deleteAll() -> None:
         """Delete all farms from the database."""
         try:
             request_threading(lambda: farm_collection.delete_many({})).result()
@@ -158,7 +159,7 @@ class Farm:
             return None
         
     @staticmethod
-    def reset_mmr():
+    def reset_mmr() -> None:
         """Reset all farms' mmr in the database."""
         try:
             farms = request_threading(lambda: farm_collection.find()).result()

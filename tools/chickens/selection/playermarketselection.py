@@ -5,10 +5,11 @@ from tools.settings import tax
 from db.userDB import User
 from db.farmDB import Farm
 from db.MarketDB import Market
+import discord
 
 class PlayerMarketMenu(ui.Select):
     """Menu to buy chickens from the market"""
-    def __init__(self, offers, message, author, instance_bot):
+    def __init__(self, offers: list, message: discord.Embed, author: discord.Member, instance_bot: discord.Client):
         self.offers = offers
         self.message = message
         self.author = author
@@ -19,7 +20,7 @@ class PlayerMarketMenu(ui.Select):
         ]
         super().__init__(min_values=1, max_values=1, options=options, placeholder="Select the chicken to buy:")
     
-    async def callback(self, interaction):
+    async def callback(self, interaction: discord.Interaction) -> None:
         """Callback for the interaction"""
         if interaction.user.id != self.author.id:
             return await send_bot_embed(interaction, description=":no_entry_sign: You can't buy chickens for another user.", ephemeral=True)
@@ -42,7 +43,7 @@ class PlayerMarketMenu(ui.Select):
         await self.on_chicken_bought(offer)
         await interaction.message.delete()
 
-    async def on_chicken_bought(self, offer):
+    async def on_chicken_bought(self, offer: dict) -> None:
         """Callback for the chicken being bought"""
         user_data = User.read(offer['author_id'])
         take_off = int(offer['price'] * tax)

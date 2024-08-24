@@ -1,11 +1,12 @@
 """
-This file contains all the base commands in the bot.  
+This file contains all the base commands in the bot.
+This cog is shared between all configurable bot modules.
 """
 
 from discord.ext import commands
 from db.MarketDB import Market
 from tools.tips import tips
-from tools.shared import guild_cache_retriever, return_data, send_bot_embed, make_embed_object, get_user_title, user_cache_retriever
+from tools.shared import *
 from tools.settings import regular_command_cooldown
 from tools.chickens.chickenshared import rank_determiner
 from db.userDB import User
@@ -14,6 +15,7 @@ from tools.pagination import PaginationView
 from tools.prices import Prices
 from tools.pointscore import pricing, refund
 from random import choice, randint
+from discord.ext.commands import Context
 import os
 import discord
 import time
@@ -24,14 +26,14 @@ class BaseCommands(commands.Cog):
 
     @commands.command()
     @pricing()
-    async def balls(self, ctx):
+    async def balls(self, ctx: Context) -> None:
         """Bot sends balls."""
         await send_bot_embed(ctx, description=f":soccer: balls")
 
     @commands.hybrid_command("mog", brief="Mog a user", parameters=["user: discord.Member"], examples=["mog @user"], description="Mog a user.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def mog(self, ctx, user: discord.Member):
+    async def mog(self, ctx: Context, user: discord.Member) -> None:
             """Mog a user."""
             path = choice(os.listdir("images/mogged/"))
             await ctx.send(file=discord.File("images/mogged/"+path))
@@ -40,7 +42,7 @@ class BaseCommands(commands.Cog):
     @commands.hybrid_command(name="shop", brief="Shows the shop.", description="Shows all the points commands and their prices.", usage="shop")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def shop(self, ctx):
+    async def shop(self, ctx: Context) -> None:
         """Shows the shop."""
         data = []
         for member in Prices.__members__:
@@ -74,7 +76,7 @@ class BaseCommands(commands.Cog):
     @commands.hybrid_command(name="profile", brief="Shows the user's profile.", description="Shows the user's profile with all the upgrades.", usage="profile OPTIONAL [user]")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def user_profile(self, ctx, user: discord.Member = None):
+    async def user_profile(self, ctx: Context, user: discord.Member = None) -> None:
         """Shows the user's profile."""
         data, user = await return_data(ctx, user)
         user_data = data["user_data"]
@@ -99,7 +101,7 @@ class BaseCommands(commands.Cog):
     
     @commands.hybrid_command(name="modulestatus", aliases=["status"], brief="Check the status of ptscmds.", usage="points_toggle", description="Check if the points commands are enabled or disabled in the server.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
-    async def points_status(self, ctx):
+    async def points_status(self, ctx: Context) -> None:
         """Check the current module active in the server"""
         modules = {
             "T": "Total",
@@ -113,7 +115,7 @@ class BaseCommands(commands.Cog):
                 
     @commands.hybrid_command(name="register", aliases=["reg"], brief="Registers the user in the database.", usage="register", description="Registers the user in the database.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
-    async def register(self, ctx):
+    async def register(self, ctx: Context) -> None:
         """Registers the user in the database."""
         if User.read(ctx.author.id):
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is already registered.")
@@ -124,15 +126,15 @@ class BaseCommands(commands.Cog):
     @commands.hybrid_command(name="points", aliases=["pts", "eggbux", "p"], brief="Shows the amount of points the user has.", usage="points OPTIONAL [user]", description="Shows the amount of points a usr has. If not usr, shows author's points.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def points(self, ctx, user: discord.Member = None):
+    async def points(self, ctx: Context, user: discord.Member = None) -> None:
         """Shows the amount of points the user has."""
         data, user = await return_data(ctx, user)
         user_data = data["user_data"]
         bank_data = data["bank_data"]
         if user_data:
             if bank_data:
-                msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}\n :bank: Bank: {bank_data['bank']}")
-                msg.add_field(name=":money_with_wings: Total eggbux:", value=f"{user_data['points'] + bank_data['bank']}")
+                msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {await format_number(user_data['points'])}\n :bank: Bank: {await format_number(bank_data['bank'])}")
+                msg.add_field(name=":money_with_wings: Total eggbux:", value=f"{await format_number(user_data['points'] + bank_data['bank'])}")
                 msg.set_thumbnail(url=user.display_avatar)
                 msg.set_footer(text=tips[randint(0, len(tips) - 1)])
                 await ctx.send(embed=msg)
@@ -146,7 +148,7 @@ class BaseCommands(commands.Cog):
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def points_Titles(self, ctx):
+    async def points_Titles(self, ctx: Context) -> None:
         end_time = time.time() + 60
         roles = {
             "T" : "Egg Novice",
@@ -180,7 +182,7 @@ class BaseCommands(commands.Cog):
                 elif user_data["roles"][-1] == "M":
                     await self.buy_roles(ctx, user, rolePrices["H"], "H", roles["H"], user_data)
 
-    async def buy_roles(self, ctx, user: discord.Member, roleValue, roleChar, roleName, user_data):
+    async def buy_roles(self, ctx: Context, user: discord.Member, roleValue: int, roleChar: str, roleName: str, user_data: dict) -> None:
         """Buy roles."""
         if user_data["points"] >= roleValue and roleChar not in user_data["roles"]:
             User.update_all(user.id, user_data["points"] - roleValue, user_data["roles"] + roleChar)
@@ -193,7 +195,7 @@ class BaseCommands(commands.Cog):
     @commands.hybrid_command(name="salary", aliases=["sal"], brief="Check the salary of a user.", usage="salary OPTIONAL [user]", description="Check the salary of a user. If not user, shows author's salary.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def salary(self, ctx, user: discord.Member = None):
+    async def salary(self, ctx: Context, user: discord.Member = None):
         """Check the salary of a user."""
         data, user = await return_data(ctx, user)
         user_data = data["user_data"]

@@ -6,10 +6,11 @@ from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji
 from tools.shared import confirmation_embed
 from tools.shared import make_embed_object, send_bot_embed
 import asyncio
+import discord
 
 class ChickenDeleteMenu(ui.Select):
     """Menu to delete chickens from the farm"""
-    def __init__(self, chickens, author, message, s):
+    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, s: EventData):
         options = [
             SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
             for index, chicken in enumerate(chickens) if chicken['rarity'] != "DEAD" or chicken['rarity'] != "ETHEREAL"
@@ -20,7 +21,7 @@ class ChickenDeleteMenu(ui.Select):
         self.delete_object = s
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder="Select the chickens to delete:")
 
-    async def callback(self, interaction):
+    async def callback(self, interaction: discord.Interaction) -> None:
         if interaction.user.id != self.author.id:
             return await send_bot_embed(interaction, description=":no_entry_sign: You can't delete chickens for another user.", ephemeral=True)
         farm_data = Farm.read(interaction.user.id)

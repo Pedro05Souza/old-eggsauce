@@ -1,25 +1,25 @@
 """
 This module contains the core of the bot's points system. It is responsible for handling the prices of the commands, cooldowns and checks.
 """
-import math
-import time
+
 from db.userDB import User
 from discord.ext import commands
-from tools.shared import send_bot_embed, make_embed_object, is_dev, user_cache_retriever, guild_cache_retriever
+from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever, guild_cache_retriever, cooldown_user_tracker
 from tools.chickens.chickenshared import update_user_farm, update_player_corn
 from tools.settings import user_salary_drop
 from tools.prices import Prices
-import inspect
+from discord.ext.commands import Context
 import discord
 import logging
+import math
+import time
 logger = logging.getLogger('botcore')
-cooldown_tracker = {}
 join_time = {}
 init_time = math.ceil(time.time())
 
 # This class is responsible for handling the prices of the commands.
 
-async def set_points_commands_submodules(ctx, config_data):
+async def set_points_commands_submodules(ctx: Context, config_data: dict) -> bool:
     """
     Verify if the current command's cog is enabled in the server.
     """
@@ -48,14 +48,14 @@ async def set_points_commands_submodules(ctx, config_data):
         await send_bot_embed(ctx, description=":warning: The module is not enabled in this server.")
         return False
 
-async def verify_points(comando, user_data):
+async def verify_points(command: str, user_data: dict) -> bool:
     """
     Verify if the user has enough points to use the command.
     """
-    price = Prices[comando].value
+    price = Prices[command].value
     return user_data["points"] >= price
 
-async def verify_if_farm_command(command):
+async def verify_if_farm_command(command: commands.Command) -> bool:
     """
     Verify if the command belongs to a farm-related cog.
     """
@@ -66,7 +66,7 @@ async def verify_if_farm_command(command):
         return True
     return False
 
-async def verify_bank_command(command):
+async def verify_bank_command(command: commands.Command) -> bool:
     """
     Verify if the command belongs to a bank-related cog.
     """
@@ -77,22 +77,7 @@ async def verify_bank_command(command):
         return True
     return False
 
-async def cooldown_user_tracker(user_id):
-    """
-    Track the cooldown of the user.
-    """
-    if user_id in cooldown_tracker:
-        if cooldown_tracker[user_id] == 15:
-            del cooldown_tracker[user_id]
-            return True
-        else:
-            cooldown_tracker[user_id] += 1
-            return False
-    else:
-        cooldown_tracker[user_id] = 1
-        return True
-
-async def verify_correct_channel(ctx, config_data):
+async def verify_correct_channel(ctx: Context, config_data: dict) -> bool:
         """
         Verify if the command is being used in the correct channel.
         """
@@ -107,7 +92,7 @@ async def verify_correct_channel(ctx, config_data):
             return False
         return True
             
-async def refund(user: discord.Member, ctx):
+async def refund(user: discord.Member, ctx: Context) -> None:
     """
     Refund the user if the command fails.
     """
@@ -119,7 +104,7 @@ async def refund(user: discord.Member, ctx):
     except Exception as e:
         logger.error(f"An error occurred while refunding the user: {e}")
 
-async def treat_exceptions(ctx, comando, user_data, config_data, data):
+async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_data: dict, data: dict) -> bool:
     """
     Treat the exceptions that may occur while executing the command.
     """
@@ -127,82 +112,34 @@ async def treat_exceptions(ctx, comando, user_data, config_data, data):
     if is_slash_command: # no need to check since slash commands always have the correct amount of arguments and types
         if not await verify_correct_channel(ctx, config_data):
             return False
-        if Prices[comando].value == 0:
+        if Prices[command].value == 0:
             return True
-        new_points = user_data["points"] - Prices[comando].value
+        new_points = user_data["points"] - Prices[command].value
         data["user_data"]["points"] = new_points
         User.update_points(ctx.author.id, new_points)
         return True
     
-    message_content = ctx.message.content
-    command_args = message_content.split()[1:] 
-        
-    command_func = ctx.command.callback
-    parameters = list(inspect.signature(command_func).parameters.values())
-    parameters = parameters[2:]
-    
-    optional_params_indices = [i for i, param in enumerate(parameters) if param.default != inspect.Parameter.empty]
-    varargs_index = next((i for i, param in enumerate(parameters) if param.kind == param.VAR_POSITIONAL), None)
-    
-    expected_args_count = len(parameters) - len(optional_params_indices)
-    if varargs_index is not None:
-        expected_args_count -= 1
-
-    if len(command_args) < expected_args_count:
-        await send_bot_embed(ctx, description=":no_entry_sign: Insufficient amount of arguments.")
-        return False
-    
-    elif len(command_args) > len(parameters) and varargs_index is None:
-        await send_bot_embed(ctx, description=":no_entry_sign: Excessive amount of arguments.")
-        return False
-    
-    if not config_data['channel_id']:
-        await send_bot_embed(ctx, description=":no_entry_sign: The bot has not been configured properly. Type **!setChannel** in the desired channel.")
-        return False
-    
-    if not await verify_correct_channel(ctx, config_data):
-        return False
-    
-    i = 0
-    for index, param in enumerate(parameters):
-        param_type = param.annotation
-        if param_type is inspect.Parameter.empty:
-            continue
-        try:
-            if varargs_index is not None and index >= varargs_index:
-                arg = ' '.join(command_args[i:])
-                command_args = command_args[:i]
-            else:
-                arg = command_args[i] if i < len(command_args) else param.default 
-            if arg is not None: 
-                if param_type == discord.Member:
-                    arg = await commands.MemberConverter().convert(ctx, arg)
-                else:
-                    arg = param_type(arg)
-            if arg is not None and not isinstance(arg, param_type):
-                return False
-            if '*' not in str(param) and index not in optional_params_indices:
-                i += 1
-        except ValueError:
-            await send_bot_embed(ctx, description=":no_entry_sign: Invalid arguments.")
-            return False
-        except commands.MemberNotFound:
-            await send_bot_embed(ctx, description=":no_entry_sign: Member not found.")
-            return False
-        except commands.errors.BadArgument:
-            await send_bot_embed(ctx, description=":no_entry_sign: Invalid arguments.")
-            return False
-        except commands.errors.CommandInvokeError:
-            await send_bot_embed(ctx, description=":no_entry_sign: An error occurred while executing the command.")
-            return False
-    if Prices[comando].value == 0:
+    try:
+     if Prices[command].value == 0:
         return True
-    new_points = user_data['points'] - Prices[comando].value
-    data["user_data"]['points'] = new_points
-    User.update_points(ctx.author.id, new_points)
-    return True
+     new_points = user_data['points'] - Prices[command].value
+     data["user_data"]['points'] = new_points
+     User.update_points(ctx.author.id, new_points)
+     return True
+    except Exception as e:
+        logger.error(f"An error occurred while treating the exceptions: {e}")
+        return False
 
-async def update_user_points(user: discord.Member, data):
+
+async def handle_exception(ctx: Context, description: str) -> None:
+    """
+    Handle the exception that may occur while executing the command.
+    """
+    if await cooldown_user_tracker(ctx.author.id):
+        await send_bot_embed(ctx, description=description)
+        await refund(ctx.author, ctx)
+
+async def update_user_points(user: discord.Member, data: dict) -> dict:
     """Updates the user's points when the command is called."""
     user_data = data['user_data']
     if user_data:
@@ -222,7 +159,7 @@ async def update_user_points(user: discord.Member, data):
         User.update_points(user.id, user_data['points'])
         return user_data
     
-async def update_points(user: discord.Member):
+async def update_points(user: discord.Member) -> int:
         """Updates the points of the user every 10 seconds."""
         userId = user.id
         if not user.voice and userId in join_time.keys():
@@ -240,14 +177,14 @@ async def update_points(user: discord.Member):
            join_time[userId] = math.ceil(time.time())
            return total_points
 
-async def add_points(type, user_id):
+async def add_points(type: int, user_id: int) -> int:
     add_points = (math.ceil(time.time()) - type) // 10
     user_data = await user_cache_retriever(user_id)
     user_data = user_data["user_data"]
     total_points = user_data["points"] + add_points
     return total_points
 
-async def salary_role(user_data):
+async def salary_role(user_data: dict) -> int:
     """Returns the salary of a user based on their roles."""
     salarios = {
         "T": 20,
@@ -260,7 +197,7 @@ async def salary_role(user_data):
     else:
         return 0
 
-async def count_points(user: discord.Member):
+async def count_points(user: discord.Member) -> None:
     """Counts the points of the user every time he enters a voice channel."""
     userId = user.id
     if user.bot:
@@ -270,7 +207,7 @@ async def count_points(user: discord.Member):
     else:
         return
 
-async def automatic_register(user: discord.Member):
+async def automatic_register(user: discord.Member) -> None:
     """Automatically registers the user in the database."""
     if User.read(user.id) and user.bot:
         return
@@ -278,14 +215,12 @@ async def automatic_register(user: discord.Member):
         User.create(user.id, 0)
         logger.info(f"{user.display_name} has been registered.")
 
-def pricing():
+def pricing() -> dict:
     """
     Decorator predicate for the points commands. This is the core of the bot's interactive system.
     Always use this when making a points command.
     """
-    async def predicate(ctx):
-
-        result = False
+    async def predicate(ctx: Context) -> bool:
         command_name = ctx.command.name
         command_ctx = ctx.command 
         config_data = await guild_cache_retriever(ctx.guild.id)
@@ -293,8 +228,7 @@ def pricing():
         if config_data['toggled_modules'] == "N":
             embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
             await ctx.author.send(embed=embed)
-            result = False
-            return result
+            return False
             
         if command_name in Prices.__members__:
             
@@ -304,23 +238,18 @@ def pricing():
 
                 if not user_data:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
-                    result = False
-                    ctx.predicate_result = result
-                    return result
+                    return False
 
                 if not await set_points_commands_submodules(ctx, config_data):
-                    ctx.predicate_result = result
-                    if not result:
-                        return result
+                    return False
                     
                 if await verify_if_farm_command(command_ctx):
                     if not data['farm_data']:
                         if await cooldown_user_tracker(ctx.author.id):
                             await send_bot_embed(ctx, description=":no_entry_sign: You don't have a farm. Type **!createfarm** to create one.")
                         result = command_name == "createfarm"
-                        ctx.predicate_result = result
                         if not result:
-                            return result
+                            return False
                     
                 if await verify_bank_command(command_ctx):
                     if not data['bank_data']:
@@ -328,36 +257,28 @@ def pricing():
                             await send_bot_embed(ctx, description=":no_entry_sign: You don't have a bank account. Use any bank command and the bot will create one for you.")
                         result = command_name == "createbank"
                         ctx.predicate_result = result
-                        return result
+                        if not result:
+                            return False
                 
                 if await verify_points(command_name, user_data):
                     result = await treat_exceptions(ctx, command_name, user_data, config_data, data)
                     ctx.data = data
-                    ctx.predicate_result = result
                     ctx.data['user_data'] = await update_user_points(ctx.author, data)
                     if result and ctx.data['farm_data']:
                         ctx.data['farm_data'] = await update_user_farm(ctx, ctx.author, data)
                         ctx.data['farm_data']['corn'] = await update_player_corn(ctx.author, data['farm_data'])
                     return result
+                
                 else:
                     if await cooldown_user_tracker(ctx.author.id):
                         await send_bot_embed(ctx, description=":no_entry_sign: You don't have enough points to use this command.")
-                    result = False
-                    ctx.predicate_result = result
-                    return result
+                    return False
             else:
-                ctx.predicate_result = result
                 return result
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: Unknown points command.")
-            result = False
-            ctx.predicate_result = result
-            return result
-    try:
-        return commands.check(predicate)
-    except Exception as e:
-        logger.error(f"An error occurred while checking the predicate: {e}")
-        return False
+            return False
+    return commands.check(predicate)
 
 @commands.Cog.listener()
 async def on_voice_state_update(user: discord.Member, before, after):

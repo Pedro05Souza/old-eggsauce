@@ -1,6 +1,7 @@
 from db.dbConfig import mongo_client
 from time import time
 from tools.shared import request_threading
+from typing import Union
 import logging
 import uuid
 market_collection = mongo_client.db.market
@@ -9,7 +10,7 @@ logger = logging.getLogger('botcore')
 class Market:
 
     @staticmethod
-    def create(offer_id, chicken, price: int, description: str, author_id):
+    def create(offer_id, chicken, price: int, description: str, author_id) -> None:
         """Create an item in the market."""
         try:
             offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
@@ -32,7 +33,7 @@ class Market:
             return None
     
     @staticmethod
-    def get(offer_id: int):
+    def get(offer_id: int) -> Union[dict, None]:
         """Get an item from the market."""
         try:
             offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
@@ -46,7 +47,7 @@ class Market:
             return None
         
     @staticmethod
-    def update(offer_id: int, **kwargs):
+    def update(offer_id: int, **kwargs) -> None:
         """Update an item in the market."""
         possible_keywords = ["chicken", "description", "author_id"]
         try:
@@ -65,7 +66,7 @@ class Market:
             return None
     
     @staticmethod
-    def delete(offer_id: int):
+    def delete(offer_id: int) -> None:
         """Delete an item from the market."""
         try:
             offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
@@ -79,7 +80,7 @@ class Market:
             return None
     
     @staticmethod
-    def get_user_offers(author_id: int):
+    def get_user_offers(author_id: int) -> Union[list, None]:
         """Get all offers from a user."""
         try:
             offers = request_threading(lambda: market_collection.find({"author_id": author_id})).result()
@@ -93,7 +94,7 @@ class Market:
             return None
                 
     @staticmethod
-    def get_chicken_offers(**kwargs):
+    def get_chicken_offers(**kwargs) -> Union[list, None]:
         """Get all offers with specific parameters."""
         query = {}
         possible_keywords = ["chicken_rarity", "upkeep_rarity", "price", "author_id"]
@@ -128,7 +129,7 @@ class Market:
             return None
         
     @staticmethod    
-    def count_all_offers():
+    def count_all_offers() -> Union[int, None]:
         """Count all offers in the market."""
         try:
             count = request_threading(lambda: market_collection.count_documents({})).result()
@@ -138,15 +139,5 @@ class Market:
             return None
         
     @staticmethod
-    def create_many(chickenlist, author_id):
-        """Create multiple items in the market."""
-        try:
-            request_threading(lambda: market_collection.insert_many(chickenlist))
-            logger.info(f"Offers have been created successfully.")
-        except Exception as e:
-            logger.error("Error encountered while creating the offers.", e)
-            return None
-        
-    @staticmethod
-    def generate_uuid():
+    def generate_uuid() -> str:
         return str(uuid.uuid4())

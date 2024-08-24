@@ -12,6 +12,7 @@ from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever
 from tools.settings import regular_command_cooldown, farm_drop, max_bench
 from tools.pointscore import pricing
 from better_profanity import profanity
+from discord.ext.commands import Context
 import discord
 
 class ChickenView(commands.Cog):
@@ -22,7 +23,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="chickeninfo", aliases=["ci"], usage="chickenInfo <index>", description="Check the information of a chicken.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def check_chicken_info(self, ctx, index: int, user: discord.Member = None):
+    async def check_chicken_info(self, ctx: Context, index: int, user: discord.Member = None):
         """Check the information of a chicken."""
         farm_data, _ = await return_data(ctx, user)
         farm_data = farm_data["farm_data"]
@@ -39,7 +40,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="chickenrarities", aliases=["cr"], usage="chickenRarities", description="Check the rarities of the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def check_chicken_rarities(self, ctx):
+    async def check_chicken_rarities(self, ctx: Context) -> None:
         """Check the rarities of the chickens"""
         rarity_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {round(rate/100, 4)}%" for rarity, rate in rollRates.items()])
         await send_bot_embed(ctx, title="Chicken Rarities:", description=rarity_info)
@@ -47,7 +48,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="chickenvalues", aliases=["cv"], usage="chickenValues", description="Check the values of eggs produced by chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def check_chicken_values(self, ctx):
+    async def check_chicken_values(self, ctx: Context) -> None:
         """Check the amount of eggs produced by chickens"""
         value_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {ChickenMultiplier[rarity].value}x" for rarity in ChickenMultiplier.__members__])
         await send_bot_embed(ctx, title="Amount of eggs produced by rarity:", description=value_info)
@@ -55,7 +56,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="chickencorn", usage="chickencorn", description="Show all the chicken food values.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def chicken_corn(self, ctx):
+    async def chicken_corn(self, ctx: Context) -> None:
         """Show all the chicken food values"""
         corn_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {ChickenFood[rarity].value}" for rarity in ChickenFood.__members__])
         await send_bot_embed(ctx, title="Chicken food values:", description=corn_info)
@@ -63,7 +64,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="chickenprices", aliases=["cprice"], usage="chickenPrices", description="Check the prices of the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def check_chicken_prices(self, ctx):
+    async def check_chicken_prices(self, ctx: Context) -> None:
         """Check the prices of the chickens"""
         prices_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {175 * ChickenRarity[rarity].value} eggbux" for rarity in ChickenRarity.__members__])
         await send_bot_embed(ctx, title="Chicken prices:", description=prices_info)
@@ -71,7 +72,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="battleinfo", aliases=["binfo"], brief="Shows your current rank.", description="Shows your current rank.", usage="rank")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def player_rank(self, ctx, user: discord.Member = None):
+    async def player_rank(self, ctx: Context, user: discord.Member = None) -> None:
         """Shows your current rank."""
         farm_data, user = await return_data(ctx, user)
         farm_data = farm_data["farm_data"]
@@ -94,7 +95,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="eggrank", aliases=["erank"], usage="rankInfo", description="Check the chicken matchmaking ranks.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def rank_info(self, ctx):
+    async def rank_info(self, ctx: Context) -> None:
         """Check the chicken matchmaking ranks"""
         rank_info = "\n".join([f"{rank} - {weight} MMR" for rank, weight in chicken_ranking.items()])
         await send_bot_embed(ctx, title="Chicken matchmaking ranks:", description=rank_info)
@@ -102,7 +103,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="farmprofit", aliases=["fp"], usage="farmprofit OPTIONAL [user]", description="Check the farm profit.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def farm_profit(self, ctx, user: discord.Member = None):
+    async def farm_profit(self, ctx: Context, user: discord.Member = None) -> None:
         """Check the farm profit"""
         data, user = await return_data(ctx, user)
         farm_data = data["farm_data"]
@@ -135,7 +136,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="renamefarm", aliases=["rf"], usage="renameFarm <nickname>", description="Rename the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def rename_farm(self, ctx, nickname: str):
+    async def rename_farm(self, ctx: Context, nickname: str):
         """Rename the farm"""
         farm_data = ctx.data["farm_data"]
         censor = profanity.contains_profanity(nickname)
@@ -152,7 +153,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="renamechicken", aliases=["rc"], usage="renameChicken <index> <nickname>", description="Rename a chicken in the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def rename_chicken(self, ctx, index: int, nickname: str):
+    async def rename_chicken(self, ctx: Context, index: int, nickname: str):
         """Rename a chicken in the farm"""
         index -= 1
         farm_data = ctx.data["farm_data"]
@@ -186,7 +187,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="switchchicken", aliases=["switch"], usage="switchChicken <index> <index2>", description="Switch the position of two chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def switch_chicken(self, ctx, index: int, index2: int):
+    async def switch_chicken(self, ctx: Context, index: int, index2: int) -> None:
         """Switches chickens"""
         farm_data = ctx.data["farm_data"]
         if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
@@ -199,7 +200,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="bench", aliases=["b"], usage="b", description="You can store chickens in the bench.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def view_bench(self, ctx, user: discord.Member = None):
+    async def view_bench(self, ctx: Context, user: discord.Member = None) -> None:
         """View the bench"""
         farm_data, user = await return_data(ctx, user)
         farm_data = farm_data["farm_data"]
@@ -211,7 +212,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="addbench", aliases=["ab"], usage="addbench <index>", description="Add a chicken from the farm to the bench.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def add_bench(self, ctx, index: int):
+    async def add_bench(self, ctx: Context, index: int) -> None:
         """Adds a chicken to the bench"""
         farm_data = ctx.data["farm_data"]
         index -= 1
@@ -233,7 +234,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="removebench", aliases=["rb"], usage="removebench <index>", description="Remove a chicken from the bench to the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def remove_bench(self, ctx, index: int):
+    async def remove_bench(self, ctx: Context, index: int) -> None:
         """Removes a chicken from the bench"""
         farm_data = ctx.data["farm_data"]
         index -= 1
@@ -255,7 +256,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="switchbench", aliases=["sb"], usage="switchb <index_farm> <index_bench>", description="Switch a chicken from the farm to the bench.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def switch_bench(self, ctx, index_farm: int, index_bench_int: int):
+    async def switch_bench(self, ctx: Context, index_farm: int, index_bench_int: int) -> None:
         """Switches a chicken from the farm to the bench"""
         if await verify_events(ctx, ctx.author):
             return
@@ -275,7 +276,7 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="redeemables", aliases=["redeem"], usage="reedemables", description="Check the reedemable items.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def reedemables(self, ctx):
+    async def reedemables(self, ctx: Context) -> None:
         """Check the reedemable items"""
         farm_data = await user_cache_retriever(ctx.author.id)
         farm_data = farm_data["farm_data"]

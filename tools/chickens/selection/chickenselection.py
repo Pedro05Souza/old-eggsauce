@@ -5,6 +5,7 @@ from tools.chickens.selection.deleteselection import ChickenDeleteMenu
 from tools.chickens.selection.redeemselection import RedeemPlayerMenu
 from tools.chickens.selection.tradeselection import ChickenAuthorTradeMenu, ChickenUserTradeMenu
 from tools.chickens.selection.playermarketselection import PlayerMarketMenu
+from typing import Union
 from discord import SelectOption, ui
 from db.farmDB import Farm
 from db.userDB import User
@@ -12,12 +13,12 @@ from tools.shared import make_embed_object, send_bot_embed
 
 class ChickenSelectView(ui.View):
     """View for selecting chickens from the market or farm to buy or delete them."""
-    def __init__(self, chickens, author, action, message, *args, **kwargs):
+    def __init__(self, chickens: list, author: Union[discord.Member, list], action:str, message: discord.Embed, *args, **kwargs):
         super().__init__(*args, **kwargs, timeout=60)
         menu = self.action_handler(chickens, author, action, message, *args, **kwargs)
         self.add_item(menu)
 
-    def action_handler(self, chickens, author, action, message, *args, **kwargs):
+    def action_handler(self, chickens: list, author: Union[discord.Member, list], action: str, message: discord.Embed, *args, **kwargs) -> ui.View:
         """Method to handle the action of the view."""
         role = kwargs.get("role", None)
         t = kwargs.get("trade_data", None)
@@ -63,7 +64,7 @@ class ChickenSelectView(ui.View):
 
 class ChickenMarketMenu(ui.Select):
     """Menu to buy chickens from the market"""
-    def __init__(self, chickens, author_id, message):
+    def __init__(self, chickens: list, author_id: int, message: discord.Embed):
         self.chickens = chickens
         self.author_id = author_id
         self.message = message
@@ -74,7 +75,7 @@ class ChickenMarketMenu(ui.Select):
         ]
         super().__init__(min_values=1, max_values=1, options=options, placeholder="Select the chicken to buy:")
 
-    async def callback(self, interaction):
+    async def callback(self, interaction: discord.Interaction) -> None:
         """Callback for the chicken market menu"""
         if interaction.user.id != self.author_id:
             return await send_bot_embed(interaction, description=":no_entry_sign: You can't buy chickens for another user.", ephemeral=True)

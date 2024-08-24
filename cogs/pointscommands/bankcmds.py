@@ -7,6 +7,7 @@ from tools.settings import regular_command_cooldown
 from db.bankDB import Bank
 from db.userDB import User
 from tools.pointscore import pricing
+from discord.ext.commands import Context
 import discord
 class BankCommands(commands.Cog):
     def __init__(self, bot):
@@ -19,7 +20,7 @@ class BankCommands(commands.Cog):
     @commands.hybrid_command("deposit", aliases=["dep"], brief="Deposits points in the bank", parameters=["amount: int"], description=f"Deposits points in the bank.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def deposit(self, ctx, amount):
+    async def deposit(self, ctx: Context, amount) -> None:
         """Deposits points in the bank"""
         user_data = ctx.data["user_data"]
         if amount.upper() == "ALL":
@@ -55,7 +56,7 @@ class BankCommands(commands.Cog):
     @commands.hybrid_command("withdraw", aliases=["with"], brief="Withdraws eggubux from the bank", parameters=["amount: int"], examples=["withdraw 1000"], description="Withdraws points from the bank.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def withdraw(self, ctx, amount):
+    async def withdraw(self, ctx: Context, amount) -> None:
         """Withdraws points from the bank"""
         bank_data = ctx.data["bank_data"]
         if amount.upper() == "ALL":
@@ -81,7 +82,7 @@ class BankCommands(commands.Cog):
     @commands.hybrid_command("upgradebanklimit", aliases=["ubl"], brief="Upgrades the bank", description="Upgrades the bank. The bank can be upgraded up to 5 times.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def upgrade_bank_limit(self, ctx):
+    async def upgrade_bank_limit(self, ctx: Context) -> None:
         """Upgrades the bank limit."""
         user_data = ctx.data["user_data"]
         bank_data = ctx.data["bank_data"]
@@ -107,7 +108,7 @@ class BankCommands(commands.Cog):
     @commands.hybrid_command("createbank", aliases=["cb"], brief="Creates a bank account", description="Creates a bank account.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def create_bank_account(self, ctx):
+    async def create_bank_account(self, ctx: Context) -> None:
         """Creates a bank account."""
         bank_data = ctx.data["bank_data"]
         if bank_data:

@@ -2,6 +2,7 @@ from db.dbConfig import mongo_client
 from time import time
 from tools.cache.init import cache_initiator
 from tools.shared import update_scheduler, request_threading
+from typing import Union
 import logging
 users_collection = mongo_client.db.user
 logger = logging.getLogger('botcore')
@@ -11,7 +12,7 @@ logger = logging.getLogger('botcore')
 class User:
     
     @staticmethod
-    def create(user_id : int, points : int):
+    def create(user_id: int, points: int) -> None:
         """Create a user in the database."""
         try:            
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
@@ -35,7 +36,7 @@ class User:
             return None    
         
     @staticmethod
-    def delete(user_id : int):
+    def delete(user_id: int) -> None:
         """Delete a user from the database."""
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
@@ -49,7 +50,7 @@ class User:
             return None
     
     @staticmethod
-    def update_all(user_id : int, points : int, roles: str):
+    def update_all(user_id: int, points: int, roles: str) -> None:
         """Update a user's status in the database."""
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id" : user_id})).result()
@@ -63,7 +64,7 @@ class User:
             return None
 
     @staticmethod
-    def update_points(user_id : int, points : int):
+    def update_points(user_id : int, points : int) -> None:
         """Update a user's points in the database."""
         try:
             if points < 0:
@@ -78,7 +79,7 @@ class User:
             return None
 
     @staticmethod
-    def update_roles(user_id : int, roles: str):
+    def update_roles(user_id : int, roles: str) -> None:
         """Update a user's roles in the database."""
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
@@ -91,7 +92,7 @@ class User:
             return None
 
     @staticmethod
-    def update_salary_time(user_id : int):
+    def update_salary_time(user_id : int) -> None:
         """Update a user's salary time in the database."""
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
@@ -104,7 +105,7 @@ class User:
             return None
         
     @staticmethod
-    def read(user_id : int):
+    def read(user_id : int) -> Union[dict, None]:
         """Read a user from the database."""
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
@@ -117,7 +118,7 @@ class User:
             return None
         
     @staticmethod
-    def readAll():
+    def readAll() -> Union[list, None]:
         """Read all users from the database."""
         try:
             users = request_threading(lambda: users_collection.find()).result()
@@ -127,7 +128,7 @@ class User:
             return None
         
     @staticmethod
-    def read_highest_10_points():
+    def read_highest_10_points() -> Union[list, None]:
         """Read the top 10 users with the most points from the database."""
         try:
             users = request_threading(lambda: users_collection.find().sort("points", -1).limit(10)).result()
@@ -137,7 +138,7 @@ class User:
             return None
 
     @staticmethod
-    def resetAll():
+    def resetAll() -> None:
         """Resets all users from the database."""
         try:
             request_threading(lambda: users_collection.update_many({}, {"$set": {"points": 0, "roles": ""}})).result()
@@ -146,7 +147,7 @@ class User:
             return None
     
     @staticmethod
-    def count_users():
+    def count_users() -> Union[int, None]:
         """Counts all users from the database."""
         try:
             count = request_threading(lambda: users_collection.count_documents({})).result()

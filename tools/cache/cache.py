@@ -5,6 +5,7 @@
 from pympler import asizeof
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from typing import Union
 import logging
 import asyncio
 logger = logging.getLogger('botcore')
@@ -15,14 +16,14 @@ class BotCache():
     cache: OrderedDict = field(default_factory=OrderedDict)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock) # Lock to prevent data discrepancies
 
-    async def get(self, key):
+    async def get(self, key: str) -> Union[dict, None]:
         async with self.lock:
             if key in self.cache:
                 self.cache.move_to_end(key)
                 return self.cache[key]
             return None
     
-    async def put(self, id, **kwargs):
+    async def put(self, id: int, **kwargs) -> None:
         async with self.lock:
             if id not in self.cache:
                 self.cache[id] = {}
@@ -32,7 +33,7 @@ class BotCache():
         if asizeof.asizeof(self.cache) > self.memory_limit_bytes:
             await self._evict_if_needed()
         
-    async def delete(self, key):
+    async def delete(self, key: str) -> None:
         async with self.lock:
             dict_value = self.cache.pop(key, None)
             if dict_value is None:
@@ -40,12 +41,12 @@ class BotCache():
             else:
                 logger.info(f"Deleted {key} from cache.")
 
-    async def _evict_if_needed(self):
+    async def _evict_if_needed(self) -> None:
         async with self.lock:
             while asizeof.asizeof(self.cache) > self.memory_limit_bytes:
                 evicted_key, _ = self.cache.popitem(last=False)
                 logger.info(f"Evicting {evicted_key} cache to free up memory.")
     
-    async def clear(self):
+    async def clear(self) -> None:
         self.cache.clear()
         logger.info("Cache cleared.")

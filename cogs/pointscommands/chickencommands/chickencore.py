@@ -5,7 +5,6 @@ This module contains the core commands and processes for the chicken system in o
 
 from random import uniform
 from time import time
-from discord.ext import commands
 from db.farmDB import Farm
 from tools.chickens.selection.chickenselection import ChickenSelectView
 from tools.chickens.chickenhandlers import RollLimit
@@ -14,6 +13,8 @@ from tools.chickens.chickeninfo import rollRates
 from tools.pointscore import pricing
 from tools.shared import make_embed_object, send_bot_embed, return_data
 from tools.settings import spam_command_cooldown, regular_command_cooldown, roll_per_hour
+from discord.ext import commands
+from discord.ext.commands import Context
 import discord
 import asyncio
 
@@ -25,8 +26,8 @@ class ChickenCore(commands.Cog):
     @commands.hybrid_command(name="createfarm", aliases=["cf"], usage="createFarm", description="Create a farm to start farming eggs.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def create_farm(self, ctx) -> None:
-        """Farm some eggs"""
+    async def create_farm(self, ctx: Context) -> None:
+        """Farm some eggs."""
         farm_data = ctx.data["farm_data"]
         if farm_data:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You already have a farm.")
@@ -37,8 +38,8 @@ class ChickenCore(commands.Cog):
     @commands.hybrid_command(name="farm", aliases=["f"], usage="farm OPTIONAL [user]", description="Check the chickens in the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def farm(self, ctx, user: discord.Member = None) -> None:
-        """Check the chickens in the farm"""
+    async def farm(self, ctx: Context, user: discord.Member = None) -> None:
+        """Check the chickens in the farm."""
         data, user = await return_data(ctx, user)
         msg = await get_usr_farm(ctx, user, data)
         if not msg:
@@ -49,23 +50,23 @@ class ChickenCore(commands.Cog):
     @commands.hybrid_command(name="market", aliases=["m"], usage="market", description="Market that generates 8 random chickens to buy.")
     @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def market(self, ctx) -> None:
-        """Market to buy chickens"""	
+    async def market(self, ctx: Context) -> None:
+        """Market to buy chickens."""	
         await self.roll(ctx, 8, "market")
 
     @commands.hybrid_command(name="eggpack", aliases=["ep"], usage="eggpack", description="Buy an egg pack.")
     @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def eggpack(self, ctx) -> None:
-        """Buy an egg pack"""
+    async def eggpack(self, ctx: Context) -> None:
+        """Buy an egg pack."""
         farm_data = ctx.data["farm_data"]
         if farm_data:
             await self.roll(ctx, 8, 'eggpack')
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
             
-    async def roll(self, ctx, chickens_to_generate, action) -> None:
-        """Market to buy chickens"""
+    async def roll(self, ctx: Context, chickens_to_generate: list, action: str) -> None:
+        """Market to buy chickens."""
         farm_data = ctx.data["farm_data"]
         default_rolls = 10
         if action == "market":
@@ -91,7 +92,7 @@ class ChickenCore(commands.Cog):
         """Roll the sum of the rates of the chicken rarities"""
         return sum(rollRates.values()), rollRates
     
-    def generate_chickens(self, rollRatesSum, rollRates, quant) -> list:
+    def generate_chickens(self, rollRatesSum: float, rollRates: dict, quant: int) -> list:
         """Generate chickens according to the roll rates"""
         generated_chickens = []
         initial_range = 1

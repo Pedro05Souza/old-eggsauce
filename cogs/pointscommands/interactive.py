@@ -5,7 +5,8 @@ from db.userDB import User
 from collections import Counter
 from random import randint, sample, choice
 from tools.pagination import PaginationView
-from tools.settings import regular_command_cooldown, spam_command_cooldown, hunger_games_wait_time, tax, min_tributes, max_tributes, hunger_games_prize_multiplier, hunger_games_match_value_per_tribute
+from tools.settings import *
+from discord.ext.commands import Context
 import logging
 import time
 import asyncio
@@ -20,7 +21,7 @@ class InteractiveCommands(commands.Cog):
     @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def donate_points(self, ctx, user: discord.Member, amount: int):
+    async def donate_points(self, ctx: Context, user: discord.Member, amount: int) -> None:
         """Donates points to another user."""
         user_data = ctx.data["user_data"]
         target_data = await user_cache_retriever(user.id)
@@ -45,7 +46,7 @@ class InteractiveCommands(commands.Cog):
     @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
     @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def cassino(self, ctx, amount, cor: str):
+    async def cassino(self, ctx: Context, amount, cor: str) -> None:
         """Bet on a color in the roulette."""
         if amount.upper() == "ALL":
             amount = ctx.data["user_data"]["points"]
@@ -79,7 +80,7 @@ class InteractiveCommands(commands.Cog):
             return
 
     @cassino.error
-    async def cassino_error(self, ctx, error):
+    async def cassino_error(self, ctx: Context, error: commands.CommandError) -> None:
         """Handles errors in the cassino command."""
         if isinstance(error, commands.MissingRequiredArgument):
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} Please, insert a valid amount and color.")
@@ -91,7 +92,7 @@ class InteractiveCommands(commands.Cog):
     @commands.hybrid_command(name="stealpoints", aliases=["steal", "rob"], brief="Steal points from another user.", usage="stealPoints [user]", description="Steal points from another user.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def steal_points(self, ctx, user: discord.Member):
+    async def steal_points(self, ctx: Context, user: discord.Member) -> None:
         """Steals points from another user."""
         if ctx.author.id in steal_status and steal_status[ctx.author.id] == user.id:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You can't steal from the same user twice.")
@@ -133,7 +134,7 @@ class InteractiveCommands(commands.Cog):
     @commands.command(aliases=["hg"])
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def hungergames(self, ctx, *args):
+    async def hungergames(self, ctx: Context, *args) -> None:
         """Starts a hunger games event."""
         guild_id = ctx.guild.id
         cooldown = await self.hunger_games_starter(ctx, guild_id, args)
@@ -152,7 +153,7 @@ class InteractiveCommands(commands.Cog):
             winner = await self.get_winner(tributes)
             await self.on_match_end(ctx, tributes, winner, guild_id)
 
-    async def hunger_games_starter(self, ctx, guild_id, args):
+    async def hunger_games_starter(self, ctx: Context, guild_id: int, args) -> int:
         global hungergames_status
         cooldown = hunger_games_wait_time
         if guild_id in hungergames_status:
@@ -171,7 +172,7 @@ class InteractiveCommands(commands.Cog):
         }
         return cooldown
     
-    async def day_events(self, ctx, alive_tributes, day, guild_id, tributes):
+    async def day_events(self, ctx: Context, alive_tributes: list, day: int, guild_id: int, tributes: list) -> None:
         shuffle_tributes = sample(alive_tributes, len(alive_tributes))
         alive_tributes = shuffle_tributes
         await send_bot_embed(ctx, title=f"Day {day}", description=f"**Tributes remaining: {len(alive_tributes)}**")
@@ -186,7 +187,7 @@ class InteractiveCommands(commands.Cog):
                 if len(alive_tributes) == 1:
                     break
 
-    async def day_switch_events(self, ctx, alive_tributes, day, tributes):
+    async def day_switch_events(self, ctx: Context, alive_tributes: list, day: int, tributes: list) -> None:
         dead_day = day - 1 if day > 0 else 0
         fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == dead_day]
         if fallen_tributes:
@@ -196,7 +197,7 @@ class InteractiveCommands(commands.Cog):
         await self.update_tribute_event(alive_tributes)
         day += 1
         
-    async def match_starter(self, ctx, tributes, guild_id, cooldown):
+    async def match_starter(self, ctx: Context, tributes: list, guild_id: int, cooldown: int) -> bool:
         end_time = time.time() + cooldown
         while True:
             actual_time = end_time - time.time()
@@ -231,14 +232,14 @@ class InteractiveCommands(commands.Cog):
             return False
         return True
     
-    async def on_match_end(self, ctx, tributes, winner, guild_id):
+    async def on_match_end(self, ctx: Context, tributes: list, winner: dict, guild_id: int) -> None:
             prizeMultiplier = len(tributes) * hunger_games_prize_multiplier
             await send_bot_embed(ctx, description=f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
             User.update_points(winner['tribute'].id, User.read(winner['tribute'].id)["points"] + prizeMultiplier)
             hungergames_status.pop(guild_id)
             await self.statistics(ctx, tributes)
 
-    async def check_tribute_play(self, tribute, default_game_value):
+    async def check_tribute_play(self, tribute: dict, default_game_value: int) -> bool:
         """Check if the tribute has enough points to play."""
         tribute_data = User.read(tribute.id)
         if tribute_data and tribute_data["points"] >= default_game_value:
@@ -247,13 +248,13 @@ class InteractiveCommands(commands.Cog):
         else:
             return False
         
-    async def increase_days_alive(self, tributes):
+    async def increase_days_alive(self, tributes: list) -> None:
         """Increase the days alive of the tributes."""
         for tribute in tributes:
             if tribute['is_alive']:
                 tribute['days_alive'] += 1
      
-    async def check_alive_tributes(self, tributes):
+    async def check_alive_tributes(self, tributes: list) -> list:
         """Check the alive tributes."""
         alive_tributes = []
         for tribute in tributes:
@@ -261,7 +262,7 @@ class InteractiveCommands(commands.Cog):
                 alive_tributes.append(tribute)
         return alive_tributes
                 
-    async def events(self):
+    async def events(self) -> dict:
         """Returns the events that can happen in the hunger games."""
         events = {
         0: "has been killed by a bear.",
@@ -295,16 +296,16 @@ class InteractiveCommands(commands.Cog):
         }
         return events
 
-    async def choose_random_event(self, events):
+    async def choose_random_event(self, events: dict) -> int:
         """Choose a random event from the list of events."""
         return choice(events)
     
-    async def update_tribute_event(self, tributes):
+    async def update_tribute_event(self, tributes: list) -> None:
         """Update the tribute event."""
         for tribute in tributes:
             tribute['has_event'] = False
 
-    async def pick_random_tribute(self, tribute1, tributes):
+    async def pick_random_tribute(self, tribute1: dict, tributes: list) -> dict:
         """Pick a random tribute."""
         aux_tributes = tributes.copy()
         aux_tributes.remove(tribute1)
@@ -313,7 +314,7 @@ class InteractiveCommands(commands.Cog):
         else:
             return None
     
-    async def event_actions(self, ctx, tribute1, tribute2, tributes, chosen_event):
+    async def event_actions(self, ctx: Context, tribute1: dict, tribute2: dict, tributes: list, chosen_event: int) -> None:
         """Perform the actions of the event."""
         events = await self.events()
         if not tribute1['has_event']:
@@ -434,7 +435,7 @@ class InteractiveCommands(commands.Cog):
                     await send_bot_embed(ctx, description=f"**{tribute1['tribute'].display_name}** {events[chosen_event]}")
 
 
-    async def check_event_possibilities(self, tribute1, tribute2, tributes, dead_tributes, guild_id):
+    async def check_event_possibilities(self, tribute1: dict, tribute2: dict, tributes: list, dead_tributes: list, guild_id: int) -> list:
         """Check the event possibilities."""
         global hungergames_status
 
@@ -520,7 +521,7 @@ class InteractiveCommands(commands.Cog):
             list_events = [event for event in list_events if event not in tribute2_events]
         return list_events
 
-    async def remove_plr_team_on_death(self, tributes):
+    async def remove_plr_team_on_death(self, tributes: list) -> None:
         """Remove the player's team on death."""
         teams_to_remove = set()
 
@@ -532,14 +533,14 @@ class InteractiveCommands(commands.Cog):
             if tribute['team'] in teams_to_remove and tribute['is_alive']:
                 tribute['team'] = None
 
-    async def steal_item(self, tribute1, tribute2):
+    async def steal_item(self, tribute1: dict, tribute2: dict) -> str:
         """Steal an item from a tribute."""
         item = choice(tribute2['inventory'])
         tribute1['inventory'].append(item)
         tribute2['inventory'].remove(item)
         return item
     
-    async def loot_tribute_Body(self, tributes):
+    async def loot_tribute_Body(self, tributes: list) -> list:
         """Loot the body of a fallen tribute."""
         dead_tributes = [dead_tribute for dead_tribute in tributes if not dead_tribute['is_alive'] and len(dead_tribute['inventory']) > 0]
         if len(dead_tributes) >= 1:
@@ -547,7 +548,7 @@ class InteractiveCommands(commands.Cog):
         else:
             return None
     
-    async def statistics(self, ctx, tributes):
+    async def statistics(self, ctx: Context, tributes: list) -> None:
         """Show the statistics of the hungergames match."""
         data = []
         for tribute in tributes:
@@ -565,7 +566,7 @@ class InteractiveCommands(commands.Cog):
         view = PaginationView(sorted_data)
         await view.send(ctx, title="Match results:", description="Match statistics for each tribute:", color=0xff0000)
     
-    async def create_team(self, tribute1, tribute2, tributes):
+    async def create_team(self, tribute1: dict, tribute2: dict, tributes: list) -> int:
         """Create a team."""
         teams = await self.check_existing_teams(tributes)
         teamNumber = randint(1, 100)
@@ -576,18 +577,18 @@ class InteractiveCommands(commands.Cog):
         else:
             await self.create_team(tribute1, tribute2, tributes)
 
-    async def check_existing_teams(self, tributes):
+    async def check_existing_teams(self, tributes: list) -> dict:
         """Check the existing teams."""
         teams = Counter([tribute['team'] for tribute in tributes if tribute['team'] is not None])
         return teams
     
-    async def get_tribute_team(self, tribute1, tributes):
+    async def get_tribute_team(self, tribute1: dict, tributes: dict):
         """Get the tribute team."""
         for tribute in tributes:
             if tribute1['team'] == tribute['team']:
                 return tribute1['team']
     
-    async def get_winner(self, tributes):
+    async def get_winner(self, tributes: list) -> dict:
         """Get the winner of the hunger games."""
         highestdayAlive = 0
         for tribute in tributes:

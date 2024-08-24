@@ -16,7 +16,7 @@ class BotMatchMaking():
     def __repr__(self) -> str:
         return f"{self.name} - {self.score}"
 
-async def bot_maker(user_score):
+async def bot_maker(user_score: int) -> BotMatchMaking:
     """"
     Function to create a bot in the matchmaking.
     """
@@ -51,7 +51,7 @@ async def bot_maker(user_score):
     bot.chicken_overrall_score = await define_chicken_overrall_score(bot.chickens)
     return bot
 
-async def define_bot_min_farm_size(player_mmr):
+async def define_bot_min_farm_size(player_mmr: int) -> int:
     """
     Defines the minimum farm size for the bot.
     """
@@ -61,7 +61,7 @@ async def define_bot_min_farm_size(player_mmr):
         if player_mmr <= i:
             return min(default_farm_size, max(2, int(i / 100)))
         
-async def define_chicken_rarity_list(player_mmr, all_rarities):
+async def define_chicken_rarity_list(player_mmr: int, all_rarities: dict) -> dict:
     """
     Changes the rarity list for the bot to pick from.
     """
@@ -89,7 +89,7 @@ async def define_chicken_rarity_list(player_mmr, all_rarities):
         bot_deck[key] = round(bot_deck[key] / total, 2)
     return bot_deck
 
-async def name_maker():
+async def name_maker() -> str:
     """
     Defines the bot's username.
     """

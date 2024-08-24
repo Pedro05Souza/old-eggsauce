@@ -12,6 +12,7 @@ from tools.chickens.chickenshared import *
 from tools.pointscore import pricing
 from tools.shared import send_bot_embed, confirmation_embed, user_cache_retriever
 from tools.settings import regular_command_cooldown
+from discord.ext.commands import Context
 import asyncio
 import logging
 import discord
@@ -25,8 +26,8 @@ class ChickenEvents(commands.Cog):
     @commands.hybrid_command(name="sellchicken", aliases=["sc"], usage="sellChicken", description="Deletes a chicken from the farm.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def sell_chicken(self, ctx) -> None:
-        """Deletes a chicken from the farm"""
+    async def sell_chicken(self, ctx: Context) -> None:
+        """Deletes a chicken from the farm."""
         if await verify_events(ctx, ctx.author):
             return
         farm_data = ctx.data["farm_data"]
@@ -40,8 +41,8 @@ class ChickenEvents(commands.Cog):
     @commands.hybrid_command(name="tradechicken", aliases=["tc", "trade"], usage="tradeChicken <user>", description="Trade a chicken(s) with another user.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def trade_chicken(self, ctx, user: discord.Member) -> None:
-        """Trade a chicken(s) with another user"""
+    async def trade_chicken(self, ctx: Context, user: discord.Member) -> None:
+        """Trade a chicken(s) with another user."""
         if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
             return
         farm_author = ctx.data["farm_data"]
@@ -80,8 +81,8 @@ class ChickenEvents(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
 
-    async def trade_chickens(self, ctx, User: discord.Member, t, farm_author, farm_target, user_cache_data) -> None:
-        """Trade the chickens"""
+    async def trade_chickens(self, ctx: Context, User: discord.Member, t: EventData, farm_author: dict, farm_target: dict, user_cache_data: dict) -> None:
+        """Trade the chickens."""
         authorEmbed = await get_usr_farm(ctx, ctx.author, ctx.data)
         userEmbed = await get_usr_farm(ctx, User, user_cache_data)
         trade_data = [farm_author['chickens'], farm_target['chickens']]
@@ -100,8 +101,8 @@ class ChickenEvents(commands.Cog):
     @commands.hybrid_command(name="giftchicken", aliases=["gc"], usage="giftChicken <index> <user>", description="Gift a chicken to another user.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def gift_chicken(self, ctx, index: int, user: discord.Member) -> None:
-        """Gift a chicken to another user"""
+    async def gift_chicken(self, ctx: Context, index: int, user: discord.Member) -> None:
+        """Gift a chicken to another user."""
         if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
             return
         author_data = ctx.data["farm_data"]
@@ -172,8 +173,8 @@ class ChickenEvents(commands.Cog):
     @commands.hybrid_command(name="evolvechicken", aliases=["ec", "fuse"], usage="evolveChicken <index> <index2>", description="Evolve a chicken if having 2 of the same rarity.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def evolve_chicken(self, ctx, index: int, index2: int) -> None:
-        """Evolves a chicken if having 2 of the same rarity"""
+    async def evolve_chicken(self, ctx: Context, index: int, index2: int) -> None:
+        """Evolves a chicken if having 2 of the same rarity."""
         if await verify_events(ctx, ctx.author):
             return
         farm_data = ctx.data["farm_data"]
@@ -220,7 +221,7 @@ class ChickenEvents(commands.Cog):
     @commands.hybrid_command(name="farmer", aliases =["farmers"], usage="farmer", description="The farmers helps increase the productivity of the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def farmer(self, ctx) -> None:
+    async def farmer(self, ctx: Context) -> None:
         """The farmer automatically feeds the chickens"""
         farmer_price = 5000
         eggs_needed = 10000
@@ -266,7 +267,7 @@ class ChickenEvents(commands.Cog):
         except asyncio.TimeoutError:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have not selected a farmer role.")
 
-    async def buy_farmer_upgrade(self, ctx, name, farmer_price, user_data, farm_data) -> None:
+    async def buy_farmer_upgrade(self, ctx: Context, name: str, farmer_price: int, user_data: dict, farm_data: dict) -> None:
         """Buy the farmer upgrade"""
         if user_data['points'] >= farmer_price:
             farm_data['farmer'] = name
@@ -279,7 +280,7 @@ class ChickenEvents(commands.Cog):
     @commands.hybrid_command(name="transcend", usage="transcend", description="Only available when having 8 ascended chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def transcend(self, ctx) -> None:
+    async def transcend(self, ctx: Context) -> None:
         """Transcend chicken"""
         farm_data = ctx.data["farm_data"]
         if all(chicken for chicken in farm_data['chickens'] if chicken['rarity'] == 'ASCENDED'):

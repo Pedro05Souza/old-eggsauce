@@ -13,6 +13,8 @@ from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import RollLimit
 from tools.cache.init import cache_initiator
 from .. import botcore
+from discord.ext.commands import Context
+from typing import Any
 import discord
 import tools
 class DevCommands(commands.Cog):
@@ -20,7 +22,7 @@ class DevCommands(commands.Cog):
         self.bot = bot
     
     @commands.command("addPoints") 
-    async def add_points(self, ctx, amount: int, user: discord.Member = None):
+    async def add_points(self, ctx: Context, amount: int, user: discord.Member = None) -> None:
         """Add points to a user. If no user is specified, the author of the command will receive the points."""
         if user is None:
             user = ctx.author
@@ -35,7 +37,7 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
 
     @commands.command("removePoints")
-    async def remove_points(self, ctx, amount: int, user: discord.Member = None):
+    async def remove_points(self, ctx: Context, amount: int, user: discord.Member = None) -> None:
         """Remove points from a user. If no user is specified, the author of the command will lose the points."""
         if user is None:
             user = ctx.author
@@ -50,13 +52,13 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
 
     @commands.command("latency", aliases=["ping"])
-    async def latency(self, ctx):
+    async def latency(self, ctx: Context) -> None:
         """Check the bot's latency."""
         if is_dev(ctx):
             await send_bot_embed(ctx, description=f":ping_pong: {round(self.bot.latency * 1000)}ms")
 
     @commands.command("deleteDB")
-    async def delete_db(self, ctx,  user: discord.Member):
+    async def delete_db(self, ctx: Context, user: discord.Member) -> None:
         """Delete a user from the database."""
         user = user.id
         if User.read(user):
@@ -69,7 +71,7 @@ class DevCommands(commands.Cog):
                 await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
             
     @commands.command()
-    async def reset(self, ctx, user: discord.Member):
+    async def reset(self, ctx: Context, user: discord.Member) -> None:
         """Reset a user from the database."""
         if is_dev(ctx) and User.read(user.id):
             if Bank.read(user.id):
@@ -80,7 +82,7 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command("giveRolls")
-    async def give_rolls(self, ctx, rolls : int, user: discord.Member):
+    async def give_rolls(self, ctx: Context, rolls : int, user: discord.Member) -> None:
         """Add more chicken roles to a user."""
         userObj = RollLimit.read(user.id)
         if is_dev(ctx):
@@ -93,7 +95,7 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command("checkbotServers", aliases=["cbs"])
-    async def check_bot_servers(self, ctx):
+    async def check_bot_servers(self, ctx: Context) -> None:
         """Check the servers the bot is in."""
         if is_dev(ctx):
             servers = self.bot.guilds
@@ -103,7 +105,7 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command("totalusers")
-    async def total_users(self, ctx):
+    async def total_users(self, ctx: Context) -> None:
         """Check the total number of users in the database."""
         if is_dev(ctx):
             total_users = User.count_users()
@@ -112,7 +114,7 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command("spawnChicken")
-    async def spawn_chicken(self, ctx, user: discord.Member, rarity):
+    async def spawn_chicken(self, ctx: Context, user: discord.Member, rarity: str) -> None:
         """Add a chicken to a user."""
         if is_dev(ctx):
             rarity = rarity.upper()
@@ -127,7 +129,7 @@ class DevCommands(commands.Cog):
                 await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")
     
     @commands.command("chickenlogs")
-    async def circulation_chickens(self, ctx):
+    async def circulation_chickens(self, ctx: Context) -> None:
         """Check the total number of chickens in circulation."""
         rarity_dictionary = ChickenRarity.__members__.keys()
         rarity_dictionary = {rarity: 0 for rarity in rarity_dictionary}
@@ -143,7 +145,7 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command("removeChicken")
-    async def remove_chicken(self, ctx, user: discord.Member, index):
+    async def remove_chicken(self, ctx: Context, user: discord.Member, index: Any) -> None:
         farm_data = Farm.read(user.id)
         if farm_data:
             if is_dev(ctx):
@@ -160,28 +162,28 @@ class DevCommands(commands.Cog):
                 await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command(name="purge")
-    async def purge(self, ctx, amount: int):
+    async def purge(self, ctx: Context, amount: int) -> None:
         """Deletes a certain amount of messages."""
         if is_dev(ctx):
             if amount > 0 and amount <= 25:
                 await ctx.channel.purge(limit=amount + 1)
     
     @commands.command(name="devMode")
-    async def developer_mode(self, ctx):
+    async def developer_mode(self, ctx: Context) -> None:
         """Activates the developer mode in the bot."""
         if is_dev(ctx):
             tools.pointscore.dev_mode = not tools.pointscore.dev_mode
             await send_bot_embed(ctx, description=f":warning: Developer mode is now {'enabled' if tools.pointscore.dev_mode else 'disabled'}.")
 
     @commands.command(name="mm")
-    async def monitor_mode(self, ctx):
+    async def monitor_mode(self, ctx: Context) -> None:
         """Activates the monitor mode in the bot."""
         if is_dev(ctx):
             botcore.monitor_mode = not botcore.monitor_mode
             print("Monitor mode is now: ", botcore.monitor_mode)
     
     @commands.command(name="marketLogs")
-    async def market_logs(self, ctx):
+    async def market_logs(self, ctx: Context) -> None:
      """Check the total number of active offers in the market."""
      if is_dev(ctx):
         total_offers = Market.count_all_offers()
@@ -190,7 +192,7 @@ class DevCommands(commands.Cog):
         await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
     @commands.command(name="reloadBot")
-    async def reload_cog(self, ctx, folder, cog_name):
+    async def reload_cog(self, ctx: Context, folder: str, cog_name: str) -> None:
      """Reload a cog."""
      folders = {"p": "pointscommands", "c": "chickenscommands"}
      if is_dev(ctx):
@@ -210,7 +212,7 @@ class DevCommands(commands.Cog):
         await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command(name="unloadBot")
-    async def unload_cog(self, ctx, cog_name):
+    async def unload_cog(self, ctx: Context, cog_name: str) -> None:
         """Unload a cog."""
         if is_dev(ctx):
             cog_full_name = f"cogs.pointscommands.{cog_name}"
@@ -226,13 +228,21 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command(name="devpanel")
-    async def developer_panel(self, ctx):
+    async def developer_panel(self, ctx: Context) -> None:
         if is_dev(ctx):
             user, guild = await cache_initiator.get_memory_usage()
             embed_obj = await make_embed_object(title="⚙️ Developer Panel")
             embed_obj.add_field(name="🔧 Cache Memory Usage:", value=f"User Cache: {user} bytes\nGuild Cache: {guild} bytes")
             embed_obj.add_field(name="🧰 Current active threads:", value=f"{retrieve_threads()}")
             await ctx.send(embed=embed_obj)
+
+    @commands.command(name="sync")
+    async def sync(self, ctx: Context) -> None:
+        if is_dev(ctx):
+            await self.bot.tree.sync()
+            await send_bot_embed(ctx, description=":warning: bot data has been synced.")
+        else:
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
             
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

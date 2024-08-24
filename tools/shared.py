@@ -5,6 +5,8 @@ This module contains shared functions that are used across multiple modules.
 
 from dotenv import load_dotenv
 from tools.cache.init import cache_initiator
+from typing import Callable, Union
+from discord.ext.commands import Context
 import os
 import discord
 import concurrent.futures
@@ -15,8 +17,9 @@ import logging
 logger = logging.getLogger('botcore')
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=5) # 5 threads to pick from the pool
 lock = threading.Lock()
+cooldown_tracker = {}
 
-async def send_bot_embed(ctx, ephemeral=False, **kwargs):
+async def send_bot_embed(ctx: Context, ephemeral=False, **kwargs) -> discord.Message:
     """
     Bot embed for modularization. Use this method whenever another command needs to send an embed.
     """
@@ -27,14 +30,14 @@ async def send_bot_embed(ctx, ephemeral=False, **kwargs):
         message = await ctx.send(embed=embed)
     return message
 
-async def make_embed_object(**kwargs):
+async def make_embed_object(**kwargs) -> discord.Embed:
     """
     Create an embed object.
     """
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     return embed
 
-def is_dev(ctx):
+def is_dev(ctx: Context) -> bool:
     """
     Check if the user is a developer.
     """
@@ -42,13 +45,13 @@ def is_dev(ctx):
     devs = os.getenv("DEVS").split(",")
     return str(ctx.author.id) in devs
 
-def dev_list():
+def dev_list() -> list:
     """Return the list of developers."""
     load_dotenv()
     devs = os.getenv("DEVS").split(",")
     return devs
 
-async def get_user_title(user_data):
+async def get_user_title(user_data: dict) -> str:
         """
         Get the user title.
         """
@@ -63,7 +66,7 @@ async def get_user_title(user_data):
                 return "Unemployed"
             return userRoles[user_data["roles"][-1]]
 
-async def confirmation_embed(ctx, user: discord.Member, description):
+async def confirmation_embed(ctx, user: discord.Member, description: str) -> bool:
      """
      Confirmation embed for modularization. Use this method whenenver another command needs confirmation from the user.
      """
@@ -86,7 +89,7 @@ async def confirmation_embed(ctx, user: discord.Member, description):
      except asyncio.TimeoutError:
         return False
 
-async def user_cache_retriever(user_id):
+async def user_cache_retriever(user_id: int) -> dict:
     """
     Retrieve the user cache.
     """
@@ -99,7 +102,7 @@ async def user_cache_retriever(user_id):
     print("cache")
     return user_cache
 
-async def read_and_update_cache(user_id):
+async def read_and_update_cache(user_id: int) -> dict:
     """
     Reads the user data from the database and updates the cache.
     """
@@ -113,7 +116,7 @@ async def read_and_update_cache(user_id):
     user_cache = await cache_initiator.get_user_cache(user_id)
     return user_cache
 
-async def guild_cache_retriever(guild_id):
+async def guild_cache_retriever(guild_id: int) -> dict:
     """
     Retrieve the guild cache.
     """
@@ -127,7 +130,7 @@ async def guild_cache_retriever(guild_id):
         return guild_cache
     return guild_cache
 
-def update_scheduler(func):
+def update_scheduler(func: Callable) -> None:
     """
     Schedules a coroutine to be run in the event loop with top priority.
     This should always be called when performing cache updates.
@@ -138,7 +141,7 @@ def update_scheduler(func):
     else:
         asyncio.run(func())
 
-def request_threading(func):  
+def request_threading(func: Callable) -> concurrent.futures.Future: 
     """
     Request a function to be run in a separate thread. Mostly used for database operations.
     """
@@ -146,13 +149,13 @@ def request_threading(func):
         future = executor.submit(func)
         return future
 
-def retrieve_threads():
+def retrieve_threads() -> int:
     """
     Retrieve the number of threads for visualization purposes.
     """
     return len(threading.enumerate())
 
-async def return_data(ctx, user=None):
+async def return_data(ctx: Context, user=None) -> Union[dict, discord.Member]:
     """
     Return the user data and the user object. This is only used in case of a command that has an user parameter.
     """
@@ -162,6 +165,27 @@ async def return_data(ctx, user=None):
         return ctx.data, ctx.author
     else:
         return await user_cache_retriever(user.id), user
+
+async def format_number(number) -> str:
+    """
+    Format the number with commas.
+    """
+    return "{:,.0f}".format(number).replace(",", ".")
+
+async def cooldown_user_tracker(user_id: int) -> bool:
+    """
+    Track the cooldown of the user.
+    """
+    if user_id in cooldown_tracker:
+        if cooldown_tracker[user_id] == 15:
+            del cooldown_tracker[user_id]
+            return True
+        else:
+            cooldown_tracker[user_id] += 1
+            return False
+    else:
+        cooldown_tracker[user_id] = 1
+        return True
 
 
     

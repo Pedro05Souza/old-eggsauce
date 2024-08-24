@@ -3,11 +3,13 @@ from db.farmDB import Farm
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import get_chicken_price, get_max_chicken_limit, get_rarity_emoji
 from tools.shared import make_embed_object
+from tools.chickens.chickenhandlers import EventData
 import asyncio
+import discord
 
 
 class ChickenAuthorTradeMenu(ui.Select):
-    def __init__(self, chickens, author, message, td):
+    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, td: EventData):
         options = [
             SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
             for index, chicken in enumerate(chickens)
@@ -18,7 +20,7 @@ class ChickenAuthorTradeMenu(ui.Select):
         self.td = td
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder=f"{author.display_name}, select the chickens to trade:")
 
-    async def callback(self, interaction):
+    async def callback(self, interaction: discord.Interaction) -> None:
         if interaction.user.id != self.author.id:
             embed = await make_embed_object(description="You can't interact with this menu.")
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -31,7 +33,7 @@ class ChickenAuthorTradeMenu(ui.Select):
         await interaction.response.send_message(embed=embed)
         
 class ChickenUserTradeMenu(ui.Select):
-    def __init__(self, chickens, author, message, td, target, instance_bot):
+    def __init__(self, chickens: list, author: discord.Member, message: discord.Member, td: EventData, target: discord.Member, instance_bot: discord.Client):
         options = [
             SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
             for index, chicken in enumerate(chickens) if chicken['rarity'] != "ETHEREAL"
@@ -44,7 +46,7 @@ class ChickenUserTradeMenu(ui.Select):
         self.instance_bot = instance_bot
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder=f"{author.display_name}, select the chickens to trade:")
 
-    async def callback(self, interaction):
+    async def callback(self, interaction: discord.Interaction) -> None:
         if interaction.user.id != self.author.id:
             embed = await make_embed_object(description="You can't interact with this menu.")
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -90,7 +92,7 @@ class ChickenUserTradeMenu(ui.Select):
             EventData.remove(self.td)
             return
 
-async def trade_handler(ctx, td, target):
+async def trade_handler(ctx, td: EventData, target: discord.Member) -> discord.Embed:
     if td.author is not None and td.target is not None:
         author_chickens = td.target[ctx.user.id]
         user_chickens = td.author[target.id]

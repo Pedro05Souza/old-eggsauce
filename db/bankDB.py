@@ -1,6 +1,7 @@
 from db.dbConfig import mongo_client
 from tools.cache.init import cache_initiator
 from tools.shared import update_scheduler, request_threading
+from typing import Union
 import logging
 bank_collection = mongo_client.db.bank
 logger = logging.getLogger('botcore')
@@ -8,7 +9,7 @@ logger = logging.getLogger('botcore')
 class Bank:
 
     @staticmethod
-    def create(user_id: int, points: int):
+    def create(user_id: int, points: int) -> None:
         """Create a user in the database."""
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
@@ -32,7 +33,7 @@ class Bank:
             return None
         
     @staticmethod
-    def delete(user_id: int):
+    def delete(user_id: int) -> None:
         """Delete a user from the database."""
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
@@ -47,7 +48,7 @@ class Bank:
             return None
         
     @staticmethod
-    def update(user_id: int, points: int):
+    def update(user_id: int, points: int) -> None:
         """Update a user in the database."""
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
@@ -63,7 +64,7 @@ class Bank:
             return None
         
     @staticmethod
-    def update_upgrades(user_id: int, upgrades: int):
+    def update_upgrades(user_id: int, upgrades: int) -> None:
         """Update a user in the database."""
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
@@ -79,7 +80,7 @@ class Bank:
             return None
         
     @staticmethod
-    def read(user_id: int):
+    def read(user_id: int) -> Union[dict, None]:
         """Read a user from the database."""
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
@@ -90,7 +91,7 @@ class Bank:
             return None
         
     @staticmethod
-    def read_highest_10_bank():
+    def read_highest_10_bank() -> Union[dict, None]:
         """Read a user from the database."""
         try:
             user_data = request_threading(lambda: bank_collection.find().sort("bank", -1).limit(10)).result()
@@ -100,7 +101,7 @@ class Bank:
             logger.error("Error encountered while trying to read the user.", e)
     
     @staticmethod
-    def readAll():
+    def readAll() -> Union[dict, None]:
         """Read all users from the database."""
         try:
             user_data = request_threading(lambda: bank_collection.find()).result()

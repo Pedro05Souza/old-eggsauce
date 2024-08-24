@@ -1,6 +1,7 @@
 from db.dbConfig import mongo_client
 from tools.shared import update_scheduler, request_threading
 from tools.cache.init import cache_initiator
+from typing import Union
 import logging
 config_collection = mongo_client.db.botcfg
 logger = logging.getLogger('botcore')
@@ -9,7 +10,7 @@ logger = logging.getLogger('botcore')
 class BotConfig:
 
     @staticmethod
-    def create(server_id: int, toggled_modules: list = None, channel_id: int = None, prefix: str = None):
+    def create(server_id: int, toggled_modules: list = None, channel_id: int = None, prefix: str = None) -> None:
         """Create a server in the database."""
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
@@ -31,7 +32,7 @@ class BotConfig:
             return None
         
     @staticmethod
-    def create_toggle(server_id:int, toggled_modules: list):
+    def create_toggle(server_id: int, toggled_modules: list) -> None:
         """Create a toggle in the database."""
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
@@ -51,7 +52,7 @@ class BotConfig:
             return None
         
     @staticmethod
-    def create_channel(server_id:int, channel_id: int):
+    def create_channel(server_id: int, channel_id: int) -> None:
         """Create a channel in the database."""
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
@@ -71,7 +72,7 @@ class BotConfig:
             return
         
     @staticmethod
-    def create_prefix(server: int, prefix: str):
+    def create_prefix(server: int, prefix: str) -> None:
         try:
             prefix_data = request_threading(lambda: config_collection.find_one({"server_id": server})).result()
             if prefix_data:
@@ -90,7 +91,7 @@ class BotConfig:
             return None
         
     @staticmethod
-    def update_prefix(server_id: int, prefix: str):
+    def update_prefix(server_id: int, prefix: str) -> None:
         """Update a prefix in the database."""
         try:
             prefix_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
@@ -104,7 +105,7 @@ class BotConfig:
             logger.error("Error encountered while updating a prefix.", e)
         
     @staticmethod
-    def update_toggled_modules(server_id: int, toggled_modules: list):
+    def update_toggled_modules(server_id: int, toggled_modules: list) -> None:
         """Update a toggle in the database."""
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
@@ -118,7 +119,7 @@ class BotConfig:
             logger.error("Error encountered while updating a toggle.", e)
     
     @staticmethod
-    def update_channel_id(server_id: int, channel_id: int):
+    def update_channel_id(server_id: int, channel_id: int) -> None: 
         """Update a channel in the database."""
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
@@ -132,7 +133,7 @@ class BotConfig:
             logger.error("Error encountered while updating a channel.", e)
         
     @staticmethod
-    def delete(server_id: int):
+    def delete(server_id: int) -> None:
         """Delete a toggle from the database."""
         try:
             config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
@@ -146,7 +147,7 @@ class BotConfig:
                 logger.error("Error encountered while deleting a server.", e)
     
     @staticmethod
-    def read_all_channels():
+    def read_all_channels() -> Union[list, None]:
         """Read all channels from the database."""
         try:
             channels = request_threading(lambda: config_collection.find()).result()
@@ -156,7 +157,7 @@ class BotConfig:
             return None
     
     @staticmethod
-    def read(server_id: int):
+    def read(server_id: int) -> Union[dict, None]:
         """Read a server from the database."""
         try:
             config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()

@@ -11,6 +11,7 @@ from tools.settings import regular_command_cooldown, max_corn_limit, max_plot_li
 from tools.pointscore import pricing
 from tools.chickens.chickenshared import preview_corn_produced, update_player_corn
 from better_profanity import profanity
+from discord.ext.commands import Context
 import discord
 
 class CornCommands(commands.Cog):
@@ -20,7 +21,7 @@ class CornCommands(commands.Cog):
     @commands.hybrid_command(name="cornfield", aliases=["c", "corn"], usage="chickenfood", descripton="Opens the food farm to generated food for the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def corn_field(self, ctx, user: discord.Member = None):
+    async def corn_field(self, ctx: Context, user: discord.Member = None) -> None:
         """Displays the user's corn field."""
         data, user = await return_data(ctx, user)
         if data:
@@ -29,7 +30,7 @@ class CornCommands(commands.Cog):
     @commands.hybrid_command(name="renamecornfield", aliases=["rcf"], usage="renameCornfield <nickname>", description="Rename the cornfield.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def rename_corn_field(self, ctx, nickname: str):
+    async def rename_corn_field(self, ctx: Context, nickname: str) -> None:
         """Rename the cornfield"""
         farm_data = ctx.data["farm_data"]
         censor = profanity.contains_profanity(nickname)
@@ -43,7 +44,7 @@ class CornCommands(commands.Cog):
         Farm.update(ctx.author.id, plant_name=nickname)
         await send_bot_embed(ctx, description=f"{ctx.author.display_name} Your cornfield has been renamed to {nickname}.")
 
-    async def show_plr_food_farm(self, ctx, user: discord.Member, data):
+    async def show_plr_food_farm(self, ctx: Context, user: discord.Member, data: dict) -> discord.Embed:
         """Show the player's food farm"""
         if not data.get("farm_data", None):
             return await make_embed_object(title=f":no_entry_sign: {user.display_name}", description=f":no_entry_sign: {user.display_name} You don't have a farm.")
@@ -57,7 +58,7 @@ class CornCommands(commands.Cog):
     @commands.hybrid_command(name="buyplot", aliases=["bp"], usage="buyPlot", description="Buy a plot to increase the corn production.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def buy_plot(self, ctx):
+    async def buy_plot(self, ctx: Context) -> None:
         """Buy a plot for corn production"""
         farm_data = ctx.data["farm_data"]
         actual_plot = farm_data['plot']
@@ -83,7 +84,7 @@ class CornCommands(commands.Cog):
     @commands.hybrid_command(name="upgradecornlimit", aliases=["ucl"], usage="upgradeCornLimit", description="Upgrade the corn limit.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def upgrade_corn_limit(self, ctx):
+    async def upgrade_corn_limit(self, ctx: Context) -> None:
         """Upgrades the player corn limit."""
         farm_data = ctx.data["farm_data"]
         range_corn = int((farm_data['corn_limit'] * 50)  // 100)
@@ -108,7 +109,7 @@ class CornCommands(commands.Cog):
     @commands.hybrid_command(name="buycorn", aliases=["bc"], usage="buyCorn <quantity>", description="Buy corn for the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def buy_corn(self, ctx, quantity):
+    async def buy_corn(self, ctx: Context, quantity) -> None:
         """Buy corn for the chickens"""
         if quantity == ("all" or "ALL"):
             quantity = ctx.data["farm_data"]['corn_limit'] - ctx.data["farm_data"]['corn']
@@ -138,7 +139,7 @@ class CornCommands(commands.Cog):
     @commands.hybrid_command(name="sellcorn", aliases=["sf"], usage="sellCorn <quantity>", description="Sell corn for the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def sell_corn(self, ctx, quantity: int):
+    async def sell_corn(self, ctx, quantity: int) -> None:
         """Sell corn"""
         farm_data = ctx.data["farm_data"]
         user_data = ctx.data["user_data"]
@@ -157,7 +158,7 @@ class CornCommands(commands.Cog):
     @commands.hybrid_command(name="feedallchicken", aliases=["fac"], usage="feedallchicken", description="Feed a chicken.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def feed_all_chickens(self, ctx):
+    async def feed_all_chickens(self, ctx: Context) -> None:
         """Feed all the chickens"""
         farm_data = ctx.data["farm_data"]
         total_chickens = len(farm_data['chickens'])

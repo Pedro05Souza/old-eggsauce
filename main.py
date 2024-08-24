@@ -13,7 +13,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 async def get_prefix_for_guild(bot, message):
     return await BotCore.get_prefix_for_guild(bot, message)
 
-def setup_intents():
+def setup_intents() -> discord.Intents:
     intents = discord.Intents.default()
     intents.members = True
     intents.voice_states = True

@@ -15,6 +15,7 @@ from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.selection.chickenselection import ChickenSelectView
 from better_profanity import profanity
+from discord.ext.commands import Context
 import discord
 
 class PlayerMarket(commands.Cog):
@@ -25,7 +26,7 @@ class PlayerMarket(commands.Cog):
     @commands.hybrid_command(name="offerchicken", aliases=["offer"], brief="Register a chicken to the player market.", description="Register a chicken to the player market.", usage="<index> OPTIONAL <description>")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def register_offer(self, ctx, index: int, price: int, *, desc: str = None):
+    async def register_offer(self, ctx: Context, index: int, price: int, *, desc: str = None) -> None:
         """Register a chicken to the player market."""
         index -= 1
         description = ""
@@ -86,7 +87,7 @@ class PlayerMarket(commands.Cog):
     @commands.hybrid_command(name="viewoffers", aliases=["offers"], description="Shows your current market offers.", usage="viewplrmarket OPTIONAL [user]")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def view_offers(self, ctx, user: discord.Member = None):
+    async def view_offers(self, ctx: Context, user: discord.Member = None) -> None:
         """Shows the player's current market offers."""
         if user is None:
             user = ctx.author
@@ -100,7 +101,7 @@ class PlayerMarket(commands.Cog):
     @commands.hybrid_command(name="searchchicken", aliases=["search"], description="Search for a chicken in the player market.", usage="OPTIONAL <chicken rarity> OPTIONAL <upkeep rarity> OPTIONAL <price> OPTIONAL [user]")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def search_chicken(self, ctx, chicken_rarity: str = None, upkeep_rarity: int = None, price: int = None, author: discord.Member = None):
+    async def search_chicken(self, ctx: Context, chicken_rarity: str = None, upkeep_rarity: int = None, price: int = None, author: discord.Member = None):
         """Search for 10 chickens offered by other players."""
         search_param = [chicken_rarity, upkeep_rarity, price, author]
         if all([not param for param in search_param]):
@@ -128,7 +129,7 @@ class PlayerMarket(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: No offers found with the parameters provided.")
 
-    async def search_organizer(self, ctx, db_request: list):
+    async def search_organizer(self, ctx: Context, db_request: list) -> list:
         offers = db_request
         offers_copy = offers.copy()
         if offers:

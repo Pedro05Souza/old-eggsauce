@@ -4,6 +4,7 @@ from tools.shared import send_bot_embed
 from tools.settings import regular_command_cooldown
 from db.userDB import User
 from random import choice
+from discord.ext.commands import Context
 import discord
 import asyncio
 
@@ -16,7 +17,7 @@ class HostileCommands(commands.Cog):
     @commands.command("momentofsilence" , aliases=["mos"])
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def moment_of_silence(self, ctx):
+    async def moment_of_silence(self, ctx: Context) -> None:
         """Mutes all users in the voice channel of the author of the command."""
         user = ctx.author
         if user.voice.channel is not None:
@@ -29,7 +30,7 @@ class HostileCommands(commands.Cog):
     @commands.command("radio")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def radio(self, ctx):
+    async def radio(self, ctx: Context) -> None:
         """Sets the voice channel to radio quality."""
         user = ctx.author
         channel = user.voice.channel
@@ -42,7 +43,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="explode")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def explode(self, ctx):
+    async def explode(self, ctx: Context) -> None:
         """Disconnects all users from their voice channels."""
         user = ctx.author
         channel = user.voice.channel if user.voice else None
@@ -55,7 +56,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="mute")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def mute(self, ctx, user: discord.Member = None):
+    async def mute(self, ctx: Context, user: discord.Member = None) -> None:
         """Mutes a user."""
         user = ctx.author
         if user is None:
@@ -79,7 +80,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="unmute")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def unmute(self, ctx, user: discord.Member = None):
+    async def unmute(self, ctx: Context, user: discord.Member = None) -> None:
         """Unmutes a user."""
         if user is None:
             user = ctx.author
@@ -96,7 +97,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="implode")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def implode(self, ctx):
+    async def implode(self, ctx: Context) -> None:
         """Disconnects all users from their voice channels."""
         user = ctx.author
         channel = user.voice.channel if user.voice else None
@@ -110,7 +111,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="removeradio")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def remove_radio(self, ctx):
+    async def remove_radio(self, ctx: Context) -> None:
         """Removes the radio effect from the voice channel."""
         user = ctx.author
         channel = user.voice.channel
@@ -123,7 +124,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="deafen")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def deafen(self, ctx, user: discord.Member=None):
+    async def deafen(self, ctx: Context, user: discord.Member=None) -> None:
         """Deafens a user."""
         if user is None:
             user = ctx.author
@@ -140,7 +141,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="pardon")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def pardon(self, ctx, user_id: int):
+    async def pardon(self, ctx: Context, user_id: int) -> None:
         """Pardons a user from prison."""
         try:
             ban_entry = await ctx.guild.fetch_ban(discord.Object(id=user_id))
@@ -155,7 +156,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="undeafen")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def undeafen(self, ctx, user: discord.Member = None):
+    async def undeafen(self, ctx: Context, user: discord.Member = None) -> None:
         """Undeafens a user."""
         if user is None:
             user = ctx.author
@@ -172,7 +173,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="disconnect", aliases=['dc'])
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def disconnect(self, ctx, user: discord.Member):
+    async def disconnect(self, ctx: Context, user: discord.Member) -> None:
         """Disconnects a user from their voice channel."""
         if user.voice.channel is not None:
             await user.move_to(None)
@@ -184,7 +185,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="prison", aliases=["jail"])
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def prison(self, ctx, user:discord.Member):
+    async def prison(self, ctx: Context, user:discord.Member) -> None:
         """Imprisons a user for 60 seconds."""
         if user.voice is None or user.voice.channel is None:
             await send_bot_embed(ctx, description=f":no_entry:sign: {user.display_name} is not in a voice channel.")
@@ -194,7 +195,7 @@ class HostileCommands(commands.Cog):
         self.prisioner[user.id] = 60
         await self.prision_counter(ctx, user, 60)
             
-    async def prision_counter(self, ctx, user: discord.Member, time: int):
+    async def prision_counter(self, ctx: Context, user: discord.Member, time: int) -> None:
         """Counts down the time a user is in prison."""
         server = ctx.guild
         channel_name = "Prison"
@@ -214,7 +215,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="fling")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def fling(self, ctx, user: discord.Member):
+    async def fling(self, ctx: Context, user: discord.Member) -> None:
         """Throws a user to a random voice channel."""
         if user.voice is not None:
             channelVet = [channel for channel in user.guild.voice_channels if channel != user.voice.channel]
@@ -234,7 +235,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="detonate")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def detonate(self, ctx):
+    async def detonate(self, ctx: Context) -> None:
         """Disconnects all users from their voice channels."""
         for vc in ctx.author.guild.voice_channels:
             for membros in vc.members:
@@ -244,7 +245,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="shuffle")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def shuffle(self, ctx):
+    async def shuffle(self, ctx: Context) -> None:
         """Throws all users to random voice channels."""
         channelVet = [channel for channel in ctx.author.guild.voice_channels]
         if not channelVet:
@@ -258,7 +259,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="emergency")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def emergency(self, ctx):
+    async def emergency(self, ctx: Context) -> None:
         """Throws all users to the voice channel of the author of the command."""
         for vc in ctx.author.guild.voice_channels:
             for membros in vc.members:
@@ -273,7 +274,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="fish")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def fish(self, ctx, user: discord.Member):
+    async def fish(self, ctx: Context, user: discord.Member) -> None:
         """Throws a user to the voice channel of the author of the command."""
         if user.voice is not None and ctx.author.voice is not None:
             await user.move_to(ctx.author.voice.channel)
@@ -285,7 +286,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="kick")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def kick(self, ctx, user: discord.Member):
+    async def kick(self, ctx: Context, user: discord.Member) -> None:
         """Kicks a user."""
         if user.id == ctx.author.id:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't kick yourself.")
@@ -297,7 +298,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="ban")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def ban(self, ctx, user: discord.Member):
+    async def ban(self, ctx: Context, user: discord.Member) -> None:
         """Bans a user."""
         if user.id == ctx.author.id:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't ban yourself.")
@@ -309,7 +310,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="changenickname", aliases=["nick"])
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def change_nickname(self, ctx, user: discord.Member, *nickname: str):
+    async def change_nickname(self, ctx: Context, user: discord.Member, *nickname: str) -> None:
         """Changes a user's nickname."""
         if user.id == ctx.me.id:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, i can't change my own nickname.")
@@ -323,7 +324,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="nuke")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def nuke(self, ctx):
+    async def nuke(self, ctx: Context) -> None:
         """Nuke the database."""
         User.resetAll()
         await send_bot_embed(ctx, description=":radioactive: All users have been set back to 0 eggbux and have lost their titles.")  
@@ -331,7 +332,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="antimute")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def antimute(self, ctx):
+    async def antimute(self, ctx: Context) -> None:
         """Makes the user never being able to get muted and deafened."""
         user = ctx.author
         if user not in self.gods:
