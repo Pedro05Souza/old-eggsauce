@@ -13,7 +13,6 @@ import concurrent.futures
 import threading
 import asyncio
 import logging
-
 logger = logging.getLogger('botcore')
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=5) # 5 threads to pick from the pool
 lock = threading.Lock()
@@ -109,6 +108,7 @@ async def read_and_update_cache(user_id: int) -> dict:
     from db.userDB import User # this is like this to avoid circular imports
     from db.bankDB import Bank # its terrible but it works
     from db.farmDB import Farm
+    
     user_data = User.read(user_id)
     farm_data = Farm.read(user_id)
     bank_data = Bank.read(user_id)
@@ -155,7 +155,7 @@ def retrieve_threads() -> int:
     """
     return len(threading.enumerate())
 
-async def return_data(ctx: Context, user=None) -> Union[dict, discord.Member]:
+async def return_data(ctx: Context, user=None) -> tuple:
     """
     Return the user data and the user object. This is only used in case of a command that has an user parameter.
     """

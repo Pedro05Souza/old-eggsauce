@@ -189,9 +189,8 @@ class BotCore(commands.Cog):
             return
         return
 
-    async def refund_price_command_on_error(self, ctx, error) -> None:
+    async def refund_price_command_on_error(self, ctx) -> None:
         if ctx.command.name in Prices.__members__ and ctx.command.name != ("stealpoints") and Prices.__members__[ctx.command.name].value > 0:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {error} The {ctx.command.name} command has been cancelled and refunded.")
             await refund(ctx.author, ctx)
             return
         
@@ -219,8 +218,8 @@ class BotCore(commands.Cog):
             return
         if isinstance(error, commands.CommandError) and not isinstance(error, commands.CommandNotFound):
             if ctx is not None and ctx.command is not None:
-                if not isinstance(error, commands.CommandOnCooldown):
-                    await self.refund_price_command_on_error(ctx, error)
+                if not isinstance(error, (commands.CommandOnCooldown, commands.CheckFailure)):
+                    await self.refund_price_command_on_error(ctx)
                     await self.log_and_raise_error(ctx, error)
                     return
 
@@ -236,6 +235,6 @@ class BotCore(commands.Cog):
             await cache_initiator.start_cache_clearing_for_users()
             await cache_initiator.start_cache_clearing_for_guilds()
             await self.restart_every_day()
-
+    
 async def setup(bot):
     await bot.add_cog(BotCore(bot))

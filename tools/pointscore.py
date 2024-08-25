@@ -9,6 +9,7 @@ from tools.chickens.chickenshared import update_user_farm, update_player_corn
 from tools.settings import user_salary_drop
 from tools.prices import Prices
 from discord.ext.commands import Context
+from tools.listeners import on_user_transaction
 import discord
 import logging
 import math
@@ -117,6 +118,7 @@ async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_d
         new_points = user_data["points"] - Prices[command].value
         data["user_data"]["points"] = new_points
         User.update_points(ctx.author.id, new_points)
+        await on_user_transaction(ctx.author.id, Prices[command].value, 1)
         return True
     
     try:
@@ -125,6 +127,7 @@ async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_d
      new_points = user_data['points'] - Prices[command].value
      data["user_data"]['points'] = new_points
      User.update_points(ctx.author.id, new_points)
+     await on_user_transaction(ctx.author.id, Prices[command].value, 1)
      return True
     except Exception as e:
         logger.error(f"An error occurred while treating the exceptions: {e}")
@@ -274,7 +277,7 @@ def pricing() -> dict:
                         await send_bot_embed(ctx, description=":no_entry_sign: You don't have enough points to use this command.")
                     return False
             else:
-                return result
+                return False
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: Unknown points command.")
             return False

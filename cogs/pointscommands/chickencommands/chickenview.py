@@ -175,7 +175,7 @@ class ChickenView(commands.Cog):
                 await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't rename a chicken with a rarity name.")
                 return
         chicken_arr = farm_data['chickens']
-        for i, chicken in enumerate(chicken_arr):
+        for i, _ in enumerate(chicken_arr):
             if index == i:
                 chicken_arr[i]['name'] = nickname
                 break
@@ -183,7 +183,6 @@ class ChickenView(commands.Cog):
         Farm.update(ctx.author.id, chickens=farm_data['chickens'])
         await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chicken has been renamed to {nickname}.")
 
-    
     @commands.hybrid_command(name="switchchicken", aliases=["switch"], usage="switchChicken <index> <index2>", description="Switch the position of two chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()

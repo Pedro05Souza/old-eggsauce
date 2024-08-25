@@ -1,6 +1,7 @@
 from discord import SelectOption, ui
 from tools.chickens.chickenshared import get_rarity_emoji, get_max_chicken_limit
 from tools.shared import make_embed_object, send_bot_embed
+from tools.listeners import on_user_transaction
 from tools.settings import tax
 from db.userDB import User
 from db.farmDB import Farm
@@ -49,6 +50,7 @@ class PlayerMarketMenu(ui.Select):
         take_off = int(offer['price'] * tax)
         total = offer['price'] - take_off
         User.update_points(offer['author_id'], points=user_data['points'] + total)
+        await on_user_transaction(offer['author_id'], total, 0)
         user = self.instance_bot.get_user(offer['author_id'])
         user = user if user else await self.instance_bot.fetch_user(offer['author_id'])
         if user:

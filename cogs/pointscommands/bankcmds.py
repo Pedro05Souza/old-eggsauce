@@ -7,6 +7,7 @@ from tools.settings import regular_command_cooldown
 from db.bankDB import Bank
 from db.userDB import User
 from tools.pointscore import pricing
+from tools.listeners import on_bank_transaction
 from discord.ext.commands import Context
 import discord
 class BankCommands(commands.Cog):
@@ -49,6 +50,7 @@ class BankCommands(commands.Cog):
             Bank.update(ctx.author.id, bankAmount + amount)
             User.update_points(ctx.author.id, user_data["points"] - amount)
             await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name}, you deposited {amount} eggbux in the bank.")
+            await on_bank_transaction(ctx.author.id, "deposit")
             return
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, please enter a valid amount.")
@@ -75,6 +77,7 @@ class BankCommands(commands.Cog):
             await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name} You withdrew {amount} eggbux from the bank.")
             Bank.update(ctx.author.id, currentAmount - amount)
             User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + amount)
+            await on_bank_transaction(ctx.author.id, "withdraw")
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} You don't have enough eggbux in the bank.")
             return

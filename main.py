@@ -25,7 +25,7 @@ def setup_intents() -> discord.Intents:
 
 bot = commands.Bot(command_prefix=get_prefix_for_guild, intents=setup_intents(), case_insensitive=True, help_command=None)
 
-async def load_cogs():
+async def load_cogs() -> None:
     """Load all cogs in the cogs directory and its subdirectories."""
     cogs_dir = Path('./cogs')
     for filepath in cogs_dir.rglob('*.py'):

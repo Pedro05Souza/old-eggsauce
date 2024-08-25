@@ -9,6 +9,7 @@ from tools.chickens.selection.chickenselection import ChickenSelectView
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import *
+from tools.listeners import on_user_transaction
 from tools.pointscore import pricing
 from tools.shared import send_bot_embed, confirmation_embed, user_cache_retriever
 from tools.settings import regular_command_cooldown
@@ -273,6 +274,7 @@ class ChickenEvents(commands.Cog):
             farm_data['farmer'] = name
             User.update_points(ctx.author.id, user_data['points'] - farmer_price)
             Farm.update(ctx.author.id, farmer=name)
+            await on_user_transaction(ctx.author.id, farmer_price, 1)
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have purchased the {name} farmer role.")
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to purchase the {name} farmer role.")
