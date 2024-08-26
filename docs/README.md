@@ -2,7 +2,7 @@
 
 ![alt text](image-2.png)
 
-This is an open source Discord bot project made as a personal project by [Alexius Dias](github.com/AlexiusMD) and [Pedro Souza](github.com/Pedro05Souza). This bot's purpose was made for a friends-only server with the intention of gaining a currency named as `eggbux` during calls, the current rate is set at 1 eggbux every 10 seconds of call time. You can use the currency to buy custom an immense amount of commands. If you want to use this bot in your server, it is recommended that every member has the same roles, same permissions so the experience can be as best as the bot can provide. This project has built-in support for MongoDB.
+This is a Discord bot project made as a personal project by  [Pedro Souza](github.com/Pedro05Souza). With time to time contributions from [Alexius Dias](github.com/AlexiusMD).
 
 ## How to run this repository locally:
 
@@ -33,11 +33,8 @@ Both the setup commands run the `Makefile` and:
 * Creates the python virtual enviroment (venv)
 * Installs all dependencies listed on `requirements.txt`
 
-Please note that the `API key` and MongoDB database storage are **NOT** available for use on the repo, and must be created privately in your local project directory. To generate your API key, click [here](https://discord.com/developers/applications). Make sure you're logged on to the discord website. Top right of your screen, click `new application`
 
-![alt text](image.png)
 
-Give the application a name and click "Create". Navigate to the `Bot` tab, reset your token and copy it to the clipboard and paste it in the `.env` file. If you do not have a `.env` file in your directory, you should create one. The `.env` file should follow the format in `.env.example`.
 
 
 ## How to run Docker in your machine:
@@ -62,11 +59,6 @@ docker build -t image_name .
 docker run -p host_port:container_port image_name
 ```
 Replace the `host_port` and `container_port` with the ports you're going to use
-
-
-## AI Integration:
-
-WIP
 
 
 ## Known Issues (Windows):
