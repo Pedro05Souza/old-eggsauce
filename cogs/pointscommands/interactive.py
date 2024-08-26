@@ -44,9 +44,9 @@ class InteractiveCommands(commands.Cog):
                     await on_user_transaction(ctx.author.id, amount, 1)
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
-             
-    @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
-    @commands.command()
+                
+    @commands.hybrid_command(name="balls", brief="Bot sends balls.", usage="balls", description="Bot sends balls.")        
+    @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
     async def balls(self, ctx: Context) -> None:
         """Bot sends balls."""
@@ -60,7 +60,8 @@ class InteractiveCommands(commands.Cog):
             path = choice(os.listdir("images/mogged/"))
             await ctx.send(file=discord.File("images/mogged/"+path))
             await ctx.send(f"{user.mention} bye bye 🤫🧏‍♂️")
-            
+
+    @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
     @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
     async def cassino(self, ctx: Context, amount, cor: str) -> None:
@@ -71,25 +72,25 @@ class InteractiveCommands(commands.Cog):
             amount = int(amount)
         cor = cor.upper()
         coresPossiveis = ["RED", "BLACK", "GREEN"]
-        corEmoji = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
-        vermelhos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
-        roleta = {i : "RED" if i in vermelhos else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
+        emoji_color = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
+        reds = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+        cassino = {i : "RED" if i in reds else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
         if cor in coresPossiveis:
             user_data = ctx.data["user_data"]
             if user_data["points"] >= amount and amount >= 50:
                 cassino = randint(0, 36)
-                corSorteada = roleta[cassino]
-                if corSorteada == "GREEN" and cor == "GREEN":
+                random_color = cassino[cassino]
+                if random_color == "GREEN" and cor == "GREEN":
                     User.update_points(ctx.author.id, user_data["points"] + (amount * 14))
-                    await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {corSorteada} {corEmoji[corSorteada]}")
+                    await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {random_color} {emoji_color[random_color]}")
                     await on_user_transaction(ctx.author.id, amount * 14, 0)
-                elif corSorteada == cor:
+                elif random_color == cor:
                     User.update_points(ctx.author.id, user_data["points"] + amount)
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount} eggbux!")
                     await on_user_transaction(ctx.author.id, amount * 2, 0)
                 else:                  
                     User.update_points(ctx.author.id, user_data["points"] - amount)
-                    await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **lost!** The selected color was {corSorteada} {corEmoji[corSorteada]}")
+                    await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **lost!** The selected color was {random_color} {emoji_color[random_color]}")
                     await on_user_transaction(ctx.author.id, amount, 1)
                     return
             else:

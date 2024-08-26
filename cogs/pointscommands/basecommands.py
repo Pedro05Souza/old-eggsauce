@@ -32,7 +32,7 @@ class BaseCommands(commands.Cog):
         data = []
         for member in Prices.__members__:
             if Prices.__members__[member].value > 0:
-                data.append({"title": member, "value": str(Prices.__members__[member].value) + " eggbux"})
+                data.append({"title": member, "value": await format_number((Prices.__members__[member].value)) + " eggbux"})
         view = PaginationView(data)
         await view.send(ctx, title="Shop", description="Buy commands with your eggbux:", color=0x00ff00)
 

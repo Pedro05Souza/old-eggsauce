@@ -96,10 +96,16 @@ class BotCore(commands.Cog):
     async def tutorial(self, target: discord.Guild) -> None:
         """Sends a tutorial message to the user."""
         embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!help** to visualize every command i have to offer. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Type **!setPrefix** to select the prefix of the bot.\n5. Have fun! :tada:")
-        for channel in target.text_channels:
-            if channel.permissions_for(target.me).send_messages:
-                await channel.send(embed=embed)
-                break
+        owner = target.owner
+        if owner:
+            try:
+                await owner.send(embed=embed)
+            except discord.Forbidden:
+                for channel in target.text_channels:
+                    if channel.permissions_for(target.me).send_messages:
+                        await channel.send(embed=embed)
+        else:
+            pass
             
     @commands.hybrid_command("modules", brief="Displays the modules available to the user.", usage="modules")
     async def modules(self, ctx: Context) -> None:
