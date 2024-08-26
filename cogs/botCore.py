@@ -15,7 +15,7 @@ import discord
 import sys
 import os
 logger = logging.getLogger('botcore')
-monitor_mode = False
+
 
 class BotCore(commands.Cog):
 
@@ -228,12 +228,7 @@ class BotCore(commands.Cog):
                     await self.refund_price_command_on_error(ctx)
                     await self.log_and_raise_error(ctx, error)
                     return
-
-    @commands.Cog.listener()
-    async def on_command_completion(self, ctx: Context) -> None:
-        if monitor_mode:
-            logger.info(f"Command {ctx.command.name} has been executed by {ctx.author.name} in {ctx.guild.name} in {ctx.channel.name}")
-
+                
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         await self.bot.wait_until_ready()

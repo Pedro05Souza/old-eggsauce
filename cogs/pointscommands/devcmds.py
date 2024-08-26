@@ -167,21 +167,7 @@ class DevCommands(commands.Cog):
         if is_dev(ctx):
             if amount > 0 and amount <= 25:
                 await ctx.channel.purge(limit=amount + 1)
-    
-    @commands.command(name="devMode")
-    async def developer_mode(self, ctx: Context) -> None:
-        """Activates the developer mode in the bot."""
-        if is_dev(ctx):
-            tools.pointscore.dev_mode = not tools.pointscore.dev_mode
-            await send_bot_embed(ctx, description=f":warning: Developer mode is now {'enabled' if tools.pointscore.dev_mode else 'disabled'}.")
-
-    @commands.command(name="mm")
-    async def monitor_mode(self, ctx: Context) -> None:
-        """Activates the monitor mode in the bot."""
-        if is_dev(ctx):
-            botcore.monitor_mode = not botcore.monitor_mode
-            print("Monitor mode is now: ", botcore.monitor_mode)
-    
+                  
     @commands.command(name="marketLogs")
     async def market_logs(self, ctx: Context) -> None:
      """Check the total number of active offers in the market."""
