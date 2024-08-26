@@ -175,7 +175,8 @@ async def drop_egg_for_player(farm_data: dict, hours_passed: int) -> Union[dict,
         farm_dictionary = {}
         farm_data_copy = farm_data['chickens'].copy()
         total_profit = await give_total_farm_profit(farm_data, hours_passed)
-        farm_data['eggs_generated'] += min(total_profit, max_egg_generated)
+        if total_profit > 0:
+            farm_data['eggs_generated'] += min(total_profit, max_egg_generated)
         farm_data['chickens'] = farm_data_copy
         farm_dictionary = {
                            "chickens" : farm_data['chickens'],
@@ -218,7 +219,6 @@ async def update_user_farm(ctx: Context, user: discord.Member, data: dict) -> Un
     last_drop_time = time() - farm_data['last_chicken_drop']
     updated_farm_data = farm_data
     hours_passed_since_last_egg_drop = min((last_drop_time // farm_drop), 24)
-    hours_passed_since_last_egg_drop = 24
     if hours_passed_since_last_egg_drop != 0:
         hours_passed_since_last_egg_drop = int(hours_passed_since_last_egg_drop)
         user_data = data['user_data']
@@ -228,7 +228,6 @@ async def update_user_farm(ctx: Context, user: discord.Member, data: dict) -> Un
         await update_user_points(ctx, user_data, data['bank_data'], updated_farm_data, taxes, total_money_earned)
         Farm.update_chicken_drop(user.id)
         Farm.update(user.id, chickens=updated_farm_data['chickens'], eggs_generated=updated_farm_data['eggs_generated'])
-        await on_user_transaction(user.id, total_money_earned, 2)
     return updated_farm_data
 
 async def update_farmer(user: discord.Member, data: dict) -> None:
@@ -385,6 +384,7 @@ async def update_user_points(ctx: Context, user_data: dict, bank_data: dict, far
         debt = taxes - user_data['points'] - bank_data['bank']
         money_earned = await quick_sell_chicken(ctx, farm_data, debt)
         User.update_points(user_data['user_id'], user_data['points'] + money_earned)
+    await on_user_transaction(user_data['user_id'], total_profit, 2)
      
 async def quick_sell_chicken(ctx: Context, farm_data: dict, debt: int) -> int:
     """
@@ -409,12 +409,11 @@ async def give_total_farm_profit(farm_data: dict, hours_passed: int) -> int:
      for chicken in farm_data['chickens']:
         if chicken['rarity'] == 'DEAD':
             continue
-        egg_value = await get_chicken_egg_value(chicken) * hours_passed
-        chicken_loss = int(egg_value * chicken['upkeep_multiplier']) * hours_passed
+        egg_value = await get_chicken_egg_value(chicken)
+        chicken_loss = int(egg_value * chicken['upkeep_multiplier'])
         chicken_profit = egg_value - chicken_loss
-        print(chicken_profit, chicken_loss)
-        total_profit += ((chicken_profit * chicken['happiness']) // 100) 
-        chicken['eggs_generated'] += chicken_profit
+        total_profit += ((chicken_profit * chicken['happiness']) * hours_passed) // 100
+        chicken['eggs_generated'] += chicken_profit * hours_passed
         chicken = await decrease_chicken_happiness(chicken, hours_passed)
         if chicken['happiness'] == 0:
              await devolve_chicken(chicken)
@@ -428,7 +427,7 @@ async def decrease_chicken_happiness(chicken: dict, hours_passed: int) -> dict:
     """
     Decrease the chicken happiness.
     """
-    happiness_decreased = randint(1, 4) * hours_passed
+    happiness_decreased = sum([randint(1, 4) for _ in range(hours_passed)])
     chicken['happiness'] = max(chicken['happiness'] - happiness_decreased, 0)
     return chicken
      

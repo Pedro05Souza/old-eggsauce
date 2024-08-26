@@ -24,21 +24,6 @@ class BaseCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    @pricing()
-    async def balls(self, ctx: Context) -> None:
-        """Bot sends balls."""
-        await send_bot_embed(ctx, description=f":soccer: balls")
-
-    @commands.hybrid_command("mog", brief="Mog a user", parameters=["user: discord.Member"], examples=["mog @user"], description="Mog a user.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
-    @pricing()
-    async def mog(self, ctx: Context, user: discord.Member) -> None:
-            """Mog a user."""
-            path = choice(os.listdir("images/mogged/"))
-            await ctx.send(file=discord.File("images/mogged/"+path))
-            await ctx.send(f"{user.mention} bye bye 🤫🧏‍♂️")
-    
     @commands.hybrid_command(name="shop", brief="Shows the shop.", description="Shows all the points commands and their prices.", usage="shop")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()

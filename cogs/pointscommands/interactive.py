@@ -46,6 +46,21 @@ class InteractiveCommands(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
              
     @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
+    @commands.command()
+    @pricing()
+    async def balls(self, ctx: Context) -> None:
+        """Bot sends balls."""
+        await send_bot_embed(ctx, description=f":soccer: balls")
+
+    @commands.hybrid_command("mog", brief="Mog a user", parameters=["user: discord.Member"], examples=["mog @user"], description="Mog a user.")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def mog(self, ctx: Context, user: discord.Member) -> None:
+            """Mog a user."""
+            path = choice(os.listdir("images/mogged/"))
+            await ctx.send(file=discord.File("images/mogged/"+path))
+            await ctx.send(f"{user.mention} bye bye 🤫🧏‍♂️")
+            
     @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
     @pricing()
     async def cassino(self, ctx: Context, amount, cor: str) -> None:

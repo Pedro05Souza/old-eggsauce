@@ -243,6 +243,29 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":warning: bot data has been synced.")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+
+    # @commands.command(name="announce")
+    # async def announcements_message(self, ctx: Context) -> None:
+    #     guild = ctx.guild
+    #     patreon_id = 1277369929800355918
+    #     donator_id = 1277390615738449961
+    #     patreon_role = guild.get_role(patreon_id)
+    #     donator_role = guild.get_role(donator_id)
+    #     if is_dev(ctx):
+    #         title = "📢 Hey, welcome to the community!\n"
+    #         intro = "We are happy to welcome you to this server. In this server you will find out about new updates, events performed on the bot and much more."
+    #         about_me = "I'm a bot that was created and developed for the purpose of entertainment and fun. I have so many commands i forgot the count of them, this is one of the problems of having way too many abilities."
+    #         paid_features = "I currently don't have any paid features. Everything is **free** to use. But if you want to support me, you can always donate to my creator. Here is the link of the patreon: [Patreon](https://www.patreon.com/eggsaucebot)"
+    #         bug_report = "Since the bot is still in development, there might be some bugs. If you find any, please report them to the creator of the bot."
+    #         rewards = f"As a reward for a **patreon membership**, you will receive {patreon_role.mention} role. This role will give you access to a special channel where you can get exclusive acess to new features and updates. As for a **one-time donation**, you will receive {donator_role.mention} role and a special badge in the bot. As for **bug reports**, you will receive **in-game** prizes for your help, the prizes will vary depending on the bug."
+    #         embed_obj = await make_embed_object(title=title)
+    #         embed_obj.add_field(name="👋 Introduction:", value=intro, inline=False)
+    #         embed_obj.add_field(name="🤖 About me:", value=about_me, inline=False)
+    #         embed_obj.add_field(name="💰 Paid features:", value=paid_features, inline=False)
+    #         embed_obj.add_field(name="🐞 Bug report:", value=bug_report, inline=False)
+    #         embed_obj.add_field(name="🎁 Rewards:", value=rewards, inline=False)
+    #         embed_obj.set_image(url="https://cdn.discordapp.com/attachments/755512000272007348/1277377900848484472/image.png?ex=66ccf260&is=66cba0e0&hm=d3da7fa594a155238e2342200cf1b245eef8d7efae7c63ae7305d579545b18d9&")
+    #         await ctx.send(embed=embed_obj)
             
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))
