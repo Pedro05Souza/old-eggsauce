@@ -24,7 +24,10 @@ async def send_bot_embed(ctx: Context, ephemeral=False, **kwargs) -> discord.Mes
     """
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     if isinstance(ctx, discord.Interaction):
-        message = await ctx.response.send_message(embed=embed, ephemeral=ephemeral)
+        if not ctx.response.is_done():
+            message = await ctx.response.send_message(embed=embed, ephemeral=ephemeral)
+        else:
+            message = await ctx.followup.send(embed=embed, ephemeral=ephemeral)
     else:
         message = await ctx.send(embed=embed)
     return message
@@ -72,8 +75,11 @@ async def confirmation_embed(ctx, user: discord.Member, description: str) -> boo
      embed = await make_embed_object(title=f":warning: {user.display_name}, you need to confirm this first:", description=description)
      embed.set_footer(text="React with ✅ to confirm or ❌ to cancel.")
      if isinstance(ctx, discord.Interaction):
-        await ctx.response.send_message(embed=embed)
-        msg = await ctx.original_response()
+        if not ctx.response.is_done():
+            await ctx.response.send_message(embed=embed)
+            msg = await ctx.original_response()
+        else:
+            msg = await ctx.followup.send(embed=embed)   
      else:
         msg = await ctx.send(embed=embed)
      await msg.add_reaction("✅")
@@ -125,9 +131,13 @@ async def guild_cache_retriever(guild_id: int) -> dict:
     
     if not guild_cache:
         guild_data = BotConfig.read(guild_id)
-        await cache_initiator.add_to_guild_cache(guild_id, prefix=guild_data['prefix'], toggled_modules=guild_data['toggled_modules'], channel_id=guild_data['channel_id'])
+        if guild_data:
+            prefix = guild_data.get('prefix', '!')
+            toggled_modules = guild_data.get('toggled_modules', None)
+            channel_id = guild_data.get('channel_id', None)
+            await cache_initiator.add_to_guild_cache(guild_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id)
+        
         guild_cache = await cache_initiator.get_guild_cache(guild_id)
-        return guild_cache
     return guild_cache
 
 def update_scheduler(func: Callable) -> None:

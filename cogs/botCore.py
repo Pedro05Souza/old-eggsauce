@@ -159,9 +159,8 @@ class BotCore(commands.Cog):
         guild_id = message.guild.id
         guild_data = await guild_cache_retriever(guild_id)
         if guild_data:
-            if not guild_data['prefix']:
-                return "!"
             return guild_data['prefix']
+        return "!"
             
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx: Context) -> None:

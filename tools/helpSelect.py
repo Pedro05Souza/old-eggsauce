@@ -1,6 +1,6 @@
 from discord.ui import View, Select
-from discord import SelectOption
-from tools.shared import make_embed_object
+from discord import Interaction, SelectOption
+from tools.shared import make_embed_object, send_bot_embed, confirmation_embed
 from db.botConfigDB import BotConfig
 
 class SelectModule(View):
@@ -44,7 +44,7 @@ class ShowPointsModules(View):
             self.add_item(select)
             self.author_id = author_id
 
-        async def callback(self, interaction):
+        async def callback(self, interaction: Interaction) -> None:
             if interaction.user.id != self.author_id:
                 embed = await make_embed_object(description=":no_entry_sign: You can't interact with this menu.")
                 await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -57,24 +57,14 @@ class ShowPointsModules(View):
             }
             moduleSelected = interaction.data["values"][0]
             if moduleSelected in possibleOptions:
-                embed = await make_embed_object(description=f":white_check_mark: Module {possibleOptions[moduleSelected]} selected")
-                await interaction.response.send_message(embed=embed)
+                await send_bot_embed(interaction, ephemeral=True, description=f":white_check_mark: Module {possibleOptions[moduleSelected]} selected")
+                if possibleOptions[moduleSelected] == "Total" or possibleOptions[moduleSelected] == "Hostile":
+                    if await confirmation_embed(interaction, interaction.user, f":warning: Enabling **{possibleOptions[moduleSelected]}** will require an extra confirmation. There are hostile commands that may/can affect the server enviroment. Do you want to enable the **Destructive Hostiles** commands?"):
+                        BotConfig.update_toggled_modules(interaction.guild_id, moduleSelected + "D")
+                        await send_bot_embed(interaction, ephemeral=True, description=":white_check_mark: **Destructive Hostiles** were enabled.")
+                        return
+                    else:
+                        BotConfig.update_toggled_modules(interaction.guild_id, moduleSelected)
+                        await send_bot_embed(interaction, ephemeral=True, description=":white_check_mark: **Destructive Hostiles** were not enabled.")
+                        return
                 BotConfig.update_toggled_modules(interaction.guild_id, moduleSelected)
-
-class ShowAllModules(View):
-    def __init__(self, author_id, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        select = Select(placeholder="Choose a module to display its commands...",
-                        min_values=1,  
-                        max_values=1,  
-                        options=[
-                            SelectOption(label="Chicken Commands", value="P", description="Select this option to view chicken commands.", emoji="🐔"),
-                            SelectOption(label="Interactive Commands", value="U", description="Select this option to view interactive commands.", emoji="🔧"),
-                            SelectOption(label="AI Commands", value="U", description="Select this option to view AI commands.", emoji="🤖"),
-                            SelectOption(label="Bank Commands", value="U", description="Select this option to view bank commands.", emoji="💰"),
-                            SelectOption(label="Hostile Commands", value="U", description="Select this option to view hostile commands.", emoji="🔫"),
-                            SelectOption(label="Friendly Commands", value="U", description="Select this option to view friendly commands.", emoji="🌟")
-                        ])
-        select.callback = self.callback
-        self.add_item(select)
-        self.author_id = author_id

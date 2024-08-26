@@ -25,12 +25,9 @@ async def set_points_commands_submodules(ctx: Context, config_data: dict) -> boo
     Verify if the current command's cog is enabled in the server.
     """
     active_module = config_data['toggled_modules']
-    if not active_module:
-        await send_bot_embed(ctx, description=":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
-        return False
     shared_cogs = ["BaseCommands", "BankCommands"]
     friendly_cogs = ["ChickenCore", "ChickenEvents", "ChickenView", "InteractiveCommands", "AICommands", "CornCommands", "PlayerMarket", "ChickenCombat"]
-    hostile_cog = ["HostileCommands"]
+    hostile_cog = ["HostileCommands", "DestructiveHostiles"]
     module_cogs = {
         "F": set(friendly_cogs + shared_cogs),
         "H": set(hostile_cog + shared_cogs),
@@ -218,16 +215,32 @@ async def automatic_register(user: discord.Member) -> None:
         User.create(user.id, 0)
         logger.info(f"{user.display_name} has been registered.")
 
+async def verify_if_server_has_modules(ctx: Context, config_data: dict) -> bool:
+    if not config_data['toggled_modules']:
+        await send_bot_embed(ctx, description=":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
+        return False
+    return True
+
+async def verify_if_server_has_channel(ctx: Context, config_data: dict) -> bool:
+    if not config_data['channel_id']:
+        await send_bot_embed(ctx, description=":warning: The commands channel isn't configured in this server. Type **!setChannel** in the desired channel.")
+        return False
+    return True
+
 def pricing() -> dict:
     """
     Decorator predicate for the points commands. This is the core of the bot's interactive system.
     Always use this when making a points command.
     """
     async def predicate(ctx: Context) -> bool:
+        config_data = await guild_cache_retriever(ctx.guild.id)
+
+        if not await verify_if_server_has_modules(ctx, config_data):
+            return False
+        if not await verify_if_server_has_channel(ctx, config_data):
+            return False
         command_name = ctx.command.name
         command_ctx = ctx.command 
-        config_data = await guild_cache_retriever(ctx.guild.id)
-            
         if config_data['toggled_modules'] == "N":
             embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
             await ctx.author.send(embed=embed)
