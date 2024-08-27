@@ -3,7 +3,7 @@ from time import time
 from db.bankDB import Bank
 from db.farmDB import Farm
 from db.userDB import User
-from db.MarketDB import Market
+from db.marketDB import Market
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickeninfo import *
 from tools.shared import send_bot_embed, make_embed_object, format_number

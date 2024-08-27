@@ -117,7 +117,8 @@ async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_d
         User.update_points(ctx.author.id, new_points)
         await on_user_transaction(ctx.author.id, Prices[command].value, 1)
         return True
-    
+    if not await verify_correct_channel(ctx, config_data):
+        return False
     try:
      if Prices[command].value == 0:
         return True

@@ -3,8 +3,8 @@ This module contains the event listeners for the bot.
 """
 import logging
 from typing import Union
-
 logger = logging.getLogger('botcore')
+
 class ListenerManager():
     """
     This class manages the listeners data and stores the last listener called.
@@ -35,8 +35,8 @@ class ListenerManager():
     async def listener_result(self, listener: str, *args) -> None:
         """
         This function is called whenever a listener is executed.
-        params: listener, args where args is a tuple of the listener arguments.
-        It stores the last listener called with its arguments.
+        param: listener which is the listener that activated.
+        param: args where args is a tuple of the listener arguments.
         """
         if self.specific_listener and listener != self.specific_listener:
             return

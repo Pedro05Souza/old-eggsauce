@@ -100,7 +100,7 @@ async def user_cache_retriever(user_id: int) -> dict:
     """
     keys = {"farm_data", "bank_data", "user_data"}
     user_cache = await cache_initiator.get_user_cache(user_id)
-    if not user_cache or not all(key in user_cache for key in keys):
+    if not user_cache or not any(key in user_cache for key in keys):
         print("db")
         user_cache = await read_and_update_cache(user_id)
         return user_cache    
