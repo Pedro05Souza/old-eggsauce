@@ -29,6 +29,7 @@ async def bot_maker(user_score: int) -> BotMatchMaking:
     bot_rarity_list = await define_chicken_rarity_list(user_score, all_rarities_dict)
     cumulative_distribution = []
     cummulative = 0
+
     for rarity, probability in bot_rarity_list.items():
         cummulative += probability
         cumulative_distribution.append((cummulative, rarity))
@@ -74,16 +75,18 @@ async def define_chicken_rarity_list(player_mmr: int, all_rarities: dict) -> dic
         for rarity, chance in zip_list:
             bot_deck[rarity] = chance
         return bot_deck
-    elif player_mmr <= 1750:
+    else:
         bot_deck.pop('ETHEREAL')
         all_rarities.pop('ETHEREAL')
+
     chicken_selected = player_mmr * len(all_rarities) / 2000
     chicken_selected = int(chicken_selected)
+
     for key, value in all_rarities.items():
-        distribution = abs(value - chicken_selected)
-        distribution = 1 if distribution == 0 else distribution
-        distribution = 1/distribution
-        bot_deck[key] = distribution
+        distance = abs(value - chicken_selected)
+        weight = 1 / (distance + 1)
+        bot_deck[key] = weight ** 2
+
     total = sum(bot_deck.values())
     for key in bot_deck:
         bot_deck[key] = round(bot_deck[key] / total, 2)

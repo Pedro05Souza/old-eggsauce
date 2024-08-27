@@ -12,7 +12,6 @@ class HostileCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.prisioner = {}
-        self.gods = []
 
     @commands.command("momentofsilence" , aliases=["mos"])
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -25,32 +24,6 @@ class HostileCommands(commands.Cog):
                 await membro.edit(mute = True)
         else:
             await send_bot_embed(ctx, description=f":no_entry:sign: {ctx.author.display_name}is not in a voice channel.")
-            await refund(user, ctx)
-
-    @commands.command("radio")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
-    @pricing()
-    async def radio(self, ctx: Context) -> None:
-        """Sets the voice channel to radio quality."""
-        user = ctx.author
-        channel = user.voice.channel
-        if user.voice.channel is not None: 
-            await channel.edit(bitrate = 8000)
-        else:
-            await send_bot_embed(ctx, description=f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
-            await refund(user, ctx)
-
-    @commands.command(name="explode")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
-    @pricing()
-    async def explode(self, ctx: Context) -> None:
-        """Disconnects all users from their voice channels."""
-        user = ctx.author
-        channel = user.voice.channel if user.voice else None
-        if channel is not None:
-            await channel.delete()
-        else:
-            await send_bot_embed(ctx, description=f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
     @commands.command(name="mute")
@@ -106,19 +79,6 @@ class HostileCommands(commands.Cog):
                 await member.move_to(None)
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not in a voice channel.")
-            await refund(user, ctx)
-
-    @commands.command(name="removeradio")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
-    @pricing()
-    async def remove_radio(self, ctx: Context) -> None:
-        """Removes the radio effect from the voice channel."""
-        user = ctx.author
-        channel = user.voice.channel
-        if user.voice.channel is not None:
-            await channel.edit(bitrate = 64000)
-        else:
-            await send_bot_embed(ctx, description=f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
             await refund(user, ctx)
 
     @commands.command(name="deafen")
@@ -247,7 +207,7 @@ class HostileCommands(commands.Cog):
     @commands.command(name="changenickname", aliases=["nick"])
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def change_nickname(self, ctx: Context, user: discord.Member, *nickname: str) -> None:
+    async def change_nickname(self, ctx: Context, *nickname: str, user: discord.Member) -> None:
         """Changes a user's nickname."""
         if user.id == ctx.me.id:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, i can't change my own nickname.")
@@ -258,27 +218,6 @@ class HostileCommands(commands.Cog):
             await user.edit(nick=nickname)
             await send_bot_embed(ctx, description=f"{user.display_name}'s nickname has been changed to {nickname}.")
 
-    @commands.command(name="nuke")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
-    @pricing()
-    async def nuke(self, ctx: Context) -> None:
-        """Nuke the database."""
-        User.resetAll()
-        await send_bot_embed(ctx, description=":radioactive: All users have been set back to 0 eggbux and have lost their titles.")  
-
-    @commands.command(name="antimute")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
-    @pricing()
-    async def antimute(self, ctx: Context) -> None:
-        """Makes the user never being able to get muted and deafened."""
-        user = ctx.author
-        if user not in self.gods:
-            self.gods.append(ctx.author)
-            await send_bot_embed(ctx, description=f"{ctx.author.display_name} has been added to the divine beings.")
-        elif user in self.gods:
-            await send_bot_embed(ctx, description=f"{ctx.author.display_name} is already a divine being.")
-            await refund(user, ctx)
-
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if self.prisioner.get(member.id, 0) > 0:
@@ -286,10 +225,6 @@ class HostileCommands(commands.Cog):
                 prison_channel = discord.utils.get(member.guild.channels, name="Prison")
                 if prison_channel is not None:
                     await member.move_to(prison_channel)       
-        if member in self.gods and not before.mute and after.mute:
-            await member.edit(mute=False)
-        if member in self.gods and not before.deaf and after.deaf:
-            await member.edit(deafen=False)
 
 async def setup(bot):
     await bot.add_cog(HostileCommands(bot))

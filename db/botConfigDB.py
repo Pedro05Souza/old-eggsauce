@@ -24,7 +24,7 @@ class BotConfig:
                     "channel_id": channel_id,
                     "prefix": prefix,
                 }
-                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id))
+                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, prefix="!", toggled_modules=toggled_modules, channel_id=channel_id))
                 request_threading(lambda: config_collection.insert_one(toggle))
                 logger.info("Server created successfully.")
         except Exception as e:
@@ -165,7 +165,9 @@ class BotConfig:
                 return config_data
             else:
                 logger.warning("Server not found.")
-                return None
+                BotConfig.create(server_id)
+                config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+                return config_data
         except Exception as e:
             logger.error("Error encountered while reading a server.", e)
             return None     

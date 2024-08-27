@@ -384,7 +384,10 @@ async def update_user_points(ctx: Context, user_data: dict, bank_data: dict, far
         debt = taxes - user_data['points'] - bank_data['bank']
         money_earned = await quick_sell_chicken(ctx, farm_data, debt)
         User.update_points(user_data['user_id'], user_data['points'] + money_earned)
-    await on_user_transaction(user_data['user_id'], total_profit, 2)
+    if total_profit > 0:
+        await on_user_transaction(user_data['user_id'], total_profit, 0)
+    else:
+        await on_user_transaction(user_data['user_id'], total_profit, 1)
      
 async def quick_sell_chicken(ctx: Context, farm_data: dict, debt: int) -> int:
     """

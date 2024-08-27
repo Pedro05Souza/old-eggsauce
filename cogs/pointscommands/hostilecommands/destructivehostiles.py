@@ -72,6 +72,19 @@ class DestructiveHostiles(commands.Cog):
                 return
         await user.ban()
         await send_bot_embed(ctx, description=f"{user.display_name} was banned.")
+    
+    @commands.command(name="explode")
+    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @pricing()
+    async def explode(self, ctx: Context) -> None:
+        """Disconnects all users from your voice channel."""
+        user = ctx.author
+        channel = user.voice.channel if user.voice else None
+        if channel is not None:
+            await channel.delete()
+        else:
+            await send_bot_embed(ctx, description=f":no_entry:sign: {ctx.author.display_name} is not in a voice channel.")
+            await refund(user, ctx)
 
 async def setup(bot):
     await bot.add_cog(DestructiveHostiles(bot))

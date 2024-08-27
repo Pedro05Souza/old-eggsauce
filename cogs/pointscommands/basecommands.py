@@ -4,7 +4,7 @@ This cog is shared between all configurable bot modules.
 """
 
 from discord.ext import commands
-from db.MarketDB import Market
+from db.marketDB import Market
 from tools.tips import tips
 from tools.shared import *
 from tools.settings import regular_command_cooldown
@@ -34,7 +34,7 @@ class BaseCommands(commands.Cog):
             if Prices.__members__[member].value > 0:
                 data.append({"title": member, "value": await format_number((Prices.__members__[member].value)) + " eggbux"})
         view = PaginationView(data)
-        await view.send(ctx, title="Shop", description="Buy commands with your eggbux:", color=0x00ff00)
+        await view.send(ctx, title="Shop", description="Buy commands with your eggbux:", color=discord.Color.yellow())
 
     # @commands.hybrid_command(name="leaderboard", brief="Shows the leaderboard.", description="Shows the leaderboard..", usage="leaderboard")
     # @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -192,6 +192,6 @@ class BaseCommands(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} isn't registered in the database.")
             await refund(ctx.author, ctx)
-
+            
 async def setup(bot):
     await bot.add_cog(BaseCommands(bot))

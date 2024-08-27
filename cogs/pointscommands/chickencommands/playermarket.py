@@ -4,7 +4,7 @@ This module contains the player market commands for the chicken system.
 
 from discord.ext import commands
 from db.farmDB import Farm
-from db.MarketDB import Market
+from db.marketDB import Market
 from tools.shared import send_bot_embed, make_embed_object
 from tools.chickens.chickenshared import get_rarity_emoji, verify_events, offer_expire_time
 from tools.shared import send_bot_embed
@@ -98,43 +98,49 @@ class PlayerMarket(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, has no active market offers.")
 
-    @commands.hybrid_command(name="searchchicken", aliases=["search"], description="Search for a chicken in the player market.", usage="OPTIONAL <chicken rarity> OPTIONAL <upkeep rarity> OPTIONAL <price> OPTIONAL [user]")
+    @discord.app_commands.command(name="searchchicken", description="Search for a chicken in the player market.")
+    @discord.app_commands.describe(
+        chicken_rarity="OPTIONAL <chicken rarity>",
+        upkeep_rarity="OPTIONAL <upkeep rarity>",
+        price="OPTIONAL <price>",
+        author="OPTIONAL [author]"
+    )
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def search_chicken(self, ctx: Context, chicken_rarity: str = None, upkeep_rarity: int = None, price: int = None, author: discord.Member = None):
+    async def search_chicken(self, interaction: discord.Interaction, chicken_rarity: str = None, upkeep_rarity: int = None, price: int = None, author: discord.Member = None):
         """Search for 10 chickens offered by other players."""
         search_param = [chicken_rarity, upkeep_rarity, price, author]
         if all([not param for param in search_param]):
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to provide at least one search parameter.")
+            await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: {interaction.user.display_name}, you need to provide at least one search parameter.")
             return
         if upkeep_rarity:
             if upkeep_rarity < 0 or upkeep_rarity > 100:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the upkeep rarity must be between **0%** and **100%**.")
+                await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: {interaction.user.display_name}, the upkeep rarity must be between **0%** and **100%**.")
                 return
             upkeep_rarity = upkeep_rarity / 100
         if chicken_rarity:
             chicken_rarity = chicken_rarity.upper()
             if chicken_rarity not in ChickenRarity.__members__:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chicken rarity provided is not valid.")
+                await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: {interaction.user.display_name}, the chicken rarity provided is not valid.")
                 return
         search = Market.get_chicken_offers(chicken_rarity=chicken_rarity, upkeep_rarity=upkeep_rarity, price=price, author_id=author.id if author else None)
         if search:
-            search = await self.search_organizer(ctx, search)
+            search = await self.search_organizer(interaction, search)
             if search:
                 msg = await make_embed_object(title=f":chicken: Search results", description=f"Here are the current player market offers:\n\n" + "\n\n".join([f"**{i+1}.** **{get_rarity_emoji(offer['chicken']['rarity'])}{offer['chicken']['rarity']} {offer['chicken']['name']}** - **Price:** {offer['price']} eggbux. :money_with_wings: \n **:gem: Upkeep rarity**: {(offer['chicken']['upkeep_multiplier']) * 100}% \n**:scroll: Description:** {offer['description']} \n **:bust_in_silhouette: Seller:** {offer['author_name']}" for i, offer in enumerate(search)]))
-                view = ChickenSelectView(chickens=search, author=ctx.author, message=msg, action="PM", instance_bot=self.bot)
-                await ctx.send(embed=msg, view=view)
+                view = ChickenSelectView(chickens=search, author=interaction.user, message=msg, action="PM", instance_bot=self.bot)
+                await interaction.response.send_message(embed=msg, view=view, ephemeral=True)
             else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: No offers found with the parameters provided.")
+                await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: No offers found with the parameters provided.")
         else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: No offers found with the parameters provided.")
+            await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: No offers found with the parameters provided.")
 
-    async def search_organizer(self, ctx: Context, db_request: list) -> list:
+    async def search_organizer(self, interaction: discord.Interaction, db_request: list) -> list:
         offers = db_request
         offers_copy = offers.copy()
         if offers:
             for offer in offers:
-                if offer['author_id'] == ctx.author.id:
+                if offer['author_id'] == interaction.user.id:
                     continue
                 else:
                     member = self.bot.get_user(offer['author_id'])

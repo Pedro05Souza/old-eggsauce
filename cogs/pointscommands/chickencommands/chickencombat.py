@@ -94,11 +94,11 @@ class ChickenCombat(commands.Cog):
             if not await self.check_if_user_is_bot(opponent):
                 await opponent.ctx.send(embed=msg_opponent)
                 user_msg = author_msg
-            await asyncio.sleep(3.5)
+            await asyncio.sleep(3)
             author_msg, user_msg = await self.check_if_same_guild(user, opponent, await make_embed_object(description=f"🔥 The match will begin soon."))
-            await asyncio.sleep(2.5)
+            await asyncio.sleep(3)
             await self.send_battle_decks(user, opponent, author_msg, user_msg)
-            await asyncio.sleep(10)
+            await asyncio.sleep(await self.dynamic_match_cooldown(user.chickens, opponent.chickens))
             await self.define_chicken_matchups(user, opponent, "ranked", user_msg, author_msg, [], [])
         elif opponent == "opponent":
             return 
@@ -175,11 +175,8 @@ class ChickenCombat(commands.Cog):
             if current_user.has_opponent:
                 return "opponent"
             if attemps == 24:
-                find_chance = randint(1, 2)
-                if find_chance == 1:
-                    bot = await bot_maker(current_user.score)
-                    return bot   
-                return "No opponent found."
+                bot = await bot_maker(current_user.score)
+                return bot   
             positive_search = saved_positive_score + 5
             negative_search = saved_negative_score - 5
             if negative_search < 0:
@@ -219,7 +216,7 @@ class ChickenCombat(commands.Cog):
         )
         total_matches = len(matchups)
         await self.check_if_same_guild_edit(author, user, user_msg, author_msg, embed_per_round)
-        await asyncio.sleep(5)
+        await asyncio.sleep(await self.dynamic_match_cooldown(author.chickens, user.chickens))
         embed_per_round.title = ":crossed_swords: Match Results:"
         embed_per_round.description = ""
         accumulator = 0
@@ -255,7 +252,6 @@ class ChickenCombat(commands.Cog):
 
     async def handle_winner(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking], winner: Union[UserInQueue, BotMatchMaking], user_msg: discord.Message, author_msg: discord.Message, embed_per_round: discord.Embed, dead_chickens_author: list, dead_chickens_user: list, match_type: str, user_name: str) -> None:
         loser = author if winner == user else user
-        self.map.pop(str(author.member.id) + "_" + str(await self.return_user_id(user)))
         EventData.remove(author.in_event)
         if not await self.check_if_user_is_bot(user):
             EventData.remove(user.in_event)
@@ -264,7 +260,7 @@ class ChickenCombat(commands.Cog):
         if dead_chickens_user:
             embed_per_round.add_field(name=f"{user_name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_user]), inline=False)
         await self.check_if_same_guild_edit(author, user, user_msg, author_msg, embed_per_round)
-        await asyncio.sleep(12)
+        await asyncio.sleep(await self.dynamic_match_cooldown(author.chickens, user.chickens))
         await self.rewards(winner, loser, author.ctx, match_type, embed_per_round, user_msg, author_msg)
     
     async def handle_no_winner(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking], user_msg: discord.Message, author_msg: discord.Message, embed_per_round: discord.Embed, dead_chickens_author: list, dead_chickens_user: list, match_type: str, total_matches: int, accumulator: int, user_name: str) -> None:
@@ -275,7 +271,7 @@ class ChickenCombat(commands.Cog):
                 embed_per_round.add_field(name=f"{user_name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_user]), inline=False)
             await self.check_if_same_guild_edit(author, user, user_msg, author_msg, embed_per_round)
             embed_per_round.clear_fields()
-            await asyncio.sleep(15)
+            await asyncio.sleep(await self.dynamic_match_cooldown(author.chickens, user.chickens))
             embed_per_round.title = "🔥 The next round will begin soon."
             embed_per_round.description = ""
             await self.check_if_same_guild_edit(author, user, user_msg, author_msg, embed_per_round)
@@ -544,6 +540,11 @@ class ChickenCombat(commands.Cog):
             if iterations == 8:
                 break
         return combat_list
+
+    async def dynamic_match_cooldown(self, author_chickens: list, user_chickens: list) -> int:
+        """Determines the cooldown for the match based on the amount of chickens."""
+        mean = (len(author_chickens) + len(user_chickens)) / 2
+        return mean * 1.5
     
 async def setup(bot):
     await bot.add_cog(ChickenCombat(bot))

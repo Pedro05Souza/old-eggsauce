@@ -53,9 +53,8 @@ async def on_user_transaction(user_id: int, quantity: int, flag: int) -> None:
     The flag parameter that indicates the context of the transaction.
     0 for gain
     1 for loss
-    2 for not guaranteed if gain or loss
     """
-    if flag not in {0, 1, 2}: 
+    if flag not in {0, 1}: 
         raise ValueError("Flag parameter must be 0, 1 or 2.")
     await listener_manager.listener_result(on_user_transaction.__name__, user_id, quantity, flag)
 

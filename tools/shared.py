@@ -100,7 +100,7 @@ async def user_cache_retriever(user_id: int) -> dict:
     """
     keys = {"farm_data", "bank_data", "user_data"}
     user_cache = await cache_initiator.get_user_cache(user_id)
-    if not user_cache or not any(key in user_cache for key in keys):
+    if not user_cache or not all(key in user_cache for key in keys):
         print("db")
         user_cache = await read_and_update_cache(user_id)
         return user_cache    
@@ -131,13 +131,13 @@ async def guild_cache_retriever(guild_id: int) -> dict:
     
     if not guild_cache:
         guild_data = BotConfig.read(guild_id)
-        if guild_data:
-            prefix = guild_data.get('prefix', '!')
-            toggled_modules = guild_data.get('toggled_modules', None)
-            channel_id = guild_data.get('channel_id', None)
-            await cache_initiator.add_to_guild_cache(guild_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id)
-        
-        guild_cache = await cache_initiator.get_guild_cache(guild_id)
+        prefix = guild_data['prefix']      
+        if prefix is None:
+            prefix = "!"
+        toggled_modules = guild_data.get('toggled_modules', None)
+        channel_id = guild_data.get('channel_id', None)
+        await cache_initiator.add_to_guild_cache(guild_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id)
+        return await cache_initiator.get_guild_cache(guild_id)
     return guild_cache
 
 def update_scheduler(func: Callable) -> None:
@@ -187,7 +187,7 @@ async def cooldown_user_tracker(user_id: int) -> bool:
     Track the cooldown of the user.
     """
     if user_id in cooldown_tracker:
-        if cooldown_tracker[user_id] == 15:
+        if cooldown_tracker[user_id] == 5:
             del cooldown_tracker[user_id]
             return True
         else:
@@ -196,6 +196,4 @@ async def cooldown_user_tracker(user_id: int) -> bool:
     else:
         cooldown_tracker[user_id] = 1
         return True
-
-
     

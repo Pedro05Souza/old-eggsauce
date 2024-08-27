@@ -37,7 +37,7 @@ class PaginationView(discord.ui.View):
         """Creates the embed with the data provided."""
         embed = discord.Embed(title=f"{self.title} {self.current_page} / {self.total_pages}", description=self.description, color=self.color)
         for item in data:
-            embed.add_field(name=item['title'], value=item['value'], inline=False)
+            embed.add_field(name=f"💰 {item['title']}", value=item['value'], inline=False)
         if self.thumbnail:
             embed.set_thumbnail(url=self.thumbnail)
         return embed
@@ -63,25 +63,25 @@ class PaginationView(discord.ui.View):
         end = start + self.sep if self.current_page != self.total_pages else None
         return self.data[start:end]
 
-    @discord.ui.button(label='First page', style=discord.ButtonStyle.green)
+    @discord.ui.button(style=discord.ButtonStyle.green, emoji='⏮️')
     async def first_page_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         """Go to the first page."""
         self.current_page = 1
         await self.update_message(self.get_current_page_data())
 
-    @discord.ui.button(label='Previous page', style=discord.ButtonStyle.primary)
+    @discord.ui.button(style=discord.ButtonStyle.primary, emoji='⏪')
     async def prev_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         """Go to the previous page."""
         self.current_page -= 1
         await self.update_message(self.get_current_page_data())
 
-    @discord.ui.button(label='Next page', style=discord.ButtonStyle.primary)
+    @discord.ui.button(style=discord.ButtonStyle.primary, emoji='⏩')
     async def next_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         """Go to the next page."""
         self.current_page += 1
         await self.update_message(self.get_current_page_data())
 
-    @discord.ui.button(label='Last page', style=discord.ButtonStyle.green)
+    @discord.ui.button(style=discord.ButtonStyle.green, emoji='⏭️')
     async def last_page_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         """Go to the last page."""
         self.current_page = self.total_pages

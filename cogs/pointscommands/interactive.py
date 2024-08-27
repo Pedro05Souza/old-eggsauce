@@ -22,7 +22,7 @@ class InteractiveCommands(commands.Cog):
     @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def donate_points(self, ctx: Context, user: discord.Member, amount: int) -> None:
+    async def donate_points(self, ctx: Context, amount: int, user: discord.Member,) -> None:
         """Donates points to another user."""
         user_data = ctx.data["user_data"]
         target_data = await user_cache_retriever(user.id)

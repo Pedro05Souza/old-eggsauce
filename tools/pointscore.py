@@ -20,19 +20,20 @@ init_time = math.ceil(time.time())
 
 # This class is responsible for handling the prices of the commands.
 
-async def set_points_commands_submodules(ctx: Context, config_data: dict) -> bool:
+async def get_points_commands_submodules(ctx: Context, config_data: dict) -> bool:
     """
     Verify if the current command's cog is enabled in the server.
     """
     active_module = config_data['toggled_modules']
     shared_cogs = ["BaseCommands", "BankCommands"]
     friendly_cogs = ["ChickenCore", "ChickenEvents", "ChickenView", "InteractiveCommands", "AICommands", "CornCommands", "PlayerMarket", "ChickenCombat"]
-    hostile_cog = ["HostileCommands", "DestructiveHostiles"]
+    hostile_cog = ["HostileCommands"]
+    destructive_cog = ["DestructiveCommands"]
     module_cogs = {
-        "F": set(friendly_cogs + shared_cogs),
-        "H": set(hostile_cog + shared_cogs),
+        "F": set(friendly_cogs + shared_cogs + destructive_cog) if active_module == "TD" else set(friendly_cogs + shared_cogs),
+        "H": set(hostile_cog + shared_cogs) if active_module == "TD" else set(hostile_cog + shared_cogs),
     }
-    if active_module == "T":
+    if active_module == "T" or active_module == "TD":
         return True
     
     if active_module == "N":
@@ -43,7 +44,7 @@ async def set_points_commands_submodules(ctx: Context, config_data: dict) -> boo
     if ctx.cog.qualified_name in cogs_to_check:
         return True 
     else:
-        await send_bot_embed(ctx, description=":warning: The module is not enabled in this server.")
+        await send_bot_embed(ctx, description=":warning: This module is not enabled in this server.")
         return False
 
 async def verify_points(command: str, user_data: dict) -> bool:
@@ -217,7 +218,8 @@ async def automatic_register(user: discord.Member) -> None:
         logger.info(f"{user.display_name} has been registered.")
 
 async def verify_if_server_has_modules(ctx: Context, config_data: dict) -> bool:
-    if not config_data['toggled_modules']:
+    modules = config_data.get('toggled_modules', None)	
+    if not modules:
         await send_bot_embed(ctx, description=":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
         return False
     return True
@@ -238,8 +240,10 @@ def pricing() -> dict:
 
         if not await verify_if_server_has_modules(ctx, config_data):
             return False
+        
         if not await verify_if_server_has_channel(ctx, config_data):
             return False
+        
         command_name = ctx.command.name
         command_ctx = ctx.command 
         if config_data['toggled_modules'] == "N":
@@ -257,7 +261,7 @@ def pricing() -> dict:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the database. Type **!register** to register or join any voice channel to register automatically.")
                     return False
 
-                if not await set_points_commands_submodules(ctx, config_data):
+                if not await get_points_commands_submodules(ctx, config_data):
                     return False
                     
                 if await verify_if_farm_command(command_ctx):
