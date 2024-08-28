@@ -2,7 +2,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from tools.shared import send_bot_embed, make_embed_object, is_dev, make_embed_object, dev_list, guild_cache_retriever, cooldown_user_tracker
 from db.botConfigDB import BotConfig
-from tools.cache.init import cache_initiator
+from tools.cache import cache_initiator
 from tools.pointscore import refund
 from tools.prices import Prices
 from tools.helpSelect import ShowPointsModules

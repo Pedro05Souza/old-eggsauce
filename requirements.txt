@@ -1,9 +1,7 @@
 discord.py
-openai
-requests
 python-dotenv
 pymongo[svr,tls]
 colorlog
 better_profanity
 pympler
-
+psutil

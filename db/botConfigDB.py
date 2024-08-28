@@ -1,6 +1,6 @@
 from db.dbConfig import mongo_client
 from tools.shared import update_scheduler, request_threading
-from tools.cache.init import cache_initiator
+from tools.cache import cache_initiator
 from typing import Union
 import logging
 config_collection = mongo_client.db.botcfg

@@ -37,7 +37,7 @@ class PaginationView(discord.ui.View):
         """Creates the embed with the data provided."""
         embed = discord.Embed(title=f"{self.title} {self.current_page} / {self.total_pages}", description=self.description, color=self.color)
         for item in data:
-            embed.add_field(name=f"💰 {item['title']}", value=item['value'], inline=False)
+            embed.add_field(name=f"{item['title']}", value=item['value'], inline=False)
         if self.thumbnail:
             embed.set_thumbnail(url=self.thumbnail)
         return embed

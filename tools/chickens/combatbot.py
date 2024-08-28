@@ -1,4 +1,4 @@
-from random import randint, random
+from random import randint, random, choice
 from tools.chickens.chickenshared import ChickenRarity, create_chicken, define_chicken_overrall_score
 from tools.settings import default_farm_size
 import bisect
@@ -92,38 +92,32 @@ async def define_chicken_rarity_list(player_mmr: int, all_rarities: dict) -> dic
         bot_deck[key] = round(bot_deck[key] / total, 2)
     return bot_deck
 
-async def name_maker() -> str:
-    """
-    Defines the bot's username.
-    """
-    name_list = [
-        "blud",
-        "Alejandro",
-        "Pickle",
-        "Cucumber",
-        "Hollow",
-        "xX_Kirito_God_Slayer_Xx",
-        "ProGamer_123",
-        "ChickenLover",
-        "Warrior_dewd",
-        "Epicswordman99",
-        "Unevenroblox1000",
-        "GamerGirl <3",
-        "Her Jett :sunglasses:",
-        "Cru1zz",
-        "the man",
-        "Kefero",
-        "trainer beco",
-        "cracka",
-        "chicken_butt",
-        "the_fat_one",
-        "jeff",
-        "Mystical",
-        "TheLegend27",
-        "ant",
-        "cr7",
-        "messi",
-        "ronaldo007",
-        "neymar_jr2"	
+async def generate_syllabe():
+    pattern = [
+        "CVC",  
+        "VC",   
+        "CV",   
+        "V",    
+        "C",    
+        "CCV",  
+        "VCC",  
+        "CVV",  
+        "VV",   
+        "CCVC",
     ]
-    return name_list[randint(0, len(name_list) - 1)]
+    syllable = ""
+    for char in pattern:
+        if char == "C":
+            syllable += choice("bdfghjklmnpqrstvwxyz")
+        elif char == "V":
+            syllable += choice("aeiou")
+    return syllable
+
+async def name_maker():
+    name = ""
+    for _ in range(randint(2, 4)):
+        name += await generate_syllabe()
+    if randint(0, 1):
+        name += str(randint(0, 999))
+    return name.capitalize() if randint(0, 1) else name
+

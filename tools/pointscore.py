@@ -58,7 +58,7 @@ async def verify_if_farm_command(command: commands.Command) -> bool:
     """
     Verify if the command belongs to a farm-related cog.
     """
-    chicken_cogs = ["ChickenCore", "ChickenEvents", "ChickenView", "CornCommands", "PlayerMarket", "ChickenCombat"]
+    chicken_cogs = {"ChickenCore", "ChickenEvents", "ChickenView", "CornCommands", "PlayerMarket", "ChickenCombat"}
     cog = command.cog
 
     if cog.qualified_name in chicken_cogs:
@@ -69,7 +69,7 @@ async def verify_bank_command(command: commands.Command) -> bool:
     """
     Verify if the command belongs to a bank-related cog.
     """
-    bank_cogs = ["BankCommands"]
+    bank_cogs = {"BankCommands"} 
     cog = command.cog
 
     if cog.qualified_name in bank_cogs:
@@ -120,18 +120,13 @@ async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_d
         return True
     if not await verify_correct_channel(ctx, config_data):
         return False
-    try:
-     if Prices[command].value == 0:
+    if Prices[command].value == 0:
         return True
-     new_points = user_data['points'] - Prices[command].value
-     data["user_data"]['points'] = new_points
-     User.update_points(ctx.author.id, new_points)
-     await on_user_transaction(ctx.author.id, Prices[command].value, 1)
-     return True
-    except Exception as e:
-        logger.error(f"An error occurred while treating the exceptions: {e}")
-        return False
-
+    new_points = user_data['points'] - Prices[command].value
+    data["user_data"]['points'] = new_points
+    User.update_points(ctx.author.id, new_points)
+    await on_user_transaction(ctx.author.id, Prices[command].value, 1)
+    return True
 
 async def handle_exception(ctx: Context, description: str) -> None:
     """
@@ -238,20 +233,19 @@ def pricing() -> dict:
     async def predicate(ctx: Context) -> bool:
         config_data = await guild_cache_retriever(ctx.guild.id)
 
-        if not await verify_if_server_has_modules(ctx, config_data):
+        if not await verify_if_server_has_modules(ctx, config_data) or not await verify_if_server_has_channel(ctx, config_data):
             return False
         
-        if not await verify_if_server_has_channel(ctx, config_data):
-            return False
-        
-        command_name = ctx.command.name
-        command_ctx = ctx.command 
         if config_data['toggled_modules'] == "N":
             embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
             await ctx.author.send(embed=embed)
             return False
+        
+        command_name = ctx.command.name
+        command_ctx = ctx.command 
+        prices_members_set = set(Prices.__members__)
             
-        if command_name in Prices.__members__:
+        if command_name in prices_members_set:
             
             if not ctx.command.get_cooldown_retry_after(ctx):
                 data = await user_cache_retriever(ctx.author.id)
@@ -284,10 +278,11 @@ def pricing() -> dict:
                 if await verify_points(command_name, user_data):
                     result = await treat_exceptions(ctx, command_name, user_data, config_data, data)
                     ctx.data = data
-                    ctx.data['user_data'] = await update_user_points(ctx.author, data)
-                    if result and ctx.data['farm_data']:
-                        ctx.data['farm_data'] = await update_user_farm(ctx, ctx.author, data)
-                        ctx.data['farm_data']['corn'] = await update_player_corn(ctx.author, data['farm_data'])
+                    if result: 
+                        ctx.data['user_data'] = await update_user_points(ctx.author, data)
+                        if ctx.data['farm_data']:
+                            ctx.data['farm_data'] = await update_user_farm(ctx, ctx.author, data)
+                            ctx.data['farm_data']['corn'] = await update_player_corn(ctx.author, data['farm_data'])
                     return result
                 
                 else:

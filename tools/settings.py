@@ -23,7 +23,7 @@ max_tributes = 30 # The maximum number of tributes that can be in the match
 
 chicken_default_value = 400 # controls the minimum value of a chicken that can generate in the market.
 default_farm_size = 8 # controls the default farm size
-offer_expire_time = 48 # controls the time it takes for an offer to expire (in hours)
+offer_expire_time = 168 # controls the time it takes for an offer to expire (in hours)
 max_bench = 5 # controls the maximum number of chickens that can be on the bench
 max_corn_limit = 2553 # controls the maximum corn limit
 max_plot_limit = 20 # controls the maximum plot limit

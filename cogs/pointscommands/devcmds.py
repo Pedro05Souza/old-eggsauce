@@ -11,10 +11,11 @@ from db.marketDB import Market
 from tools.chickens.chickenshared import create_chicken
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import RollLimit
-from tools.cache.init import cache_initiator
+from tools.cache import cache_initiator
 from .. import botcore
 from discord.ext.commands import Context
 from typing import Any
+import psutil
 import discord
 import tools
 
@@ -217,10 +218,13 @@ class DevCommands(commands.Cog):
     @commands.command(name="devpanel")
     async def developer_panel(self, ctx: Context) -> None:
         if is_dev(ctx):
+            process = psutil.Process()
             user, guild = await cache_initiator.get_memory_usage()
             embed_obj = await make_embed_object(title="⚙️ Developer Panel")
             embed_obj.add_field(name="🔧 Cache Memory Usage:", value=f"User Cache: {user} bytes\nGuild Cache: {guild} bytes")
             embed_obj.add_field(name="🧰 Current active threads:", value=f"{retrieve_threads()}")
+            embed_obj.add_field(name="📊 CPU Usage:", value=f"{process.cpu_percent()}%")
+            embed_obj.add_field(name="🧠 Memory Usage:", value=f"{process.memory_info().rss / 1024 ** 2} MB")
             await ctx.send(embed=embed_obj)
 
     @commands.command(name="sync")

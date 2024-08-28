@@ -1,6 +1,6 @@
 from db.dbConfig import mongo_client
 from time import time
-from tools.cache.init import cache_initiator
+from tools.cache import cache_initiator
 from tools.shared import update_scheduler, request_threading
 from typing import Union
 import logging
