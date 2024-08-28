@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from typing import Union
 import logging
 import asyncio
+import zlib
+import pickle
 logger = logging.getLogger('botcore')
 
 @dataclass
@@ -20,7 +22,8 @@ class BotCache():
         async with self.lock:
             if key in self.cache:
                 self.cache.move_to_end(key)
-                return self.cache[key]
+                compressed_value = self.cache[key]
+                return {k: pickle.loads(zlib.decompress(v)) for k, v in compressed_value.items()}
             return None
     
     async def put(self, id: int, **kwargs) -> None:
@@ -28,8 +31,9 @@ class BotCache():
             if id not in self.cache:
                 self.cache[id] = {}
             for key, value in kwargs.items():
-                self.cache[id][key] = value
-                self.cache.move_to_end(id)
+                compressed_value = zlib.compress(pickle.dumps(value), level=9)
+                self.cache[id][key] = compressed_value
+            self.cache.move_to_end(id)
         if asizeof.asizeof(self.cache) > self.memory_limit_bytes:
             await self._evict_if_needed()
         
