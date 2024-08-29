@@ -41,7 +41,7 @@ class InteractiveCommands(commands.Cog):
                     User.update_points(ctx.author.id, user_data["points"] - amount)
                     User.update_points(user.id, target_data["points"] + amount)
                     await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} donated **{amount}** eggbux to {user.display_name}. The donation was taxed by **{int(tax * 100)}%** eggbux.")
-                    await on_user_transaction(ctx.author.id, amount, 1)
+                    await on_user_transaction(ctx, amount, 1)
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
                 
@@ -83,15 +83,15 @@ class InteractiveCommands(commands.Cog):
                 if random_color == "GREEN" and cor == "GREEN":
                     User.update_points(ctx.author.id, user_data["points"] + (amount * 14))
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {random_color} {emoji_color[random_color]}")
-                    await on_user_transaction(ctx.author.id, amount * 14, 0)
+                    await on_user_transaction(ctx, amount * 14, 0)
                 elif random_color == cor:
                     User.update_points(ctx.author.id, user_data["points"] + amount)
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount} eggbux!")
-                    await on_user_transaction(ctx.author.id, amount * 2, 0)
+                    await on_user_transaction(ctx, amount * 2, 0)
                 else:                  
                     User.update_points(ctx.author.id, user_data["points"] - amount)
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **lost!** The selected color was {random_color} {emoji_color[random_color]}")
-                    await on_user_transaction(ctx.author.id, amount, 1)
+                    await on_user_transaction(ctx, amount, 1)
                     return
             else:
                 await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} You don't have enough eggbux or the amount is less than 50.")
@@ -144,7 +144,7 @@ class InteractiveCommands(commands.Cog):
                 User.update_points(ctx.author.id, user_data['points'] + random_integer)
                 User.update_points(user.id, target_data['points'] - random_integer)
                 await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} stole {random_integer} eggbux from {user.display_name}")
-                await on_user_transaction(ctx.author.id, random_integer, 0)
+                await on_user_transaction(ctx, random_integer, 0)
                 return
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} failed to steal from {user.display_name}")

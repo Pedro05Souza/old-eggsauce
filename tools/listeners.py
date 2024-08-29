@@ -3,13 +3,15 @@ This module contains the event listeners for the bot.
 """
 import logging
 from typing import Union
+from discord.ext.commands import Context
+from discord.interactions import Interaction
 logger = logging.getLogger('botcore')
 
 class ListenerManager():
     """
     This class manages the listeners data and stores the last listener called.
     """
-    def __init__(self, user_id = None, specific_listener = None) -> None:
+    def __init__(self, user_id: int = None, specific_listener: str = None) -> None:
         """
         Initialize the listener manager.
         Params: user_id, specific_listener
@@ -19,7 +21,6 @@ class ListenerManager():
         self.store_last_listener = {
             "on_user_transaction": [],
             "on_chicken_sold": [],
-            "on_bank_transaction": [],
         }
         self.__user_id = user_id
         self.__specific_listener = specific_listener
@@ -40,37 +41,27 @@ class ListenerManager():
         """
         if self.specific_listener and listener != self.specific_listener:
             return
-        if self.user_id and args[0] != self.user_id:
+        if self.user_id and args[0].author.id != self.user_id:
             return
         logger.info(f"Listener {listener} activated with args {args}")
         self.store_last_listener[listener] = args
 
 listener_manager = ListenerManager()
 
-async def on_user_transaction(user_id: int, quantity: int, flag: int) -> None:
+async def on_user_transaction(ctx: Context | Interaction , quantity: int, flag: int) -> None:
     """
     This function is called whenever a user transaction is executed.
     The flag parameter that indicates the context of the transaction.
+    It receives the context of the command, the quantity of the transaction and the flag which is:
     0 for gain
     1 for loss
     """
     if flag not in {0, 1}: 
         raise ValueError("Flag parameter must be 0, 1 or 2.")
-    await listener_manager.listener_result(on_user_transaction.__name__, user_id, quantity, flag)
+    await listener_manager.listener_result(on_user_transaction.__name__, ctx, quantity, flag)
 
-async def on_chicken_sold(user_id: int) -> None:
+async def on_chicken_sold(ctx: Context, chickens_sold : list ) -> None:
     """
     This function is called whenever a chicken is sold to the market.
     """
-    await listener_manager.listener_result(on_chicken_sold.__name__, user_id)
-
-async def on_bank_transaction(user_id: int, quantity: int, flag: int) -> None:
-    """
-    This function is called whenever a bank transaction is executed.
-    The flag parameter that indicates the context of the transaction.
-    0 for withdrawal
-    1 for deposit
-    """
-    if flag not in {0, 1}: 
-        raise ValueError("Flag parameter must be 0 or 1.")
-    await listener_manager.listener_result(on_bank_transaction.__name__, user_id, quantity, flag)
+    await listener_manager.listener_result(on_chicken_sold.__name__, ctx, chickens_sold)

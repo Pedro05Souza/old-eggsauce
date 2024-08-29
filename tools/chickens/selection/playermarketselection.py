@@ -50,7 +50,6 @@ class PlayerMarketMenu(ui.Select):
         take_off = int(offer['price'] * tax)
         total = offer['price'] - take_off
         User.update_points(offer['author_id'], points=user_data['points'] + total)
-        await on_user_transaction(offer['author_id'], total, 0)
         user = self.instance_bot.get_user(offer['author_id'])
         user = user if user else await self.instance_bot.fetch_user(offer['author_id'])
         if user:

@@ -7,7 +7,7 @@ from tools.settings import regular_command_cooldown
 from db.bankDB import Bank
 from db.userDB import User
 from tools.pointscore import pricing
-from tools.listeners import on_bank_transaction, on_user_transaction
+from tools.listeners import on_user_transaction
 from discord.ext.commands import Context
 import discord
 class BankCommands(commands.Cog):
@@ -50,7 +50,7 @@ class BankCommands(commands.Cog):
             Bank.update(ctx.author.id, bankAmount + amount)
             User.update_points(ctx.author.id, user_data["points"] - amount)
             await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name}, you deposited {amount} eggbux in the bank.")
-            await on_bank_transaction(ctx.author.id, amount, 1)
+            await on_user_transaction(ctx, amount, 1)
             return
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, please enter a valid amount.")
@@ -77,7 +77,7 @@ class BankCommands(commands.Cog):
             await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name} You withdrew {amount} eggbux from the bank.")
             Bank.update(ctx.author.id, currentAmount - amount)
             User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + amount)
-            await on_bank_transaction(ctx.author.id, amount, 0)
+            await on_user_transaction(ctx, amount, 0)
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} You don't have enough eggbux in the bank.")
             return
@@ -103,7 +103,7 @@ class BankCommands(commands.Cog):
             upgrades = bank_data['upgrades'] + 1
             Bank.update_upgrades(ctx.author.id, upgrades)
             await send_bot_embed(ctx, description=f":bank: {ctx.author.display_name}, you upgraded the bank to level {upgrades - 1}. Now you can have up to **{upgrades * 10000}** eggbux in the bank.")
-            await on_user_transaction(ctx.author.id, upgrades_formula, 1)
+            await on_user_transaction(ctx, upgrades_formula, 1)
             return
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, you have cancelled the bank upgrade.")

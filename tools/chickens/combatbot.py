@@ -115,7 +115,7 @@ async def generate_syllabe():
 
 async def name_maker():
     name = ""
-    for _ in range(randint(2, 4)):
+    for _ in range(randint(2, 3)):
         name += await generate_syllabe()
     if randint(0, 1):
         name += str(randint(0, 999))

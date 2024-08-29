@@ -16,8 +16,8 @@ class CacheInitiator:
         """
         Periodically clear the user cache.
         """
-        await self.user_cache.clear_users_cache_periondically(300) # 5 minutes
-
+        await self.user_cache.clear_users_cache_periondically(1800) # 30 minutes
+        
     async def get_user_cache(self, user_id: int) -> Union[dict, None]:
         """
         Get the user cache.

@@ -193,5 +193,4 @@ async def cooldown_user_tracker(user_id: int) -> bool:
             return False
     else:
         cooldown_tracker[user_id] = 1
-        return True
-    
+        return True  

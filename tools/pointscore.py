@@ -116,7 +116,7 @@ async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_d
         new_points = user_data["points"] - Prices[command].value
         data["user_data"]["points"] = new_points
         User.update_points(ctx.author.id, new_points)
-        await on_user_transaction(ctx.author.id, Prices[command].value, 1)
+        await on_user_transaction(ctx, Prices[command].value, 1)
         return True
     if not await verify_correct_channel(ctx, config_data):
         return False
@@ -125,7 +125,7 @@ async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_d
     new_points = user_data['points'] - Prices[command].value
     data["user_data"]['points'] = new_points
     User.update_points(ctx.author.id, new_points)
-    await on_user_transaction(ctx.author.id, Prices[command].value, 1)
+    await on_user_transaction(ctx, Prices[command].value, 1)
     return True
 
 async def handle_exception(ctx: Context, description: str) -> None:
@@ -225,22 +225,31 @@ async def verify_if_server_has_channel(ctx: Context, config_data: dict) -> bool:
         return False
     return True
 
+async def check_server_requirements(ctx: Context, config_data: dict) -> bool:
+    if not await verify_if_server_has_modules(ctx, config_data):
+            return False
+        
+    if not await verify_if_server_has_channel(ctx, config_data):
+        return False
+    
+    if config_data['toggled_modules'] == "N":
+        embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
+        await ctx.author.send(embed=embed)
+        return False
+    return True
+
 def pricing() -> dict:
     """
     Decorator predicate for the points commands. This is the core of the bot's interactive system.
     Always use this when making a points command.
     """
     async def predicate(ctx: Context) -> bool:
+        
         config_data = await guild_cache_retriever(ctx.guild.id)
 
-        if not await verify_if_server_has_modules(ctx, config_data) or not await verify_if_server_has_channel(ctx, config_data):
+        if not await check_server_requirements(ctx, config_data):
             return False
-        
-        if config_data['toggled_modules'] == "N":
-            embed = await make_embed_object(description=":warning: The points commands are **disabled** in this server.")
-            await ctx.author.send(embed=embed)
-            return False
-        
+
         command_name = ctx.command.name
         command_ctx = ctx.command 
         prices_members_set = set(Prices.__members__)

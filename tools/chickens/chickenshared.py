@@ -385,9 +385,9 @@ async def update_user_points(ctx: Context, user_data: dict, bank_data: dict, far
         money_earned = await quick_sell_chicken(ctx, farm_data, debt)
         User.update_points(user_data['user_id'], user_data['points'] + money_earned)
     if total_profit > 0:
-        await on_user_transaction(user_data['user_id'], total_profit, 0)
+        await on_user_transaction(ctx, total_profit, 0)
     else:
-        await on_user_transaction(user_data['user_id'], total_profit, 1)
+        await on_user_transaction(ctx, total_profit, 1)
      
 async def quick_sell_chicken(ctx: Context, farm_data: dict, debt: int) -> int:
     """
@@ -430,7 +430,7 @@ async def decrease_chicken_happiness(chicken: dict, hours_passed: int) -> dict:
     """
     Decrease the chicken happiness.
     """
-    happiness_decreased = sum([randint(1, 4) for _ in range(hours_passed)])
+    happiness_decreased = sum([randint(1, 3) for _ in range(hours_passed)])
     chicken['happiness'] = max(chicken['happiness'] - happiness_decreased, 0)
     return chicken
      

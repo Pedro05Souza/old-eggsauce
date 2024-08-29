@@ -76,7 +76,7 @@ class CornCommands(commands.Cog):
                 farm_data['plot'] += 1
                 User.update_points(ctx.author.id, user_data['points'] - plot_price)
                 Farm.update(ctx.author.id, plot=farm_data['plot'])
-                await on_user_transaction(ctx.author.id, plot_price, 1)
+                await on_user_transaction(ctx, plot_price, 1)
                 await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have bought a new plot.")
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to buy the plot.")
@@ -102,7 +102,7 @@ class CornCommands(commands.Cog):
                 farm_data['corn_limit'] += range_corn
                 User.update_points(ctx.author.id, user_data['points'] - price_corn)
                 Farm.update(ctx.author.id, corn_limit=farm_data['corn_limit'])
-                await on_user_transaction(ctx.author.id, price_corn, 1)
+                await on_user_transaction(ctx, price_corn, 1)
                 await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have upgraded the corn limit.")
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to upgrade the corn limit.")
@@ -137,13 +137,13 @@ class CornCommands(commands.Cog):
         farm_data['corn'] += quantity
         User.update_points(ctx.author.id, user_data['points'] - corn_price)
         Farm.update(ctx.author.id, corn=farm_data['corn'])
-        await on_user_transaction(ctx.author.id, corn_price, 1)
+        await on_user_transaction(ctx, corn_price, 1)
         await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have bought {quantity} corn for {corn_price} eggbux.")
 
     @commands.hybrid_command(name="sellcorn", aliases=["sf"], usage="sellCorn <quantity>", description="Sell corn for the chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
     @pricing()
-    async def sell_corn(self, ctx, quantity: int) -> None:
+    async def sell_corn(self, ctx: Context, quantity: int) -> None:
         """Sell corn"""
         farm_data = ctx.data["farm_data"]
         user_data = ctx.data["user_data"]
@@ -157,7 +157,7 @@ class CornCommands(commands.Cog):
         farm_data['corn'] -= quantity
         User.update_points(ctx.author.id, user_data['points'] + corn_price)
         Farm.update(ctx.author.id, corn=farm_data['corn'])
-        await on_user_transaction(ctx.author.id, corn_price, 0)
+        await on_user_transaction(ctx, corn_price, 0)
         await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have sold {quantity} corn for {corn_price} eggbux.")
 
     @commands.hybrid_command(name="feedallchicken", aliases=["fac"], usage="feedallchicken", description="Feed a chicken.")

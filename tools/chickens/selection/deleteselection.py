@@ -44,7 +44,7 @@ class ChickenDeleteMenu(ui.Select):
             EventData.remove(self.delete_object)
             await asyncio.sleep(2.5)
             await interaction.message.delete()
-            await on_chicken_sold(interaction.user.id)
+            await on_chicken_sold(interaction, chickens_selected)
             return
         else:
             embed = await make_embed_object(description=f":x: {interaction.user.display_name} have cancelled the deletion of the selected chickens.")

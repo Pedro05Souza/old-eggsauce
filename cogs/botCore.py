@@ -136,10 +136,11 @@ class BotCore(commands.Cog):
     async def get_prefix_for_guild(_, message: discord.Message = None) -> str:
      """Get the prefix for the guild."""
      if message:
+        if not message.guild:
+            return "!"
         guild_id = message.guild.id
         guild_data = await guild_cache_retriever(guild_id)
-        if guild_data:
-            return guild_data['prefix']
+        return guild_data['prefix']
             
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx: Context) -> None:

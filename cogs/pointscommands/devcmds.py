@@ -17,7 +17,6 @@ from discord.ext.commands import Context
 from typing import Any
 import psutil
 import discord
-import tools
 
 class DevCommands(commands.Cog):
     def __init__(self, bot):

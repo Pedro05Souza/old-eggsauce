@@ -112,7 +112,7 @@ class ChickenMarketMenu(ui.Select):
         aux['bought'] = True
         Farm.update(interaction.user.id, chickens=farm_data['chickens'])
         User.update_points(interaction.user.id, user_data["points"] - price)
-        await on_user_transaction(interaction.user.id, price, 1)
+        await on_user_transaction(interaction, price, 1)
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: **{get_rarity_emoji(chicken_selected['rarity'])} {chicken_selected['rarity']} {chicken_selected['name']}**, costing {price} eggbux :money_with_wings:")
         await interaction.response.send_message(embed=embed)
         available_chickens = [chicken for chicken in self.chickens if not chicken.get('bought', False)]
