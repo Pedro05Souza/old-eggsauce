@@ -17,7 +17,7 @@ from db.userDB import User
 from tools.tips import tips
 from random import random, randint
 from discord.ext.commands import Context
-from typing import AsyncGenerator, Union
+from typing import Union, Dict, List
 import asyncio
 import discord
 
@@ -34,8 +34,7 @@ class UserInQueue():
 class ChickenCombat(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.user_queue = []
-        self.map = {}
+        self.user_queue: Dict[int, List[UserInQueue]] = {}
 
     @commands.hybrid_command(name="eggleague", aliases=["eleague", "fight", "battle", "queue"], brief="Match making for chicken combat.", description="Match making for chicken combat.", usage="combat")
     @commands.cooldown(1, queue_command_cooldown, commands.BucketType.user)
@@ -55,13 +54,34 @@ class ChickenCombat(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You need to have chickens to participate in combat.")
             EventData.remove(user.in_event)
             return
-        self.user_queue.append(user)
+        await self.add_user_in_queue(user)
         user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
         match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data['mmr'])}**.")
         match_matching_obj.set_footer(text=tips[randint(0, len(tips) - 1)])
         author_msg, user_msg = await self.check_if_same_guild(user, user, match_matching_obj)
         opponent = await self.search(user)
         await self.combat_handler(user, opponent, user_msg, author_msg, ctx, e)
+
+    async def add_user_in_queue(self, user: UserInQueue):
+        """
+        Adds a user in the queue.
+        """
+        set_scores = [i for i in range(0, 2100, 100)]
+        for score in reversed(set_scores):
+            if user.score >= score:
+                if score not in self.user_queue:
+                    self.user_queue[score] = []
+                self.user_queue[score].append(user)
+                break
+
+    async def retrieve_user_key(self, user: UserInQueue) -> int:
+        """
+        Retrieve the user key.
+        """
+        set_scores = [i for i in range(0, 2100, 100)]
+        for score in reversed(set_scores):
+            if user.score >= score:
+                return score
 
     async def combat_handler(self, user: UserInQueue, opponent: Union[UserInQueue, str], user_msg: discord.Message, author_msg: discord.Message, ctx: Context, e: EventData) -> None:
         """
@@ -74,15 +94,7 @@ class ChickenCombat(commands.Cog):
         param: e: EventData
         """
         if isinstance(opponent, (UserInQueue, BotMatchMaking)):
-            if str(user.member.id) + "_" + str(await self.return_user_id(opponent)) in self.map:
-                return
-            self.user_queue.remove(user)
             opponent_mmr = 0
-            if not await self.check_if_user_is_bot(opponent):
-                self.user_queue.remove(opponent)
-            opponent.has_opponent = True
-            user.has_opponent = True
-            self.map = {str(user.member.id) + "_" + str(await self.return_user_id(opponent)): [user, opponent]}
             if not await self.check_if_user_is_bot(opponent):
                 opponent_data = Farm.read(opponent.member.id)
                 opponent_mmr = opponent_data['mmr']
@@ -119,25 +131,8 @@ class ChickenCombat(commands.Cog):
             return user.member.id
         else:
             return user.bot_id
-            
-    async def user_queue_generator(self, positive_search_rank: int, negative_search_rank: int, current_user: UserInQueue) -> AsyncGenerator[UserInQueue, None]:
-        """
-        Generator for the user queue.
-        param: positive_search_rank: int
-        param: negative_search_rank: int
-        param: current_user: UserInQueue
-
-        return: UserInQueue
-        """
-        for user in self.user_queue:
-            if user.score >= negative_search_rank and user.score <= positive_search_rank:
-                if user.has_opponent:
-                    continue
-                if user.member.id == current_user.member.id:
-                    continue
-                yield user
-
-    async def increase_search_range(self, positive_search: int, negative_search: int, current_user: UserInQueue) -> AsyncGenerator:
+                    
+    async def increase_search_range(self, positive_search: int, negative_search: int, current_user: UserInQueue) -> Union[UserInQueue, None]:
         """
         Increase the search range for the user queue.
         param: positive_search: int
@@ -145,8 +140,13 @@ class ChickenCombat(commands.Cog):
         param: current_user: UserInQueue
         return: Generator
         """
-        user_list = self.user_queue_generator(positive_search, negative_search, current_user)
-        return user_list
+        for i in range(negative_search, positive_search):
+            if i in self.user_queue.keys():
+                for user in self.user_queue[i]:
+                    if user.member.id != current_user.member.id:
+                        self.user_queue[i].remove(user)
+                        return user
+        return None
     
     async def send_battle_decks(self, user: UserInQueue, opponent: UserInQueue, author_msg: discord.Message, user_msg: discord.Message) -> None:
         """
@@ -176,14 +176,19 @@ class ChickenCombat(commands.Cog):
                 return "opponent"
             if attemps == 24:
                 bot = await bot_maker(current_user.score)
+                current_user.has_opponent = True
+                self.user_queue[await self.retrieve_user_key(current_user)].remove(current_user)
                 return bot   
             positive_search = saved_positive_score + 5
             negative_search = saved_negative_score - 5
             if negative_search < 0:
                 negative_search = 0
-            user_list = await self.increase_search_range(positive_search, negative_search, current_user)
-            async for user in user_list:
-                return user
+            opponent_found = await self.increase_search_range(positive_search, negative_search, current_user)
+            if opponent_found:
+                current_user.has_opponent = True
+                opponent_found.has_opponent = True
+                self.user_queue[await self.retrieve_user_key(current_user)].remove(current_user)
+                return opponent_found
             attemps += 1
             await asyncio.sleep(1)
             saved_negative_score, saved_positive_score = negative_search, positive_search
