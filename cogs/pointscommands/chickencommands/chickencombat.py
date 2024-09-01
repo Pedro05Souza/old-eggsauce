@@ -544,7 +544,7 @@ class ChickenCombat(commands.Cog):
     async def dynamic_match_cooldown(self, author_chickens: list, user_chickens: list) -> int:
         """Determines the cooldown for the match based on the amount of chickens."""
         mean = (len(author_chickens) + len(user_chickens)) / 2
-        return mean * 1.6
+        return mean * 2
     
 async def setup(bot):
     await bot.add_cog(ChickenCombat(bot))

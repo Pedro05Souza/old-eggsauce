@@ -53,7 +53,6 @@ class ChickenSelectView(ui.View):
             menu = RedeemPlayerMenu(chickens, author, message)
         return menu
 
-    
     async def on_timeout(self) -> None:
         """Method to execute when the view times out."""
         if self.children[0].__class__.__name__ == "ChickenDeleteMenu":

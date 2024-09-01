@@ -60,8 +60,9 @@ async def on_user_transaction(ctx: Context | Interaction , quantity: int, flag: 
         raise ValueError("Flag parameter must be 0, 1 or 2.")
     await listener_manager.listener_result(on_user_transaction.__name__, ctx, quantity, flag)
 
-async def on_chicken_sold(ctx: Context, chickens_sold : list ) -> None:
+async def on_chicken_state_change(ctx: Context | Interaction, chicken: dict | list, state: str) -> None:
     """
-    This function is called whenever a chicken is sold to the market.
+    This function is called whenever a chicken state change is executed.
+    It receives the context of the command, the chicken and the state of the chicken.
     """
-    await listener_manager.listener_result(on_chicken_sold.__name__, ctx, chickens_sold)
+    await listener_manager.listener_result(on_chicken_state_change.__name__, ctx, chicken, state)

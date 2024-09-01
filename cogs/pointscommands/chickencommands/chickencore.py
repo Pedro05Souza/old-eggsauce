@@ -12,7 +12,7 @@ from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, lo
 from tools.chickens.chickeninfo import rollRates
 from tools.pointscore import pricing
 from tools.shared import make_embed_object, send_bot_embed, return_data
-from tools.settings import spam_command_cooldown, regular_command_cooldown, roll_per_hour
+from tools.settings import spam_command_cooldown, regular_command_cooldown, roll_per_hour, default_rolls
 from discord.ext import commands
 from discord.ext.commands import Context
 import discord
@@ -68,7 +68,6 @@ class ChickenCore(commands.Cog):
     async def roll(self, ctx: Context, chickens_to_generate: list, action: str) -> None:
         """Market to buy chickens."""
         farm_data = ctx.data["farm_data"]
-        default_rolls = 10
         if action == "market":
             if not RollLimit.read_key(ctx.author.id):
                 if farm_data['farmer'] == "Executive Farmer":
@@ -78,7 +77,7 @@ class ChickenCore(commands.Cog):
                 else:
                     RollLimit.create(ctx.author.id, default_rolls)
             if RollLimit.read(ctx.author.id) == 0:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today.")
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today. Try again in **{roll_per_hour - time() % roll_per_hour:.0f}** seconds.")
                 return
             RollLimit.update(ctx.author.id, RollLimit.read(ctx.author.id) - 1)
         if farm_data['farmer'] == "Generous Farmer":

@@ -51,8 +51,8 @@ class CornCommands(commands.Cog):
             return await make_embed_object(title=f":no_entry_sign: {user.display_name}", description=f":no_entry_sign: {user.display_name} You don't have a farm.")
         farm_data = data["farm_data"]
         if user.id != ctx.author.id:
-            farm_data['corn'] = await update_player_corn(user, farm_data)
-        food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in **{farm_drop // 3600}** hour(s): **{await preview_corn_produced(farm_data)}** :money_with_wings:\n:seedling: **Plots**: {farm_data['plot']}")
+            farm_data['corn'], _ = await update_player_corn(user, farm_data)
+        food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in **{farm_drop // 3600}** hour(s): **{await preview_corn_produced(farm_data)}** :tractor:\n:seedling: **Plots**: {farm_data['plot']}")
         food_embed.set_thumbnail(url=user.display_avatar)
         return food_embed
     
@@ -191,6 +191,7 @@ class CornCommands(commands.Cog):
             return
         elif total_cost == 0 and all_happiness == len(farm_data['chickens']):
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, all the chickens are already fed.")
+            return
         Farm.update(ctx.author.id, corn=farm_data['corn'], chickens=farm_data['chickens'])
         await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, **{chickens_fed}** out of **{total_chickens}** chickens have been fed.\n:corn:The corn cost was {total_cost}.")
 

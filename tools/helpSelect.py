@@ -2,6 +2,7 @@ from discord.ui import View, Select
 from discord import Interaction, SelectOption
 from tools.shared import make_embed_object, send_bot_embed, confirmation_embed
 from db.botConfigDB import BotConfig
+
 class ShowPointsModules(View):
         def __init__(self, author_id: int, guild_cache: dict, *args, **kwargs):
             super().__init__(*args, **kwargs)

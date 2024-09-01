@@ -106,6 +106,7 @@ class BaseCommands(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is already registered.")
         else:
             User.create(ctx.author.id, 0)
+            Bank.create(ctx.author.id, 0)
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} has been registered.")
  
     @commands.hybrid_command(name="points", aliases=["pts", "eggbux", "p"], brief="Shows the amount of points the user has.", usage="points OPTIONAL [user]", description="Shows the amount of points a usr has. If not usr, shows author's points.")
@@ -117,16 +118,11 @@ class BaseCommands(commands.Cog):
         user_data = data["user_data"]
         bank_data = data["bank_data"]
         if user_data:
-            if bank_data:
-                msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {await format_number(user_data['points'])}\n :bank: Bank: {await format_number(bank_data['bank'])}")
-                msg.add_field(name=":money_with_wings: Total eggbux:", value=f"{await format_number(user_data['points'] + bank_data['bank'])}")
-                msg.set_thumbnail(url=user.display_avatar)
-                msg.set_footer(text=tips[randint(0, len(tips) - 1)])
-                await ctx.send(embed=msg)
-            else:
-                msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {user_data['points']}")
-                msg.set_thumbnail(url=user.display_avatar)
-                await ctx.send(embed=msg)
+            msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {await format_number(user_data['points'])}\n :bank: Bank: {await format_number(bank_data['bank'])}")
+            msg.add_field(name=":money_with_wings: Total eggbux:", value=f"{await format_number(user_data['points'] + bank_data['bank'])}")
+            msg.set_thumbnail(url=user.display_avatar)
+            msg.set_footer(text=tips[randint(0, len(tips) - 1)])
+            await ctx.send(embed=msg)
         else:   
             await send_bot_embed(ctx, description=f"{user.display_name} has no eggbux :cry:")
         

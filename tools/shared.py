@@ -5,7 +5,7 @@ This module contains shared functions that are used across multiple modules.
 
 from dotenv import load_dotenv
 from tools.cache import cache_initiator
-from typing import Callable, Union
+from typing import Callable
 from discord.ext.commands import Context
 import os
 import discord
@@ -149,12 +149,12 @@ def update_scheduler(func: Callable) -> None:
     else:
         asyncio.run(func())
 
-def request_threading(func: Callable) -> concurrent.futures.Future: 
+def request_threading(callback: Callable) -> concurrent.futures.Future: 
     """
     Request a function to be run in a separate thread. Mostly used for database operations.
     """
     with lock:
-        future = executor.submit(func)
+        future = executor.submit(callback)
         return future
 
 def retrieve_threads() -> int:

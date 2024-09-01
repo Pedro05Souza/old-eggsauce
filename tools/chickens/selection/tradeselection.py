@@ -73,7 +73,7 @@ class ChickenUserTradeMenu(ui.Select):
         users_reacted = set()
         while len(users_reacted) < 2:
             try:
-                reaction, reactUsr = await self.instance_bot.wait_for("reaction_add", check=lambda reaction, user: user.id == self.author.id or user.id == self.target.id, timeout=40)
+                reaction, reactUsr = await self.instance_bot.wait_for("reaction_add", check=lambda _, user: user.id == self.author.id or user.id == self.target.id, timeout=40)
                 if reaction.emoji == "✅":
                     users_reacted.add(reactUsr.id)
                 elif reaction.emoji == "❌":

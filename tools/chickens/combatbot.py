@@ -67,17 +67,12 @@ async def define_chicken_rarity_list(player_mmr: int, all_rarities: dict) -> dic
     Changes the rarity list for the bot to pick from.
     """
     bot_deck = all_rarities.copy()
-    if player_mmr >= 2000:
-        chances = .33
-        rarities = ['ASCENDED', 'ETHEREAL', 'CHOSEN']
-        zip_list = zip(rarities, [chances] * len(rarities))
-        bot_deck = dict(zip_list)
-        for rarity, chance in zip_list:
-            bot_deck[rarity] = chance
-        return bot_deck
-    else:
+    
+    if not player_mmr >= 2000:
         bot_deck.pop('ETHEREAL')
         all_rarities.pop('ETHEREAL')
+    else:
+        player_mmr = 2000
 
     chicken_selected = player_mmr * len(all_rarities) / 2000
     chicken_selected = int(chicken_selected)

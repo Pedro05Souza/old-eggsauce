@@ -3,8 +3,9 @@ This module contains the core of the bot's points system. It is responsible for 
 """
 
 from db.userDB import User
+from db.bankDB import Bank
 from discord.ext import commands
-from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever, guild_cache_retriever, cooldown_user_tracker
+from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever, guild_cache_retriever, cooldown_user_tracker, format_number
 from tools.chickens.chickenshared import update_user_farm, update_player_corn
 from tools.settings import user_salary_drop
 from tools.prices import Prices
@@ -62,17 +63,6 @@ async def verify_if_farm_command(command: commands.Command) -> bool:
     cog = command.cog
 
     if cog.qualified_name in chicken_cogs:
-        return True
-    return False
-
-async def verify_bank_command(command: commands.Command) -> bool:
-    """
-    Verify if the command belongs to a bank-related cog.
-    """
-    bank_cogs = {"BankCommands"} 
-    cog = command.cog
-
-    if cog.qualified_name in bank_cogs:
         return True
     return False
 
@@ -137,24 +127,35 @@ async def handle_exception(ctx: Context, description: str) -> None:
         await refund(ctx.author, ctx)
 
 async def update_user_points(user: discord.Member, data: dict) -> dict:
-    """Updates the user's points when the command is called."""
+    """
+    Updates the user's points when the command is called.
+    """
     user_data = data['user_data']
     if user_data:
         points = await update_points(user)
+        salary_gain = await get_salary_points(user, user_data)
         if points:
             user_data['points'] = points
         else:
-            return user_data
-        last_title_drop = time.time() - user_data["salary_time"]
-        hours_passed = min(last_title_drop // user_salary_drop, 12)
-        hours_passed = int(hours_passed)
-        salary = await salary_role(user_data)
-        if hours_passed > 0 and user_data["roles"] != "":
-            user_data['points'] += salary * hours_passed
-            User.update_salary_time(user.id)
-            logger.info(f"{user.display_name} has received {salary * hours_passed} eggbux from their title.")
+            return user_data, salary_gain
         User.update_points(user.id, user_data['points'])
-        return user_data
+        return user_data, salary_gain
+    
+async def get_salary_points(user: discord.Member, user_data: dict) -> int:
+    """
+    Calculates the salary of the user based on their roles.
+    """
+    last_title_drop = time.time() - user_data["salary_time"]
+    hours_passed = min(last_title_drop // user_salary_drop, 12)
+    hours_passed = int(hours_passed)
+    salary = await salary_role(user_data)
+    if hours_passed > 0 and user_data["roles"] != "":
+        points_gain = salary * hours_passed
+        user_data['points'] += points_gain
+        User.update_salary_time(user.id)
+        logger.info(f"{user.display_name} has received {salary * hours_passed} eggbux from their title.")
+        return points_gain
+    return 0
     
 async def update_points(user: discord.Member) -> int:
         """Updates the points of the user every 10 seconds."""
@@ -210,6 +211,7 @@ async def automatic_register(user: discord.Member) -> None:
         return
     else:
         User.create(user.id, 0)
+        Bank.create(user.id, 0)
         logger.info(f"{user.display_name} has been registered.")
 
 async def verify_if_server_has_modules(ctx: Context, config_data: dict) -> bool:
@@ -237,6 +239,21 @@ async def check_server_requirements(ctx: Context, config_data: dict) -> bool:
         await ctx.author.send(embed=embed)
         return False
     return True
+
+async def send_away_user_rewards(ctx: Context, salary_gained: int, total_profit: int, corn_produced: int) -> None:
+    """
+    Sends a message to the user to see how many he gained during his time away.
+    """
+    description = f":tada: **{ctx.author.display_name}** While you were away, you gained:\n"
+
+    if salary_gained > 0:
+        description += f":money_with_wings: **{await format_number(salary_gained)}** eggbux from your salary.\n"
+    if total_profit > 0:
+        description += f":wood: **{await format_number(total_profit)}** eggbux from your farm.\n"
+    if corn_produced > 0:
+        description += f":corn: **{await format_number(corn_produced)}** corn from your farm."
+    if salary_gained > 0 or total_profit > 0 or corn_produced > 0:
+        await send_bot_embed(ctx, description=description)
 
 def pricing() -> dict:
     """
@@ -275,23 +292,16 @@ def pricing() -> dict:
                         if not result:
                             return False
                     
-                if await verify_bank_command(command_ctx):
-                    if not data['bank_data']:
-                        if await cooldown_user_tracker(ctx.author.id):
-                            await send_bot_embed(ctx, description=":no_entry_sign: You don't have a bank account. Use any bank command and the bot will create one for you.")
-                        result = command_name == "createbank"
-                        ctx.predicate_result = result
-                        if not result:
-                            return False
-                
                 if await verify_points(command_name, user_data):
                     result = await treat_exceptions(ctx, command_name, user_data, config_data, data)
                     ctx.data = data
                     if result: 
-                        ctx.data['user_data'] = await update_user_points(ctx.author, data)
+                        ctx.data['user_data'], salary_gained = await update_user_points(ctx.author, data)
                         if ctx.data['farm_data']:
-                            ctx.data['farm_data'] = await update_user_farm(ctx, ctx.author, data)
-                            ctx.data['farm_data']['corn'] = await update_player_corn(ctx.author, data['farm_data'])
+                            ctx.data['farm_data'], total_profit = await update_user_farm(ctx, ctx.author, data)
+                            corn_to_cache, corn_produced = await update_player_corn(ctx.author, data['farm_data'])
+                            ctx.data['farm_data']['corn'] = corn_to_cache
+                            await send_away_user_rewards(ctx, salary_gained, total_profit, corn_produced)
                     return result
                 
                 else:

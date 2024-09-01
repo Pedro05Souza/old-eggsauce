@@ -74,12 +74,12 @@ class InteractiveCommands(commands.Cog):
         coresPossiveis = ["RED", "BLACK", "GREEN"]
         emoji_color = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}
         reds = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
-        cassino = {i : "RED" if i in reds else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
+        color = {i : "RED" if i in reds else ("BLACK" if i != 0 else "GREEN") for i in range(0, 37)}
         if cor in coresPossiveis:
             user_data = ctx.data["user_data"]
             if user_data["points"] >= amount and amount >= 50:
                 cassino = randint(0, 36)
-                random_color = cassino[cassino]
+                random_color = color[cassino]
                 if random_color == "GREEN" and cor == "GREEN":
                     User.update_points(ctx.author.id, user_data["points"] + (amount * 14))
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {random_color} {emoji_color[random_color]}")
