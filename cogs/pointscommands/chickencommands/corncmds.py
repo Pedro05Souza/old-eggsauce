@@ -114,7 +114,7 @@ class CornCommands(commands.Cog):
     @pricing()
     async def buy_corn(self, ctx: Context, quantity) -> None:
         """Buy corn for the chickens"""
-        if quantity == ("all" or "ALL"):
+        if quantity in ("all", "All", "ALL"):
             quantity = ctx.data["farm_data"]['corn_limit'] - ctx.data["farm_data"]['corn']
         else:
             try:

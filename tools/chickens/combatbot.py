@@ -11,7 +11,7 @@ class BotMatchMaking():
         self.score = 0
         self.chicken_overrall_score = 0
         self.has_opponent = False
-        self.bot_id = randint(100000, 999999)
+        self.bot_id = randint(0, 999999)
 
     def __repr__(self) -> str:
         return f"{self.name} - {self.score}"
@@ -100,7 +100,9 @@ async def generate_syllabe():
         "VV",   
         "CCVC",
     ]
+
     syllable = ""
+
     for char in pattern:
         if char == "C":
             syllable += choice("bdfghjklmnpqrstvwxyz")

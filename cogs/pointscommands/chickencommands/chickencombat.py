@@ -521,7 +521,7 @@ class ChickenCombat(commands.Cog):
                 user = UserInQueue(user, temp_farm_data_user, ctx, e2, user_data['mmr'])
                 author.chicken_overrall_score = await define_chicken_overrall_score(author.chickens)
                 user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
-                author_msg, user_msg = await self.check_if_same_guild(author, user, await make_embed_object(description=f"🔥 The mach will begin soon."))
+                author_msg, user_msg = await self.check_if_same_guild(author, user, await make_embed_object(description=f"🔥 The match will begin soon."))
                 await asyncio.sleep(3.5)
                 await self.define_chicken_matchups(author, user, "friendly", user_msg, author_msg, [], [])
             else:

@@ -67,6 +67,7 @@ class ChickenCore(commands.Cog):
             
     async def roll(self, ctx: Context, chickens_to_generate: list, action: str) -> None:
         """Market to buy chickens."""
+        global default_rolls
         farm_data = ctx.data["farm_data"]
         if action == "market":
             if not RollLimit.read_key(ctx.author.id):

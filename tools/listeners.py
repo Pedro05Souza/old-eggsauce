@@ -43,7 +43,6 @@ class ListenerManager():
             return
         if self.user_id and args[0].author.id != self.user_id:
             return
-        logger.info(f"Listener {listener} activated with args {args}")
         self.store_last_listener[listener] = args
 
 listener_manager = ListenerManager()

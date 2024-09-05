@@ -105,14 +105,15 @@ class ChickenView(commands.Cog):
     @pricing()
     async def farm_profit(self, ctx: Context, user: discord.Member = None) -> None:
         """Check the farm profit"""
-        data, member = await return_data(ctx, user)
+        data, user = await return_data(ctx, user)
+        farm_data = data["farm_data"]   
         if data["farm_data"]:
             if user.id != ctx.author.id:
-                farm_data, _ = await update_user_farm(ctx, member, data)
+                farm_data, _ = await update_user_farm(ctx, user, data)
             totalProfit = 0
             totalcorn = 0
             if len(farm_data['chickens']) == 0:
-                await send_bot_embed(ctx,description= f":no_entry_sign: {member.display_name}, you don't have any chickens.")
+                await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have any chickens.")
                 return
             for chicken in farm_data['chickens']:
                 totalcorn += ChickenFood[chicken['rarity']].value
@@ -126,9 +127,9 @@ class ChickenView(commands.Cog):
             taxes = await farm_maintence_tax(farm_data)
             result = totalProfit - taxes
             if totalProfit > 0:
-                await send_bot_embed(ctx, description=f":white_check_mark: {member.display_name}, your farm is expected to generate a profit of **{result}** per **{farm_drop // 3600}** hour(s) :money_with_wings:.\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**\n 🚜 Farm maintenance: **{taxes}**")
+                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, your farm is expected to generate a profit of **{result}** per **{farm_drop // 3600}** hour(s) :money_with_wings:.\n:egg: Eggs produced: **{totalProfit}**\n :corn: Corn going to the chickens: **{totalcorn}**\n 🚜 Farm maintenance: **{taxes}**")
             elif totalProfit == 0:
-                await send_bot_embed(ctx,description= f":no_entry_sign: {member.display_name}, your farm is expected to generate neither profit nor loss.")
+                await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss.")
         else:
             await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have a farm.")
 

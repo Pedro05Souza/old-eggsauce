@@ -14,6 +14,7 @@ class Prices(Enum):
     withdraw = 0
     chickenrarities = 0
     deposit = 0
+    friendly = 0
     buycorn = 0
     chickenprices = 0
     chickenvalues = 0

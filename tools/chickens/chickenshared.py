@@ -434,7 +434,7 @@ async def decrease_chicken_happiness(chicken: dict, hours_passed: int) -> dict:
     """
     Decrease the chicken happiness.
     """
-    happiness_decreased = sum([randint(1, 2) for _ in range(hours_passed)])
+    happiness_decreased = sum([randint(1, 3) for _ in range(hours_passed)])
     chicken['happiness'] = max(chicken['happiness'] - happiness_decreased, 0)
     return chicken
      
