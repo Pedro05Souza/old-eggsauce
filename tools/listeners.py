@@ -20,7 +20,6 @@ class ListenerManager():
         """
         self.store_last_listener = {
             "on_user_transaction": [],
-            "on_chicken_sold": [],
         }
         self.__user_id = user_id
         self.__specific_listener = specific_listener
@@ -58,10 +57,3 @@ async def on_user_transaction(ctx: Context | Interaction , quantity: int, flag: 
     if flag not in {0, 1}: 
         raise ValueError("Flag parameter must be 0, 1 or 2.")
     await listener_manager.listener_result(on_user_transaction.__name__, ctx, quantity, flag)
-
-async def on_chicken_state_change(ctx: Context | Interaction, chicken: dict | list, state: str) -> None:
-    """
-    This function is called whenever a chicken state change is executed.
-    It receives the context of the command, the chicken and the state of the chicken.
-    """
-    await listener_manager.listener_result(on_chicken_state_change.__name__, ctx, chicken, state)

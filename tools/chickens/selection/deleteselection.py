@@ -4,7 +4,6 @@ from db.userDB import User
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji
 from tools.shared import make_embed_object, send_bot_embed, confirmation_embed, user_cache_retriever
-from tools.listeners import on_chicken_state_change
 import asyncio
 import discord
 
@@ -45,7 +44,6 @@ class ChickenDeleteMenu(ui.Select):
             EventData.remove(self.delete_object)
             await asyncio.sleep(2.5)
             await interaction.message.delete()
-            await on_chicken_state_change(interaction, chickens_selected, "sold")
             return
         else:
             embed = await make_embed_object(description=f":x: {interaction.user.display_name} have cancelled the deletion of the selected chickens.")
