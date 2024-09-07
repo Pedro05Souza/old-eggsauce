@@ -5,9 +5,8 @@ import logging
 
 logger = logging.getLogger('botcore')
 
-
-load_dotenv
-uri = os.getenv("MONGODB_KEY")
+load_dotenv()
+uri = os.getenv("MONGODB_KEY_LOCAL")
 
 
 def connect(uri):
@@ -23,7 +22,8 @@ def connect(uri):
         return None    
 
 mongo_client = connect(uri)
-db = mongo_client.botDiscord
+db = mongo_client.BotDiscord
+print(db.list_collection_names())
 
 # current_schema = {
 #     "$jsonSchema":{

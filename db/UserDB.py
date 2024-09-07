@@ -4,7 +4,7 @@ from tools.cache import cache_initiator
 from tools.shared import update_scheduler, request_threading
 from typing import Union
 import logging
-users_collection = mongo_client.db.user
+users_collection = mongo_client.BotDiscord.user
 logger = logging.getLogger('botcore')
 
 # This class is responsible for handling user data in the database.

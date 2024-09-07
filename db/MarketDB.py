@@ -4,7 +4,7 @@ from tools.shared import request_threading
 from typing import Union
 import logging
 import uuid
-market_collection = mongo_client.db.market
+market_collection = mongo_client.BotDiscord.market
 logger = logging.getLogger('botcore')
 
 class Market:

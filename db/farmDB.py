@@ -4,9 +4,8 @@ from tools.cache import cache_initiator
 from tools.shared import update_scheduler, request_threading
 from typing import Union
 import logging
-farm_collection = mongo_client.db.farm
+farm_collection = mongo_client.BotDiscord.farm
 logger = logging.getLogger('botcore')
-
 
 class Farm:
 
@@ -31,13 +30,13 @@ class Farm:
                     "corn_limit": 200,
                     "plot": 1,
                     "last_chicken_drop": time(),
-                    "last_farmer_drop": time(),
                     "last_corn_drop": time(),
                     "mmr": 0,
                     "highest_mmr": 0,
                     "wins": 0,
                     "losses": 0,
-                    "redeemables": []
+                    "redeemables": [],
+                    "last_roll_drop": time()
                 }
                 update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, farm_data=farm))
                 request_threading(lambda: farm_collection.insert_one(farm))
@@ -63,7 +62,7 @@ class Farm:
     @staticmethod
     def update(user_id: int, **kwargs) -> None:
         """Update a farm's status in the database."""
-        possible_keywords = {"farm_name", "plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses", "redeemables"}
+        possible_keywords = {"farm_name", "plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses", "redeemables", "last_roll_drop"} 
         try:
             query = {}
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()

@@ -3,7 +3,7 @@ from tools.cache import cache_initiator
 from tools.shared import update_scheduler, request_threading
 from typing import Union
 import logging
-bank_collection = mongo_client.db.bank
+bank_collection = mongo_client.BotDiscord.bank
 logger = logging.getLogger('botcore')
 
 class Bank:

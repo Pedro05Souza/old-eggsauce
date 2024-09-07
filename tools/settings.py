@@ -7,7 +7,7 @@ This module contains various configuration settings for the bot, including coold
 """
 # Cooldown settings (in seconds)
 
-spam_command_cooldown = .8 # Cooldown for spam commands
+spam_command_cooldown = 1 # Cooldown for spam commands
 regular_command_cooldown = 3.5 # Cooldown for regular commands
 queue_command_cooldown = 90 # Cooldown for queue commands
 

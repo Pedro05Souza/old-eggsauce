@@ -3,7 +3,7 @@ from tools.shared import update_scheduler, request_threading
 from tools.cache import cache_initiator
 from typing import Union
 import logging
-config_collection = mongo_client.db.botcfg
+config_collection = mongo_client.BotDiscord.botcfg
 logger = logging.getLogger('botcore')
 
 
