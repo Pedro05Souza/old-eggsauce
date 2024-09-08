@@ -34,9 +34,6 @@ Both the setup commands run the `Makefile` and:
 * Installs all dependencies listed on `requirements.txt`
 
 
-
-
-
 ## How to run Docker in your machine:
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop.).
@@ -52,27 +49,4 @@ docker --version
 ```
 make build
 ```
-
-
-
-```
-docker build -t image_name .
-```
-
-
-## Known Issues (Windows):
-This topic is for known issues that happened with this project and a suggestion on how fix each one of them. If you happen to find any more issues that aren't here message the developers and let us know!
-
-An issue you may encounter with the `.env` file is after you set it up in your project, your IDE may still not recognize it, in order to make our project able to run in your computer, you need to restart your Python Enviroment. If using Visual Studio code `Ctrl+Shift+P` to open the command palette, then type and select `Reload Window`.
-
-Another issue that in case you encounter is involving your virtual enviroment. If you try to run `make setup-windows` and for some reason it doesn't locate the 'requirements.txt` file in your directory, it can possible be related to this problem. To fix this you need to first remove the current enviroment. In your powershell terminal, type the following command:
-
-```
-rm -r "directorypathhere"
-```
-If sucessful, recreate the enviroment. 
-```
-python -m venv venv
-```
-If sucessful execute the make setup command again.
 
