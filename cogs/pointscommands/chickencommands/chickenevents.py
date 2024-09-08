@@ -290,15 +290,21 @@ class ChickenEvents(commands.Cog):
     async def transcend(self, ctx: Context) -> None:
         """Transcend chicken"""
         farm_data = ctx.data["farm_data"]
-        if all(chicken for chicken in farm_data['chickens'] if chicken['rarity'] == 'ASCENDED'):
-            if len(farm_data['chickens']) < 8:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to have 8 ascended chickens to transcend.")
-                return
+        ascended_chickens = [chicken for chicken in farm_data['chickens'] if chicken['rarity'] == 'ASCENDED']
+        extra_ascended_chickens = []
+        if len(ascended_chickens) < 8:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to have ** {8 - len(ascended_chickens)} more {get_rarity_emoji('ASCENDED')} ASCENDED chickens** in order to transcend them.")
+            return
+        elif len(ascended_chickens) > 8:
+            extra_ascended_chickens = [chicken for chicken in ascended_chickens[8:]]
+        if await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to transcend your 8 ascended chickens to an ETHEREAL Chicken?"):
             transcended_chicken = await create_chicken("ETHEREAL", "transcend")
-            farm_data['chickens'] = [transcended_chicken]
+            farm_data['chickens'] = [for_chicken for for_chicken in farm_data['chickens'] if for_chicken['rarity'] != "ASCENDED"]
+            farm_data['chickens'].extend(extra_ascended_chickens)
+            farm_data['chickens'].append(transcended_chicken)
             Farm.update(ctx.author.id, chickens=farm_data['chickens'])
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have transcended your chickens to an **{get_rarity_emoji('ETHEREAL')} ETHEREAL Chicken.**")
-            return
+        return
         
     async def verify_player_has_sustainable(self, farm_data: dict) -> bool:
         """Verify if the player has the sustainable farmer role."""
