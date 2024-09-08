@@ -213,10 +213,10 @@ async def update_user_farm(ctx: Context, user: discord.Member, data: dict) -> Un
     Update the user's farm.
     """
     if not data['farm_data']:
-        return None
+        return None, 0
     farm_data = data['farm_data']
     if len(farm_data['chickens']) == 0:
-        return farm_data
+        return farm_data, 0
     last_drop_time = time() - farm_data['last_chicken_drop']
     updated_farm_data = farm_data
     hours_passed_since_last_egg_drop = min((last_drop_time // farm_drop), 24)
