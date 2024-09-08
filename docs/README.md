@@ -47,18 +47,17 @@ Both the setup commands run the `Makefile` and:
 docker --version
 ```
 
-3. If sucessful, proceed to build the docker image. Open the terminal and navigate to your project directory and enter the following command. (Remember to switch the `image_name` with a name for your image)
+3. If sucessful, proceed to build and run with docker-compose entering the following command:
+
+```
+make build
+```
+
+
 
 ```
 docker build -t image_name .
 ```
-
-4. Once the image is built, you can run a container based on that image using the following command:
-
-```
-docker run -p host_port:container_port image_name
-```
-Replace the `host_port` and `container_port` with the ports you're going to use
 
 
 ## Known Issues (Windows):
