@@ -18,9 +18,9 @@ class RollLimit:
         return False
 
     @classmethod
-    def remove(cls, obj: object) -> None:
+    def remove(cls, user_id: int) -> None:
         try:
-            cls.obj_list.pop(obj.user_id)
+            cls.obj_list.pop(user_id)
         except Exception as e:
             logger.error("Error removing object from list.", e)
     

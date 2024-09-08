@@ -11,6 +11,7 @@ from tools.settings import user_salary_drop
 from tools.prices import Prices
 from discord.ext.commands import Context
 from tools.listeners import on_user_transaction
+from contextlib import contextmanager
 import discord
 import logging
 import math
@@ -261,7 +262,6 @@ def pricing() -> dict:
     Always use this when making a points command.
     """
     async def predicate(ctx: Context) -> bool:
-        
         config_data = await guild_cache_retriever(ctx.guild.id)
 
         if not await check_server_requirements(ctx, config_data):

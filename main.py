@@ -21,7 +21,7 @@ def setup_intents() -> discord.Intents:
     intents.messages = True
     intents.guilds = True
     intents.message_content = True
-    return intents
+    return intents  
 
 bot = commands.Bot(command_prefix=get_prefix_for_guild, intents=setup_intents(), case_insensitive=True, help_command=None)
 

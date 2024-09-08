@@ -270,14 +270,19 @@ class ChickenEvents(commands.Cog):
 
     async def buy_farmer_upgrade(self, ctx: Context, name: str, farmer_price: int, user_data: dict, farm_data: dict) -> None:
         """Buy the farmer upgrade"""
-        if user_data['points'] >= farmer_price:
-            farm_data['farmer'] = name
-            User.update_points(ctx.author.id, user_data['points'] - farmer_price)
-            Farm.update(ctx.author.id, farmer=name)
-            await on_user_transaction(ctx, farmer_price, 1)
-            await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have purchased the {name} farmer role.")
-        else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to purchase the {name} farmer role.")
+        if farm_data['farmer'] == name:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you already have the {name} farmer role.")
+            return
+        if name == "Sustainable Farmer":
+            Farm.add_last_farm_drop_attribute(ctx.author.id)
+        if await self.verify_player_has_sustainable(farm_data) and not name == "Sustainable Farmer":
+            Farm.remove_last_farm_drop_attribute(ctx.author.id)
+        farm_data['farmer'] = name
+        User.update_points(ctx.author.id, user_data['points'] - farmer_price)
+        Farm.update(ctx.author.id, farmer=name)
+        await on_user_transaction(ctx, farmer_price, 1)
+        await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have purchased the {name} farmer role.")
+        return
     
     @commands.hybrid_command(name="transcend", usage="transcend", description="Only available when having 8 ascended chickens.")
     @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
@@ -294,6 +299,10 @@ class ChickenEvents(commands.Cog):
             Farm.update(ctx.author.id, chickens=farm_data['chickens'])
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have transcended your chickens to an **{get_rarity_emoji('ETHEREAL')} ETHEREAL Chicken.**")
             return
+        
+    async def verify_player_has_sustainable(self, farm_data: dict) -> bool:
+        """Verify if the player has the sustainable farmer role."""
+        return farm_data['farmer'] == "Sustainable Farmer"
             
 async def setup(bot):
     await bot.add_cog(ChickenEvents(bot))

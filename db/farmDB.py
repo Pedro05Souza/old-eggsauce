@@ -31,6 +31,7 @@ class Farm:
                     "plot": 1,
                     "last_chicken_drop": time(),
                     "last_corn_drop": time(),
+                    "last_market_drop": time(),
                     "mmr": 0,
                     "highest_mmr": 0,
                     "wins": 0,
@@ -171,3 +172,42 @@ class Farm:
         except Exception as e:
             logger.error("Error encountered while resetting all farms' mmr.", e)
             return None
+        
+    @staticmethod
+    def add_last_farm_drop_attribute(user_id: int) -> None:
+        try:
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
+            if farm_data:
+                farm_data['last_farmer_drop'] = time()
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}})).result()
+        except Exception as e:
+            logger.error("Error encountered while trying to add last farm drop attribute.", e)
+            return None
+        
+    @staticmethod
+    def remove_last_farm_drop_attribute(user_id: int) -> None:
+        try:
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
+            if farm_data:
+                farm_data.pop('last_farmer_drop')
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$unset": {"last_farmer_drop": ""}})).result()
+        except Exception as e:
+            logger.error("Error encountered while trying to remove last farm drop attribute.", e)
+            return None
+        
+    @staticmethod
+    def update_last_market_drop(user_id: int) -> None:
+        """Update a farm's last drop in the database."""
+        try:
+            farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
+            if farm_data:
+                farm_data['last_market_drop'] = time()
+                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_market_drop": time()}})).result()
+        except Exception as e:
+            logger.error("Error encountered while trying to update farm's last drop.", e)
+            return None
+        
+    

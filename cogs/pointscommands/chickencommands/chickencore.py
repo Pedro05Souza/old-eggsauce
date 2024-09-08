@@ -70,6 +70,10 @@ class ChickenCore(commands.Cog):
         global default_rolls
         farm_data = ctx.data["farm_data"]
         if action == "market":
+            if not await self.verify_if_user_can_roll(farm_data):
+                minutes_remaining = round((roll_per_hour - (time() - farm_data['last_market_drop'])) / 60)
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you can only roll once every **{roll_per_hour // 3600}** hour(s). Try again in **{minutes_remaining}** minutes.")
+                return
             if not RollLimit.read_key(ctx.author.id):
                 if farm_data['farmer'] == "Executive Farmer":
                     farmer_upgrades = load_farmer_upgrades("Executive Farmer")
@@ -77,10 +81,10 @@ class ChickenCore(commands.Cog):
                     RollLimit.create(ctx.author.id, farmer_upgd + default_rolls)
                 else:
                     RollLimit.create(ctx.author.id, default_rolls)
-            if RollLimit.read(ctx.author.id) == 0:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you have reached the limit of rolls for today. Try again in **{roll_per_hour - time() % roll_per_hour:.0f}** seconds.")
-                return
             RollLimit.update(ctx.author.id, RollLimit.read(ctx.author.id) - 1)
+            if RollLimit.read(ctx.author.id) == 1:
+                Farm.update_last_market_drop(ctx.author.id)
+                RollLimit.remove(ctx.author.id)
         if farm_data['farmer'] == "Generous Farmer":
             default_rolls += load_farmer_upgrades("Generous Farmer")[0]
         generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
@@ -108,16 +112,12 @@ class ChickenCore(commands.Cog):
                 randomRoll -= rate
         return generated_chickens
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.bot.loop.create_task(self.reset_periodically())
-    
-    async def reset_periodically(self):
-        """Reset the roll limit every determined time"""
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            await asyncio.sleep(roll_per_hour - time() % roll_per_hour)
-            RollLimit.remove_all()
+    async def verify_if_user_can_roll(self, farm_data: dict) -> bool:
+        last_roll = time() - farm_data['last_market_drop']
+        last_roll = min(last_roll // roll_per_hour, 1)
+        if last_roll >= 1:
+            return True
+        return False
 
 async def setup(bot):
     await bot.add_cog(ChickenCore(bot))

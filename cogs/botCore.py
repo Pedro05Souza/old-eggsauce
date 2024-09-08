@@ -168,6 +168,11 @@ class BotCore(commands.Cog):
             await send_bot_embed(ctx, description=description)
             return
         return
+    
+
+    async def verify_error_type(self, error):
+        if isinstance(error, error.MissingPermissions):
+            return True
 
     async def refund_price_command_on_error(self, ctx) -> None:
         if ctx.command.name in Prices.__members__ and ctx.command.name != ("stealpoints") and Prices.__members__[ctx.command.name].value > 0:

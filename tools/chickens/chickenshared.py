@@ -72,7 +72,8 @@ async def get_usr_farm(ctx: Context, user: discord.Member, data) -> discord.Embe
             if user.id != ctx.author.id:
                  farm_data = await update_user_farm(ctx, user, data)
             farm_data = await get_player_chicken(ctx, user, data)
-            await update_farmer(user, data)
+            if farm_data['farmer'] == 'Sustainable Farmer':
+                await update_farmer(user, data)
             if len(farm_data['chickens']) == 0:
                 return
             msg = await make_embed_object(

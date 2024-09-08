@@ -81,19 +81,6 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=f"{user.display_name} has been reset.")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
-    
-    @commands.command("giveRolls")
-    async def give_rolls(self, ctx: Context, rolls : int, user: discord.Member) -> None:
-        """Add more chicken roles to a user."""
-        userObj = RollLimit.read(user.id)
-        if is_dev(ctx):
-            if userObj:
-                userObj.current += rolls
-                await send_bot_embed(ctx, description=f"{user.display_name} received {rolls} rolls.")
-            else:
-                await send_bot_embed(ctx, description=":no_entry_sign: user didn't roll chickens in the market yet.")
-        else:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command("checkbotServers", aliases=["cbs"])
     async def check_bot_servers(self, ctx: Context) -> None:
