@@ -1,31 +1,22 @@
-version: "3.8"
+
 services:
-  app:
-    build:
-      context: ./
-      dockerfile: Dockerfile.main
-    image: app
-    container_name: EggsauceBot
-    restart: unless-stopped
+  bot:
+    build: .
+    command: python3 main.py
+    volumes:
+      - .:/app
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - MONGODB_KEY=${MONGODB_KEY}
-      - DEVS=${DEVS}
-    networks:
-      - EggsauceBot
-
-  language_model:
-    build:
-      context: ./language_model
-      dockerfile: Dockerfile.LLM
-    image: language_model
-    container_name: LLM
-    restart: unless-stopped
+    depends_on:
+      - db
     ports:
       - "8080:8080"
-    networks:
-      - EggsauceBot
-
-networks:
-  EggsauceBot:
-    driver: bridge
+    restart: always
+  
+  db:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - D:/MongoDB/server:/data/db
+    restart: always
