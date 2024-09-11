@@ -155,14 +155,20 @@ def update_scheduler(callback: Callable) -> None:
 def request_threading(callback: Callable, id: int = None) -> concurrent.futures.Future: 
     """
     Request a function to be run in a separate thread. Mostly used for database operations.
-    Obs: Get requests from database are NOT thread safe, while write requests are.
+    Obs: All get requests from database are NOT thread safe, while all write requests are.
     """
     if id is None:
+        lock_context = None
+    else:
+        lock_context = lock_manager(id)
+    
+    if lock_context:
+        with lock_context:
+            future = executor.submit(callback)
+    else:
         future = executor.submit(callback)
-        return future
-    with lock_manager(id):
-        future = executor.submit(callback)
-        return future
+    
+    return future
 
 def retrieve_threads() -> int:
     """
@@ -205,7 +211,7 @@ async def cooldown_user_tracker(user_id: int) -> bool:
 @contextmanager
 def lock_manager(id: int):
     """
-    Lock data to avoid multiple access.
+    Lock data to avoid multiple access from different threads with the same user id.
     """
     with global_lock:
         if id not in lock_tracker:
