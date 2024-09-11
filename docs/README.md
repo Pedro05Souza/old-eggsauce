@@ -1,19 +1,18 @@
 # Eggsauce BOT
 
-<div style="text-align: center;">
-  <img src="image.png" alt="alt text">
-</div>
+![alt text](image.png)
 
-This is a Discord bot project made as a personal project by  [Pedro Souza](github.com/Pedro05Souza). With time to time contributions from [Alexius Dias](github.com/AlexiusMD).
+This Discord bot project, named Eggsauce, was initially started by [Pedro Souza](https://github.com/Pedro05Souza) with early contributions from [Alexius Dias] (https://github.com/AlexiusMD). Currently, the project is maintained and developed solely by Pedro Souza.
 
-## How to install the repository's dependancies
 
-In order to install dependancies, you must first clone the repo onto a directory of your liking. If your OS is Unix-based, you can just run the following command on the terminal:
+##  project dependencies
+
+In order to install dependancies, you must first clone the repo onto a directory of your liking. If you're using a Unix-based operating system, you can install the necessary dependencies by crunning the following command in your terminal:
 ```
 make setup-unix
 ```
 
-If your OS is Windows, you must do some additional steps before running the `Makefile`
+For Windows, you must do some additional steps before executing the `Makefile`:
 - Install the [chocolatey package manager](https://chocolatey.org/install) 
 - Run the following command in your windows powershell terminal:
 ```
@@ -36,9 +35,9 @@ Both the setup commands run the `Makefile` and:
 * Installs all dependencies listed on `requirements.txt`
 
 
-## How to run this project in your machine
+## Running the project
 
-Before proceeding, ensure you have the necessary project folder with all required configurations. Please contact the lead developer to obtain it.
+Note: Some configuration `files` and `enviroment variables` are not included in this repository for security reasons. To obtain these files, please contact the lead developer. The project will **NOT** run without the proper setup.
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop.).
 
@@ -57,4 +56,3 @@ make build
 ## Troubleshooting and Support
 
 If you encounter any difficulties running the project or have questions, please do not hesitate to contact the lead developer. 
-[Pedro Souza] (github.com/Pedro05Souza)
