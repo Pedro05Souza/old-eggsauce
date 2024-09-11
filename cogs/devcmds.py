@@ -222,11 +222,12 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
 
     @commands.command(name="givecorn")
-    async def give_corn(self, ctx: Context, user: discord.Member, amount: int) -> None:
+    async def give_corn(self, ctx: Context, amount: int, user: discord.Member= None) -> None:
         if is_dev(ctx):
+            user = ctx.author if user is None else user
             farm_data = Farm.read(user.id)
             if farm_data:
-                farm_data['corn'] += min(amount, farm_data['corn_limit'])
+                farm_data['corn'] = min(amount + farm_data['corn'], farm_data['corn_limit'])
                 Farm.update(user.id, corn=farm_data['corn'])
                 await send_bot_embed(ctx, description=f"{user.display_name} received {amount} corn.")
         else:
