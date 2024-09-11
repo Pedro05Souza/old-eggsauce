@@ -169,7 +169,6 @@ class BotCore(commands.Cog):
             return
         return
     
-
     async def verify_error_type(self, error):
         if isinstance(error, error.MissingPermissions):
             return True
