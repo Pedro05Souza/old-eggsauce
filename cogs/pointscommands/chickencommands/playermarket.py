@@ -147,7 +147,7 @@ class PlayerMarket(commands.Cog):
                     if member:
                         offer['author_name'] = member.name
                     else:
-                        offer['author_name'] = "Unknown User"
+                        Market.delete(offer['author_id'])
             offers_copy = [offer for offer in offers if offer.get('author_name')]
             offers = offers_copy
             return offers
