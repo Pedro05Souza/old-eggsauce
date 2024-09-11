@@ -1,10 +1,10 @@
 """
 This module contains the event listeners for the bot.
 """
-import logging
 from typing import Union
 from discord.ext.commands import Context
 from discord.interactions import Interaction
+import logging
 logger = logging.getLogger('botcore')
 
 class ListenerManager():
