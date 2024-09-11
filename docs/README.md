@@ -2,7 +2,7 @@
 
 ![alt text](image.png)
 
-This Discord bot project, named Eggsauce, was initially started by [Pedro Souza](https://github.com/Pedro05Souza) with early contributions from [Alexius Dias] (https://github.com/AlexiusMD). Currently, the project is maintained and developed solely by Pedro Souza.
+This Discord bot project, named Eggsauce, was initially started by [Pedro Souza](https://github.com/Pedro05Souza) with early contributions from [Alexius Dias](https://github.com/AlexiusMD). Currently, the project is maintained and developed solely by Pedro Souza.
 
 
 ##  project dependencies
@@ -37,7 +37,7 @@ Both the setup commands run the `Makefile` and:
 
 ## Running the project
 
-Note: Some configuration `files` and `enviroment variables` are not included in this repository for security reasons. To obtain these files, please contact the lead developer. The project will **NOT** run without the proper setup.
+Note: Some configuration `files` and `enviroment variables` are not included in this repository for security reasons. To obtain please contact the lead developer. The project will **NOT** run without the proper setup.
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop.).
 
