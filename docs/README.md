@@ -1,4 +1,6 @@
-![alt text](image.png)
+<h1 style="text-algin: center;">
+  <img src="image-1.png"/>
+</h1>
 
 # Eggsauce
 
