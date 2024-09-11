@@ -18,7 +18,6 @@ def connect(uri):
     return None    
 
 mongo_client = connect(uri)
-
 if mongo_client is None:
     logger.critical("Could not connect to the database.")
     exit(1)
