@@ -1,6 +1,8 @@
 # Eggsauce BOT
 
-![alt text](image.png)
+<div style="text-align: center;">
+  <img src="image.png" alt="alt text">
+</div>
 
 This is a Discord bot project made as a personal project by  [Pedro Souza](github.com/Pedro05Souza). With time to time contributions from [Alexius Dias](github.com/AlexiusMD).
 
