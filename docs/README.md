@@ -1,12 +1,12 @@
-# Eggsauce BOT:
+# Eggsauce BOT
 
-![alt text](image-2.png)
+![alt text](image.png)
 
 This is a Discord bot project made as a personal project by  [Pedro Souza](github.com/Pedro05Souza). With time to time contributions from [Alexius Dias](github.com/AlexiusMD).
 
-## How to run this repository locally:
+## How to install the repository's dependancies
 
-In order to run this repository locally, you must first clone the repo onto a directory of your liking. If your OS is Unix-based, you can just run the following command on the terminal:
+In order to install dependancies, you must first clone the repo onto a directory of your liking. If your OS is Unix-based, you can just run the following command on the terminal:
 ```
 make setup-unix
 ```
@@ -34,19 +34,25 @@ Both the setup commands run the `Makefile` and:
 * Installs all dependencies listed on `requirements.txt`
 
 
-## How to run Docker in your machine:
+## How to run this project in your machine
+
+Before proceeding, ensure you have the necessary project folder with all required configurations. Please contact the lead developer to obtain it.
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop.).
 
-2. After installing docker, verify your installation, open your terminal and run the following command:
+2. After installation, confirm Docker is correctly set up by running the following command in your terminal:
 
 ```
 docker --version
 ```
 
-3. If sucessful, proceed to build and run with docker-compose entering the following command:
+3. If Docker is successfully installed, you can proceed by building and running the project using `docker-compose`. Execute the following command:
 
 ```
 make build
 ```
 
+## Troubleshooting and Support
+
+If you encounter any difficulties running the project or have questions, please do not hesitate to contact the lead developer. 
+[Pedro Souza] (github.com/Pedro05Souza)
