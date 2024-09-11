@@ -68,8 +68,7 @@ class InteractiveCommands(commands.Cog):
         """Bet on a color in the roulette."""
         if amount.upper() == "ALL":
             amount = ctx.data["user_data"]["points"]
-        else:
-            amount = int(amount)
+        amount = int(amount)
         cor = cor.upper()
         coresPossiveis = ["RED", "BLACK", "GREEN"]
         emoji_color = {"RED": "🟥", "BLACK": "⬛", "GREEN": "🟩"}

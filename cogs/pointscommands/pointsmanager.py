@@ -21,22 +21,23 @@ class PointsManager(commands.Cog):
         """Check if the user is in the message cache."""
         return user_id in self.message_cache
 
-    async def reward_points_if_possible(self, user_id: int) -> None:
-        """Rewards the user with points if he is in the message cache."""
+    async def reward_points_if_possible(self, user_id: int, data: dict) -> int | None:
+        """Rewards the user with points in the bot cache's system if he is in the message cache."""
+        if not await self.check_if_user_in_message_cache(user_id):
+            return None
         current_time = math.ceil(time.time())
         message_time = self.message_cache[user_id]
         time_difference = current_time - message_time
         time_passed = min(time_difference // 10, 1)
         if time_passed > 0:
             time_passed = int(time_passed)
-            user_data = await user_cache_retriever(user_id)
-            user_data = user_data["user_data"]
-            user_data["points"] += time_passed
             self.message_cache.pop(user_id)
             logger.info(f"{user_id} has received {time_passed} eggbux from sending messages.")
-            User.update_points(user_id, user_data["points"])
+            user_data = data['user_data']
+            total_points = user_data['points'] + time_passed
+            return total_points
         else:
-            return
+            return None
     
     async def count_points(self, user: discord.Member) -> None:
         """Counts the points of the user every time he enters a voice channel."""
@@ -72,7 +73,7 @@ class PointsManager(commands.Cog):
         user_data = await user_cache_retriever(user_id)
         user_data = user_data["user_data"]
         total_points = user_data["points"] + add_points
-        User.update_points(user_id, total_points)
+        total_points = int(total_points)
         return total_points
     
     async def update_user_points(self, user: discord.Member, data: dict) -> dict:
@@ -80,14 +81,16 @@ class PointsManager(commands.Cog):
         Updates the user's points when any command is used.
         """
         user_data = data['user_data']
-        if user_data:
-            points = await self.update_points(user)
-            salary_gain = await self.get_salary_points(user, user_data)
-            if points:
-                user_data['points'] = points
-            else:
+        salary_gain = await self.get_salary_points(user, user_data)
+        if not user.id in self.locks: # means that the user havent joined voice or sent a message
+            return user_data, salary_gain
+        async with self.locks[user.id]:
+            voice_points = await self.update_points(user)
+            message_points = await self.reward_points_if_possible(user.id, data)
+            points = (voice_points or 0) + (message_points or 0)
+            if points == 0:
                 return user_data, salary_gain
-            User.update_points(user.id, user_data['points'])
+            User.update_points(user.id, points)
             return user_data, salary_gain
         
     async def get_salary_points(self, user: discord.Member, user_data: dict) -> int:
@@ -130,14 +133,13 @@ class PointsManager(commands.Cog):
                 return
             if user.id not in self.locks:
                 self.locks[user.id] = asyncio.Lock()
-            async with self.locks[user.id]:
-                if user_data and before.channel is None and after.channel is not None:
-                    await self.count_points(user)
-                elif user_data and before.channel is not None and after.channel is None:
-                    await self.update_points(user)
-                    self.locks.pop(user.id)
-                else:
-                    pass
+            if user_data and before.channel is None and after.channel is not None:
+                await self.count_points(user)
+            elif user_data and before.channel is not None and after.channel is None:
+                await self.update_points(user)
+                self.locks.pop(user.id)
+            else:
+                pass
             
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -158,11 +160,8 @@ class PointsManager(commands.Cog):
         if message.author.id not in self.locks:
             self.locks[message.author.id] = asyncio.Lock()
         
-        async with self.locks[message.author.id]:
-            if message.author.id not in self.message_cache:
-                self.message_cache[message.author.id] = time.time()
-            else:
-                await self.reward_points_if_possible(message.author.id)
+        if message.author.id not in self.message_cache:
+            self.message_cache[message.author.id] = time.time()
 
 async def setup(bot):
     await bot.add_cog(PointsManager(bot))
