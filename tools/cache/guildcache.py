@@ -1,6 +1,5 @@
 from tools.cache.cache import BotCache
 from pympler import asizeof
-from typing import Union
 import asyncio
 import logging
 logger = logging.getLogger('botcore')
