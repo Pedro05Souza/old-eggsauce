@@ -17,7 +17,7 @@ import logging
 logger = logging.getLogger('botcore')
 num_cores = os.cpu_count()
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_cores // 2) # half of the cores
-lock = threading.Lock()
+global_lock = threading.Lock()
 cooldown_tracker = {}
 lock_tracker = {}
 
@@ -141,16 +141,16 @@ async def guild_cache_retriever(guild_id: int) -> dict:
         return await cache_initiator.get_guild_cache(guild_id)
     return guild_cache
 
-def update_scheduler(func: Callable) -> None:
+def update_scheduler(callback: Callable) -> None:
     """
     Schedules a coroutine to be run in the event loop with top priority.
     This should always be called when performing cache updates.
     """
     loop = asyncio.get_event_loop()
     if loop.is_running():
-        loop.call_soon(asyncio.ensure_future, func())
+        loop.call_soon(asyncio.ensure_future, callback())
     else:
-        asyncio.run(func())
+        asyncio.run(callback())
 
 def request_threading(callback: Callable, id: int = None) -> concurrent.futures.Future: 
     """
@@ -207,10 +207,12 @@ def thread_locker(id: int):
     """
     Lock the user data to avoid multiple access.
     """
-    if id not in lock_tracker:
-        lock_tracker[id] = lock
+    with global_lock:
+        if id not in lock_tracker:
+            lock_tracker[id] = global_lock
+    lock = lock_tracker[id]
+    lock.acquire()
     try:
-        lock_tracker[id].acquire()
         yield
     finally:
         lock_tracker[id].release()
