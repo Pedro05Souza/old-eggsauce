@@ -40,7 +40,7 @@ class Farm:
                     "last_roll_drop": time()
                 }
                 update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, farm_data=farm))
-                request_threading(lambda: farm_collection.insert_one(farm))
+                request_threading(lambda: farm_collection.insert_one(farm), user_id).result()
                 logger.info(f"Farm for {user_id} has been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the farm.", e)
@@ -53,7 +53,7 @@ class Farm:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
                 update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
-                request_threading(farm_collection.delete_one({"user_id": user_id}))
+                request_threading(farm_collection.delete_one({"user_id": user_id}), user_id).result()
                 logger.info("Farm has been deleted successfully.")
             else:
                 logger.warning("Farm not found.")
@@ -75,7 +75,7 @@ class Farm:
                             farm_data[key] = value
                     if query:
                         update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                        request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": query})).result()
+                        request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": query}), user_id).result()
                 else:
                     logger.warning("Keyword arguments aren't being passed.")
         except Exception as e:
@@ -89,7 +89,8 @@ class Farm:
             if farm_data:
                 farm_data['last_chicken_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_chicken_drop": time()}})).result()
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_chicken_drop": time()}}),
+                                  user_id).result()
         except Exception as e:
             logger.error(f"Error encountered while trying to update farm's last drop. {e}")
             return None
@@ -102,7 +103,8 @@ class Farm:
             if farm_data:
                 farm_data['last_farmer_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}})).result()
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}}), 
+                                  user_id).result()
         except Exception as e:
             logger.error("Error encountered while trying to update farm's last drop.", e)
             return
@@ -115,7 +117,8 @@ class Farm:
             if farm_data:
                 farm_data['last_corn_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_corn_drop": time()}})).result()
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_corn_drop": time()}}), 
+                                  user_id).result()
         except Exception as e:
             logger.error("Error encountered while trying to update farm's last drop.", e)
             return None
@@ -149,16 +152,6 @@ class Farm:
             return None
     
     @staticmethod
-    def deleteAll() -> None:
-        """Delete all farms from the database."""
-        try:
-            request_threading(lambda: farm_collection.delete_many({})).result()
-            logger.info("All farms have been deleted successfully.")
-        except Exception as e:
-            logger.error("Error encountered while deleting all farms.", e)
-            return None
-        
-    @staticmethod
     def reset_mmr() -> None:
         """Reset all farms' mmr in the database."""
         try:
@@ -180,7 +173,8 @@ class Farm:
             if farm_data:
                 farm_data['last_farmer_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}})).result()
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}}), 
+                                  user_id).result()
         except Exception as e:
             logger.error("Error encountered while trying to add last farm drop attribute.", e)
             return None
@@ -192,7 +186,8 @@ class Farm:
             if farm_data:
                 farm_data.pop('last_farmer_drop')
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$unset": {"last_farmer_drop": ""}})).result()
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$unset": {"last_farmer_drop": ""}}), 
+                                  user_id).result()
         except Exception as e:
             logger.error("Error encountered while trying to remove last farm drop attribute.", e)
             return None
@@ -205,7 +200,8 @@ class Farm:
             if farm_data:
                 farm_data['last_market_drop'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, farm_data=farm_data))
-                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_market_drop": time()}})).result()
+                request_threading(lambda: farm_collection.update_one({"user_id": user_id}, {"$set": {"last_market_drop": time()}}), 
+                                  user_id).result()
         except Exception as e:
             logger.error("Error encountered while trying to update farm's last drop.", e)
             return None

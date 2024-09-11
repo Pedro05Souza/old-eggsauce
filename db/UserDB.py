@@ -29,7 +29,7 @@ class User:
                     "salary_time": time()
                 }
                 update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, user_data=user))
-                request_threading(lambda: users_collection.insert_one(user)).result()
+                request_threading(lambda: users_collection.insert_one(user), user_id).result()
                 logger.info(f"User {user_id} has been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the user.", e)
@@ -42,7 +42,7 @@ class User:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
-                request_threading(lambda: users_collection.delete_one({"user_id" : user_id})).result()
+                request_threading(lambda: users_collection.delete_one({"user_id" : user_id}), user_id).result()
             else:
                 logger.warning("User not found.")
         except Exception as e:
@@ -58,7 +58,8 @@ class User:
                 user_data['points'] = points
                 user_data['roles'] = roles
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})).result()
+                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}}), 
+                                  user_id).result()
         except Exception as e:
             logger.error("Error encountered while trying to update user's status.", e)
             return None
@@ -73,7 +74,8 @@ class User:
             if user_data:
                 user_data['points'] = points
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"points": points}}))
+                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"points": points}}), 
+                                  user_id).result()
         except Exception as e:
             logger.error("Error encountered while trying to update user's points.", e)
             return None
@@ -86,7 +88,8 @@ class User:
             if user_data:
                 user_data['roles'] = roles
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"roles": roles}})).result()
+                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"roles": roles}}), 
+                                  user_id).result()
         except Exception as e:
             logger.error("Error encountered while trying to update user's roles.", e)
             return None
@@ -99,7 +102,8 @@ class User:
             if user_data:
                 user_data['salary_time'] = time()
                 update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"salary_time": time()}})).result()
+                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"salary_time": time()}}),
+                                  user_id).result()
         except Exception as e:
             logger.error("Error encountered while trying to update user's salary time.", e)
             return None

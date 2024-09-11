@@ -26,7 +26,7 @@ class Market:
                     "author_id": author_id,
                     "created_at": time()
                 }
-                request_threading(lambda: market_collection.insert_one(offer))
+                request_threading(lambda: market_collection.insert_one(offer), offer_id).result()
                 logger.info(f"Offer has been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the offer.", e)
@@ -50,13 +50,17 @@ class Market:
     def update(offer_id: int, **kwargs) -> None:
         """Update an item in the market."""
         possible_keywords = ["chicken", "description", "author_id"]
+        query = {}
         try:
             offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
             if offer_data:
                 if kwargs:
                     for key, value in kwargs.items():
                         if key in possible_keywords:
-                            request_threading(lambda: market_collection.update_one({"offer_id": offer_id}, {"$set": {key: value}}))
+                            query[key] = value
+                    if query:
+                        request_threading(lambda: market_collection.update_one({"offer_id": offer_id}, {"$set": query}), offer_id).result()
+                        logger.info(f"Offer {offer_id} has been updated successfully.")
                 else:
                     logger.warning("Keyword arguments aren't being passed.")
             else:
@@ -71,7 +75,7 @@ class Market:
         try:
             offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
             if offer_data:
-                request_threading(lambda: market_collection.delete_one({"offer_id": offer_id}))
+                request_threading(lambda: market_collection.delete_one({"offer_id": offer_id}), offer_id).result()
                 logger.info(f"Offer {offer_id} has been deleted successfully.")
             else:
                 logger.warning(f"Offer {offer_id} does not exist.")

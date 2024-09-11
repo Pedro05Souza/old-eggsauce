@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from tools.cache import cache_initiator
 from typing import Callable
 from discord.ext.commands import Context
+from contextlib import contextmanager
 import os
 import discord
 import concurrent.futures
@@ -14,9 +15,11 @@ import threading
 import asyncio
 import logging
 logger = logging.getLogger('botcore')
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=5) # 5 threads to pick from the pool
+num_cores = os.cpu_count()
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_cores // 2) # half of the cores
 lock = threading.Lock()
 cooldown_tracker = {}
+lock_tracker = {}
 
 async def send_bot_embed(ctx: Context, ephemeral=False, **kwargs) -> discord.Message:
     """
@@ -149,11 +152,15 @@ def update_scheduler(func: Callable) -> None:
     else:
         asyncio.run(func())
 
-def request_threading(callback: Callable) -> concurrent.futures.Future: 
+def request_threading(callback: Callable, id: int = None) -> concurrent.futures.Future: 
     """
     Request a function to be run in a separate thread. Mostly used for database operations.
+    Obs: Get requests from database are NOT thread safe, while write requests are.
     """
-    with lock:
+    if id is None:
+        future = executor.submit(callback)
+        return future
+    with thread_locker(id):
         future = executor.submit(callback)
         return future
 
@@ -194,3 +201,17 @@ async def cooldown_user_tracker(user_id: int) -> bool:
     else:
         cooldown_tracker[user_id] = 1
         return True  
+    
+@contextmanager
+def thread_locker(id: int):
+    """
+    Lock the user data to avoid multiple access.
+    """
+    if id not in lock_tracker:
+        lock_tracker[id] = lock
+    try:
+        lock_tracker[id].acquire()
+        yield
+    finally:
+        lock_tracker[id].release()
+        lock_tracker.pop(id)
