@@ -160,7 +160,7 @@ def request_threading(callback: Callable, id: int = None) -> concurrent.futures.
     if id is None:
         future = executor.submit(callback)
         return future
-    with thread_locker(id):
+    with lock_manager(id):
         future = executor.submit(callback)
         return future
 
@@ -203,9 +203,9 @@ async def cooldown_user_tracker(user_id: int) -> bool:
         return True  
     
 @contextmanager
-def thread_locker(id: int):
+def lock_manager(id: int):
     """
-    Lock the user data to avoid multiple access.
+    Lock data to avoid multiple access.
     """
     with global_lock:
         if id not in lock_tracker:
