@@ -163,7 +163,7 @@ class BotCore(commands.Cog):
         raise error
     
     async def handle_exception(self, ctx: Context, error: Exception) -> None:
-        description = f":no_entry_sign: An error has occured while executing the command. {error}"
+        description = f":no_entry_sign: Oops! Something went wrong."
         if await cooldown_user_tracker(ctx.author.id):
             await send_bot_embed(ctx, description=description)
             return
