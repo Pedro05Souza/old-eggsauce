@@ -11,12 +11,12 @@ services:
       - db
     ports:
       - "8080:8080"
-    restart: always
+    restart: on-failure:5
   
   db:
     image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
-      - D:/MongoDB/server:/data/db
-    restart: always
+      - ./data/server:/data/db
+    restart: on-failure:5
