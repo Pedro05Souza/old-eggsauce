@@ -3,7 +3,7 @@ This module contains the bank commands.
 """
 from discord.ext import commands
 from tools.shared import send_bot_embed, confirmation_embed
-from tools.settings import regular_command_cooldown
+from tools.settings import REGULAR_COOLDOWN
 from db.bankDB import Bank
 from db.userDB import User
 from tools.pointscore import pricing
@@ -19,7 +19,7 @@ class BankCommands(commands.Cog):
         Bank.create(User.id, 0)
 
     @commands.hybrid_command("deposit", aliases=["dep"], brief="Deposits points in the bank", parameters=["amount: int"], description=f"Deposits points in the bank.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def deposit(self, ctx: Context, amount) -> None:
         """Deposits points in the bank"""
@@ -56,7 +56,7 @@ class BankCommands(commands.Cog):
             await send_bot_embed(ctx, description=f"{ctx.author.display_name}, please enter a valid amount.")
 
     @commands.hybrid_command("withdraw", aliases=["with"], brief="Withdraws eggubux from the bank", parameters=["amount: int"], examples=["withdraw 1000"], description="Withdraws points from the bank.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def withdraw(self, ctx: Context, amount) -> None:
         """Withdraws points from the bank"""
@@ -83,7 +83,7 @@ class BankCommands(commands.Cog):
             return
     
     @commands.hybrid_command("upgradebanklimit", aliases=["ubl"], brief="Upgrades the bank", description="Upgrades the bank. The bank can be upgraded up to 5 times.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def upgrade_bank_limit(self, ctx: Context) -> None:
         """Upgrades the bank limit."""

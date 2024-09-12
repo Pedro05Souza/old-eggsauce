@@ -1,4 +1,4 @@
-from tools.settings import corn_per_plot, max_plot_limit, max_bench
+from tools.settings import CORN_PER_PLOT, MAX_PLOT_LIMIT, MAX_BENCH
 
 tips = {
     0: "You earn 1 eggbux every 10 seconds of call time.",
@@ -21,13 +21,13 @@ tips = {
     17: "You can view the top 10 users with the most points using the !leaderboard command.",
     18: "You can see the hourly income of your farm with the !fp command, it comes with an optional user parameter.",
     19: "You can donate eggbux to other players using the !donate command.",
-    20: f"Every plot of corn produces {corn_per_plot} corn every hour, you can expand your plot limit with the !bp command.",
+    20: f"Every plot of corn produces {CORN_PER_PLOT} corn every hour, you can expand your plot limit with the !bp command.",
     21: "You can expand your corn limit with the !ucl command.",
     22: "You can sell corn for a third of the price.",
     23: "You can buy corn with eggbux.",
     24: "You can start a hunger games event with the !hg command, the minimum number of players is 4.",
     25: "This message is a tip.",
-    26: f"The maximum plot limit is {max_plot_limit}.",
+    26: f"The maximum plot limit is {MAX_PLOT_LIMIT}.",
     27: "Your chickens wait for you to feed them.",
     28: "This bot was made by a human.",
     29: "The formula for the eggs produced by a chicken is: (eggs_per_hour * happiness) / 100.",
@@ -36,7 +36,7 @@ tips = {
     32: "The upkeep multiplier for the chickens regulates the eggs produced.",
     33: "You can evolve two chickens of the same type to the next rarity",
     34: "Everytime you don't have money to maintain your chickens, one of them will randomly be picked and quick sold to pay the debt.",
-    35: f"You can put your chickens in the bench to avoid them from being deleted. The limit is {max_bench} chickens.",
+    35: f"You can put your chickens in the bench to avoid them from being deleted. The limit is {MAX_BENCH} chickens.",
     36: "You can see the bench with the !bench command.",
     37: "Somewhere in the world, a chicken is being born.",
     38: "There is a chicken out there that is waiting for you to buy it.",

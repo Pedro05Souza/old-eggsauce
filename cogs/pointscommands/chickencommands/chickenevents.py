@@ -12,7 +12,7 @@ from tools.chickens.chickenshared import *
 from tools.listeners import on_user_transaction
 from tools.pointscore import pricing
 from tools.shared import send_bot_embed, confirmation_embed, user_cache_retriever
-from tools.settings import regular_command_cooldown
+from tools.settings import REGULAR_COOLDOWN
 from discord.ext.commands import Context
 import asyncio
 import logging
@@ -25,7 +25,7 @@ class ChickenEvents(commands.Cog):
         self.bot = bot
     
     @commands.hybrid_command(name="sellchicken", aliases=["sc"], usage="sellChicken", description="Deletes a chicken from the farm.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def sell_chicken(self, ctx: Context) -> None:
         """Deletes a chicken from the farm."""
@@ -40,7 +40,7 @@ class ChickenEvents(commands.Cog):
         await ctx.send(embed=message,view=view)
 
     @commands.hybrid_command(name="tradechicken", aliases=["tc", "trade"], usage="tradeChicken <user>", description="Trade a chicken(s) with another user.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def trade_chicken(self, ctx: Context, user: discord.Member) -> None:
         """Trade a chicken(s) with another user."""
@@ -100,7 +100,7 @@ class ChickenEvents(commands.Cog):
         await ctx.send(embed=userEmbed, view=view_user)
 
     @commands.hybrid_command(name="giftchicken", aliases=["gc"], usage="giftChicken <index> <user>", description="Gift a chicken to another user.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def gift_chicken(self, ctx: Context, index: int, user: discord.Member) -> None:
         """Gift a chicken to another user."""
@@ -172,7 +172,7 @@ class ChickenEvents(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
             
     @commands.hybrid_command(name="evolvechicken", aliases=["ec", "fuse"], usage="evolveChicken <index> <index2>", description="Evolve a chicken if having 2 of the same rarity.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def evolve_chicken(self, ctx: Context, index: int, index2: int) -> None:
         """Evolves a chicken if having 2 of the same rarity."""
@@ -220,7 +220,7 @@ class ChickenEvents(commands.Cog):
             EventData.remove(e)
 
     @commands.hybrid_command(name="farmer", aliases =["farmers"], usage="farmer", description="The farmers helps increase the productivity of the chickens.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def farmer(self, ctx: Context) -> None:
         """The farmer automatically feeds the chickens"""
@@ -285,7 +285,7 @@ class ChickenEvents(commands.Cog):
         return
     
     @commands.hybrid_command(name="transcend", usage="transcend", description="Only available when having 8 ascended chickens.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def transcend(self, ctx: Context) -> None:
         """Transcend chicken"""

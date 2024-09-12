@@ -7,7 +7,7 @@ from discord.ext import commands
 from db.marketDB import Market
 from tools.tips import tips
 from tools.shared import *
-from tools.settings import regular_command_cooldown
+from tools.settings import REGULAR_COOLDOWN
 from tools.chickens.chickenshared import rank_determiner
 from db.userDB import User
 from db.bankDB import Bank
@@ -24,7 +24,7 @@ class BaseCommands(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(name="shop", brief="Shows the shop.", description="Shows all the points commands and their prices.", usage="shop")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def shop(self, ctx: Context) -> None:
         """Shows the shop."""
@@ -36,7 +36,7 @@ class BaseCommands(commands.Cog):
         await view.send(ctx, title="Shop", description="Buy commands with your eggbux:", color=discord.Color.yellow())
     
     @commands.hybrid_command(name="profile", brief="Shows the user's profile.", description="Shows the user's profile with all the upgrades.", usage="profile OPTIONAL [user]")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def user_profile(self, ctx: Context, user: discord.Member = None) -> None:
         """Shows the user's profile."""
@@ -62,7 +62,7 @@ class BaseCommands(commands.Cog):
         await ctx.send(embed=msg)
     
     @commands.hybrid_command(name="modulestatus", aliases=["status"], brief="Check the status of ptscmds.", usage="points_toggle", description="Check if the points commands are enabled or disabled in the server.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     async def points_status(self, ctx: Context) -> None:
         """Check the current module active in the server"""
         modules = {
@@ -76,7 +76,7 @@ class BaseCommands(commands.Cog):
         await send_bot_embed(ctx, description=f":warning: Points commands are currently set to: **{modules[current_module]}**")
                 
     @commands.hybrid_command(name="register", aliases=["reg"], brief="Registers the user in the database.", usage="register", description="Registers the user in the database.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     async def register(self, ctx: Context) -> None:
         """Registers the user in the database."""
         if User.read(ctx.author.id):
@@ -87,7 +87,7 @@ class BaseCommands(commands.Cog):
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} has been registered.")
  
     @commands.hybrid_command(name="points", aliases=["pts", "eggbux", "p"], brief="Shows the amount of points the user has.", usage="points OPTIONAL [user]", description="Shows the amount of points a usr has. If not usr, shows author's points.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def points(self, ctx: Context, user: discord.Member = None) -> None:
         """Shows the amount of points the user has."""
@@ -104,7 +104,7 @@ class BaseCommands(commands.Cog):
             await send_bot_embed(ctx, description=f"{user.display_name} has no eggbux :cry:")
         
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def points_Titles(self, ctx: Context) -> None:
         end_time = time.time() + 60
@@ -151,7 +151,7 @@ class BaseCommands(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} already has the role **{roleName}**.")
     
     @commands.hybrid_command(name="salary", aliases=["sal"], brief="Check the salary of a user.", usage="salary OPTIONAL [user]", description="Check the salary of a user. If not user, shows author's salary.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def salary(self, ctx: Context, user: discord.Member = None):
         """Check the salary of a user."""

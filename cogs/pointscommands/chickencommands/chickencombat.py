@@ -6,11 +6,11 @@ from discord.ext import commands
 from dataclasses import dataclass
 from tools.pointscore import pricing
 from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, user_cache_retriever
-from tools.settings import queue_command_cooldown
+from tools.settings import QUEUE_COOLDOWN
 from tools.chickens.combatbot import BotMatchMaking, bot_maker
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit
-from tools.settings import max_bench
+from tools.settings import MAX_BENCH
 from tools.chickens.chickeninfo import rarities_weight, upkeep_weight, score_determiner, chicken_ranking
 from db.farmDB import Farm
 from db.userDB import User
@@ -37,7 +37,7 @@ class ChickenCombat(commands.Cog):
         self.user_queue: Dict[int, List[UserInQueue]] = {}
 
     @commands.hybrid_command(name="eggleague", aliases=["eleague", "fight", "battle", "queue"], brief="Match making for chicken combat.", description="Match making for chicken combat.", usage="combat")
-    @commands.cooldown(1, queue_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, QUEUE_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def queue(self, ctx: Context) -> None:
         """
@@ -468,7 +468,7 @@ class ChickenCombat(commands.Cog):
             chicken_rewarded = await create_chicken(chicken_rewarded, "rewards")
             msg = await make_embed_object(title=f"🎉 {winner.member.name}'s rank rewards", description=f"You've managed to upgrade your rank, here are the following rewards:\n\n :money_with_wings: **{points_gained}** eggbux.")
             User.update_points(winner.member.id, user_data['points'] + points_gained)
-            if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data) and len(farm_data['bench'] )>= max_bench:
+            if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data) and len(farm_data['bench'] )>= MAX_BENCH:
                 msg.description += f"\n\n:warning: You've reached the maximum amount of chickens in your farm. The **{get_rarity_emoji(chicken_rewarded['rarity'])}** **{chicken_rewarded['rarity']}** **{chicken_rewarded['name']}** has been added to the reedemable rewards. Type **redeemables** to claim it."
                 farm_data['redeemables'].append(chicken_rewarded)
                 Farm.update(winner.member.id, redeemables=farm_data['redeemables'])
@@ -496,7 +496,7 @@ class ChickenCombat(commands.Cog):
                 return rank_dictionary[key], points_gained
     
     @commands.hybrid_command(name="friendly", brief="Friendly combat with another user.", description="Friendly combat with another user.", usage="friendly @user")
-    @commands.cooldown(1, queue_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, QUEUE_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def friendly_combat(self, ctx: Context, user: discord.Member) -> None:
         """Friendly combat with another user."""

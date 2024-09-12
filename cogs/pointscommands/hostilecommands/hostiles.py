@@ -1,8 +1,7 @@
 from discord.ext import commands
 from tools.pointscore import pricing, refund
 from tools.shared import send_bot_embed
-from tools.settings import regular_command_cooldown
-from db.userDB import User
+from tools.settings import REGULAR_COOLDOWN
 from random import choice
 from discord.ext.commands import Context
 import discord
@@ -14,7 +13,7 @@ class HostileCommands(commands.Cog):
         self.prisioner = {}
 
     @commands.command("momentofsilence" , aliases=["mos"])
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def moment_of_silence(self, ctx: Context) -> None:
         """Mutes all users in the voice channel of the author of the command."""
@@ -27,7 +26,7 @@ class HostileCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command(name="mute")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def mute(self, ctx: Context, user: discord.Member = None) -> None:
         """Mutes a user."""
@@ -51,7 +50,7 @@ class HostileCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command(name="unmute")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def unmute(self, ctx: Context, user: discord.Member = None) -> None:
         """Unmutes a user."""
@@ -68,7 +67,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="implode")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def implode(self, ctx: Context) -> None:
         """Disconnects all users from their voice channels."""
@@ -82,7 +81,7 @@ class HostileCommands(commands.Cog):
             await refund(user, ctx)
 
     @commands.command(name="deafen")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def deafen(self, ctx: Context, user: discord.Member=None) -> None:
         """Deafens a user."""
@@ -99,7 +98,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
     
     @commands.command(name="pardon")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def pardon(self, ctx: Context, user_id: int) -> None:
         """Pardons a user from prison."""
@@ -114,7 +113,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="undeafen")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def undeafen(self, ctx: Context, user: discord.Member = None) -> None:
         """Undeafens a user."""
@@ -131,7 +130,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="disconnect", aliases=['dc'])
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def disconnect(self, ctx: Context, user: discord.Member) -> None:
         """Disconnects a user from their voice channel."""
@@ -143,7 +142,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="prison", aliases=["jail"])
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def prison(self, ctx: Context, user:discord.Member) -> None:
         """Imprisons a user for 60 seconds."""
@@ -173,7 +172,7 @@ class HostileCommands(commands.Cog):
                 await prison_channel.delete()
                 
     @commands.command(name="fling")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def fling(self, ctx: Context, user: discord.Member) -> None:
         """Throws a user to a random voice channel."""
@@ -193,7 +192,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
     
     @commands.command(name="fish")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def fish(self, ctx: Context, user: discord.Member) -> None:
         """Throws a user to the voice channel of the author of the command."""
@@ -205,7 +204,7 @@ class HostileCommands(commands.Cog):
             await refund(ctx.author, ctx)
 
     @commands.command(name="changenickname", aliases=["nick"])
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def change_nickname(self, ctx: Context, *nickname: str, user: discord.Member) -> None:
         """Changes a user's nickname."""

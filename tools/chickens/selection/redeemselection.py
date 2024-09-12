@@ -2,7 +2,7 @@ from discord import SelectOption, ui
 from db.farmDB import Farm
 from tools.shared import make_embed_object, send_bot_embed
 from tools.chickens.chickenshared import get_rarity_emoji, get_max_chicken_limit
-from tools.settings import max_bench
+from tools.settings import MAX_BENCH
 import asyncio
 import discord
 
@@ -29,7 +29,7 @@ class RedeemPlayerMenu(ui.Select):
             return
         for chicken in chickens_selected:
             if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
-                if len(farm_data['bench']) >= max_bench:
+                if len(farm_data['bench']) >= MAX_BENCH:
                     await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem more chickens than the farm size.", ephemeral=True)
                     return
                 chickens_sucessfully_redeemed.append(chicken)

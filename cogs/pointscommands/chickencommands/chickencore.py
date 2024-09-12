@@ -12,11 +12,10 @@ from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, lo
 from tools.chickens.chickeninfo import rollRates
 from tools.pointscore import pricing
 from tools.shared import make_embed_object, send_bot_embed, return_data
-from tools.settings import spam_command_cooldown, regular_command_cooldown, roll_per_hour, default_rolls
+from tools.settings import REGULAR_COOLDOWN, SPAM_COOLDOWN, ROLL_PER_HOUR, DEFAULT_ROLLS
 from discord.ext import commands
 from discord.ext.commands import Context
 import discord
-import asyncio
 
 class ChickenCore(commands.Cog):
 
@@ -24,7 +23,7 @@ class ChickenCore(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(name="createfarm", aliases=["cf"], usage="createFarm", description="Create a farm to start farming eggs.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def create_farm(self, ctx: Context) -> None:
         """Farm some eggs."""
@@ -36,7 +35,7 @@ class ChickenCore(commands.Cog):
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} You have created a farm.")
 
     @commands.hybrid_command(name="farm", aliases=["f"], usage="farm OPTIONAL [user]", description="Check the chickens in the farm.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def farm(self, ctx: Context, user: discord.Member = None) -> None:
         """Check the chickens in the farm."""
@@ -48,14 +47,14 @@ class ChickenCore(commands.Cog):
         await ctx.send(embed=msg)
 
     @commands.hybrid_command(name="market", aliases=["m"], usage="market", description="Market that generates 8 random chickens to buy.")
-    @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, SPAM_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def market(self, ctx: Context) -> None:
         """Market to buy chickens."""	
         await self.roll(ctx, 8, "market")
 
     @commands.hybrid_command(name="eggpack", aliases=["ep"], usage="eggpack", description="Buy an egg pack.")
-    @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, SPAM_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def eggpack(self, ctx: Context) -> None:
         """Buy an egg pack."""
@@ -67,26 +66,26 @@ class ChickenCore(commands.Cog):
             
     async def roll(self, ctx: Context, chickens_to_generate: list, action: str) -> None:
         """Market to buy chickens."""
-        global default_rolls
+        global DEFAULT_ROLLS
         farm_data = ctx.data["farm_data"]
         if action == "market":
             if not await self.verify_if_user_can_roll(farm_data):
-                minutes_remaining = round((roll_per_hour - (time() - farm_data['last_market_drop'])) / 60)
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you can only roll once every **{roll_per_hour // 3600}** hour(s). Try again in **{minutes_remaining}** minutes.")
+                minutes_remaining = round((ROLL_PER_HOUR - (time() - farm_data['last_market_drop'])) / 60)
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you can only roll once every **{ROLL_PER_HOUR // 3600}** hour(s). Try again in **{minutes_remaining}** minutes.")
                 return
             if not RollLimit.read_key(ctx.author.id):
                 if farm_data['farmer'] == "Executive Farmer":
                     farmer_upgrades = load_farmer_upgrades("Executive Farmer")
                     farmer_upgd = farmer_upgrades[0]
-                    RollLimit.create(ctx.author.id, farmer_upgd + default_rolls)
+                    RollLimit.create(ctx.author.id, farmer_upgd + DEFAULT_ROLLS)
                 else:
-                    RollLimit.create(ctx.author.id, default_rolls)
+                    RollLimit.create(ctx.author.id, DEFAULT_ROLLS)
             RollLimit.update(ctx.author.id, RollLimit.read(ctx.author.id) - 1)
             if RollLimit.read(ctx.author.id) == 1:
                 Farm.update_last_market_drop(ctx.author.id)
                 RollLimit.remove(ctx.author.id)
         if farm_data['farmer'] == "Generous Farmer":
-            default_rolls += load_farmer_upgrades("Generous Farmer")[0]
+            DEFAULT_ROLLS += load_farmer_upgrades("Generous Farmer")[0]
         generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
         message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux." for index, chicken in enumerate(generated_chickens)]))
         view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message)
@@ -114,7 +113,7 @@ class ChickenCore(commands.Cog):
     
     async def verify_if_user_can_roll(self, farm_data: dict) -> bool:
         last_roll = time() - farm_data['last_market_drop']
-        last_roll = min(last_roll // roll_per_hour, 1)
+        last_roll = min(last_roll // ROLL_PER_HOUR, 1)
         if last_roll >= 1:
             return True
         return False

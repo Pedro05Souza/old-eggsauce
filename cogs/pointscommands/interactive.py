@@ -20,7 +20,7 @@ class InteractiveCommands(commands.Cog):
         self.bot = bot
             
     @commands.hybrid_command(name="donatepoints", aliases=["donate", "give"], brief="Donate points to another user.", usage="donatePoints [user] [amount]", description="Donate points to another user.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def donate_points(self, ctx: Context, amount: int, user: discord.Member,) -> None:
         """Donates points to another user."""
@@ -35,25 +35,25 @@ class InteractiveCommands(commands.Cog):
                     await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't donate 0 or less than 50 eggbux.")
                     return
                 else:
-                    taxed_amount = amount * tax
+                    taxed_amount = amount * TAX
                     amount -= taxed_amount
                     amount = int(amount)
                     User.update_points(ctx.author.id, user_data["points"] - amount)
                     User.update_points(user.id, target_data["points"] + amount)
-                    await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} donated **{amount}** eggbux to {user.display_name}. The donation was taxed by **{int(tax * 100)}%** eggbux.")
+                    await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} donated **{amount}** eggbux to {user.display_name}. The donation was taxed by **{int(TAX * 100)}%** eggbux.")
                     await on_user_transaction(ctx, amount, 1)
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} doesn't have enough eggbux.")
                 
     @commands.hybrid_command(name="balls", brief="Bot sends balls.", usage="balls", description="Bot sends balls.")        
-    @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def balls(self, ctx: Context) -> None:
         """Bot sends balls."""
         await send_bot_embed(ctx, description=f":soccer: balls")
 
     @commands.hybrid_command("mog", brief="Mog a user", parameters=["user: discord.Member"], examples=["mog @user"], description="Mog a user.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def mog(self, ctx: Context, user: discord.Member) -> None:
             """Mog a user."""
@@ -62,7 +62,7 @@ class InteractiveCommands(commands.Cog):
             await ctx.send(f"{user.mention} bye bye 🤫🧏‍♂️")
 
     @commands.hybrid_command(name="casino", aliases=["cassino", "bet", "gamble", "roulette"], brief="Bet on a color in the roulette.", usage="casino [amount] [color]", description="Bet on a color in the roulette, RED, BLACK or GREEN.")
-    @commands.cooldown(1, spam_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def cassino(self, ctx: Context, amount, cor: str) -> None:
         """Bet on a color in the roulette."""
@@ -110,7 +110,7 @@ class InteractiveCommands(commands.Cog):
             logging.warning(f"Error in cassino command: {error}")
 
     @commands.hybrid_command(name="stealpoints", aliases=["steal", "rob"], brief="Steal points from another user.", usage="stealPoints [user]", description="Steal points from another user.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def steal_points(self, ctx: Context, user: discord.Member) -> None:
         """Steals points from another user."""
@@ -153,7 +153,7 @@ class InteractiveCommands(commands.Cog):
             return
         
     @commands.command(aliases=["hg"])
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def hungergames(self, ctx: Context, *args) -> None:
         """Starts a hunger games event."""
@@ -176,7 +176,7 @@ class InteractiveCommands(commands.Cog):
 
     async def hunger_games_starter(self, ctx: Context, guild_id: int, args) -> int:
         global hungergames_status
-        cooldown = hunger_games_wait_time
+        cooldown = HUNGER_GAMES_WAIT_TIME
         if guild_id in hungergames_status:
             await send_bot_embed(ctx, description=":no_entry_sign: A hunger games is already in progress.")
             return
@@ -227,7 +227,7 @@ class InteractiveCommands(commands.Cog):
             try:
                 reaction, user = await self.bot.wait_for("reaction_add", timeout=cooldown)
                 if reaction.emoji == "✅":
-                    allowplay = await self.check_tribute_play(discord.utils.get(ctx.guild.members, id=user.id), hunger_games_match_value_per_tribute)
+                    allowplay = await self.check_tribute_play(discord.utils.get(ctx.guild.members, id=user.id), HUNGER_GAMES_MATCH_VALUE)
                     if allowplay:
                         if not any(tribute['tribute'] == user for tribute in tributes):
                             tributes.append({"tribute": user, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
@@ -239,22 +239,22 @@ class InteractiveCommands(commands.Cog):
             except asyncio.TimeoutError:
                 break
         
-        if len(tributes) < min_tributes:
-            await send_bot_embed(ctx, description=f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is **{min_tributes}**.")
+        if len(tributes) < MIN_TRIBUTES:
+            await send_bot_embed(ctx, description=f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is **{MIN_TRIBUTES}**.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
-                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + hunger_games_match_value_per_tribute)
+                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + HUNGER_GAMES_MATCH_VALUE)
             return False
-        elif len(tributes) > max_tributes:
-            await send_bot_embed(ctx, description=f":no_entry_sign: The maximum number of tributes is **{max_tributes}**. The game has been cancelled.")
+        elif len(tributes) > MAX_TRIBUTES:
+            await send_bot_embed(ctx, description=f":no_entry_sign: The maximum number of tributes is **{MAX_TRIBUTES}**. The game has been cancelled.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
-                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + hunger_games_match_value_per_tribute)
+                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + HUNGER_GAMES_MATCH_VALUE)
             return False
         return True
     
     async def on_match_end(self, ctx: Context, tributes: list, winner: dict, guild_id: int) -> None:
-            prizeMultiplier = len(tributes) * hunger_games_prize_multiplier
+            prizeMultiplier = len(tributes) * HUNGER_GAMES_PRIZE
             await send_bot_embed(ctx, description=f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
             User.update_points(winner['tribute'].id, User.read(winner['tribute'].id)["points"] + prizeMultiplier)
             hungergames_status.pop(guild_id)

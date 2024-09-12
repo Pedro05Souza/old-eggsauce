@@ -7,7 +7,7 @@ from db.farmDB import Farm
 from db.userDB import User
 from tools.chickens.chickeninfo import ChickenFood
 from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, return_data
-from tools.settings import regular_command_cooldown, max_corn_limit, max_plot_limit, farm_drop
+from tools.settings import REGULAR_COOLDOWN, MAX_CORN_LIMIT, MAX_PLOT_LIMIT, FARM_DROP
 from tools.pointscore import pricing
 from tools.chickens.chickenshared import preview_corn_produced, update_player_corn
 from tools.listeners import on_user_transaction
@@ -20,7 +20,7 @@ class CornCommands(commands.Cog):
         self.bot = bot
     
     @commands.hybrid_command(name="cornfield", aliases=["c", "corn"], usage="chickenfood", descripton="Opens the food farm to generated food for the chickens.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def corn_field(self, ctx: Context, user: discord.Member = None) -> None:
         """Displays the user's corn field."""
@@ -29,7 +29,7 @@ class CornCommands(commands.Cog):
             await ctx.send(embed=await self.show_plr_food_farm(ctx, user, data))
     
     @commands.hybrid_command(name="renamecornfield", aliases=["rcf"], usage="renameCornfield <nickname>", description="Rename the cornfield.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def rename_corn_field(self, ctx: Context, nickname: str) -> None:
         """Rename the cornfield"""
@@ -52,18 +52,18 @@ class CornCommands(commands.Cog):
         farm_data = data["farm_data"]
         if user.id != ctx.author.id:
             farm_data['corn'], _ = await update_player_corn(user, farm_data)
-        food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in **{farm_drop // 3600}** hour(s): **{await preview_corn_produced(farm_data)}** :tractor:\n:seedling: **Plots**: {farm_data['plot']}")
+        food_embed = await make_embed_object(title=f":corn: {farm_data['plant_name']}", description=f":corn: Corn balance: {farm_data['corn']}/{farm_data['corn_limit']}\n:moneybag: Corn expected to generate in **{FARM_DROP // 3600}** hour(s): **{await preview_corn_produced(farm_data)}** :tractor:\n:seedling: **Plots**: {farm_data['plot']}")
         food_embed.set_thumbnail(url=user.display_avatar)
         return food_embed
     
     @commands.hybrid_command(name="buyplot", aliases=["bp"], usage="buyPlot", description="Buy a plot to increase the corn production.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def buy_plot(self, ctx: Context) -> None:
         """Buy a plot for corn production"""
         farm_data = ctx.data["farm_data"]
         actual_plot = farm_data['plot']
-        if actual_plot == max_plot_limit:
+        if actual_plot == MAX_PLOT_LIMIT:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum number of plots.")
             return
         plot_price = (actual_plot ** 1.7) * 100
@@ -84,13 +84,13 @@ class CornCommands(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the purchase or the offer has expired.")
             
     @commands.hybrid_command(name="upgradecornlimit", aliases=["ucl"], usage="upgradeCornLimit", description="Upgrade the corn limit.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def upgrade_corn_limit(self, ctx: Context) -> None:
         """Upgrades the player corn limit."""
         farm_data = ctx.data["farm_data"]
         range_corn = int((farm_data['corn_limit'] * 50)  // 100)
-        if farm_data['corn_limit'] == max_corn_limit:
+        if farm_data['corn_limit'] == MAX_CORN_LIMIT:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum corn limit.")
             return
         price_corn = farm_data['corn_limit'] * 2
@@ -110,7 +110,7 @@ class CornCommands(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the upgrade or the offer has expired.")
     
     @commands.hybrid_command(name="buycorn", aliases=["bc"], usage="buyCorn <quantity>", description="Buy corn for the chickens.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def buy_corn(self, ctx: Context, quantity) -> None:
         """Buy corn for the chickens"""
@@ -141,7 +141,7 @@ class CornCommands(commands.Cog):
         await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have bought {quantity} corn for {corn_price} eggbux.")
 
     @commands.hybrid_command(name="sellcorn", aliases=["sf"], usage="sellCorn <quantity>", description="Sell corn for the chickens.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def sell_corn(self, ctx: Context, quantity: int) -> None:
         """Sell corn"""
@@ -161,7 +161,7 @@ class CornCommands(commands.Cog):
         await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have sold {quantity} corn for {corn_price} eggbux.")
 
     @commands.hybrid_command(name="feedallchicken", aliases=["fac"], usage="feedallchicken", description="Feed a chicken.")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def feed_all_chickens(self, ctx: Context) -> None:
         """Feed all the chickens"""

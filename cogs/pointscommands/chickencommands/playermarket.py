@@ -6,9 +6,9 @@ from discord.ext import commands
 from db.farmDB import Farm
 from db.marketDB import Market
 from tools.shared import send_bot_embed, make_embed_object
-from tools.chickens.chickenshared import get_rarity_emoji, verify_events, offer_expire_time
+from tools.chickens.chickenshared import get_rarity_emoji, verify_events
 from tools.shared import send_bot_embed
-from tools.settings import regular_command_cooldown
+from tools.settings import REGULAR_COOLDOWN, OFFER_EXPIRE_TIME
 from tools.pointscore import pricing
 from tools.shared import confirmation_embed
 from tools.chickens.chickeninfo import ChickenRarity
@@ -24,7 +24,7 @@ class PlayerMarket(commands.Cog):
         self.bot = bot
     
     @commands.hybrid_command(name="offerchicken", aliases=["offer"], brief="Register a chicken to the player market.", description="Register a chicken to the player market.", usage="<index> OPTIONAL <description>")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def register_offer(self, ctx: Context, index: int, price: int, *, desc: str = None) -> None:
         """Register a chicken to the player market."""
@@ -76,7 +76,7 @@ class PlayerMarket(commands.Cog):
             confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to register your **{get_rarity_emoji(selected_chicken['rarity'])}{selected_chicken['rarity']} {selected_chicken['name']}** to the player market for **{price}** eggbux?")
             if confirmation:
                 Market.create(ctx.author.id, selected_chicken, price, description, ctx.author.id)
-                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have successfully registered your chicken to the player market. If no one buys it, it automatically gets back to your farm after **{offer_expire_time}** hours.")
+                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have successfully registered your chicken to the player market. If no one buys it, it automatically gets back to your farm after **{OFFER_EXPIRE_TIME}** hours.")
                 farm_data['chickens'].pop(index)
                 Farm.update(ctx.author.id, chickens=farm_data['chickens'])
                 EventData.remove(r)
@@ -85,7 +85,7 @@ class PlayerMarket(commands.Cog):
                 EventData.remove(r)
     
     @commands.hybrid_command(name="viewoffers", aliases=["offers"], description="Shows your current market offers.", usage="viewplrmarket OPTIONAL [user]")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def view_offers(self, ctx: Context, user: discord.Member = None) -> None:
         """Shows the player's current market offers."""
@@ -105,7 +105,7 @@ class PlayerMarket(commands.Cog):
         price="OPTIONAL <price>",
         author="OPTIONAL [author]"
     )
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def search_chicken(self, interaction: discord.Interaction, chicken_rarity: str = None, upkeep_rarity: int = None, price: int = None, author: discord.Member = None):
         """Search for 10 chickens offered by other players."""

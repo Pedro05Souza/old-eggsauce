@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Context
 from random import choice
-from tools.settings import regular_command_cooldown
+from tools.settings import REGULAR_COOLDOWN
 from tools.pointscore import refund, pricing
 from tools.shared import send_bot_embed
 
@@ -11,7 +11,7 @@ class DestructiveHostiles(commands.Cog):
         self.bot = bot
 
     @commands.command(name="detonate")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def detonate(self, ctx: Context) -> None:
         """Disconnects all users from their voice channels."""
@@ -21,7 +21,7 @@ class DestructiveHostiles(commands.Cog):
         await send_bot_embed(ctx, description=f"All users have been disconnected from their voice channels.")
 
     @commands.command(name="shuffle")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def shuffle(self, ctx: Context) -> None:
         """Throws all users to random voice channels."""
@@ -35,7 +35,7 @@ class DestructiveHostiles(commands.Cog):
         await send_bot_embed(ctx, description=f"All users have been thrown to random voice channels.")
     
     @commands.command(name="emergency")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def emergency(self, ctx: Context) -> None:
         """Throws all users to the voice channel of the author of the command."""
@@ -50,7 +50,7 @@ class DestructiveHostiles(commands.Cog):
         await send_bot_embed(ctx, description=f"All users have been thrown to {ctx.author.voice.channel.name}.")
     
     @commands.command(name="kick")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def kick(self, ctx: Context, user: discord.Member) -> None:
         """Kicks a user."""
@@ -62,7 +62,7 @@ class DestructiveHostiles(commands.Cog):
         await send_bot_embed(ctx, description=f"{user.display_name} was kicked.")
      
     @commands.command(name="ban")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def ban(self, ctx: Context, user: discord.Member) -> None:
         """Bans a user."""
@@ -74,7 +74,7 @@ class DestructiveHostiles(commands.Cog):
         await send_bot_embed(ctx, description=f"{user.display_name} was banned.")
     
     @commands.command(name="explode")
-    @commands.cooldown(1, regular_command_cooldown, commands.BucketType.user)
+    @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def explode(self, ctx: Context) -> None:
         """Disconnects all users from your voice channel."""
