@@ -1,7 +1,7 @@
 from discord.ext import commands
 from tools.shared import guild_cache_retriever, user_cache_retriever
 from db.userDB import User
-from tools.settings import user_salary_drop
+from tools.settings import USER_SALARY_DROP
 import discord
 import time
 import math
@@ -33,9 +33,7 @@ class PointsManager(commands.Cog):
             time_passed = int(time_passed)
             self.message_cache.pop(user_id)
             logger.info(f"{user_id} has received {time_passed} eggbux from sending messages.")
-            user_data = data['user_data']
-            total_points = user_data['points'] + time_passed
-            return total_points
+            return time_passed
         else:
             return None
     
@@ -69,10 +67,7 @@ class PointsManager(commands.Cog):
            return total_points
 
     async def add_points(self, type: int, user_id: int) -> int:
-        add_points = (math.ceil(time.time()) - type) // 10
-        user_data = await user_cache_retriever(user_id)
-        user_data = user_data["user_data"]
-        total_points = user_data["points"] + add_points
+        total_points = (math.ceil(time.time()) - type) // 10
         total_points = int(total_points)
         return total_points
     
@@ -90,7 +85,7 @@ class PointsManager(commands.Cog):
             points = (voice_points or 0) + (message_points or 0)
             if points == 0:
                 return user_data, salary_gain
-            User.update_points(user.id, points)
+            User.update_points(user.id, user_data["points"] + points)
             return user_data, salary_gain
         
     async def get_salary_points(self, user: discord.Member, user_data: dict) -> int:
@@ -98,7 +93,7 @@ class PointsManager(commands.Cog):
         Calculates the salary of the user based on their roles.
         """
         last_title_drop = time.time() - user_data["salary_time"]
-        hours_passed = min(last_title_drop // user_salary_drop, 12)
+        hours_passed = min(last_title_drop // USER_SALARY_DROP, 12)
         hours_passed = int(hours_passed)
         salary = await self.salary_role(user_data)
         if hours_passed > 0 and user_data["roles"] != "":
