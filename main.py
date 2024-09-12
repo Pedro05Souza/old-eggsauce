@@ -1,7 +1,6 @@
 from setup import *
 import logging
 import discord
-import asyncio
 logger = logging.getLogger('botcore')
         
 @bot.event
