@@ -52,10 +52,10 @@ def get_chicken_price(chicken: dict, *args) -> int:
 def load_farmer_upgrades(farmer) -> Union[list, int]:
         """Load the farmer upgrades"""
         farmer_dict = {
-            "Rich Farmer": [10, 20],
+            "Rich Farmer": [15, 20],
             "Guardian Farmer": 5,
             "Executive Farmer" : [8, 20],
-            "Warrior Farmer": 3,
+            "Warrior Farmer": 2,
             "Generous Farmer": [3],
             'Sustainable Farmer': [14600, [5, 40]]
         }
@@ -105,6 +105,12 @@ def get_max_chicken_limit(farm_data: dict) -> int:
             return DEFAULT_FARM_SIZE + load_farmer_upgrades('Warrior Farmer')
         else:
             return DEFAULT_FARM_SIZE
+
+async def get_max_bench_limit() -> int:
+        """
+        Get the maximum bench limit that can be stored in the farm.
+        """
+        return MAX_BENCH
         
 async def verify_events(ctx: Context, user: discord.Member):
         """Verify if the user is in an event. This method should be called whenever a user is performing critical actions
