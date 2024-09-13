@@ -6,6 +6,7 @@ from tools.chickens.selection.redeemselection import RedeemPlayerMenu
 from tools.chickens.selection.tradeselection import ChickenAuthorTradeMenu, ChickenUserTradeMenu
 from tools.chickens.selection.playermarketselection import PlayerMarketMenu
 from tools.listeners import on_user_transaction
+from tools.settings import MAX_BENCH
 from typing import Union
 from discord import SelectOption, ui
 from db.farmDB import Farm
@@ -96,7 +97,7 @@ class ChickenMarketMenu(ui.Select):
         if not farm_data:
             await send_bot_embed(interaction, description=":no_entry_sign: You don't have a farm. Type !createfarm to start.", ephemeral=True)
             return
-        if len(farm_data['chickens']) == get_max_chicken_limit(farm_data):
+        if len(farm_data['chickens']) == get_max_chicken_limit(farm_data) and len(farm_data['bench']) == await get_max_bench_limit():
             await send_bot_embed(interaction, description=":no_entry_sign: You hit the maximum limit of chickens in the farm.", ephemeral=True)
             self.options = [
                 SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken, farm_data['farmer'])}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
