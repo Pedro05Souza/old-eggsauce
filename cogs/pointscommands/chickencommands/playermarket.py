@@ -1,10 +1,9 @@
 """
 This module contains the player market commands for the chicken system.
 """
-
 from discord.ext import commands
-from db.farmDB import Farm
-from db.marketDB import Market
+from db.farmdb import Farm
+from db.marketdb import Market
 from tools.shared import send_bot_embed, make_embed_object
 from tools.chickens.chickenshared import get_rarity_emoji, verify_events
 from tools.shared import send_bot_embed
@@ -27,7 +26,18 @@ class PlayerMarket(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def register_offer(self, ctx: Context, index: int, price: int, *, desc: str = None) -> None:
-        """Register a chicken to the player market."""
+        """
+        Register a chicken to the player market.
+
+        Args:
+            ctx (Context): The context of the command.
+            index (int): The index of the chicken to register.
+            price (int): The price of the chicken.
+            desc (str, optional): The description of the chicken. Defaults to None.
+        
+        Returns:
+            None
+        """
         index -= 1
         description = ""
         farm_data = ctx.data['farm_data']
@@ -88,7 +98,16 @@ class PlayerMarket(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def view_offers(self, ctx: Context, user: discord.Member = None) -> None:
-        """Shows the player's current market offers."""
+        """
+        Shows the player's current market offers.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member, optional): The user to check the offers. Defaults to None, which is the author of the command.
+        
+        Returns:
+            None
+        """
         if user is None:
             user = ctx.author
         current_offers = Market.get_user_offers(user.id)
@@ -108,7 +127,16 @@ class PlayerMarket(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def search_chicken(self, interaction: discord.Interaction, chicken_rarity: str = None, upkeep_rarity: int = None, price: int = None, author: discord.Member = None):
-        """Search for 10 chickens offered by other players."""
+        """
+        Search for a maximum 10 chickens offered by other players.
+
+        Args:
+            interaction (discord.Interaction): The interaction of the command.
+            chicken_rarity (str, optional): The rarity of the chicken. Defaults to None.
+            upkeep_rarity (int, optional): The upkeep rarity of the chicken. Defaults to None.
+            price (int, optional): The price of the chicken. Defaults to None.
+            author (discord.Member, optional): The author of the chicken. Defaults to None.
+        """
         search_param = [chicken_rarity, upkeep_rarity, price, author]
         if all([not param for param in search_param]):
             await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: {interaction.user.display_name}, you need to provide at least one search parameter.")
@@ -136,6 +164,16 @@ class PlayerMarket(commands.Cog):
             await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: No offers found with the parameters provided.")
 
     async def search_organizer(self, interaction: discord.Interaction, db_request: list) -> list:
+        """
+        Organizes the search results.
+
+        Args:
+            interaction (discord.Interaction): The interaction of the command.
+            db_request (list): The list of offers.
+        
+        Returns:
+            list
+        """
         offers = db_request
         offers_copy = offers.copy()
         if offers:

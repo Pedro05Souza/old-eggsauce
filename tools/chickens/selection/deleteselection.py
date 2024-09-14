@@ -1,6 +1,6 @@
 from discord import SelectOption, ui
-from db.farmDB import Farm
-from db.userDB import User
+from db.farmdb import Farm
+from db.userdb import User
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji
 from tools.shared import make_embed_object, send_bot_embed, confirmation_embed, user_cache_retriever
@@ -8,7 +8,7 @@ import asyncio
 import discord
 
 class ChickenDeleteMenu(ui.Select):
-    """Menu to delete chickens from the farm"""
+
     def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, s: EventData):
         options = [
             SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
@@ -21,6 +21,15 @@ class ChickenDeleteMenu(ui.Select):
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder="Select the chickens to delete:")
 
     async def callback(self, interaction: discord.Interaction) -> None:
+        """
+        Responsable for deleting chickens from the farm.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+
+        Returns:
+            None
+        """
         if interaction.user.id != self.author.id:
             return await send_bot_embed(interaction, description=":no_entry_sign: You can't delete chickens for another user.", ephemeral=True)
         data = await user_cache_retriever(interaction.user.id)

@@ -1,6 +1,6 @@
 from discord.ext import commands
 from tools.shared import guild_cache_retriever, user_cache_retriever
-from db.userDB import User
+from db.userdb import User
 from tools.settings import USER_SALARY_DROP
 import discord
 import time
@@ -10,6 +10,7 @@ import asyncio
 logger = logging.getLogger("botcore")
 
 class PointsManager(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
         self.message_cache = {}
@@ -18,11 +19,28 @@ class PointsManager(commands.Cog):
         self.locks = {}
 
     async def check_if_user_in_message_cache(self, user_id: int) -> bool:
-        """Check if the user is in the message cache."""
+        """
+        Check if the user is in the message cache.
+
+        Args:
+            user_id (int): The id of the user to check.
+
+        Returns:
+            bool
+        """
         return user_id in self.message_cache
 
     async def reward_points_if_possible(self, user_id: int, data: dict) -> int | None:
-        """Rewards the user with points in the bot cache's system if he is in the message cache."""
+        """
+        Rewards the user with points in the bot cache's system if he is in the message cache.
+
+        Args:
+            user_id (int): The id of the user to reward.
+            data (dict): The data of the user.
+
+        Returns:
+            int | None
+        """
         if not await self.check_if_user_in_message_cache(user_id):
             return None
         current_time = math.ceil(time.time())
@@ -38,7 +56,15 @@ class PointsManager(commands.Cog):
             return None
     
     async def count_points(self, user: discord.Member) -> None:
-        """Counts the points of the user every time he enters a voice channel."""
+        """
+        Counts the points of the user every time he enters a voice channel.
+
+        Args:
+            user (discord.Member): The user to count the points.
+
+        Returns:
+            None
+        """
         userId = user.id
         if user.bot:
             return
@@ -48,25 +74,39 @@ class PointsManager(commands.Cog):
             return
     
     async def update_points(self, user: discord.Member) -> int:
-        """Updates the points of the user every 10 seconds."""
+        """
+        Updates the points of the user every 10 seconds.
+
+        Args:
+            user (discord.Member): The user to update the points.
+        """
         userId = user.id
 
         if not user.voice and userId in self.join_time.keys():
-            total_points = await self.add_points(self.join_time[userId], userId)
+            total_points = await self.add_points(self.join_time[userId])
             self.join_time.pop(userId)
             return total_points
         
         if userId in self.join_time.keys():
-            total_points = await self.add_points(self.join_time[userId], userId)
+            total_points = await self.add_points(self.join_time[userId])
             self.join_time[userId] = math.ceil(time.time())
             return total_points
         
         if userId not in self.join_time.keys() and user.voice:
-           total_points = await self.add_points(self.init_time, userId)
+           total_points = await self.add_points(self.init_time)
            self.join_time[userId] = math.ceil(time.time())
            return total_points
 
-    async def add_points(self, type: int, user_id: int) -> int:
+    async def add_points(self, type: int) -> int:
+        """
+        Adds points to the user based on the time he has been in the voice channel.
+
+        Args:
+            type (int): The time the user joined the voice channel.
+
+        Returns:
+            int
+        """
         total_points = (math.ceil(time.time()) - type) // 10
         total_points = int(total_points)
         return total_points
@@ -74,6 +114,10 @@ class PointsManager(commands.Cog):
     async def update_user_points(self, user: discord.Member, data: dict) -> dict:
         """
         Updates the user's points when any command is used.
+
+        Args:
+            user (discord.Member): The user to update the points.
+            data (dict): The data of the user.
         """
         user_data = data['user_data']
         salary_gain = await self.get_salary_points(user, user_data)
@@ -91,6 +135,13 @@ class PointsManager(commands.Cog):
     async def get_salary_points(self, user: discord.Member, user_data: dict) -> int:
         """
         Calculates the salary of the user based on their roles.
+
+        Args:
+            user (discord.Member): The user to calculate the salary.
+            user_data (dict): The data of the user.
+
+        Returns:
+            int
         """
         last_title_drop = time.time() - user_data["salary_time"]
         hours_passed = min(last_title_drop // USER_SALARY_DROP, 12)
@@ -105,7 +156,15 @@ class PointsManager(commands.Cog):
         return 0
     
     async def salary_role(self, user_data: dict) -> int:
-        """Returns the salary of a user based on their roles."""
+        """
+        Returns the salary of a user based on their roles.
+
+        Args:
+            user_data (dict): The data of the user.
+
+        Returns:
+            int
+        """
         salarios = {
             "T": 20,
             "L": 40,
@@ -119,7 +178,9 @@ class PointsManager(commands.Cog):
         
     @commands.Cog.listener()
     async def on_voice_state_update(self, user: discord.Member, before, after):
-        """Listens to the voice state update event."""
+        """
+        Listens to the voice state update event.
+        """
         guild_data = await guild_cache_retriever(user.guild.id)
         if not guild_data['toggled_modules'] == "N":
             user_data = await user_cache_retriever(user.id)
@@ -138,7 +199,9 @@ class PointsManager(commands.Cog):
             
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        """Listens to the message event."""
+        """
+        Listens to the message event.
+        """
         if message.author.bot:
             return
         

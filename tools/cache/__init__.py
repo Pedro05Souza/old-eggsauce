@@ -14,25 +14,48 @@ class CacheInitiator:
 
     async def start_cache_clearing_for_users(self) -> None:
         """
-        Periodically clear the user cache.
+        Periodically clear the user cache with a given interval.
+
+        Returns:
+            None
         """
-        await self.user_cache.clear_users_cache_periondically(1800) # 30 minutes
+        await self.user_cache.clear_users_cache_periondically(1800)
         
     async def get_user_cache(self, user_id: int) -> Union[dict, None]:
         """
-        Get the user cache.
+        Get the user cache for a given user id.
+
+        Args:
+            user_id (int): The user id to get the cache for.
+        
+        Returns:
+            Union[dict, None]
         """
         return await self.user_cache.get(user_id)
 
     async def add_to_user_cache(self, user_id: int, **kwargs) -> None:
         """
-        Add to the user cache.
+        Adds to the user cache.
+
+        Args:
+            user_id (int): The user id to add to the cache.
+            **kwargs: The data to add to the cache.
+
+        Returns:
+            None
         """
         await self.user_cache.put(user_id, **kwargs)
 
     async def update_user_cache(self, user_id: int, **kwargs) -> None:
         """
-        Update the user cache.
+        Updates the user cache.
+
+        Args:
+            user_id (int): The user id to update the cache for.
+            **kwargs: The data to update the cache with.
+
+        Returns:
+            None
         """
         if not await self.user_cache.get(user_id):
             await self.add_to_user_cache(user_id, **kwargs)
@@ -41,31 +64,51 @@ class CacheInitiator:
 
     async def delete_from_user_cache(self, user_id: int) -> None:
         """
-        Delete the user cache.
+        Deletes from the user cache.
+
+        Args:
+            user_id (int): The user id to delete the cache for.
+
+        Returns:
+            None
         """
         await self.user_cache.delete(user_id)
 
-    async def delete_user_cache(self, user_id: int) -> None:
-        """
-        Delete the user cache
-        """
-        await self.delete_from_user_cache(user_id)
-
     async def get_guild_cache(self, guild_id: int) -> Union[dict, None]:
         """
-        Get the guild cache.
+        Gets the guild cache for a given guild id.
+
+        Args:
+            guild_id (int): The guild id to get the cache for.
+        
+        Returns:
+            Union[dict, None]
         """
         return await self.guild_cache.get(guild_id)
 
     async def add_to_guild_cache(self, guild_id: int, **kwargs) -> None:
         """
-        Add to the guild cache.
+        Adds to the guild cache.
+
+        Args:
+            guild_id (int): The guild id to add to the cache.
+            **kwargs: The data to add to the cache.
+
+        Returns:
+            None
         """
         await self.guild_cache.put(guild_id, **kwargs)
 
     async def update_guild_cache(self, guild_id: int, **kwargs) -> None:
         """
-        Update the guild cache.
+        Updates the guild cache.
+
+        Args:
+            guild_id (int): The guild id to update the cache for.
+            **kwargs: The data to update the cache with.
+
+        Returns:
+            None
         """
         if await self.guild_cache.get(guild_id) is None:
             await self.add_to_guild_cache(guild_id, **kwargs)
@@ -80,15 +123,21 @@ class CacheInitiator:
 
     async def get_memory_usage(self) -> tuple:
         """
-        Get the memory usage.
+        Gets the memory usage.
+
+        Returns:
+            tuple
         """
         return await self.user_cache.get_user_cache_memory_consuption(), await self.guild_cache.get_guild_cache_memory_consuption()
     
     async def start_cache_clearing_for_guilds(self) -> None:
         """
-        Periodically clear the guild cache.
+        Periodically clears the guild cache.
+
+        Returns:
+            None
         """
-        await self.guild_cache.clear_guild_cache_periodically(1800)  # 30 minutes
+        await self.guild_cache.clear_guild_cache_periodically(1800)
     
-cache_initiator = CacheInitiator(16777216, 8388608)  # 16MB, 8MB # can hold up to 7.8k guilds and 1.6k users
+cache_initiator = CacheInitiator(16777216, 8388608)  # 16MB, 8MB
 

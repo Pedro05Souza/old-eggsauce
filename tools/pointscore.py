@@ -2,8 +2,8 @@
 This module contains the core of the bot's points system. It is responsible for handling the prices of the commands, cooldowns and checks.
 """
 
-from db.userDB import User
-from db.bankDB import Bank
+from db.userdb import User
+from db.bankdb import Bank
 from discord.ext import commands
 from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever, guild_cache_retriever, cooldown_user_tracker, format_number
 from tools.chickens.chickenshared import update_user_farm, update_player_corn
@@ -19,6 +19,13 @@ logger = logging.getLogger('botcore')
 async def get_points_commands_submodules(ctx: Context, config_data: dict) -> bool:
     """
     Verify if the current command's cog is enabled in the server.
+
+    Args:
+        ctx (Context): The context of the command.
+        config_data (dict): The server's configuration data.
+
+    Returns:
+        bool
     """
     active_module = config_data['toggled_modules']
     shared_cogs = ["BaseCommands", "BankCommands"]
@@ -45,14 +52,27 @@ async def get_points_commands_submodules(ctx: Context, config_data: dict) -> boo
 
 async def verify_points(command: str, user_data: dict) -> bool:
     """
-    Verify if the user has enough points to use the command.
+    Verifies if the user has enough points to use the command.
+
+    Args:
+        command (str): The command to verify.
+        user_data (dict): The user data.
+
+    Returns:
+        bool
     """
     price = Prices[command].value
     return user_data["points"] >= price
 
 async def verify_if_farm_command(command: commands.Command) -> bool:
     """
-    Verify if the command belongs to a farm-related cog.
+    Verifies if the command belongs to a farm-related cog.
+
+    Args:
+        command (commands.Command): The command to verify.
+
+    Returns:
+        bool
     """
     chicken_cogs = {"ChickenCore", "ChickenEvents", "ChickenView", "CornCommands", "PlayerMarket", "ChickenCombat"}
     cog = command.cog
@@ -63,7 +83,14 @@ async def verify_if_farm_command(command: commands.Command) -> bool:
 
 async def verify_correct_channel(ctx: Context, config_data: dict) -> bool:
         """
-        Verify if the command is being used in the correct channel.
+        Verifies if the command is being used in the correct channel.
+
+        Args:
+            ctx (Context): The context of the command.
+            config_data (dict): The server's configuration data.
+
+        Returns:
+            bool
         """
         if ctx.channel.id != config_data['channel_id']:
             commands_object = ctx.bot.get_channel(config_data['channel_id'])
@@ -78,7 +105,14 @@ async def verify_correct_channel(ctx: Context, config_data: dict) -> bool:
             
 async def refund(user: discord.Member, ctx: Context) -> None:
     """
-    Refund the user if the command fails.
+    Refunds the user if the command fails.
+
+    Args:
+        user (discord.Member): The user to refund.
+        ctx (Context): The context of the command.
+    
+    Returns:
+        None
     """
     try:
         price = Prices[ctx.command.name].value
@@ -91,6 +125,16 @@ async def refund(user: discord.Member, ctx: Context) -> None:
 async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_data: dict, data: dict) -> bool:
     """
     Treat the exceptions that may occur while executing the command.
+
+    Args:
+        ctx (Context): The context of the command.
+        command (str): The command name.
+        user_data (dict): The user data.
+        config_data (dict): The server's configuration data.
+        data (dict): The cache data.
+
+    Returns:
+        bool
     """
     is_slash_command = hasattr(ctx, "interaction") and ctx.interaction is not None
     if is_slash_command: # no need to check since slash commands always have the correct amount of arguments and types
@@ -116,13 +160,28 @@ async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_d
 async def handle_exception(ctx: Context, description: str) -> None:
     """
     Handle the exception that may occur while executing the command.
+
+    Args:
+        ctx (Context): The context of the command.
+        description (str): The description of the embed.
+
+    Returns:
+        None
     """
     if await cooldown_user_tracker(ctx.author.id):
         await send_bot_embed(ctx, description=description)
         await refund(ctx.author, ctx)
     
 async def automatic_register(user: discord.Member) -> None:
-    """Automatically registers the user in the database."""
+    """
+    Automatically registers the user in the database.
+
+    Args:
+        user (discord.Member): The user to register.
+    
+    Returns:
+        None
+    """
     user_data = await user_cache_retriever(user.id)['user_data']
     if user_data:
         return
@@ -136,6 +195,16 @@ async def automatic_register(user: discord.Member) -> None:
         logger.info(f"{user.display_name} has been registered.")
 
 async def verify_if_server_has_modules(ctx: Context, config_data: dict) -> bool:
+    """
+    Check if the server has the necessary requirements to use the points commands
+
+    Args:
+        ctx (Context): The context of the command.
+        config_data (dict): The server's configuration
+
+    Returns:
+        bool
+    """
     modules = config_data.get('toggled_modules', None)	
     if not modules:
         await send_bot_embed(ctx, description=":warning: The modules aren't configured in this server. Type **!setModule** to configure them. To see the available modules type **!modules**.")
@@ -143,12 +212,26 @@ async def verify_if_server_has_modules(ctx: Context, config_data: dict) -> bool:
     return True
 
 async def verify_if_server_has_channel(ctx: Context, config_data: dict) -> bool:
+    """
+    Check if the server has the necessary requirements to use the points commands
+
+    Args:
+        ctx (Context): The context of the command.
+        config_data (dict): The server's configuration data.
+    """
     if not config_data['channel_id']:
         await send_bot_embed(ctx, description=":warning: The commands channel isn't configured in this server. Type **!setChannel** in the desired channel.")
         return False
     return True
 
 async def check_server_requirements(ctx: Context, config_data: dict) -> bool:
+    """
+    Check if the server has the necessary requirements to use the points commands
+
+    Args:
+        ctx (Context): The context of the command.
+        config_data (dict): The server's configuration data.
+    """
     if not await verify_if_server_has_modules(ctx, config_data):
             return False
         
@@ -164,6 +247,15 @@ async def check_server_requirements(ctx: Context, config_data: dict) -> bool:
 async def send_away_user_rewards(ctx: Context, salary_gained: int, total_profit: int, corn_produced: int) -> None:
     """
     Sends a message to the user to see how many he gained during his time away.
+
+    Args:
+        ctx (Context): The context of the command.
+        salary_gained (int): The amount of salary the user gained.
+        total_profit (int): The total profit the user gained.
+        corn_produced (int): The amount of corn the user produced.
+
+    Returns:
+        None
     """
     description = f":tada: **{ctx.author.display_name}** While you were away, you gained:\n"
 

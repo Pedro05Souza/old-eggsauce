@@ -18,7 +18,13 @@ class BotMatchMaking():
 
 async def bot_maker(user_score: int) -> BotMatchMaking:
     """"
-    Function to create a bot in the matchmaking.
+    Creates a bot in the matchmaking.
+
+    Args:
+        user_score (int): The score of the user.
+
+    Returns:
+        BotMatchMaking
     """
     bot = BotMatchMaking(await name_maker())
     bot_farm_size = randint(await define_bot_min_farm_size(user_score), DEFAULT_FARM_SIZE)
@@ -55,6 +61,12 @@ async def bot_maker(user_score: int) -> BotMatchMaking:
 async def define_bot_min_farm_size(player_mmr: int) -> int:
     """
     Defines the minimum farm size for the bot.
+
+    Args:
+        player_mmr (int): The mmr of the player.
+
+    Returns:
+        int
     """
     if player_mmr >= 2000:
         return DEFAULT_FARM_SIZE
@@ -64,7 +76,14 @@ async def define_bot_min_farm_size(player_mmr: int) -> int:
         
 async def define_chicken_rarity_list(player_mmr: int, all_rarities: dict) -> dict:
     """
-    Changes the rarity list for the bot to pick from.
+    Changes the chicken rarity list for the bot to pick from.
+
+    Args:
+        player_mmr (int): The mmr of the player.
+        all_rarities (dict): The rarities to pick from.
+
+    Returns:
+        dict
     """
     bot_deck = all_rarities.copy()
     
@@ -88,6 +107,12 @@ async def define_chicken_rarity_list(player_mmr: int, all_rarities: dict) -> dic
     return bot_deck
 
 async def generate_syllabe():
+    """
+    Generates a syllabe for the bot name.
+
+    Returns:
+        str
+    """
     pattern = [
         "CVC",  
         "VC",   
@@ -111,6 +136,12 @@ async def generate_syllabe():
     return syllable
 
 async def name_maker():
+    """
+    Generates a name for the bot.
+
+    Returns:
+        str
+    """
     name = ""
     for _ in range(randint(2, 3)):
         name += await generate_syllabe()

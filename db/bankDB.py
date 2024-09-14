@@ -1,4 +1,8 @@
-from db.dbConfig import mongo_client
+"""
+This module contains the database functions for the bank collection.
+"""
+
+from db.dbsetup import mongo_client
 from tools.cache import cache_initiator
 from tools.shared import update_scheduler, request_threading
 from typing import Union
@@ -10,7 +14,16 @@ class Bank:
 
     @staticmethod
     def create(user_id: int, points: int) -> None:
-        """Create a user in the database."""
+        """
+        Creates a user in the database.
+
+        Args:
+            user_id (int): The id of the user to create.
+            points (int): The amount of points to create the user with.
+
+        Returns:
+            None
+        """
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
@@ -34,7 +47,15 @@ class Bank:
         
     @staticmethod
     def delete(user_id: int) -> None:
-        """Delete a user from the database."""
+        """
+        Deletes a user from the bank collection.
+
+        Args:
+            user_id (int): The id of the user to delete.
+
+        Returns:
+            None
+        """
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
@@ -49,7 +70,13 @@ class Bank:
         
     @staticmethod
     def update(user_id: int, points: int) -> None:
-        """Update a user in the database."""
+        """
+        Updates a user in the database.
+
+        Args:
+            user_id (int): The id of the user to update.
+            points (int): The amount of points to update the user with.
+        """
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
@@ -65,7 +92,16 @@ class Bank:
         
     @staticmethod
     def update_upgrades(user_id: int, upgrades: int) -> None:
-        """Update a user in the database."""
+        """
+        Updates a user in the bank collection with upgrades.
+
+        Args:
+            user_id (int): The id of the user to update.
+            upgrades (int): The amount of upgrades to update the user with.
+
+        Returns:
+            None
+        """
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
@@ -81,32 +117,19 @@ class Bank:
         
     @staticmethod
     def read(user_id: int) -> Union[dict, None]:
-        """Read a user from the database."""
+        """
+        Reads a user from the bank collection.
+
+        Args:
+            user_id (int): The id of the user to read.
+
+        Returns:
+            dict | None
+        """
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
                 return user_data
         except Exception as e:
             logger.error("Error encountered while trying to read the user.", e)
-            return None
-        
-    @staticmethod
-    def read_highest_10_bank() -> Union[dict, None]:
-        """Read a user from the database."""
-        try:
-            user_data = request_threading(lambda: bank_collection.find().sort("bank", -1).limit(10)).result()
-            if user_data:
-                return user_data
-        except Exception as e:
-            logger.error("Error encountered while trying to read the user.", e)
-    
-    @staticmethod
-    def readAll() -> Union[dict, None]:
-        """Read all users from the database."""
-        try:
-            user_data = request_threading(lambda: bank_collection.find()).result()
-            if user_data:
-                return user_data
-        except Exception as e:
-            logger.error("Error encountered while trying to read all users.", e)
             return None

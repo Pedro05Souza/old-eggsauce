@@ -9,12 +9,27 @@ import discord
 logger = logging.getLogger('botcore')
 load_dotenv()   
 
-async def get_prefix_for_guild(bot, message):
-    """Get the prefix for the guild."""
+async def get_prefix_for_guild(bot, message) -> str:
+    """
+    Get the prefix for the guild.
+
+    Args:
+        bot (commands.Bot): The bot instance.
+        message (discord.Message): The message instance.
+
+    Returns:
+        str
+    """
     return await BotCore.get_prefix_for_guild(bot, message)
 
 def setup_intents() -> discord.Intents:
-    """Setup the intents for the bot."""
+    """
+    Setup intents for the bot.
+
+
+    Returns:
+        discord.Intents
+    """
     intents = discord.Intents.default()
     intents.members = True
     intents.voice_states = True
@@ -27,7 +42,12 @@ def setup_intents() -> discord.Intents:
 bot = commands.Bot(command_prefix=get_prefix_for_guild, intents=setup_intents(), case_insensitive=True, help_command=None)
 
 async def load_cogs() -> None:
-    """Load all cogs in the cogs directory and its subdirectories."""
+    """
+    Loads all cogs in the cogs directory and its subdirectories.
+
+    Returns:
+        None
+    """
     cogs_dir = Path('./cogs')
     for filepath in cogs_dir.rglob('*.py'):
         module_path = filepath.relative_to(cogs_dir).with_suffix('').as_posix().replace('/', '.')
@@ -35,6 +55,12 @@ async def load_cogs() -> None:
         await bot.load_extension(f'cogs.{module_path}')
 
 def load_bot_token() -> str:
+    """
+    Loads the bot token from the environment variables.
+
+    Returns:
+        str
+    """
     token = os.getenv("DISCORD_TOKEN")
     if token is None:
         raise ValueError("Token not found.")

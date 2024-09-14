@@ -1,4 +1,4 @@
-from db.dbConfig import mongo_client
+from db.dbsetup import mongo_client
 from time import time
 from tools.cache import cache_initiator
 from tools.shared import update_scheduler, request_threading
@@ -13,7 +13,16 @@ class User:
     
     @staticmethod
     def create(user_id: int, points: int) -> None:
-        """Create a user in the database."""
+        """
+        Creates an user in the user collection.
+
+        Args:
+            user_id (int): The id of the user to create.
+            points (int): The points of the user to create.
+
+        Returns:
+            None
+        """
         try:            
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
             if user_data:
@@ -37,7 +46,15 @@ class User:
         
     @staticmethod
     def delete(user_id: int) -> None:
-        """Delete a user from the database."""
+        """
+        Deletes an user from the user collection.
+
+        Args:
+            user_id (int): The id of the user to delete.
+        
+        Returns:
+            None
+        """
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
             if user_data:
@@ -51,7 +68,17 @@ class User:
     
     @staticmethod
     def update_all(user_id: int, points: int, roles: str) -> None:
-        """Update a user's status in the database."""
+        """
+        Updates an user's attributes in the user collection.
+
+        Args:
+            user_id (int): The id of the user to update.
+            points (int): The points of the user to update.
+            roles (str): The roles of the user to update.
+
+        Returns:
+            None
+        """
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id" : user_id})).result()
             if user_data:
@@ -66,7 +93,16 @@ class User:
 
     @staticmethod
     def update_points(user_id : int, points : int) -> None:
-        """Update a user's points in the database."""
+        """
+        Update n user's points in the user collection.
+
+        Args:
+            user_id (int): The id of the user to update.
+            points (int): The points of the user to update.
+
+        Returns:
+            None
+        """
         try:
             if points < 0:
                 points = 0
@@ -82,7 +118,16 @@ class User:
 
     @staticmethod
     def update_roles(user_id : int, roles: str) -> None:
-        """Update a user's roles in the database."""
+        """
+        Updates a user's roles in the user collection.
+
+        Args:
+            user_id (int): The id of the user to update.
+            roles (str): The roles of the user to update.
+
+        Returns:
+            None
+        """
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
             if user_data:
@@ -96,7 +141,15 @@ class User:
 
     @staticmethod
     def update_salary_time(user_id : int) -> None:
-        """Update a user's salary time in the database."""
+        """
+        Updates a user's salary time in the user collection.
+
+        Args:
+            user_id (int): The id of the user to update.
+
+        Returns:
+            None
+        """
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
             if user_data:
@@ -110,7 +163,15 @@ class User:
         
     @staticmethod
     def read(user_id : int) -> Union[dict, None]:
-        """Read a user from the database."""
+        """
+        Reads a user from the user collection.
+
+        Args:
+            user_id (int): The id of the user to read.
+
+        Returns:
+            Union[dict, None]
+        """
         try:
             user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
             if user_data:
@@ -122,28 +183,13 @@ class User:
             return None
         
     @staticmethod
-    def readAll() -> Union[list, None]:
-        """Read all users from the database."""
-        try:
-            users = request_threading(lambda: users_collection.find()).result()
-            return users
-        except Exception as e:
-            logger.error("Error encountered while trying to read all users.", e)
-            return None
-        
-    @staticmethod
-    def read_highest_10_points() -> Union[list, None]:
-        """Read the top 10 users with the most points from the database."""
-        try:
-            users = request_threading(lambda: users_collection.find().sort("points", -1).limit(10)).result()
-            return users
-        except Exception as e:
-            logger.error("Error encountered while trying to read the top 10 users with the most points.", e)
-            return None
-
-    @staticmethod
     def resetAll() -> None:
-        """Resets all users from the database."""
+        """
+        Resets all users from the user collection.
+
+        Returns:
+            None
+        """
         try:
             request_threading(lambda: users_collection.update_many({}, {"$set": {"points": 0, "roles": ""}})).result()
         except Exception as e:
@@ -152,7 +198,12 @@ class User:
     
     @staticmethod
     def count_users() -> Union[int, None]:
-        """Counts all users from the database."""
+        """
+        Counts all users from the user collection.
+
+        Returns:
+            Union[int, None]
+        """
         try:
             count = request_threading(lambda: users_collection.count_documents({})).result()
             return count

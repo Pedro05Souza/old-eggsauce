@@ -1,9 +1,9 @@
 from random import randint, uniform
 from time import time
-from db.bankDB import Bank
-from db.farmDB import Farm
-from db.userDB import User
-from db.marketDB import Market
+from db.bankdb import Bank
+from db.farmdb import Farm
+from db.userdb import User
+from db.marketdb import Market
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickeninfo import *
 from tools.shared import send_bot_embed, make_embed_object, format_number
@@ -22,6 +22,12 @@ logger = logging.getLogger('botcore')
 def determine_chicken_upkeep(chicken: dict) -> float:
     """
     Determine the chicken upkeep. Use this method to define a value for the chicken upkeep.
+
+    Args:
+        chicken (dict): The chicken to determine the upkeep for.
+
+    Returns:
+        float
     """
     percentage = uniform(0, .75)
     percentage = round(percentage, 2)
@@ -30,15 +36,29 @@ def determine_chicken_upkeep(chicken: dict) -> float:
 
 async def get_chicken_egg_value(chicken: dict) -> int:
     """
-    Get the chicken egg value.
+    Gets the chicken egg value.
+
+    Args:
+        chicken (dict): The chicken to get the egg value for.
+
+    Returns:
+        int
     """
     egg_value = ChickenMultiplier[chicken['rarity']].value
     return egg_value
 
-def get_chicken_price(chicken: dict, *args) -> int:
-    """Get the chicken price."""	
-    if args:   
-        farmer = args[0]
+def get_chicken_price(chicken: dict, farmer: str = None) -> int:
+    """
+    Gets the chicken price.
+
+    Args:
+        chicken (dict): The chicken to get the price for.
+        *args: The optinal farmer argument.
+
+    Returns:
+        int
+    """	
+    if farmer:  
         if farmer == 'Executive Farmer':
             farmer_upgrades = load_farmer_upgrades(farmer)
             discount_value = farmer_upgrades[1]
@@ -50,23 +70,49 @@ def get_chicken_price(chicken: dict, *args) -> int:
     return ChickenRarity[chicken['rarity']].value * CHICKEN_DEFAULT_VALUE
 
 def load_farmer_upgrades(farmer) -> Union[list, int]:
-        """Load the farmer upgrades"""
-        farmer_dict = {
-            "Rich Farmer": [15, 20],
-            "Guardian Farmer": 5,
-            "Executive Farmer" : [8, 20],
-            "Warrior Farmer": 2,
-            "Generous Farmer": [3],
-            'Sustainable Farmer': [14600, [5, 40]]
-        }
-        return farmer_dict[farmer]
+    """
+    Loads the farmer upgrades
+
+    Args:
+        farmer (str): The farmer to load the upgrades for.
+
+    Returns:
+        Union[list, int]
+    """
+    farmer_dict = {
+        "Rich Farmer": [15, 20],
+        "Guardian Farmer": 5,
+        "Executive Farmer" : [8, 20],
+        "Warrior Farmer": 2,
+        "Generous Farmer": [3],
+        'Sustainable Farmer': [14600, [5, 40]]
+    }
+    return farmer_dict[farmer]
         
-def get_rarity_emoji(rarity):
-    """Get the rarity emoji for the chicken."""
+def get_rarity_emoji(rarity) -> str:
+    """
+    Gets the rarity emoji for the chicken.
+
+    Args:
+        rarity (str): The rarity of the chicken.
+
+    Returns:
+        str
+    """
     return defineRarityEmojis[rarity]
 
 async def get_usr_farm(ctx: Context, user: discord.Member, data) -> discord.Embed:
-        """Get the user's farm."""
+        """
+        Gets the user's farm.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member): The user to get the farm for.
+            data (dict): The data to get the farm from.
+
+        Returns:
+            discord.Embed
+        """
         farm_data = data['farm_data']
         if farm_data:
             if user.id != ctx.author.id:
@@ -79,7 +125,7 @@ async def get_usr_farm(ctx: Context, user: discord.Member, data) -> discord.Embe
             msg = await make_embed_object(
                 title=f":chicken: {farm_data['farm_name']}\n:egg: **Eggs generated**: {await format_number(farm_data['eggs_generated'])}\n:farmer: Farmer: {farm_data['farmer'] if farm_data['farmer'] else 'No Farmer.'}",
                 description="\n".join([
-                f"{get_rarity_emoji(chicken['rarity'])}  **{index + 1}.** **{chicken['rarity']} {chicken['name']}** \n:partying_face: Happiness: **{chicken['happiness']}%**\n :gem: Upkeep rarity: **{determine_upkeep_rarity(chicken['upkeep_multiplier'])}**\n"
+                f"{get_rarity_emoji(chicken['rarity'])}  **{index + 1}.** **{chicken['rarity']} {chicken['name']}** \n:partying_face: Happiness: **{chicken['happiness']}%**\n :gem: Upkeep rarity: **{determine_upkeep_rarity_text(chicken['upkeep_multiplier'])}**\n"
                 for index, chicken in enumerate(farm_data['chickens'])
             ]))
             msg.set_thumbnail(url=user.display_avatar)
@@ -88,9 +134,15 @@ async def get_usr_farm(ctx: Context, user: discord.Member, data) -> discord.Embe
         else:
             return None
         
-def determine_upkeep_rarity(upkeep_multiplier: float) -> str:
+def determine_upkeep_rarity_text(upkeep_multiplier: float) -> str:
         """
-        Determine the text that will be displayed for the upkeep rarity.
+        Determines the text that will be displayed for the upkeep rarity.
+
+        Args:
+            upkeep_multiplier (float): The upkeep multiplier to determine the rarity for.
+
+        Returns:
+            str
         """
         chicken_upkeep = upkeep_multiplier
         for rarity, value in chicken_rarities.items():
@@ -99,7 +151,13 @@ def determine_upkeep_rarity(upkeep_multiplier: float) -> str:
                  
 def get_max_chicken_limit(farm_data: dict) -> int:
         """
-        Get the maximum chicken limit that can be stored in the farm.
+        Gets the maximum chicken limit that can be stored in the farm.
+
+        Args:
+            farm_data (dict): The farm data to get the limit for.
+
+        Returns:
+            int
         """
         if farm_data['farmer'] == 'Warrior Farmer':
             return DEFAULT_FARM_SIZE + load_farmer_upgrades('Warrior Farmer')
@@ -107,41 +165,73 @@ def get_max_chicken_limit(farm_data: dict) -> int:
             return DEFAULT_FARM_SIZE
 
 async def get_max_bench_limit() -> int:
-        """
-        Get the maximum bench limit that can be stored in the farm.
-        """
-        return MAX_BENCH
+    """
+    Gets the maximum bench limit that can be stored in the farm.
+
+    Returns:
+        int
+    """
+    return MAX_BENCH
         
 async def verify_events(ctx: Context, user: discord.Member):
         """Verify if the user is in an event. This method should be called whenever a user is performing critical actions
         that could duplicate the chicken data.
-        Example: Selling a chicken and starting a trade with another user, if you trade before selling the chicken, the chicken duplicates."""
+        Example: Selling a chicken and starting a trade with another user, if you trade before selling the chicken, the chicken duplicates.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member): The user to verify the event for.
+
+        Returns:
+            bool
+        """
         if EventData.check_user_in_event(user.id):
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} is already in an event.")
             return True
         return False
       
 async def get_user_bench(ctx: Context, farm_data: dict, user: discord.Member) -> discord.Embed:
-     """
-     Display the user's bench.
-     """
-     bench = farm_data['bench']
-     await send_bot_embed(ctx, title=f":chair: {user.display_name}'s bench:", description="\n\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
+    """
+    Display the user's bench.
+
+    Args:
+        ctx (Context): The context of the command.
+        farm_data (dict): The farm data to get the bench from.
+        user (discord.Member): The user to get the bench for.
+
+    Returns:
+        discord.Embed
+    """
+    bench = farm_data['bench']
+    await send_bot_embed(ctx, title=f":chair: {user.display_name}'s bench:", description="\n\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity_text(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
 
 async def rank_determiner(mmr: int) -> str:
-     """
-     Determines the text that will be displayed for the player's rank.
-     """
-     for key, value in reversed(chicken_ranking.items()):
-         if mmr >= value:
-             return key
-     return len(chicken_ranking) - 1
+    """
+    Determines the text that will be displayed for the player's rank.
+
+    Args:
+        mmr (int): The mmr to determine the rank for.
+
+    Returns:
+        str
+    """
+    for key, value in reversed(chicken_ranking.items()):
+        if mmr >= value:
+            return key
+    return len(chicken_ranking) - 1
 
 async def create_chicken(rarity: str, author: str) -> Union[dict, None]:
-     """"
-     Create a chicken.
-     """
-     if rarity in ChickenRarity.__members__:
+    """"
+    Creates a chicken dictionary.
+
+    Args:
+        rarity (str): The rarity of the chicken to create.
+        author (str): The author of the chicken.
+
+    Returns:
+        Union[dict, None]
+    """
+    if rarity in ChickenRarity.__members__:
         chicken = {
                     "rarity": rarity,
                     "name": "Chicken",
@@ -156,18 +246,24 @@ async def create_chicken(rarity: str, author: str) -> Union[dict, None]:
         if rarity == "ETHEREAL":
             chicken['upkeep_multiplier'] = 0
         else:
-         chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
+            chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
         return chicken
-     return None
+    return None
 
 async def define_chicken_overrall_score(chickens: list) -> int:
         """
         Defines player's chickens overrall score.
+
+        Args:
+            chickens (list): The chickens to define the score for.
+
+        Returns:
+            int
         """
         chicken_overrall_score = 0
         for chicken in chickens:
             chicken_overrall_score += rarities_weight[chicken['rarity']]
-            chicken_overrall_score += upkeep_weight[determine_upkeep_rarity(chicken['upkeep_multiplier'])]
+            chicken_overrall_score += upkeep_weight[determine_upkeep_rarity_text(chicken['upkeep_multiplier'])]
         chicken_overrall_score -= farm_size_weights[len(chickens)]
         if chicken_overrall_score < 0:
             chicken_overrall_score = 0
@@ -177,7 +273,14 @@ async def define_chicken_overrall_score(chickens: list) -> int:
 
 async def drop_egg_for_player(farm_data: dict, hours_passed: int) -> Union[dict, int]:
         """
-        Calculate the eggs generated by the farm.
+        Calculates the eggs generated by the farm.
+
+        Args:
+            farm_data (dict): The farm data to calculate the eggs for.
+            hours_passed (int): The hours passed.
+
+        Returns:
+            Union[dict, int]
         """
         farm_dictionary = {}
         farm_data_copy = farm_data['chickens'].copy()
@@ -195,7 +298,14 @@ async def drop_egg_for_player(farm_data: dict, hours_passed: int) -> Union[dict,
                     
 async def feed_eggs_auto(farm_data: dict, bank_amount: int) -> int:
     """
-    Feed the chickens automatically
+    Feeds the chickens automatically.
+
+    Args:
+        farm_data (dict): The farm data to feed the chickens for.
+        bank_amount (int): The bank amount to feed the chickens with.
+
+    Returns:
+        int
     """
     total_upkeep = 0
     random_range = load_farmer_upgrades('Sustainable Farmer')[1]
@@ -216,7 +326,15 @@ async def feed_eggs_auto(farm_data: dict, bank_amount: int) -> int:
 
 async def update_user_farm(ctx: Context, user: discord.Member, data: dict) -> Union[dict, None]:
     """
-    Update the user's farm.
+    Updates the user's farm.
+
+    Args:
+        ctx (Context): The context of the command.
+        user (discord.Member): The user to update the farm for.
+        data (dict): The data to update the farm from.
+
+    Returns:
+        Union[dict, None]
     """
     if not data['farm_data']:
         return None, 0
@@ -239,7 +357,16 @@ async def update_user_farm(ctx: Context, user: discord.Member, data: dict) -> Un
     return updated_farm_data, total_profit
 
 async def update_farmer(user: discord.Member, data: dict) -> None:
-    """Update the farmer. Needs refactoring."""
+    """
+    Feeds the chickens automatically for the sustainable farmer.
+
+    Args:
+        user (discord.Member): The user to update the farmer for.
+        data (dict): The data to update the farmer from.
+
+    Returns:
+        None
+    """
     farm_data = data['farm_data']
     last_drop_time = time() - farm_data['last_farmer_drop']
     hours_passed_since_feed = 0
@@ -260,7 +387,15 @@ async def update_farmer(user: discord.Member, data: dict) -> None:
             Farm.update_farmer_drop(user.id)
             
 async def devolve_chicken(chicken: dict) -> None:
-        """ 33% chance of devolving a chicken if its happiness is at 0%."""
+        """
+        10% chance of devolving a chicken if its happiness is at 0%.
+
+        Args:
+            chicken (dict): The chicken to devolve.
+
+        Returns:
+            None
+        """
         devolveChance = randint(1, 10)
         cr = chicken['rarity']
         if cr in ChickenRarity.__members__ and cr != 'COMMON':
@@ -279,7 +414,16 @@ async def devolve_chicken(chicken: dict) -> None:
             return
 
 async def update_player_corn(user: discord.Member, data: dict) -> int:
-    """Update the player's corn."""
+    """
+    Updates the player's corn.
+
+    Args:
+        user (discord.Member): The user to update the corn for.
+        data (dict): The data to update the corn from.
+
+    Returns:
+        int
+    """
     if not data:
         return 0
     farm_data = data
@@ -296,7 +440,16 @@ async def update_player_corn(user: discord.Member, data: dict) -> int:
     return current_corn, corn_produced
 
 async def calculate_corn(farm_data: dict, hours_passed: int) -> int:
-    """Calculate the corn generated by the farm."""
+    """
+    Calculates the corn generated by the farm.
+
+    Args:
+        farm_data (dict): The farm data to calculate the corn for.
+        hours_passed (int): The hours passed.
+
+    Returns:
+        int
+    """
     corn_produced = farm_data['plot'] * CORN_PER_PLOT   
     corn_produced *= hours_passed
     if farm_data['farmer'] == 'Rich Farmer':
@@ -306,43 +459,66 @@ async def calculate_corn(farm_data: dict, hours_passed: int) -> int:
 
 async def preview_corn_produced(farm_data: dict) -> int:
     """
-    Preview the corn produced by the farm.
+    Previews the corn produced by the farm.
+
+    Args:
+        farm_data (dict): The farm data to preview the corn for.
+
+    Returns:
+        int
     """
     return farm_data['plot'] * CORN_PER_PLOT
         
 async def get_player_chicken(ctx: Context, user: discord.Member, data):
-     """Retrieves the player's chickens from market offers."""
-     farm_data = data['farm_data']
-     market_data = Market.get_user_offers(user.id)
-     offers_list = []
-     chickens_added = []
-     for offer in market_data:
+    """
+     Retrieves the player's chickens from market offers.
+
+    Args:
+        ctx (Context): The context of the command.
+        user (discord.Member): The user to get the chickens for.
+        data (dict): The data to get the chickens from.
+
+    Returns:
+        dict
+    """
+    farm_data = data['farm_data']
+    market_data = Market.get_user_offers(user.id)
+    offers_list = []
+    chickens_added = []
+    for offer in market_data:
         last_offer_time = time() - offer['created_at']
         if last_offer_time // 3600 > OFFER_EXPIRE_TIME:
-             offers_list.append(offer)
-     if offers_list:
-            offers_to_process = offers_list.copy()
-            for offer in offers_to_process:
-                chicken = offer['chicken']
-                var = farm_data['chickens'] + [chicken]
-                if len(var) > get_max_chicken_limit(farm_data):
-                    break
-                farm_data['chickens'] = var
-                offers_list.remove(offer)
-                chickens_added.append(chicken)
-                Market.delete(offer['offer_id'])
-            if chickens_added:
-                chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_added])
-                await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, you have successfully added the following chickens to your farm: \n\n{chicken_desc}\n Those chickens have been removed from the market.")
-                Farm.update(user.id, chickens=farm_data['chickens'])
-            if offers_list:
-                chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for offer in offers_list for chicken in [offer['chicken']]])
-                await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you can't add the following chickens to your farm: \n\n{chicken_desc}\n They have been automatically put back in the market.")
-     return farm_data
+                offers_list.append(offer)
+    if offers_list:
+        offers_to_process = offers_list.copy()
+        for offer in offers_to_process:
+            chicken = offer['chicken']
+            var = farm_data['chickens'] + [chicken]
+            if len(var) > get_max_chicken_limit(farm_data):
+                break
+            farm_data['chickens'] = var
+            offers_list.remove(offer)
+            chickens_added.append(chicken)
+            Market.delete(offer['offer_id'])
+        if chickens_added:
+            chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_added])
+            await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, you have successfully added the following chickens to your farm: \n\n{chicken_desc}\n Those chickens have been removed from the market.")
+            Farm.update(user.id, chickens=farm_data['chickens'])
+        if offers_list:
+            chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for offer in offers_list for chicken in [offer['chicken']]])
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you can't add the following chickens to your farm: \n\n{chicken_desc}\n They have been automatically put back in the market.")
+    return farm_data
 
 async def farm_maintence_tax(farm_data: Context, **kwargs) -> int:
     """
     Calculates the farm maintence tax.
+
+    Args:
+        farm_data (dict): The farm data to calculate the tax for.
+        **kwargs: The optional arguments.
+
+    Returns:
+        int
     """
     hours_passed = None
     
@@ -375,7 +551,20 @@ async def farm_maintence_tax(farm_data: Context, **kwargs) -> int:
     return int(total_tax)
 
 async def update_user_points(ctx: Context, user_data: dict, bank_data: dict, farm_data: dict, taxes: int, total_profit: int) -> int:
-    """Update the user's points."""
+    """
+    Updates the user's points after the farm has been calculated.
+
+    Args:
+        ctx (Context): The context of the command.
+        user_data (dict): The user data to update the points for.
+        bank_data (dict): The bank data to update the points for.
+        farm_data (dict): The farm data to update the points for.
+        taxes (int): The taxes to pay.
+        total_profit (int): The total profit.
+
+    Returns:
+        int
+    """
     user_data['points'] += total_profit
     profit_with_taxes = total_profit - taxes
 
@@ -402,7 +591,15 @@ async def update_user_points(ctx: Context, user_data: dict, bank_data: dict, far
      
 async def quick_sell_chicken(ctx: Context, farm_data: dict, debt: int) -> int:
     """
-    Quick sell a chicken to pay the debt.
+    Quick sells a chicken to pay the debt.
+
+    Args:
+        ctx (Context): The context of the command.
+        farm_data (dict): The farm data to sell the chicken from.
+        debt (int): The debt to pay.
+
+    Returns:
+        int
     """
     random_chicken = farm_data['chickens'][randint(0, len(farm_data['chickens']) - 1)]
     farm_data['chickens'].remove(random_chicken)
@@ -416,11 +613,18 @@ async def quick_sell_chicken(ctx: Context, farm_data: dict, debt: int) -> int:
     return money_earned
 
 async def give_total_farm_profit(farm_data: dict, hours_passed: int) -> int:
-     """
-     Give the total farm profit.
-     """
-     total_profit = 0
-     for chicken in farm_data['chickens']:
+    """
+    Gives the total farm profit.
+
+    Args:
+        farm_data (dict): The farm data to give the profit for.
+        hours_passed (int): The hours passed.
+
+    Returns:
+        int
+    """
+    total_profit = 0
+    for chicken in farm_data['chickens']:
         if chicken['rarity'] == 'DEAD':
             continue
         egg_value = await get_chicken_egg_value(chicken)
@@ -430,16 +634,23 @@ async def give_total_farm_profit(farm_data: dict, hours_passed: int) -> int:
         chicken['eggs_generated'] += chicken_profit
         chicken = await decrease_chicken_happiness(chicken, hours_passed)
         if chicken['happiness'] == 0:
-             await devolve_chicken(chicken)
+                await devolve_chicken(chicken)
 
-     if farm_data['farmer'] == 'Rich Farmer':
-            to_increase = (total_profit * load_farmer_upgrades('Rich Farmer')[0]) // 100
-            total_profit += to_increase
-     return total_profit
+    if farm_data['farmer'] == 'Rich Farmer':
+        to_increase = (total_profit * load_farmer_upgrades('Rich Farmer')[0]) // 100
+        total_profit += to_increase
+    return total_profit
 
 async def decrease_chicken_happiness(chicken: dict, hours_passed: int) -> dict:
     """
-    Decrease the chicken happiness.
+    Decreases the chicken happiness.
+
+    Args:
+        chicken (dict): The chicken to decrease the happiness for.
+        hours_passed (int): The hours passed.
+
+    Returns:
+        dict
     """
     happiness_decreased = sum([randint(1, 3) for _ in range(hours_passed)])
     chicken['happiness'] = max(chicken['happiness'] - happiness_decreased, 0)

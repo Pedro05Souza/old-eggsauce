@@ -2,15 +2,14 @@
 This file contains all the base commands in the bot.
 This cog is shared between all configurable bot modules.
 """
-
 from discord.ext import commands
-from db.marketDB import Market
+from db.marketdb import Market
 from tools.tips import tips
 from tools.shared import *
 from tools.settings import REGULAR_COOLDOWN
 from tools.chickens.chickenshared import rank_determiner
-from db.userDB import User
-from db.bankDB import Bank
+from db.userdb import User
+from db.bankdb import Bank
 from tools.pagination import PaginationView
 from tools.prices import Prices
 from tools.pointscore import pricing, refund
@@ -27,7 +26,15 @@ class BaseCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def shop(self, ctx: Context) -> None:
-        """Shows the shop."""
+        """
+        Shows the shop.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         data = []
         for member in Prices.__members__:
             if Prices.__members__[member].value > 0:
@@ -39,7 +46,16 @@ class BaseCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def user_profile(self, ctx: Context, user: discord.Member = None) -> None:
-        """Shows the user's profile."""
+        """
+        Shows the user's profile.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member, optional): The user to check the profile. Defaults to None, which is the author of the command.
+        
+        Returns:
+            None
+        """
         data, user = await return_data(ctx, user)
         user_data = data["user_data"]
         bank_data = data["bank_data"]
@@ -154,17 +170,22 @@ class BaseCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def salary(self, ctx: Context, user: discord.Member = None):
-        """Check the salary of a user."""
+        """
+        Check the salary of a user.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member, optional): The user to check the salary. Defaults to None, which is the author of the command.
+
+        Returns:
+            None
+        """
         data, user = await return_data(ctx, user)
         user_data = data["user_data"]
-        if user_data:
-            if user_data["roles"] != "":
-                await send_bot_embed(ctx, description=f":moneybag: {user.display_name} has the title of **{await get_user_title(user_data)}** and earns {await self.salary_role(user_data)} eggbux..")
-                return   
-            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a title.")
-        else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} isn't registered in the database.")
-            await refund(ctx.author, ctx)
+        if user_data["roles"] != "":
+            await send_bot_embed(ctx, description=f":moneybag: {user.display_name} has the title of **{await get_user_title(user_data)}** and earns {await self.salary_role(user_data)} eggbux..")
+            return   
+        await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a title.")
             
 async def setup(bot):
     await bot.add_cog(BaseCommands(bot))

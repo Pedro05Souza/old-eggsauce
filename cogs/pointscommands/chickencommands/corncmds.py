@@ -1,10 +1,9 @@
 """
 This file contains the corn commands for the chicken food farm.
 """
-
 from discord.ext import commands
-from db.farmDB import Farm
-from db.userDB import User
+from db.farmdb import Farm
+from db.userdb import User
 from tools.chickens.chickeninfo import ChickenFood
 from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, return_data
 from tools.settings import REGULAR_COOLDOWN, MAX_CORN_LIMIT, MAX_PLOT_LIMIT, FARM_DROP
@@ -23,7 +22,16 @@ class CornCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def corn_field(self, ctx: Context, user: discord.Member = None) -> None:
-        """Displays the user's corn field."""
+        """
+        Displays the user's corn field.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member, optional): The user to check the corn field. Defaults to None, which is the author of the command.
+        
+        Returns:
+            None
+        """
         data, user = await return_data(ctx, user)
         if data:
             await ctx.send(embed=await self.show_plr_food_farm(ctx, user, data))
@@ -32,7 +40,16 @@ class CornCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def rename_corn_field(self, ctx: Context, nickname: str) -> None:
-        """Rename the cornfield"""
+        """
+        Renames the cornfield.
+
+        Args:
+            ctx (Context): The context of the command.
+            nickname (str): The new name of the cornfield.
+        
+        Returns:
+            None
+        """
         farm_data = ctx.data["farm_data"]
         censor = profanity.contains_profanity(nickname)
         if censor:
@@ -46,7 +63,17 @@ class CornCommands(commands.Cog):
         await send_bot_embed(ctx, description=f"{ctx.author.display_name} Your cornfield has been renamed to {nickname}.")
 
     async def show_plr_food_farm(self, ctx: Context, user: discord.Member, data: dict) -> discord.Embed:
-        """Show the player's food farm"""
+        """
+        Show the player's food farm.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member): The user to check the corn field.
+            data (dict): The data of the user.
+        
+        Returns:
+            discord.Embed: The embed object of the corn field.
+        """
         if not data.get("farm_data", None):
             return await make_embed_object(title=f":no_entry_sign: {user.display_name}", description=f":no_entry_sign: {user.display_name} You don't have a farm.")
         farm_data = data["farm_data"]
@@ -60,7 +87,15 @@ class CornCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def buy_plot(self, ctx: Context) -> None:
-        """Buy a plot for corn production"""
+        """
+        Buy a plot for corn production.
+
+        Args:
+            ctx (Context): The context of the command.
+        
+        Returns:
+            None
+        """
         farm_data = ctx.data["farm_data"]
         actual_plot = farm_data['plot']
         if actual_plot == MAX_PLOT_LIMIT:
@@ -87,7 +122,15 @@ class CornCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def upgrade_corn_limit(self, ctx: Context) -> None:
-        """Upgrades the player corn limit."""
+        """
+        Upgrades the player corn limit.
+
+        Args:
+            ctx (Context): The context of the command.
+        
+        Returns:
+            None
+        """
         farm_data = ctx.data["farm_data"]
         range_corn = int((farm_data['corn_limit'] * 50)  // 100)
         if farm_data['corn_limit'] == MAX_CORN_LIMIT:
@@ -113,15 +156,19 @@ class CornCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def buy_corn(self, ctx: Context, quantity) -> None:
-        """Buy corn for the chickens"""
+        """
+        Buy corn for the chickens.
+
+        Args:
+            ctx (Context): The context of the command.
+            quantity (str): The quantity of corn to buy.
+
+        Returns:
+            None
+        """
         if quantity in ("all", "All", "ALL"):
             quantity = ctx.data["farm_data"]['corn_limit'] - ctx.data["farm_data"]['corn']
-        else:
-            try:
-                quantity = int(quantity)
-            except ValueError:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the quantity must be a number or 'all'.")
-                return
+        quantity = int(quantity)
         farm_data = ctx.data["farm_data"]
         user_data = ctx.data["user_data"]
         if quantity < 30:
@@ -144,7 +191,16 @@ class CornCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def sell_corn(self, ctx: Context, quantity: int) -> None:
-        """Sell corn"""
+        """
+        Sells corn produced by the farm.
+
+        Args:
+            ctx (Context): The context of the command.
+            quantity (int): The quantity of corn to sell.
+        
+        Returns:
+            None
+        """
         farm_data = ctx.data["farm_data"]
         user_data = ctx.data["user_data"]
         if quantity > farm_data['corn']:
@@ -164,7 +220,15 @@ class CornCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def feed_all_chickens(self, ctx: Context) -> None:
-        """Feed all the chickens"""
+        """
+        Feed all the chickens in the farm.
+
+        Args:
+            ctx (Context): The context of the command.
+        
+        Returns:
+            None
+        """
         farm_data = ctx.data["farm_data"]
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0

@@ -1,3 +1,7 @@
+"""
+This module is responsible for establishing a connection to the database.
+"""
+
 from pymongo import MongoClient
 import logging
 
@@ -6,7 +10,15 @@ logger = logging.getLogger('botcore')
 uri = "mongodb://db:27017/"
 
 def connect(uri):
-    """Connect to the MongoDB database."""
+    """
+    Establishes a connection to the database.
+
+    Args:
+        uri (str): The uri of the database.
+
+    Returns:
+        MongoClient | None
+    """
     try:
         client = MongoClient(uri)
         client.admin.command('ping')

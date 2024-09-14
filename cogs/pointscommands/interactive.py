@@ -1,7 +1,10 @@
+"""
+This file contains the interactive commands of the bot.
+"""
 from discord.ext import commands
 from tools.pointscore import pricing, refund
 from tools.shared import *
-from db.userDB import User
+from db.userdb import User
 from collections import Counter
 from random import randint, sample, choice
 from tools.pagination import PaginationView
@@ -23,7 +26,17 @@ class InteractiveCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def donate_points(self, ctx: Context, amount: int, user: discord.Member,) -> None:
-        """Donates points to another user."""
+        """
+        Donates points to another user.
+
+        Args:
+            ctx (Context): The context of the command.
+            amount (int): The amount of points to donate.
+            user (discord.Member): The user to donate the points to.
+
+        Returns:
+            None
+        """
         user_data = ctx.data["user_data"]
         target_data = await user_cache_retriever(user.id)
         target_data = target_data["user_data"]
@@ -49,14 +62,31 @@ class InteractiveCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def balls(self, ctx: Context) -> None:
-        """Bot sends balls."""
+        """
+        Bot sends balls.
+
+        Args:
+            ctx (Context): The context of the command.
+        
+        Returns:
+            None
+        """
         await send_bot_embed(ctx, description=f":soccer: balls")
 
     @commands.hybrid_command("mog", brief="Mog a user", parameters=["user: discord.Member"], examples=["mog @user"], description="Mog a user.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def mog(self, ctx: Context, user: discord.Member) -> None:
-            """Mog a user."""
+            """
+            Mog a user.
+
+            Args:
+                ctx (Context): The context of the command.
+                user (discord.Member): The user to mog.
+            
+            Returns:
+                None
+            """
             path = choice(os.listdir("images/mogged/"))
             await ctx.send(file=discord.File("images/mogged/"+path))
             await ctx.send(f"{user.mention} bye bye 🤫🧏‍♂️")
@@ -65,7 +95,17 @@ class InteractiveCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def cassino(self, ctx: Context, amount, cor: str) -> None:
-        """Bet on a color in the roulette."""
+        """
+        Bet on a color in the roulette.
+
+        Args:
+            ctx (Context): The context of the command.
+            amount (str): The amount of points to bet.
+            cor (str): The color to bet on.
+
+        Returns:
+            None
+        """
         if amount.upper() == "ALL":
             amount = ctx.data["user_data"]["points"]
         amount = int(amount)
@@ -101,7 +141,16 @@ class InteractiveCommands(commands.Cog):
 
     @cassino.error
     async def cassino_error(self, ctx: Context, error: commands.CommandError) -> None:
-        """Handles errors in the cassino command."""
+        """
+        Handles errors in the cassino command.
+
+        Args:
+            ctx (Context): The context of the command.
+            error (commands.CommandError): The error that occurred.
+
+        Returns:
+            None
+        """
         if isinstance(error, commands.MissingRequiredArgument):
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} Please, insert a valid amount and color.")
         elif isinstance(error, commands.BadArgument):
@@ -113,7 +162,16 @@ class InteractiveCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def steal_points(self, ctx: Context, user: discord.Member) -> None:
-        """Steals points from another user."""
+        """
+        Steals points from another user.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member): The user to steal the points from.
+
+        Returns:
+            None
+        """
         if ctx.author.id in steal_status and steal_status[ctx.author.id] == user.id:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You can't steal from the same user twice.")
             await refund(ctx.author, ctx)
@@ -156,7 +214,16 @@ class InteractiveCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def hungergames(self, ctx: Context, *args) -> None:
-        """Starts a hunger games event."""
+        """
+        Starts a hunger games event.
+
+        Args:
+            ctx (Context): The context of the command.
+            args (list): The arguments of the command.
+
+        Returns:
+            None
+        """
         guild_id = ctx.guild.id
         cooldown = await self.hunger_games_starter(ctx, guild_id, args)
         day = 1
@@ -175,6 +242,17 @@ class InteractiveCommands(commands.Cog):
             await self.on_match_end(ctx, tributes, winner, guild_id)
 
     async def hunger_games_starter(self, ctx: Context, guild_id: int, args) -> int:
+        """
+        Starts the hunger games event.
+
+        Args:
+            ctx (Context): The context of the command.
+            guild_id (int): The id of the guild.
+            args (list): The arguments of the command (this is used to set a custom time for the hunger games, only available for owners).
+
+        Returns:
+            int: The cooldown of the hunger games.
+        """
         global hungergames_status
         cooldown = HUNGER_GAMES_WAIT_TIME
         if guild_id in hungergames_status:
@@ -194,6 +272,19 @@ class InteractiveCommands(commands.Cog):
         return cooldown
     
     async def day_events(self, ctx: Context, alive_tributes: list, day: int, guild_id: int, tributes: list) -> None:
+        """
+        Perform the events of the day.
+
+        Args:
+            ctx (Context): The context of the command.
+            alive_tributes (list): The alive tributes.
+            day (int): The day of the event.
+            guild_id (int): The id of the guild.
+            tributes (list): The list of tributes.
+
+        Returns:
+            None
+        """
         shuffle_tributes = sample(alive_tributes, len(alive_tributes))
         alive_tributes = shuffle_tributes
         await send_bot_embed(ctx, title=f"Day {day}", description=f"**Tributes remaining: {len(alive_tributes)}**")
@@ -209,6 +300,18 @@ class InteractiveCommands(commands.Cog):
                     break
 
     async def day_switch_events(self, ctx: Context, alive_tributes: list, day: int, tributes: list) -> None:
+        """
+        Perform the switch events of the day.
+
+        Args:
+            ctx (Context): The context of the command.
+            alive_tributes (list): The alive tributes.
+            day (int): The day of the event.
+            tributes (list): The list of tributes.
+
+        Returns:
+            None
+        """
         dead_day = day - 1 if day > 0 else 0
         fallen_tributes = [tribute for tribute in tributes if not tribute['is_alive'] and tribute['days_alive'] == dead_day]
         if fallen_tributes:
@@ -219,6 +322,18 @@ class InteractiveCommands(commands.Cog):
         day += 1
         
     async def match_starter(self, ctx: Context, tributes: list, guild_id: int, cooldown: int) -> bool:
+        """
+        Starts the match.
+
+        Args:
+            ctx (Context): The context of the command.
+            tributes (list): The list of tributes.
+            guild_id (int): The id of the guild.
+            cooldown (int): The cooldown of the match.
+
+        Returns:
+            bool
+        """
         end_time = time.time() + cooldown
         while True:
             actual_time = end_time - time.time()
@@ -254,14 +369,35 @@ class InteractiveCommands(commands.Cog):
         return True
     
     async def on_match_end(self, ctx: Context, tributes: list, winner: dict, guild_id: int) -> None:
-            prizeMultiplier = len(tributes) * HUNGER_GAMES_PRIZE
-            await send_bot_embed(ctx, description=f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
-            User.update_points(winner['tribute'].id, User.read(winner['tribute'].id)["points"] + prizeMultiplier)
-            hungergames_status.pop(guild_id)
-            await self.statistics(ctx, tributes)
+        """
+        Ends the match.
+
+        Args:
+            ctx (Context): The context of the command.
+            tributes (list): The list of tributes.
+            winner (dict): The winner of the match.
+            guild_id (int): The id of the guild.
+
+        Returns:
+            None
+        """
+        prizeMultiplier = len(tributes) * HUNGER_GAMES_PRIZE
+        await send_bot_embed(ctx, description=f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
+        User.update_points(winner['tribute'].id, User.read(winner['tribute'].id)["points"] + prizeMultiplier)
+        hungergames_status.pop(guild_id)
+        await self.statistics(ctx, tributes)
 
     async def check_tribute_play(self, tribute: dict, default_game_value: int) -> bool:
-        """Check if the tribute has enough points to play."""
+        """
+        Check if the tribute has enough points to play.
+
+        Args:
+            tribute (dict): The tribute to check.
+            default_game_value (int): The default game value.
+
+        Returns:
+            bool
+        """
         tribute_data = User.read(tribute.id)
         if tribute_data and tribute_data["points"] >= default_game_value:
             User.update_points(tribute.id, tribute_data["points"] - default_game_value)
@@ -270,13 +406,29 @@ class InteractiveCommands(commands.Cog):
             return False
         
     async def increase_days_alive(self, tributes: list) -> None:
-        """Increase the days alive of the tributes."""
+        """
+        Increase the days alive of the tributes.
+
+        Args:
+            tributes (list): The list of tributes.
+
+        Returns:
+            None
+        """
         for tribute in tributes:
             if tribute['is_alive']:
                 tribute['days_alive'] += 1
      
     async def check_alive_tributes(self, tributes: list) -> list:
-        """Check the alive tributes."""
+        """
+        Check the alive tributes.
+
+        Args:
+            tributes (list): The list of tributes.
+
+        Returns:
+            list
+        """
         alive_tributes = []
         for tribute in tributes:
             if tribute['is_alive']:
@@ -284,7 +436,12 @@ class InteractiveCommands(commands.Cog):
         return alive_tributes
                 
     async def events(self) -> dict:
-        """Returns the events that can happen in the hunger games."""
+        """
+        Returns the events that can happen in the hunger games.
+
+        Returns:
+            dict
+        """
         events = {
         0: "has been killed by a bear.",
         1: "has teamed up with",
@@ -318,16 +475,41 @@ class InteractiveCommands(commands.Cog):
         return events
 
     async def choose_random_event(self, events: dict) -> int:
-        """Choose a random event from the list of events."""
+        """
+        Choose a random event from the list of events.
+
+        Args:
+            events (dict): The list of events.
+
+        Returns:
+            int
+        """
         return choice(events)
     
     async def update_tribute_event(self, tributes: list) -> None:
-        """Update the tribute event."""
+        """
+        Update the tribute event.
+
+        Args:
+            tributes (list): The list of tributes.
+
+        Returns:
+            None
+        """
         for tribute in tributes:
             tribute['has_event'] = False
 
     async def pick_random_tribute(self, tribute1: dict, tributes: list) -> dict:
-        """Pick a random tribute."""
+        """
+        Pick a random tribute.
+
+        Args:
+            tribute1 (dict): The tribute that is picking the random tribute.
+            tributes (list): The list of tributes.
+
+        Returns:
+            dict
+        """
         aux_tributes = tributes.copy()
         aux_tributes.remove(tribute1)
         if aux_tributes:
@@ -336,7 +518,19 @@ class InteractiveCommands(commands.Cog):
             return None
     
     async def event_actions(self, ctx: Context, tribute1: dict, tribute2: dict, tributes: list, chosen_event: int) -> None:
-        """Perform the actions of the event."""
+        """
+        Perform the actions of the event.
+
+        Args:
+            ctx (Context): The context of the command.
+            tribute1 (dict): The first tribute.
+            tribute2 (dict): The second tribute.
+            tributes (list): The list of tributes.
+            chosen_event (int): The chosen event.
+
+        Returns:
+            None
+        """
         events = await self.events()
         if not tribute1['has_event']:
             tribute1['has_event'] = True
@@ -457,7 +651,19 @@ class InteractiveCommands(commands.Cog):
 
 
     async def check_event_possibilities(self, tribute1: dict, tribute2: dict, tributes: list, dead_tributes: list, guild_id: int) -> list:
-        """Check the event possibilities."""
+        """
+        Check the event possibilities.
+
+        Args:
+            tribute1 (dict): The first tribute.
+            tribute2 (dict): The second tribute.
+            tributes (list): The list of tributes.
+            dead_tributes (list): The list of dead tributes.
+            guild_id (int): The id of the guild.
+        
+        Returns:
+            list
+        """
         global hungergames_status
 
         list_events = list(range(20))
@@ -543,7 +749,15 @@ class InteractiveCommands(commands.Cog):
         return list_events
 
     async def remove_plr_team_on_death(self, tributes: list) -> None:
-        """Remove the player's team on death."""
+        """
+        Remove the player's team on death.
+
+        Args:
+            tributes (list): The list of tributes.
+        
+        Returns:
+            None
+        """
         teams_to_remove = set()
 
         for tribute in tributes:
@@ -555,14 +769,31 @@ class InteractiveCommands(commands.Cog):
                 tribute['team'] = None
 
     async def steal_item(self, tribute1: dict, tribute2: dict) -> str:
-        """Steal an item from a tribute."""
+        """
+        Steal an item from a tribute.
+
+        Args:
+            tribute1 (dict): The first tribute.
+            tribute2 (dict): The second tribute.
+
+        Returns:
+            str
+        """
         item = choice(tribute2['inventory'])
         tribute1['inventory'].append(item)
         tribute2['inventory'].remove(item)
         return item
     
     async def loot_tribute_Body(self, tributes: list) -> list:
-        """Loot the body of a fallen tribute."""
+        """
+        Loot the body of a fallen tribute.
+
+        Args:
+            tributes (list): The list of tributes.
+
+        Returns:
+            list
+        """
         dead_tributes = [dead_tribute for dead_tribute in tributes if not dead_tribute['is_alive'] and len(dead_tribute['inventory']) > 0]
         if len(dead_tributes) >= 1:
             return dead_tributes
@@ -570,7 +801,16 @@ class InteractiveCommands(commands.Cog):
             return None
     
     async def statistics(self, ctx: Context, tributes: list) -> None:
-        """Show the statistics of the hungergames match."""
+        """
+        Show the statistics of the hungergames match.
+
+        Args:
+            ctx (Context): The context of the command.
+            tributes (list): The list of tributes.
+
+        Returns:
+            None
+        """
         data = []
         for tribute in tributes:
             data.append(
@@ -588,7 +828,17 @@ class InteractiveCommands(commands.Cog):
         await view.send(ctx, title="Match results:", description="Match statistics for each tribute:", color=0xff0000)
     
     async def create_team(self, tribute1: dict, tribute2: dict, tributes: list) -> int:
-        """Create a team."""
+        """
+        Creates a team.
+
+        Args:
+            tribute1 (dict): The first tribute.
+            tribute2 (dict): The second tribute.
+            tributes (list): The list of tributes.
+
+        Returns:
+            int
+        """
         teams = await self.check_existing_teams(tributes)
         teamNumber = randint(1, 100)
         if teamNumber not in teams.keys():
@@ -599,18 +849,43 @@ class InteractiveCommands(commands.Cog):
             await self.create_team(tribute1, tribute2, tributes)
 
     async def check_existing_teams(self, tributes: list) -> dict:
-        """Check the existing teams."""
+        """
+        Checks the existing teams.
+
+        Args:
+            tributes (list): The list of tributes.
+
+        Returns:
+            dict
+        """
         teams = Counter([tribute['team'] for tribute in tributes if tribute['team'] is not None])
         return teams
     
-    async def get_tribute_team(self, tribute1: dict, tributes: dict):
-        """Get the tribute team."""
+    async def get_tribute_team(self, tribute1: dict, tributes: dict) -> int:
+        """
+        Gets the tribute team.
+
+        Args:
+            tribute1 (dict): The tribute.
+            tributes (dict): The list of tributes.
+
+        Returns:
+            int
+        """
         for tribute in tributes:
             if tribute1['team'] == tribute['team']:
                 return tribute1['team']
     
     async def get_winner(self, tributes: list) -> dict:
-        """Get the winner of the hunger games."""
+        """
+        Gets the winner of the hunger games.
+
+        Args:
+            tributes (list): The list of tributes.
+        
+        Returns:
+            dict
+        """
         highestdayAlive = 0
         for tribute in tributes:
             if tribute['days_alive'] > highestdayAlive:

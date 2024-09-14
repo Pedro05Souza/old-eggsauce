@@ -1,5 +1,5 @@
 from discord import SelectOption, ui
-from db.farmDB import Farm
+from db.farmdb import Farm
 from tools.shared import make_embed_object, send_bot_embed
 from tools.chickens.chickenshared import get_rarity_emoji, get_max_chicken_limit
 from tools.settings import MAX_BENCH
@@ -7,6 +7,7 @@ import asyncio
 import discord
 
 class RedeemPlayerMenu(ui.Select):
+
     def __init__(self, chickens: list, author: discord.Member, message: discord.Embed):
         self.chickens = chickens
         self.author = author
@@ -18,6 +19,15 @@ class RedeemPlayerMenu(ui.Select):
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder="Select the chickens to redeem:")
 
     async def callback(self, interaction: discord.Interaction) -> None:
+        """
+        Responsable for redeeming chickens from the player market command.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+
+        Returns:
+            None
+        """
         if interaction.user.id != self.author:
             await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem chickens for another user.", ephemeral=True)
             return

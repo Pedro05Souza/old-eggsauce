@@ -6,22 +6,34 @@ from tools.chickens.selection.redeemselection import RedeemPlayerMenu
 from tools.chickens.selection.tradeselection import ChickenAuthorTradeMenu, ChickenUserTradeMenu
 from tools.chickens.selection.playermarketselection import PlayerMarketMenu
 from tools.listeners import on_user_transaction
-from tools.settings import MAX_BENCH
 from typing import Union
 from discord import SelectOption, ui
-from db.farmDB import Farm
-from db.userDB import User
+from db.farmdb import Farm
+from db.userdb import User
 from tools.shared import make_embed_object, send_bot_embed
 
 class ChickenSelectView(ui.View):
-    """View for selecting chickens from the market or farm to buy or delete them."""
+
     def __init__(self, chickens: list, author: Union[discord.Member, list], action:str, message: discord.Embed, *args, **kwargs):
         super().__init__(*args, **kwargs, timeout=60)
         menu = self.action_handler(chickens, author, action, message, *args, **kwargs)
         self.add_item(menu)
 
     def action_handler(self, chickens: list, author: Union[discord.Member, list], action: str, message: discord.Embed, *args, **kwargs) -> ui.View:
-        """Method to handle the action of the view."""
+        """
+        Handles the action to be taken for the menu.
+
+        Args:
+            chickens (list): The list of chickens to display.
+            author (Union[discord.Member, list]): The author of the message.
+            action (str): The action to take.
+            message (discord.Embed): The message to display.
+            *args: The arguments.
+            **kwargs: The keyword arguments.
+
+        Returns:
+            ui.View
+        """
         role = kwargs.get("role", None)
         t = kwargs.get("trade_data", None)
         instance_bot = kwargs.get("instance_bot", None)
@@ -55,7 +67,12 @@ class ChickenSelectView(ui.View):
         return menu
 
     async def on_timeout(self) -> None:
-        """Method to execute when the view times out."""
+        """
+        Execute when the view times out.
+
+        Returns:
+            None
+        """
         if self.children[0].__class__.__name__ == "ChickenDeleteMenu":
             if hasattr(self.children[0], "delete_object"):
                 EventData.remove(self.children[0].delete_object)
@@ -64,7 +81,7 @@ class ChickenSelectView(ui.View):
         return
 
 class ChickenMarketMenu(ui.Select):
-    """Menu to buy chickens from the market"""
+    
     def __init__(self, chickens: list, author_id: int, message: discord.Embed):
         self.chickens = chickens
         self.author_id = author_id
@@ -77,7 +94,15 @@ class ChickenMarketMenu(ui.Select):
         super().__init__(min_values=1, max_values=1, options=options, placeholder="Select the chicken to buy:")
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        """Callback for the chicken market menu"""
+        """
+        Responsable for buying chickens from the regular market command.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+
+        Returns:
+            None
+        """
         if interaction.user.id != self.author_id:
             return await send_bot_embed(interaction, description=":no_entry_sign: You can't buy chickens for another user.", ephemeral=True)
         index = self.values[0]

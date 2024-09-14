@@ -8,15 +8,16 @@ import logging
 logger = logging.getLogger('botcore')
 
 class ListenerManager():
-    """
-    This class manages the listeners data and stores the last listener called.
-    """
+
     def __init__(self, user_id: int = None, specific_listener: str = None) -> None:
         """
         Initialize the listener manager.
-        Params: user_id, specific_listener
-        Where user_id specifies an user id that the listener manager will attempt to listen to.
-        Where specific_listener specifies a specific listener that the listener manager is listening to.
+        Args:
+            user_id (int): specifies an user id that the listener manager will attempt to listen to.
+            specific_listener (str): specifies a specific listener that the listener manager is listening to.
+
+        Returns:
+            None
         """
         self.store_last_listener = {
             "on_user_transaction": [],
@@ -35,8 +36,13 @@ class ListenerManager():
     async def listener_result(self, listener: str, *args) -> None:
         """
         This function is called whenever a listener is executed.
-        param: listener which is the listener that activated.
-        param: args where args is a tuple of the listener arguments.
+
+        Args:
+            listener (str): The name of the listener that was called.
+            *args: The arguments passed to the listener.
+
+        Returns:
+            None
         """
         if self.specific_listener and listener != self.specific_listener:
             return
@@ -53,6 +59,14 @@ async def on_user_transaction(ctx: Context | Interaction , quantity: int, flag: 
     It receives the context of the command, the quantity of the transaction and the flag which is:
     0 for gain
     1 for loss
+
+    Args:
+        ctx (Context): The context of the command.
+        quantity (int): The quantity of the transaction.
+        flag (int): The flag of the transaction.
+
+    Returns:
+        None
     """
     if flag not in {0, 1}: 
         raise ValueError("Flag parameter must be 0, 1 or 2.")

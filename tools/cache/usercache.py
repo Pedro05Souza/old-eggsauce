@@ -10,6 +10,15 @@ class UserCache(BotCache):
         super().__init__(memory_limit)
     
     async def put(self, key: int, **kwargs) -> None:
+        """
+        Puts a value in the cache and validate the keyword arguments.
+        Args:
+            key (int): The key to put the value for.
+            **kwargs: The data to put in the cache.
+
+        Returns:
+            None
+        """
         allowed_kw = {"farm_data", "bank_data", "user_data"}
         if all(kw in allowed_kw for kw in kwargs):
             await super().put(key, **kwargs)
@@ -18,7 +27,13 @@ class UserCache(BotCache):
         
     async def clear_users_cache_periondically(self, interval) -> None:
         """
-        Periodically clear the user cache.
+        Periodically clears the user cache.
+
+        Args:
+            interval (int): The interval to clear the cache.
+
+        Returns:
+            None
         """
         while True:
             await asyncio.sleep(interval)
@@ -28,9 +43,9 @@ class UserCache(BotCache):
 
     async def get_user_cache_memory_consuption(self) -> int:
         """
-        Get the memory consumption of the user cache.
+        Gets the memory consumption of the user cache.
+
+        Returns:
+            int
         """
         return asizeof.asizeof(self.cache)
-    
-    async def delete(self, key) -> None:
-        await super().delete(key)

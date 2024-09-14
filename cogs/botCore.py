@@ -1,7 +1,11 @@
+"""
+This module contains the core of the bot, performing essential functions.
+"""
+
 from discord.ext import commands
 from dotenv import load_dotenv
 from tools.shared import send_bot_embed, make_embed_object, is_dev, make_embed_object, dev_list, guild_cache_retriever, cooldown_user_tracker
-from db.botConfigDB import BotConfig
+from db.botconfigdb import BotConfig
 from tools.cache import cache_initiator
 from tools.pointscore import refund
 from tools.prices import Prices
@@ -26,6 +30,12 @@ class BotCore(commands.Cog):
         self.last_cooldown_message_time = {}
 
     def setup_logging(self) -> logging.Logger:
+        """
+        Setup the logging for the bot.
+
+        Returns:
+            logging.Logger
+        """
         logger = logging.getLogger('botcore')
         logger.setLevel(logging.INFO)
         console_handler = logging.StreamHandler()
@@ -46,6 +56,12 @@ class BotCore(commands.Cog):
         logger.addHandler(console_handler)
 
     async def restart_client(self) -> None:
+        """
+        Restarts the bot.
+
+        Returns:
+            None
+        """
         try:
             logger.info("Restarting bot...")
             await self.cancel_all_async_tasks()
@@ -59,7 +75,12 @@ class BotCore(commands.Cog):
             logger.critical(f"Error restarting bot: {e}")
 
     async def close_aiohttp_sessions(self) -> None:
-        """Close all aiohttp ClientSession instances."""
+        """
+        Close all aiohttp ClientSession instances.
+
+        Returns:
+            None
+        """
         if hasattr(self.bot, "http_session") and self.bot.http_session:
             try:
                 await self.bot.http_session.close()
@@ -68,7 +89,12 @@ class BotCore(commands.Cog):
                 logger.error(f"Error closing aiohttp session: {e}")
 
     async def cancel_all_async_tasks(self) -> None:
-        """Cancel all running async tasks."""
+        """
+        Cancel all running async tasks.
+
+        Returns:
+            None
+        """
         tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
         for task in tasks:
             task.cancel()
@@ -82,19 +108,27 @@ class BotCore(commands.Cog):
 
     @commands.command("r", aliases=["restart"])
     async def force_restart(self, ctx: Context) -> None:
-        """Restart the bot."""
+        """
+        Force restarts the bot.
+
+        Args:
+            ctx (Context): The context of the command.
+        """
         if is_dev(ctx):
             await send_bot_embed(ctx, description=":warning: Restarting...")
             logger.info(f"{ctx.author.name}, user id: {ctx.author.id} has attempted to restart the bot.")
             await self.restart_client()
-
-    async def restart_every_day(self) -> None:
-        while True:
-            await asyncio.sleep(86400)
-            await self.restart_client()
     
     async def tutorial(self, target: discord.Guild) -> None:
-        """Sends a tutorial message to the user."""
+        """
+        Sends a tutorial message to the user. This function is called whenever the bot joins a new guild.
+
+        Args:
+            target (discord.Guild): The guild to send the tutorial to.
+
+        Returns:
+            None
+        """
         embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!help** to visualize every command i have to offer. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Type **!setPrefix** to select the prefix of the bot. My default prefix is **!**.\n5. Have fun! :tada:")
         owner = target.owner
         if owner:
@@ -109,7 +143,15 @@ class BotCore(commands.Cog):
         
     @commands.command("setModule", aliases=["setM"])
     async def set_module(self, ctx: Context) -> None:
-        """Set the module where the bot will pick commands from."""
+        """
+        Set the module where the bot will pick commands from.
+
+        Args:
+            ctx (Context): The context of the command.
+        
+        Returns:
+            None
+        """
         guild_data = await guild_cache_retriever(ctx.guild.id)
         if ctx.author.id == ctx.guild.owner_id:
             embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. :star: **Friendly**\n3. :gun: **Hostiles**\n4. :x: **None**\n\n**Important note**: \n**Friendly module:** contains Chicken commands, bank commands, interactive commands, AI commands and friendly commands and activates users gaining one currency every 10 seconds during call-time.\n**Hostile module:** contains hostile commands, bank commands and activates users gaining one currency every 10 seconds during call-time.\n\nSelect one of the modules to enable/disable it.")
@@ -121,7 +163,16 @@ class BotCore(commands.Cog):
 
     @commands.command("setPrefix", aliases=["setP"])
     async def set_prefix(self, ctx: Context, prefix: str) -> None:
-        """Set the prefix for the bot."""
+        """
+        Set the prefix for the bot.
+
+        Args:
+            ctx (Context): The context of the command.
+            prefix (str): The prefix to set.
+
+        Returns:
+            None
+        """
         if ctx.author.guild_permissions.administrator:
             if len(prefix) > 1:
                 await send_bot_embed(ctx, description=":no_entry_sign: The prefix can't have more than one character.")
@@ -134,7 +185,15 @@ class BotCore(commands.Cog):
     
     @staticmethod
     async def get_prefix_for_guild(_, message: discord.Message = None) -> str:
-     """Get the prefix for the guild."""
+     """
+     Get the prefix for the guild.
+
+    Args:
+        message (discord.Message): The message object.
+
+    Returns:
+        str
+     """
      if message:
         if not message.guild:
             return "!"
@@ -144,7 +203,15 @@ class BotCore(commands.Cog):
             
     @commands.command("setChannel", alias=["setC"])
     async def set_channel(self, ctx: Context) -> None:
-        """Set the channel where the bot will listen for commands."""
+        """
+        Set the channel where the bot will listen for commands.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         if ctx.author.guild_permissions.administrator:
             BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
             await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
@@ -153,6 +220,16 @@ class BotCore(commands.Cog):
             await ctx.author.send(embed=embed)
 
     async def log_and_raise_error(self, ctx: Context, error: Exception) -> None:
+        """
+        Logs the error, raises it and notifies the developers.
+
+        Args:
+            ctx (Context): The context of the command.
+            error (Exception): The error that occurred.
+
+        Returns:
+            None
+        """
         logger.error(f"Error in command: {ctx.command.name}\n In server: {ctx.guild.name}\n In channel: {ctx.channel.name}\n By user: {ctx.author.name}\n Error: {error} \n Type: {type(error)}")
         devs = dev_list()
         await self.handle_exception(ctx, error)
@@ -163,17 +240,32 @@ class BotCore(commands.Cog):
         raise error
     
     async def handle_exception(self, ctx: Context, error: Exception) -> None:
+        """
+        Handles the exception and sends a message to the user.
+
+        Args:
+            ctx (Context): The context of the command.
+            error (Exception): The error that occurred.
+        
+        Returns:
+            None
+        """
         description = f":no_entry_sign: Oops! Something went wrong."
         if await cooldown_user_tracker(ctx.author.id):
             await send_bot_embed(ctx, description=description)
             return
         return
     
-    async def verify_error_type(self, error):
-        if isinstance(error, error.MissingPermissions):
-            return True
-
     async def refund_price_command_on_error(self, ctx) -> None:
+        """
+        Refunds the user if the command has a price and the command has failed.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         if ctx.command.name in Prices.__members__ and ctx.command.name != ("stealpoints") and Prices.__members__[ctx.command.name].value > 0:
             await refund(ctx.author, ctx)
             return
@@ -215,7 +307,6 @@ class BotCore(commands.Cog):
         while not self.bot.is_closed():
             await cache_initiator.start_cache_clearing_for_users()
             await cache_initiator.start_cache_clearing_for_guilds()
-            await self.restart_every_day()
     
 async def setup(bot):
     await bot.add_cog(BotCore(bot))

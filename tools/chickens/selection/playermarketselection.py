@@ -2,13 +2,13 @@ from discord import SelectOption, ui
 from tools.chickens.chickenshared import get_rarity_emoji, get_max_chicken_limit
 from tools.shared import make_embed_object, send_bot_embed
 from tools.settings import TAX
-from db.userDB import User
-from db.farmDB import Farm
-from db.marketDB import Market
+from db.userdb import User
+from db.farmdb import Farm
+from db.marketdb import Market
 import discord
 
 class PlayerMarketMenu(ui.Select):
-    """Menu to buy chickens from the market"""
+
     def __init__(self, offers: list, message: discord.Embed, author: discord.Member, instance_bot: discord.Client):
         self.offers = offers
         self.message = message
@@ -21,7 +21,15 @@ class PlayerMarketMenu(ui.Select):
         super().__init__(min_values=1, max_values=1, options=options, placeholder="Select the chicken to buy:")
     
     async def callback(self, interaction: discord.Interaction) -> None:
-        """Callback for the interaction"""
+        """
+        Responsable for buying chickens from the player market command.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+
+        Returns:
+            None
+        """
         if interaction.user.id != self.author.id:
             return await send_bot_embed(interaction, description=":no_entry_sign: You can't buy chickens for another user.", ephemeral=True)
         index = self.values[0]
@@ -44,7 +52,15 @@ class PlayerMarketMenu(ui.Select):
         await interaction.message.delete()
 
     async def on_chicken_bought(self, offer: dict) -> None:
-        """Callback for the chicken being bought"""
+        """
+        Called when a chicken is bought from the player market.
+
+        Args:
+            offer (dict): The offer that was bought.
+
+        Returns:
+            None
+        """
         user_data = User.read(offer['author_id'])
         take_off = int(offer['price'] * TAX)
         total = offer['price'] - take_off

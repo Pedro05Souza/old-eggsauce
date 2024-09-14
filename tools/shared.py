@@ -24,6 +24,14 @@ lock_tracker = {}
 async def send_bot_embed(ctx: Context, ephemeral=False, **kwargs) -> discord.Message:
     """
     Bot embed for modularization. Use this method whenever another command needs to send an embed.
+
+    Args:
+        ctx (Context): The context of the command.
+        ephemeral (bool): Whether the message should be ephemeral or not. (This is only used for interactions, will raise an error if used for non-interactions)
+        **kwargs: The keyword arguments for the embed.
+
+    Returns:
+        discord.Message
     """
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     if isinstance(ctx, discord.Interaction):
@@ -37,28 +45,51 @@ async def send_bot_embed(ctx: Context, ephemeral=False, **kwargs) -> discord.Mes
 
 async def make_embed_object(**kwargs) -> discord.Embed:
     """
-    Create an embed object.
+    Creates an embed object.
+
+    Args:
+        **kwargs: The keyword arguments for the embed.
+
+    Returns:
+        discord.Embed
     """
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     return embed
 
 def is_dev(ctx: Context) -> bool:
     """
-    Check if the user is a developer.
+    Checks if the user is a developer.
+
+    Args:
+        ctx (Context): The context of the command.
+
+    Returns:
+        bool
     """
     load_dotenv()
     devs = os.getenv("DEVS").split(",")
     return str(ctx.author.id) in devs
 
 def dev_list() -> list:
-    """Return the list of developers."""
+    """
+    Returns the list of developers.
+
+    Returns:
+        list
+    """
     load_dotenv()
     devs = os.getenv("DEVS").split(",")
     return devs
 
 async def get_user_title(user_data: dict) -> str:
         """
-        Get the user title.
+        Gets the user title.
+
+        Args:
+            user_data (dict): The user data.
+        
+        Returns:
+            str
         """
         userRoles = {
             "T" : "Egg Novice",
@@ -73,7 +104,15 @@ async def get_user_title(user_data: dict) -> str:
 
 async def confirmation_embed(ctx, user: discord.Member, description: str) -> bool:
      """
-     Confirmation embed for modularization. Use this method whenenver another command needs confirmation from the user.
+    Confirmation embed for modularization. Use this method whenever another command needs confirmation from the user.
+
+    Args:
+        ctx (Context): The context of the command.
+        user (discord.Member): The user to confirm.
+        description (str): The description of the embed.
+
+    Returns:
+        bool
      """
      embed = await make_embed_object(title=f":warning: {user.display_name}, you need to confirm this first:", description=description)
      embed.set_footer(text="React with ✅ to confirm or ❌ to cancel.")
@@ -99,7 +138,13 @@ async def confirmation_embed(ctx, user: discord.Member, description: str) -> boo
 
 async def user_cache_retriever(user_id: int) -> dict:
     """
-    Retrieve the user cache.
+    Retrieves the user cache.
+
+    Args:
+        user_id (int): The user id to get the cache for.
+
+    Returns:
+        dict
     """
     keys = {"farm_data", "bank_data", "user_data"}
     user_cache = await cache_initiator.get_user_cache(user_id)
@@ -111,10 +156,16 @@ async def user_cache_retriever(user_id: int) -> dict:
 async def read_and_update_cache(user_id: int) -> dict:
     """
     Reads the user data from the database and updates the cache.
+
+    Args:
+        user_id (int): The user id to read the data for.
+
+    Returns:
+        dict
     """
-    from db.userDB import User # this is like this to avoid circular imports
-    from db.bankDB import Bank # its terrible but it works
-    from db.farmDB import Farm
+    from db.userdb import User # this is like this to avoid circular imports
+    from db.bankdb import Bank # its terrible but it works
+    from db.farmdb import Farm
     
     user_data = User.read(user_id)
     farm_data = Farm.read(user_id)
@@ -125,9 +176,15 @@ async def read_and_update_cache(user_id: int) -> dict:
 
 async def guild_cache_retriever(guild_id: int) -> dict:
     """
-    Retrieve the guild cache.
+    Retrieves the guild cache.
+
+    Args:
+        guild_id (int): The guild id to get the cache for.
+
+    Returns:
+        dict
     """
-    from db.botConfigDB import BotConfig # same as above
+    from db.botconfigdb import BotConfig # same as above
     guild_cache = await cache_initiator.get_guild_cache(guild_id)
     
     if not guild_cache:
@@ -145,6 +202,12 @@ def update_scheduler(callback: Callable) -> None:
     """
     Schedules a coroutine to be run in the event loop with top priority.
     This should always be called when performing cache updates.
+
+    Args:
+        callback (Callable): The coroutine to run.
+
+    Returns:
+        None
     """
     loop = asyncio.get_event_loop()
     if loop.is_running():
@@ -154,8 +217,15 @@ def update_scheduler(callback: Callable) -> None:
 
 def request_threading(callback: Callable, id: int = None) -> concurrent.futures.Future: 
     """
-    Request a function to be run in a separate thread. Mostly used for database operations.
+    Requests a function to be run in a separate thread. Mostly used for database operations.
     Obs: All get requests from database are NOT thread safe, while all write requests are.
+
+    Args:
+        callback (Callable): The function to run.
+        id (int): The id to lock the thread with. If None, the thread will not be locked.
+
+    Returns:
+        concurrent.futures.Future
     """
     if id is None:
         lock_context = None
@@ -172,13 +242,23 @@ def request_threading(callback: Callable, id: int = None) -> concurrent.futures.
 
 def retrieve_threads() -> int:
     """
-    Retrieve the number of threads for visualization purposes.
+    Retrieves the number of threads for visualization purposes.
+
+    Returns:
+        int
     """
     return len(threading.enumerate())
 
 async def return_data(ctx: Context, user=None) -> tuple:
     """
-    Return the user data and the user object. This is only used in case of a command that has an user parameter.
+    Returns the user data and the user object. This is only used in case of a command that has an optional user parameter.
+
+    Args:
+        ctx (Context): The context of the command.
+        user (discord.Member): The user to get the data for.
+
+    Returns:
+        tuple
     """
     if not user:
         return ctx.data, ctx.author
@@ -189,13 +269,25 @@ async def return_data(ctx: Context, user=None) -> tuple:
 
 async def format_number(number) -> str:
     """
-    Format the number with commas.
+    Formats the number with commas.
+
+    Args:
+        number: The number to format.
+
+    Returns:
+        str
     """
     return "{:,.0f}".format(number).replace(",", ".")
 
 async def cooldown_user_tracker(user_id: int) -> bool:
     """
-    Track the cooldown of the user.
+    Tracks the cooldown of the user.
+
+    Args:
+        user_id (int): The user id to track the cooldown for.
+
+    Returns:
+        bool
     """
     if user_id in cooldown_tracker:
         if cooldown_tracker[user_id] == 5:
@@ -211,7 +303,13 @@ async def cooldown_user_tracker(user_id: int) -> bool:
 @contextmanager
 def lock_manager(id: int):
     """
-    Lock data to avoid multiple access from different threads with the same user id.
+    Locks data to avoid multiple access from different threads with the same user id.
+
+    Args:
+        id (int): The id to lock the data with.
+
+    Returns:
+        None
     """
     with global_lock:
         if id not in lock_tracker:

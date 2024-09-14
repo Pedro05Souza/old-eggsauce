@@ -1,7 +1,8 @@
-from db.dbConfig import mongo_client
+from db.dbsetup import mongo_client
 from time import time
 from tools.cache import cache_initiator
 from tools.shared import update_scheduler, request_threading
+from discord.ext.commands import Context
 from typing import Union
 import logging
 farm_collection = mongo_client.BotDiscord.farm
@@ -10,8 +11,17 @@ logger = logging.getLogger('botcore')
 class Farm:
 
     @staticmethod
-    def create(user_id: int, ctx) -> None:
-        """Create a farm for the user."""
+    def create(user_id: int, ctx: Context) -> None:
+        """
+        Creates a farm for the user in the farm collection.
+
+        Args:
+            user_id (int): The id of the user to create the farm for.
+            ctx (commands.Context): The context of the command.
+
+        Returns:
+            None
+        """
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
@@ -48,7 +58,15 @@ class Farm:
     
     @staticmethod
     def delete(user_id: int) -> None:
-        """Delete a farm from the database."""
+        """
+        Deletes a farm from the farm collection.
+
+        Args:
+            user_id (int): The id of the user to delete.
+
+        Returns:
+            None
+        """
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
@@ -62,7 +80,16 @@ class Farm:
 
     @staticmethod
     def update(user_id: int, **kwargs) -> None:
-        """Update a farm's status in the database."""
+        """
+        Updates a farm's status in the farm collection.
+
+        Args:
+            user_id (int): The id of the user to update.
+            **kwargs: The data to update the farm with.
+
+        Returns:
+            None
+        """
         possible_keywords = {"farm_name", "plant_name", "corn", "chickens", "eggs_generated", "farmer", "corn_limit", "plot", "bench", "mmr", "highest_mmr", "wins", "losses", "redeemables", "last_roll_drop"} 
         try:
             query = {}
@@ -83,7 +110,15 @@ class Farm:
             
     @staticmethod
     def update_chicken_drop(user_id: int) -> None:
-        """Update a farm's last drop in the database."""
+        """
+        Updates a farm's last drop in the farm collection.
+
+        Args:
+            user_id (int): The id of the user to update the farm for.
+
+        Returns:
+            None
+        """
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
@@ -97,7 +132,15 @@ class Farm:
         
     @staticmethod
     def update_farmer_drop(user_id: int) -> None:
-        """Update a farm's last drop in the database."""
+        """
+        Update a farm's last drop in the farm collection.
+
+        Args:
+            user_id (int): The id of the user to update the farm for.
+
+        Returns:
+            None
+        """
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
@@ -111,7 +154,15 @@ class Farm:
         
     @staticmethod
     def update_corn_drop(user_id: int) -> None:
-        """Update a farm's last drop in the database."""
+        """
+        Updates a farm's last drop in the farm collection.
+
+        Args:
+            user_id (int): The id of the user to update the farm for.
+
+        Returns:
+            None
+        """
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
@@ -125,7 +176,15 @@ class Farm:
 
     @staticmethod
     def read(user_id: int) -> Union[dict, None]:
-        """Read a farm's data from the database."""
+        """
+        Reads a farm's data from the farm collection.
+
+        Args:
+            user_id (int): The id of the user to read the farm for.
+
+        Returns:
+            dict | None
+        """
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
@@ -138,22 +197,13 @@ class Farm:
             return None
         
     @staticmethod
-    def readAll() -> Union[list, None]:
-        """Read all farms from the database."""
-        try:
-            farms = request_threading(lambda: farm_collection.find()).result()
-            if farms:
-                return farms
-            else:
-                logger.warning("No farms found.")
-                return None
-        except Exception as e:
-            logger.error("Error encountered while reading all farms.", e)
-            return None
-    
-    @staticmethod
     def reset_mmr() -> None:
-        """Reset all farms' mmr in the database."""
+        """
+        Resets all farms' mmr in the database.
+
+        Returns:
+            None
+        """
         try:
             farms = request_threading(lambda: farm_collection.find()).result()
             if farms:
@@ -168,6 +218,16 @@ class Farm:
         
     @staticmethod
     def add_last_farm_drop_attribute(user_id: int) -> None:
+        """
+        Add last farm drop attribute to a farm in the farm collection. This method is ONLY called
+        when a player acquires the sustainable farmer.
+
+        Args:
+            user_id (int): The id of the user to add the attribute for.
+
+        Returns:
+            None
+        """
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
@@ -181,6 +241,16 @@ class Farm:
         
     @staticmethod
     def remove_last_farm_drop_attribute(user_id: int) -> None:
+        """
+        Remove last farm drop attribute from a farm in the farm collection. This method is ONLY called
+        when a player switches from the sustainable farmer to another farmer.
+
+        Args:
+            user_id (int): The id of the user to remove the attribute for.
+
+        Returns:
+            None
+        """
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
@@ -194,7 +264,15 @@ class Farm:
         
     @staticmethod
     def update_last_market_drop(user_id: int) -> None:
-        """Update a farm's last drop in the database."""
+        """
+        Update a farm's last drop in the farm collection.
+
+        Args:
+            user_id (int): The id of the user to update the farm for.
+
+        Returns:
+            None
+        """
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:

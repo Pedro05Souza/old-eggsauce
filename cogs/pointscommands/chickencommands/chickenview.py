@@ -1,9 +1,8 @@
 """
 This module contains the view commands for the chicken system.
 """
-
 from discord.ext import commands
-from db.farmDB import Farm
+from db.farmdb import Farm
 from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, chicken_ranking
 from tools.chickens.chickenshared import *
 from tools.chickens.chickenhandlers import EventData
@@ -23,8 +22,18 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="chickeninfo", aliases=["ci"], usage="chickenInfo <index>", description="Check the information of a chicken.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
-    async def check_chicken_info(self, ctx: Context, index: int, user: discord.Member = None):
-        """Check the information of a chicken."""
+    async def check_chicken_info(self, ctx: Context, index: int, user: discord.Member = None) -> None:
+        """
+        Check the information of a chicken.
+
+        Args:
+            ctx (Context): The context of the command.
+            index (int): The index of the chicken to check.
+            user (discord.Member, optional): The user to check the chicken. Defaults to None, which is the author of the command.
+        
+        Returns:
+            None
+        """
         farm_data, _ = await return_data(ctx, user)
         farm_data = farm_data["farm_data"]
         if farm_data:
@@ -41,7 +50,15 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def check_chicken_rarities(self, ctx: Context) -> None:
-        """Check the rarities of the chickens"""
+        """
+        Check the rarities of the chickens.
+
+        Args:
+            ctx (Context): The context of the command.
+        
+        Returns:
+            None
+        """
         rarity_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {round(rate/100, 4)}%" for rarity, rate in rollRates.items()])
         await send_bot_embed(ctx, title="Chicken Rarities:", description=rarity_info)
 
@@ -49,7 +66,15 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def check_chicken_values(self, ctx: Context) -> None:
-        """Check the amount of eggs produced by chickens"""
+        """
+        Check the amount of eggs produced by chickens.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         value_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {ChickenMultiplier[rarity].value}x" for rarity in ChickenMultiplier.__members__])
         await send_bot_embed(ctx, title="Amount of eggs produced by rarity:", description=value_info)
     
@@ -57,7 +82,15 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def chicken_corn(self, ctx: Context) -> None:
-        """Show all the chicken food values"""
+        """
+        Show all the chicken food values.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         corn_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {ChickenFood[rarity].value}" for rarity in ChickenFood.__members__])
         await send_bot_embed(ctx, title="Chicken food values:", description=corn_info)
     
@@ -65,7 +98,15 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def check_chicken_prices(self, ctx: Context) -> None:
-        """Check the prices of the chickens"""
+        """
+        Check the prices of the chickens.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         prices_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {175 * ChickenRarity[rarity].value} eggbux" for rarity in ChickenRarity.__members__])
         await send_bot_embed(ctx, title="Chicken prices:", description=prices_info)
 
@@ -73,7 +114,16 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def player_rank(self, ctx: Context, user: discord.Member = None) -> None:
-        """Shows your current rank."""
+        """
+        Shows your current rank.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member, optional): The user to check the rank. Defaults to None, which is the author of the command.
+        
+        Returns:
+            None
+        """
         farm_data, user = await return_data(ctx, user)
         farm_data = farm_data["farm_data"]
         if farm_data:
@@ -96,7 +146,15 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def rank_info(self, ctx: Context) -> None:
-        """Check the chicken matchmaking ranks"""
+        """
+        Check the chicken matchmaking ranks.
+
+        Args:
+            ctx (Context): The context of the command.
+        
+        Returns:
+            None
+        """
         rank_info = "\n".join([f"{rank} - {weight} MMR" for rank, weight in chicken_ranking.items()])
         await send_bot_embed(ctx, title="Chicken matchmaking ranks:", description=rank_info)
 
@@ -104,7 +162,16 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def farm_profit(self, ctx: Context, user: discord.Member = None) -> None:
-        """Check the farm profit"""
+        """
+        Check the farm profit.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member, optional): The user to check the farm. Defaults to None, which is the author of the command.
+        
+        Returns:
+            None
+        """
         data, user = await return_data(ctx, user)
         farm_data = data["farm_data"]   
         if data["farm_data"]:
@@ -136,8 +203,17 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="renamefarm", aliases=["rf"], usage="renameFarm <nickname>", description="Rename the farm.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
-    async def rename_farm(self, ctx: Context, nickname: str):
-        """Rename the farm"""
+    async def rename_farm(self, ctx: Context, nickname: str) -> None:
+        """
+        Renames the farm.
+
+        Args:
+            ctx (Context): The context of the command.
+            nickname (str): The new nickname of the farm.
+        
+        Returns:
+            None
+        """
         farm_data = ctx.data["farm_data"]
         censor = profanity.contains_profanity(nickname)
         if censor:
@@ -153,8 +229,18 @@ class ChickenView(commands.Cog):
     @commands.hybrid_command(name="renamechicken", aliases=["rc"], usage="renameChicken <index> <nickname>", description="Rename a chicken in the farm.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
-    async def rename_chicken(self, ctx: Context, index: int, nickname: str):
-        """Rename a chicken in the farm"""
+    async def rename_chicken(self, ctx: Context, index: int, nickname: str) -> None:
+        """
+        Renames a chicken in the farm.
+
+        Args:
+            ctx (Context): The context of the command.
+            index (int): The index of the chicken to rename.
+            nickname (str): The new nickname of the chicken.
+        
+        Returns:
+            None
+        """
         index -= 1
         farm_data = ctx.data["farm_data"]
         censor = profanity.contains_profanity(nickname)
@@ -187,11 +273,22 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def switch_chicken(self, ctx: Context, index: int, index2: int) -> None:
-        """Switches chickens"""
+        """
+        Switch chickens positions in the farm.
+
+        Args:
+            ctx (Context): The context of the command.
+            index (int): The index of the first chicken.
+            index2 (int): The index of the second chicken.
+
+        Returns:
+            None
+        """
         farm_data = ctx.data["farm_data"]
         if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             return
+        
         farm_data['chickens'][index - 1], farm_data['chickens'][index2 - 1] = farm_data['chickens'][index2 - 1], farm_data['chickens'][index - 1]
         Farm.update(ctx.author.id, chickens=farm_data['chickens'])
         await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
@@ -200,7 +297,16 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def view_bench(self, ctx: Context, user: discord.Member = None) -> None:
-        """View the bench"""
+        """
+        View the chickens in the bench.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member, optional): The user to check the bench. Defaults to None, which is the author of the command.
+        
+        Returns:
+            None
+        """
         farm_data, user = await return_data(ctx, user)
         farm_data = farm_data["farm_data"]
         if farm_data:
@@ -212,7 +318,16 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def add_bench(self, ctx: Context, index: int) -> None:
-        """Adds a chicken to the bench"""
+        """
+        Adds a chicken to the bench.
+
+        Args:
+            ctx (Context): The context of the command.
+            index (int): The index of the chicken to add.
+
+        Returns:
+            None
+        """
         farm_data = ctx.data["farm_data"]
         index -= 1
         e = EventData(ctx.author)
@@ -234,7 +349,16 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def remove_bench(self, ctx: Context, index: int) -> None:
-        """Removes a chicken from the bench"""
+        """
+        Removes a chicken from the bench.
+
+        Args:
+            ctx (Context): The context of the command.
+            index (int): The index of the chicken to remove.
+        
+        Returns:
+            None
+        """
         farm_data = ctx.data["farm_data"]
         index -= 1
         e = EventData(ctx.author)
@@ -256,7 +380,17 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def switch_bench(self, ctx: Context, index_farm: int, index_bench_int: int) -> None:
-        """Switches a chicken from the farm to the bench"""
+        """
+        Switches a chicken from the farm to the bench.
+
+        Args:
+            ctx (Context): The context of the command.
+            index_farm (int): The index of the chicken in the farm.
+            index_bench_int (int): The index of the chicken in the bench.
+        
+        Returns:
+            None
+        """
         if await verify_events(ctx, ctx.author):
             return
         farm_data = ctx.data["farm_data"]
@@ -276,7 +410,15 @@ class ChickenView(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def reedemables(self, ctx: Context) -> None:
-        """Check the reedemable items"""
+        """
+        Check the reedemable items.
+
+        Args:
+            ctx (Context): The context of the command.
+        
+        Returns:
+            None
+        """
         farm_data = await user_cache_retriever(ctx.author.id)
         farm_data = farm_data["farm_data"]
         reedemables = farm_data['redeemables']

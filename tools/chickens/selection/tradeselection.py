@@ -1,5 +1,5 @@
 from discord import SelectOption, ui
-from db.farmDB import Farm
+from db.farmdb import Farm
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import get_chicken_price, get_max_chicken_limit, get_rarity_emoji
 from tools.shared import make_embed_object
@@ -9,6 +9,7 @@ import discord
 
 
 class ChickenAuthorTradeMenu(ui.Select):
+
     def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, td: EventData):
         options = [
             SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
@@ -21,6 +22,15 @@ class ChickenAuthorTradeMenu(ui.Select):
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder=f"{author.display_name}, select the chickens to trade:")
 
     async def callback(self, interaction: discord.Interaction) -> None:
+        """
+        Responsable for selecting the chickens to trade.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+
+        Returns:
+            None
+        """
         if interaction.user.id != self.author.id:
             embed = await make_embed_object(description="You can't interact with this menu.")
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -33,6 +43,7 @@ class ChickenAuthorTradeMenu(ui.Select):
         await interaction.response.send_message(embed=embed)
         
 class ChickenUserTradeMenu(ui.Select):
+
     def __init__(self, chickens: list, author: discord.Member, message: discord.Member, td: EventData, target: discord.Member, instance_bot: discord.Client):
         options = [
             SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
@@ -47,6 +58,15 @@ class ChickenUserTradeMenu(ui.Select):
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder=f"{author.display_name}, select the chickens to trade:")
 
     async def callback(self, interaction: discord.Interaction) -> None:
+        """
+        Responsable for selecting the chickens to trade.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+
+        Returns:
+            None
+        """
         if interaction.user.id != self.author.id:
             embed = await make_embed_object(description="You can't interact with this menu.")
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -93,6 +113,17 @@ class ChickenUserTradeMenu(ui.Select):
             return
 
 async def trade_handler(ctx, td: EventData, target: discord.Member) -> discord.Embed:
+    """
+    Handles the trade between two users.
+
+    Args:
+        ctx (discord.Interaction): The interaction object.
+        td (EventData): The EventData object.
+        target (discord.Member): The target user.
+
+    Returns:
+        discord.Embed: The embed object.
+    """
     if td.author is not None and td.target is not None:
         author_chickens = td.target[ctx.user.id]
         user_chickens = td.author[target.id]

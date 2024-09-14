@@ -1,30 +1,38 @@
 """
 This file contains the developer commands for the bot.
 """
-
 from discord.ext import commands
-from db.userDB import User
+from db.userdb import User
 from tools.shared import make_embed_object, send_bot_embed, is_dev, retrieve_threads
-from db.bankDB import Bank
-from db.farmDB import Farm
-from db.marketDB import Market
+from db.bankdb import Bank
+from db.farmdb import Farm
+from db.marketdb import Market
 from tools.chickens.chickenshared import create_chicken
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import RollLimit
 from tools.cache import cache_initiator
 from . import botcore
 from discord.ext.commands import Context
-from typing import Any
 import psutil
 import discord
 
 class DevCommands(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
     
     @commands.command("addPoints") 
     async def add_points(self, ctx: Context, amount: int, user: discord.Member = None) -> None:
-        """Add points to a user. If no user is specified, the author of the command will receive the points."""
+        """
+        Adds points to a user.
+
+        Args:
+            amount (int): The amount of points to add.
+            user (discord.Member): The user to add the points to. Defaults to None. If None, the author of the command will receive the points.
+
+        Returns:
+            None
+        """
         if user is None:
             user = ctx.author
         user_data = User.read(user.id)
@@ -39,7 +47,16 @@ class DevCommands(commands.Cog):
 
     @commands.command("removePoints")
     async def remove_points(self, ctx: Context, amount: int, user: discord.Member = None) -> None:
-        """Remove points from a user. If no user is specified, the author of the command will lose the points."""
+        """
+        Removes points from a user.
+
+        Args:
+            amount (int): The amount of points to remove.
+            user (discord.Member): The user to remove the points from. Defaults to None. If None, the author of the command will lose the points.
+
+        Returns:
+            None
+        """
         if user is None:
             user = ctx.author
         user_data = User.read(user.id)
@@ -54,13 +71,29 @@ class DevCommands(commands.Cog):
 
     @commands.command("latency", aliases=["ping"])
     async def latency(self, ctx: Context) -> None:
-        """Check the bot's latency."""
+        """
+        Check the bot's latency.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         if is_dev(ctx):
             await send_bot_embed(ctx, description=f":ping_pong: {round(self.bot.latency * 1000)}ms")
 
     @commands.command("deleteDB")
     async def delete_db(self, ctx: Context, user: discord.Member) -> None:
-        """Delete a user from the database."""
+        """
+        Delete an user from the database.
+
+        Args:
+            user (discord.Member): The user to delete from the database.
+
+        Returns:
+            None
+        """
         user = user.id
         if User.read(user):
             if is_dev(ctx):
@@ -73,7 +106,15 @@ class DevCommands(commands.Cog):
             
     @commands.command()
     async def reset(self, ctx: Context, user: discord.Member) -> None:
-        """Reset a user from the database."""
+        """
+        Resets an user from the database.
+
+        Args:
+            user (discord.Member): The user to reset from the database.
+        
+        Returns:
+            None
+        """
         if is_dev(ctx) and User.read(user.id):
             if Bank.read(user.id):
                 Bank.update(user.id, 0)
@@ -84,7 +125,15 @@ class DevCommands(commands.Cog):
 
     @commands.command("checkbotServers", aliases=["cbs"])
     async def check_bot_servers(self, ctx: Context) -> None:
-        """Check the servers the bot is in."""
+        """
+        Check the servers the bot is in.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         if is_dev(ctx):
             servers = self.bot.guilds
             total_servers = len(servers)
@@ -94,7 +143,15 @@ class DevCommands(commands.Cog):
     
     @commands.command("totalusers")
     async def total_users(self, ctx: Context) -> None:
-        """Check the total number of users in the database."""
+        """
+        Check the total number of users in the database.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         if is_dev(ctx):
             total_users = User.count_users()
             await send_bot_embed(ctx, description=f"```Total users in the database: {total_users}```")
@@ -103,7 +160,16 @@ class DevCommands(commands.Cog):
 
     @commands.command("spawnChicken")
     async def spawn_chicken(self, ctx: Context, user: discord.Member, rarity: str) -> None:
-        """Add a chicken to a user."""
+        """
+        Adds a chicken to an user's farm.
+
+        Args:
+            user (discord.Member): The user to add the chicken to.
+            rarity (str): The rarity of the chicken.
+
+        Returns:
+            None
+        """
         if is_dev(ctx):
             rarity = rarity.upper()
             farm_data = Farm.read(user.id)
@@ -115,94 +181,36 @@ class DevCommands(commands.Cog):
                 farm_data['chickens'].append(chicken)
                 Farm.update(user.id, chickens=farm_data['chickens'])
                 await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")
-    
-    @commands.command("chickenlogs")
-    async def circulation_chickens(self, ctx: Context) -> None:
-        """Check the total number of chickens in circulation."""
-        rarity_dictionary = ChickenRarity.__members__.keys()
-        rarity_dictionary = {rarity: 0 for rarity in rarity_dictionary}
-        if is_dev(ctx):
-            total_chickens = 0
-            for farm in Farm.readAll():
-                if 'chickens' in farm:
-                    for chicken in farm['chickens']:
-                        rarity_dictionary[chicken['rarity']] += 1
-                        total_chickens += 1
-            await send_bot_embed(ctx, description=f"```Total chickens in circulation: {total_chickens}```\n Rarities: \n{' '.join([f'{rarity}: {count}' for rarity, count in rarity_dictionary.items()])}")
-        else:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
-    
-    @commands.command("removeChicken")
-    async def remove_chicken(self, ctx: Context, user: discord.Member, index: Any) -> None:
-        farm_data = Farm.read(user.id)
-        if farm_data:
-            if is_dev(ctx):
-                if index.upper() == "ALL":
-                    farm_data['chickens'].clear()
-                    Farm.update(user.id, chickens=farm_data['chickens'])
-                    await send_bot_embed(ctx, description=f"{user.display_name} lost all chickens.")
-                    return
-                index = int(index)
-                farm_data['chickens'].pop(index)
-                Farm.update(user.id, chickens=farm_data['chickens'])
-                await send_bot_embed(ctx, description=f"{user.display_name} lost a chicken.")
-            else:
-                await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
-    
-    @commands.command(name="purge")
-    async def purge(self, ctx: Context, amount: int) -> None:
-        """Deletes a certain amount of messages."""
-        if is_dev(ctx):
-            if amount > 0 and amount <= 25:
-                await ctx.channel.purge(limit=amount + 1)
-                  
+                              
     @commands.command(name="marketLogs")
     async def market_logs(self, ctx: Context) -> None:
-     """Check the total number of active offers in the market."""
+     """
+    Checks the total number of active offers in the market.
+
+    Args:
+        ctx (Context): The context of the command.
+
+    Returns: 
+        None
+         
+     """
      if is_dev(ctx):
         total_offers = Market.count_all_offers()
         await send_bot_embed(ctx, description=f"```Total active offers in the player market: {total_offers}```")
      else:
         await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
     
-    @commands.command(name="reloadBot")
-    async def reload_cog(self, ctx: Context, folder: str, cog_name: str) -> None:
-     """Reload a cog."""
-     folders = {"p": "pointscommands", "c": "chickenscommands"}
-     if is_dev(ctx):
-        if folder not in folders:
-            cog_full_name = f"cogs.{cog_name}"
-        else:
-            cog_full_name = f"cogs.pointscommands/{folders[folder]}/{cog_name}"
-        if cog_full_name in self.bot.extensions:
-            try:
-                await self.bot.reload_extension(cog_full_name)
-                await send_bot_embed(ctx, description=f":warning: {cog_name} has been reloaded.")
-            except Exception as e:
-                await send_bot_embed(ctx, description=f":no_entry_sign: Failed to reload {cog_name}. Error: {e}")
-        else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {cog_name} is not loaded.")
-     else:
-        await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
-
-    @commands.command(name="unloadBot")
-    async def unload_cog(self, ctx: Context, cog_name: str) -> None:
-        """Unload a cog."""
-        if is_dev(ctx):
-            cog_full_name = f"cogs.pointscommands.{cog_name}"
-            if cog_full_name in self.bot.extensions:
-                try:
-                    await self.bot.unload_extension(cog_full_name)
-                    await send_bot_embed(ctx, description=f":warning: {cog_name} has been unloaded.")
-                except Exception as e:
-                    await send_bot_embed(ctx, description=f":no_entry_sign: Failed to unload {cog_name}. Error: {e}")
-            else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {cog_name} is not loaded.")
-        else:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
-
     @commands.command(name="devpanel")
     async def developer_panel(self, ctx: Context) -> None:
+        """
+        Check the developer panel. It shows the memory usage, active threads, CPU usage and memory usage.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         if is_dev(ctx):
             process = psutil.Process()
             user, guild = await cache_initiator.get_memory_usage()
@@ -215,6 +223,15 @@ class DevCommands(commands.Cog):
 
     @commands.command(name="sync")
     async def sync(self, ctx: Context) -> None:
+        """
+        Sync the bot commands globally.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         if is_dev(ctx):
             await self.bot.tree.sync()
             await send_bot_embed(ctx, description=":warning: bot data has been synced.")
@@ -223,6 +240,16 @@ class DevCommands(commands.Cog):
 
     @commands.command(name="givecorn")
     async def give_corn(self, ctx: Context, amount: int, user: discord.Member= None) -> None:
+        """
+        Gives corn to a user.
+
+        Args:
+            amount (int): The amount of corn to give.
+            user (discord.Member): The user to give the corn to. Defaults to None. If None, the author of the command will receive the corn.
+        
+        Returns:
+            None
+        """
         if is_dev(ctx):
             user = ctx.author if user is None else user
             farm_data = Farm.read(user.id)

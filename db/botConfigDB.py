@@ -1,4 +1,7 @@
-from db.dbConfig import mongo_client
+"""
+This module contains the class BotConfig which is responsible for creating, updating, deleting, and reading server configurations from the database.
+"""
+from db.dbsetup import mongo_client
 from tools.shared import update_scheduler, request_threading
 from tools.cache import cache_initiator
 from typing import Union
@@ -11,7 +14,18 @@ class BotConfig:
 
     @staticmethod
     def create(server_id: int, toggled_modules: list = None, channel_id: int = None, prefix: str = None) -> None:
-        """Create a server in the database."""
+        """
+        Creates a server in the bot config collection.
+
+        Args:
+            server_id (int): The id of the server to create.
+            toggled_modules (list): The modules to toggle.
+            channel_id (int): The id of the channel to create.
+            prefix (str): The prefix to create.
+
+        Returns:
+            None
+        """
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
@@ -33,7 +47,16 @@ class BotConfig:
         
     @staticmethod
     def create_toggle(server_id: int, toggled_modules: list) -> None:
-        """Create a toggle in the database."""
+        """
+        Creates a toggle in the bot config collection.
+
+        Args:
+            server_id (int): The id of the server to create.
+            toggled_modules (list): The modules to toggle.
+
+        Returns:
+            None
+        """
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
@@ -53,7 +76,16 @@ class BotConfig:
         
     @staticmethod
     def create_channel(server_id: int, channel_id: int) -> None:
-        """Create a channel in the database."""
+        """
+        Creates a channel in the bot config collection.
+
+        Args:
+            server_id (int): The id of the server to create.
+            channel_id (int): The id of the channel to create.
+
+        Returns:
+            None
+        """
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
@@ -73,6 +105,16 @@ class BotConfig:
         
     @staticmethod
     def create_prefix(server_id: int, prefix: str) -> None:
+        """
+        Creates a prefix in the bot config collection.
+
+        Args:
+            server_id (int): The id of the server to create.
+            prefix (str): The prefix to create.
+
+        Returns:
+            None
+        """
         try:
             prefix_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if prefix_data:
@@ -92,7 +134,16 @@ class BotConfig:
         
     @staticmethod
     def update_prefix(server_id: int, prefix: str) -> None:
-        """Update a prefix in the database."""
+        """
+        Update a prefix in the bot config collection.
+
+        Args:
+            server_id (int): The id of the server to update.
+            prefix (str): The prefix to update.
+
+        Returns:
+            None
+        """
         try:
             prefix_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if prefix_data:
@@ -106,7 +157,16 @@ class BotConfig:
         
     @staticmethod
     def update_toggled_modules(server_id: int, toggled_modules: list) -> None:
-        """Update a toggle in the database."""
+        """
+        Update a toggle in the database.
+
+        Args:
+            server_id (int): The id of the server to update.
+            toggled_modules (list): The modules to toggle.
+
+        Returns:
+            None
+        """
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
@@ -120,7 +180,16 @@ class BotConfig:
     
     @staticmethod
     def update_channel_id(server_id: int, channel_id: int) -> None: 
-        """Update a channel in the database."""
+        """
+        Updates a channel in the database.
+
+        Args:
+            server_id (int): The id of the server to update.
+            channel_id (int): The id of the channel to update.
+
+        Returns:
+            None
+        """
         try:
             toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if toggle_data:
@@ -134,7 +203,15 @@ class BotConfig:
         
     @staticmethod
     def delete(server_id: int) -> None:
-        """Delete a toggle from the database."""
+        """
+        Deletes a toggle from the database.
+
+        Args:
+            server_id (int): The id of the server to delete.
+
+        Returns:
+            None
+        """
         try:
             config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if config_data:
@@ -147,18 +224,13 @@ class BotConfig:
                 logger.error("Error encountered while deleting a server.", e)
     
     @staticmethod
-    def read_all_channels() -> Union[list, None]:
-        """Read all channels from the database."""
-        try:
-            channels = request_threading(lambda: config_collection.find()).result()
-            return channels
-        except Exception as e:
-            logger.error("Error encountered while reading all channels.", e)
-            return None
-    
-    @staticmethod
     def read(server_id: int) -> Union[dict, None]:
-        """Read a server from the database."""
+        """
+        Reads a server from the database.
+
+        Args:
+            server_id (int): The id of the server to read.
+        """
         try:
             config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
             if config_data:

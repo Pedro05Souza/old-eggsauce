@@ -1,4 +1,4 @@
-from db.dbConfig import mongo_client
+from db.dbsetup import mongo_client
 from time import time
 from tools.shared import request_threading
 from typing import Union
@@ -11,7 +11,19 @@ class Market:
 
     @staticmethod
     def create(offer_id, chicken, price: int, description: str, author_id) -> None:
-        """Create an item in the market."""
+        """
+        Create an offer in the market collection.
+
+        Args:
+            offer_id (int): The id of the offer to create.
+            chicken (dict): The chicken to create the offer with.
+            price (int): The price of the offer.
+            description (str): The description of the offer.
+            author_id (int): The id of the author of the offer.
+
+        Returns:
+            None
+        """
         try:
             offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
             if offer_data:
@@ -34,7 +46,15 @@ class Market:
     
     @staticmethod
     def get(offer_id: int) -> Union[dict, None]:
-        """Get an item from the market."""
+        """
+        Get an offer from the market collection.
+
+        Args:
+            offer_id (int): The id of the offer to get.
+        
+        Returns:
+            Union[dict, None]
+        """
         try:
             offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
             if offer_data:
@@ -48,7 +68,16 @@ class Market:
         
     @staticmethod
     def update(offer_id: int, **kwargs) -> None:
-        """Update an item in the market."""
+        """
+        Updates an offer in the market collection.
+
+        Args:
+            offer_id (int): The id of the offer to update.
+            **kwargs: The keyword arguments to update the offer with.
+
+        Returns:
+            None
+        """
         possible_keywords = ["chicken", "description", "author_id"]
         query = {}
         try:
@@ -71,7 +100,15 @@ class Market:
     
     @staticmethod
     def delete(offer_id: int) -> None:
-        """Delete an item from the market."""
+        """
+        Deletes an item from the market.
+
+        Args:
+            offer_id (int): The id of the offer to delete.
+
+        Returns:
+            None
+        """
         try:
             offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
             if offer_data:
@@ -85,7 +122,15 @@ class Market:
     
     @staticmethod
     def get_user_offers(author_id: int) -> Union[list, None]:
-        """Get all offers from a user."""
+        """
+        Get all offers from a user in the market collection.
+
+        Args:
+            author_id (int): The id of the user to get the offers from.
+
+        Returns:
+            Union[list, None]
+        """
         try:
             offers = request_threading(lambda: market_collection.find({"author_id": author_id})).result()
             if offers:
@@ -99,7 +144,15 @@ class Market:
                 
     @staticmethod
     def get_chicken_offers(**kwargs) -> Union[list, None]:
-        """Get all offers with specific parameters."""
+        """
+        Performs search in the market collection based on the parameters provided.
+
+        Args:
+            **kwargs: The keyword arguments to search the offers with.
+
+        Returns:
+            Union[list, None]
+        """
         query = {}
         possible_keywords = ["chicken_rarity", "upkeep_rarity", "price", "author_id"]
         for key, value in kwargs.items():
@@ -134,7 +187,12 @@ class Market:
         
     @staticmethod    
     def count_all_offers() -> Union[int, None]:
-        """Count all offers in the market."""
+        """
+        Counts all offers in the market.
+
+        Returns:
+            Union[int, None]
+        """
         try:
             count = request_threading(lambda: market_collection.count_documents({})).result()
             return count

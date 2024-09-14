@@ -6,14 +6,13 @@ from discord.ext import commands
 from dataclasses import dataclass
 from tools.pointscore import pricing
 from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, user_cache_retriever
-from tools.settings import QUEUE_COOLDOWN
 from tools.chickens.combatbot import BotMatchMaking, bot_maker
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit
-from tools.settings import MAX_BENCH
+from tools.settings import MAX_BENCH, QUEUE_COOLDOWN
 from tools.chickens.chickeninfo import rarities_weight, upkeep_weight, score_determiner, chicken_ranking
-from db.farmDB import Farm
-from db.userDB import User
+from db.farmdb import Farm
+from db.userdb import User
 from tools.tips import tips
 from random import random, randint
 from discord.ext.commands import Context
@@ -32,6 +31,7 @@ class UserInQueue():
     has_opponent: bool = False
     
 class ChickenCombat(commands.Cog):
+    
     def __init__(self, bot):
         self.bot = bot
         self.user_queue: Dict[int, List[UserInQueue]] = {}
@@ -42,7 +42,12 @@ class ChickenCombat(commands.Cog):
     async def queue(self, ctx: Context) -> None:
         """
         Match making function for chicken combat.
-        param: ctx: commands.Context
+
+        Args:
+            ctx: (commands.Context)
+
+        Returns:
+            None
         """
         farm_data = ctx.data["farm_data"]
         if await verify_events(ctx, ctx.author):
@@ -65,6 +70,12 @@ class ChickenCombat(commands.Cog):
     async def add_user_in_queue(self, user: UserInQueue):
         """
         Adds a user in the queue.
+
+        Args:
+            user: (UserInQueue): The user to add in the queue.
+        
+        Returns:
+            None
         """
         set_scores = [i for i in range(0, 2100, 100)]
         for score in reversed(set_scores):
@@ -76,7 +87,13 @@ class ChickenCombat(commands.Cog):
 
     async def retrieve_user_key(self, user: UserInQueue) -> int:
         """
-        Retrieve the user key.
+        Retrieve the user key in the match making queue.
+
+        Args:
+            user: (UserInQueue): The user to retrieve the key for.
+
+        Returns:
+            int
         """
         set_scores = [i for i in range(0, 2100, 100)]
         for score in reversed(set_scores):
@@ -86,12 +103,17 @@ class ChickenCombat(commands.Cog):
     async def combat_handler(self, user: UserInQueue, opponent: Union[UserInQueue, str], user_msg: discord.Message, author_msg: discord.Message, ctx: Context, e: EventData) -> None:
         """
         Handles the combat between the two users.
-        param: user: UserInQueue
-        param: opponent: Union[UserInQueue, str]
-        param: user_msg: discord.Message
-        param: author_msg: discord.Message
-        param: ctx: commands.Context
-        param: e: EventData
+
+        Args:
+            user: UserInQueue
+            opponent: Union[UserInQueue, str]
+            user_msg: discord.Message
+            author_msg: discord.Message
+            ctx: commands.Context
+            e: EventData
+
+        Returns:
+            None
         """
         if isinstance(opponent, (UserInQueue, BotMatchMaking)):
             opponent_mmr = 0
@@ -124,8 +146,12 @@ class ChickenCombat(commands.Cog):
     async def return_user_id(self, user: Union[UserInQueue, BotMatchMaking]) -> int:
         """
         Return the user id of the user.
-        param: user: UserInQueue
-        return: int
+
+        Args:
+            user: (UserInQueue): The user to return the id for.
+        
+        Returns:
+            int
         """
         if isinstance(user, UserInQueue):
             return user.member.id
@@ -134,11 +160,14 @@ class ChickenCombat(commands.Cog):
                     
     async def increase_search_range(self, positive_search: int, negative_search: int, current_user: UserInQueue) -> Union[UserInQueue, None]:
         """
-        Increase the search range for the user queue.
-        param: positive_search: int
-        param: negative_search: int
-        param: current_user: UserInQueue
-        return: Generator
+        Increase the search range for opponents.
+
+        Args:
+            positive_search: int
+            negative_search: int
+            current_user: UserInQueue
+        Returns:
+            Union[UserInQueue, None]
         """
         for i in range(negative_search, positive_search):
             if i in self.user_queue.keys():
@@ -150,11 +179,16 @@ class ChickenCombat(commands.Cog):
     
     async def send_battle_decks(self, user: UserInQueue, opponent: UserInQueue, author_msg: discord.Message, user_msg: discord.Message) -> None:
         """
-        Sends the battle decks to the users.
-        param: user: UserInQueue
-        param: opponent: UserInQueue
-        param: author_msg: discord.Message
-        param: user_msg: discord.Message
+        Sends both players their respective battle decks.
+
+        Args:
+            user: (UserInQueue): The user in the match.
+            opponent: (UserInQueue): The opponent of the user.
+            author_msg: (discord.Message): The message from the author.
+            user_msg: (discord.Message): The message from the user.
+
+        Returns:
+            None
         """
         opponent_deck = opponent.chickens
         author_deck = user.chickens
@@ -166,8 +200,12 @@ class ChickenCombat(commands.Cog):
     async def search(self, current_user: UserInQueue) -> Union[UserInQueue, BotMatchMaking, str]:
         """
         Search for an opponent for the user.
-        param: current_user: UserInQueue
-        return: Union[UserInQueue, BotMatchMaking, str]
+
+        Args:
+            current_user: (UserInQueue): The user to search for an opponent for.
+        
+        Returns:
+            Union[UserInQueue, BotMatchMaking, str]
         """
         attemps = 0
         saved_positive_score, saved_negative_score = current_user.score, current_user.score
@@ -197,13 +235,18 @@ class ChickenCombat(commands.Cog):
     async def define_chicken_matchups(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking], match_type: str, user_msg: discord.Message, author_msg: discord.Message, dead_chickens_author: list, dead_chickens_user: list) -> None:
         """
         Define the chicken matchups for the combat.
-        param: author: UserInQueue
-        param: user: UserInQueue
-        param: match_type: str
-        param: user_msg: discord.Message
-        param: author_msg: discord.Message
-        param: dead_chickens_author: list
-        param: dead_chickens_user: list
+
+        Args:
+            author: (UserInQueue): The author of the match.
+            user: (UserInQueue): The user in the match.
+            match_type: (str): Check if the match is a friendly or ranked match.
+            user_msg: (discord.Message): The message from the user.
+            author_msg: (discord.Message): The message from the author.
+            dead_chickens_author: (list): List of dead chickens for the author.
+            dead_chickens_user: (list): List of dead chickens for the user.
+        
+        Returns:
+            None
         """
         author_chickens = author.chickens
         user_chickens = user.chickens
@@ -229,20 +272,27 @@ class ChickenCombat(commands.Cog):
             accumulator += 1
             await self.matches(user, author, match, accumulator, total_matches, embed_per_round, match_type, user_msg, author_msg, dead_chickens_author, dead_chickens_user)
 
-    async def matches(self, user: Union[UserInQueue, BotMatchMaking], author: UserInQueue, match: list, accumulator: int, total_matches: int, embed_per_round: discord.Embed, match_type: str, user_msg: discord.Message, author_msg: discord.Message, dead_chickens_author: list, dead_chickens_user: list) -> None:
+    async def matches(self, user: Union[UserInQueue, BotMatchMaking], author: UserInQueue, match: list, accumulator: int, 
+              total_matches: int, embed_per_round: discord.Embed, match_type: str, user_msg: discord.Message, 
+              author_msg: discord.Message, dead_chickens_author: list, dead_chickens_user: list) -> None:
         """
         Determines which chickens wins in a match.
-        param: user: Union[UserInQueue, BotMatchMaking]
-        param: author: UserInQueue
-        param: match: list
-        param: accumulator: int
-        param: total_matches: int
-        param: embed_per_round: discord.Embed
-        param: match_type: str
-        param: user_msg: discord.Message
-        param: author_msg: discord.Message
-        param: dead_chickens_author: list
-        param: dead_chickens_user: list
+
+        Args:
+            user: (Union[UserInQueue, BotMatchMaking]): The user in the match, which can be a bot or a user.
+            author: (UserInQueue): The author of the match.
+            match: (list): The match to determine the winner for.
+            accumulator: (int): How many turns will one battle have.
+            total_matches: (int): How many turns will be played in a specific battle.
+            embed_per_round: (discord.Embed): The message to be send after each round.
+            match_type: (str): The type of the match, either friendly or ranked.
+            user_msg: (discord.Message): The message from the user.
+            author_msg: (discord.Message): The message from the author.
+            dead_chickens_author: (list): List of dead chickens for the author.
+            dead_chickens_user: (list): List of dead chickens for the user.
+
+        Returns:
+        None
         """
         random_number = random()
         user_name = await self.check_user_name(user)
@@ -255,7 +305,29 @@ class ChickenCombat(commands.Cog):
         else:
             await self.handle_no_winner(author, user, user_msg, author_msg, embed_per_round, dead_chickens_author, dead_chickens_user, match_type, total_matches, accumulator, user_name)
 
-    async def handle_winner(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking], winner: Union[UserInQueue, BotMatchMaking], user_msg: discord.Message, author_msg: discord.Message, embed_per_round: discord.Embed, dead_chickens_author: list, dead_chickens_user: list, match_type: str, user_name: str) -> None:
+    async def handle_winner(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking], 
+              winner: Union[UserInQueue, BotMatchMaking], user_msg: discord.Message, author_msg: discord.Message, 
+              embed_per_round: discord.Embed, dead_chickens_author: list, 
+              dead_chickens_user: list, match_type: str, user_name: str) -> None:
+        """
+        Handles the case where there is a winner in the match.
+
+        Args:
+            author: (UserInQueue): The author of the match.
+            user: (Union[UserInQueue, BotMatchMaking]): The user or bot in the match.
+            winner: (Union[UserInQueue, BotMatchMaking]): The winner of the match.
+            user_msg: (discord.Message): The message from the user.
+            author_msg: (discord.Message): The message from the author.
+            embed_per_round: (discord.Embed): The embed for the current round.
+            dead_chickens_author: (list): List of dead chickens for the author.
+            dead_chickens_user: (list): List of dead chickens for the user.
+            match_type: (str): The type of the match.
+            user_name: (str): The name of the user.
+        
+        Returns:
+            None
+        """
+
         loser = author if winner == user else user
         EventData.remove(author.in_event)
         if not await self.check_if_user_is_bot(user):
@@ -268,7 +340,28 @@ class ChickenCombat(commands.Cog):
         await asyncio.sleep(await self.dynamic_match_cooldown(author.chickens, user.chickens))
         await self.rewards(winner, loser, author.ctx, match_type, embed_per_round, user_msg, author_msg)
     
-    async def handle_no_winner(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking], user_msg: discord.Message, author_msg: discord.Message, embed_per_round: discord.Embed, dead_chickens_author: list, dead_chickens_user: list, match_type: str, total_matches: int, accumulator: int, user_name: str) -> None:
+    async def handle_no_winner(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking], user_msg: discord.Message, 
+            author_msg: discord.Message, embed_per_round: discord.Embed, dead_chickens_author: list, 
+            dead_chickens_user: list, match_type: str, total_matches: int, accumulator: int, user_name: str) -> None:
+        """
+        Handles the case where there is no winner in the match, meaning the match will proceed to the next round.
+
+        Args:
+            author (UserInQueue): The author of the match.
+            user (Union[UserInQueue, BotMatchMaking]): The user or bot in the match.
+            user_msg (discord.Message): The message from the user.
+            author_msg (discord.Message): The message from the author.
+            embed_per_round (discord.Embed): The embed for the current round.
+            dead_chickens_author (list): List of dead chickens for the author.
+            dead_chickens_user (list): List of dead chickens for the user.
+            match_type (str): The type of the match.
+            total_matches (int): The total number of matches.
+            accumulator (int): The accumulator value.
+            user_name (str): The name of the user.
+
+        Returns:
+            None
+        """
         if accumulator == total_matches:
             if dead_chickens_author:
                 embed_per_round.add_field(name=f"{author.member.name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_author]), inline=False)
@@ -284,7 +377,26 @@ class ChickenCombat(commands.Cog):
             embed_per_round.clear_fields()
             await self.define_chicken_matchups(author, user, match_type, user_msg, author_msg, dead_chickens_author, dead_chickens_user)
     
-    async def update_match_result(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking], match: list, win_rate_for_author : float, win_rate_for_user: float, embed_per_round: discord.Embed, dead_chickens_author: list, dead_chickens_user: list, random_number: float, user_name: str) -> None:
+    async def update_match_result(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking], match: list, 
+        win_rate_for_author : float, win_rate_for_user: float, embed_per_round: discord.Embed, dead_chickens_author: list, 
+        dead_chickens_user: list, random_number: float, user_name: str) -> None:
+        """	
+        Updates the match result.
+        Args:
+            author (UserInQueue): The author of the match.
+            user (Union[UserInQueue, BotMatchMaking]): The user or bot in the match.
+            match (list): The match to determine the winner for.
+            win_rate_for_author (float): The win rate for the author.
+            win_rate_for_user (float): The win rate for the user.
+            embed_per_round (discord.Embed): The embed for the current round.
+            dead_chickens_author (list): List of dead chickens for the author.
+            dead_chickens_user (list): List of dead chickens for the user.
+            random_number (float): The random number to determine the winner.
+            user_name (str): The name of the user.
+
+        Returns:
+            None
+        """
         if random_number < win_rate_for_author:
             embed_per_round.add_field(name=f"Battle:", value=f"🎉 {author.member.name}'s **{get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']} ({round(win_rate_for_author * 100)}%)** has won against {user_name}'s **{get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']} ({round(win_rate_for_user * 100)}%)**\n", inline=False)
             if match[1] in user.chickens:
@@ -297,6 +409,16 @@ class ChickenCombat(commands.Cog):
                 dead_chickens_author.append(match[0])
 
     async def define_win_rate(self, chicken1: dict, chicken2: dict) -> tuple:
+        """
+        Responsable for calculating the win rate of the players chickens.
+
+        Args:
+            chicken1: (dict): The chicken of the author.
+            chicken2: (dict): The chicken of the user.
+
+        Returns:
+            tuple
+        """
         win_rate_for_author = 0.5
         win_rate_for_user = 0.5
         rarity_chicken_author_position = list(rarities_weight.keys()).index(chicken1['rarity'])
@@ -331,7 +453,21 @@ class ChickenCombat(commands.Cog):
         win_rate_for_user = win_rate_for_user / real_win_rate
         return win_rate_for_author, win_rate_for_user
     
-    async def define_bench_chickens(self, author_chickens: list, user_chickens: list, matchups: list, bench_chickens_author: list, bench_chickens_user: list) -> tuple:
+    async def define_bench_chickens(self, author_chickens: list, user_chickens: list, matchups: list, 
+              bench_chickens_author: list, bench_chickens_user: list) -> tuple:
+        """
+        Defines the bench chickens for the match.
+        
+        Args:
+            author_chickens: (list): The chickens of the author.
+            user_chickens: (list): The chickens of the user.
+            matchups: (list): The matchups for the match.
+            bench_chickens_author: (list): The bench chickens for the author.
+            bench_chickens_user: (list): The bench chickens for the user.
+
+        Returns:
+            tuple
+        """
         if len(author_chickens) == len(user_chickens):
             for i in range(0, len(author_chickens)):
                 matchups.append([author_chickens[i], user_chickens[i]])
@@ -347,9 +483,20 @@ class ChickenCombat(commands.Cog):
             for i in range(0, len(user_chickens)):
                 matchups.append([author_chickens[i], user_chickens[i]])
         return matchups, bench_chickens_author, bench_chickens_user
-
     
-    async def check_if_same_guild(self, author: Union[UserInQueue, BotMatchMaking], user: Union[UserInQueue, BotMatchMaking], embed: discord.Embed) -> tuple:
+    async def check_if_same_guild(self, author: Union[UserInQueue, BotMatchMaking], user: Union[UserInQueue, BotMatchMaking], 
+              embed: discord.Embed) -> tuple:
+        """
+        Check if the users are in the same guild, so it doesn't send the same message twice.
+
+        Args:
+            author: (Union[UserInQueue, BotMatchMaking]): The author of the match.
+            user: (Union[UserInQueue, BotMatchMaking]): The user in the match.
+            embed: (discord.Embed): The embed to send.
+        
+        Returns:
+            tuple
+        """
         if await self.check_if_user_is_bot(user):
             author_msg = await author.ctx.send(embed=embed)
             user_msg = author_msg
@@ -367,7 +514,21 @@ class ChickenCombat(commands.Cog):
             user_msg = await user.ctx.send(embed=embed)
             return author_msg, user_msg
         
-    async def check_if_same_guild_edit(self, author: Union[UserInQueue, BotMatchMaking], user: Union[UserInQueue, BotMatchMaking], user_msg: discord.Message, author_msg: discord.Message, embed: discord.Embed) -> None:
+    async def check_if_same_guild_edit(self, author: Union[UserInQueue, BotMatchMaking], 
+               user: Union[UserInQueue, BotMatchMaking], user_msg: discord.Message, author_msg: discord.Message, embed: discord.Embed) -> None:
+        """
+        Check if the users are in the same guild, so it doesn't edit the same message twice.
+
+        Args:
+            author: (Union[UserInQueue, BotMatchMaking]): The author of the match.
+            user: (Union[UserInQueue, BotMatchMaking]): The user in the match.
+            user_msg: (discord.Message): The message from the user.
+            author_msg: (discord.Message): The message from the author.
+            embed: (discord.Embed): The embed to send.
+        
+        Returns:
+            None
+        """
         if await self.check_if_user_is_bot(user):
             await author_msg.edit(embed=embed)
             return
@@ -383,16 +544,44 @@ class ChickenCombat(commands.Cog):
             return
 
     async def check_if_user_is_bot(self, user: Union[UserInQueue, BotMatchMaking]) -> bool:
+        """
+        Check if the user is a bot.
+
+        Args:
+            user: (Union[UserInQueue, BotMatchMaking]): The user to check if is a bot.
+        
+        Returns:
+            bool
+        """
         if isinstance(user, BotMatchMaking):
             return True
         return False
         
     async def check_user_name(self, user: Union[UserInQueue, BotMatchMaking]) -> str:
+        """
+        Check the user name, this is a necessary function because the user can be a bot.
+
+        Args:
+            user: (Union[UserInQueue, BotMatchMaking]): The user to check the name for.
+
+        Returns:
+            str
+        """
         if await self.check_if_user_is_bot(user):
             return user.name
         return user.member.name
 
     async def check_winner(self, author: UserInQueue, user: Union[UserInQueue, BotMatchMaking]) -> Union[UserInQueue, BotMatchMaking, None]:
+        """
+        Check the winner of the match.
+
+        Args:
+            author: (UserInQueue): The author of the match.
+            user: (Union[UserInQueue, BotMatchMaking]): The user in the match.
+
+        Returns:
+            Union[UserInQueue, BotMatchMaking, None]
+        """
         if len(author.chickens) == 0:
             return user
         if len(user.chickens) == 0:
@@ -400,13 +589,38 @@ class ChickenCombat(commands.Cog):
         return None
     
     async def check_user_score(self, user: Union[UserInQueue, BotMatchMaking]) -> list:
+        """
+        Check the user score. This is a necessary function because the user can be a bot.
+
+        Args:
+            user: (Union[UserInQueue, BotMatchMaking]): The user to check the score for.
+
+        Returns:
+            list
+        """
         if not await self.check_if_user_is_bot(user):
             farm_data = Farm.read(user.member.id)
             return [farm_data['mmr'], farm_data['highest_mmr'], farm_data['wins'], farm_data['losses']]
         return [user.score, 0, 0, 0]
 
-    async def rewards(self, winner: Union[BotMatchMaking, UserInQueue], loser: Union[UserInQueue, BotMatchMaking], ctx: Context, match_type: int, embed_per_round: discord.Embed, winner_msg: discord.Message, loser_msg: discord.Message) -> None:
-        """Rewards the winner of the combat.""" 
+    async def rewards(self, winner: Union[BotMatchMaking, UserInQueue], loser: Union[UserInQueue, BotMatchMaking], 
+                      ctx: Context, match_type: int, embed_per_round: discord.Embed, 
+                      winner_msg: discord.Message, loser_msg: discord.Message) -> None:
+        """
+        Rewards the winner of the combat.
+
+        Args:
+            winner: (Union[BotMatchMaking, UserInQueue]): The winner of the combat.
+            loser: (Union[UserInQueue, BotMatchMaking]): The loser of the combat.
+            ctx: (Context): The context of the command.
+            match_type: (int): The type of the match.
+            embed_per_round: (discord.Embed): The embed for the current round.
+            winner_msg: (discord.Message): The message from the winner.
+            loser_msg: (discord.Message): The message from the loser.
+
+        Returns:
+            None
+        """ 
         if match_type == "ranked":
             farm_data_winner = await self.check_user_score(winner)
             farm_data_loser = await self.check_user_score(loser)
@@ -438,8 +652,21 @@ class ChickenCombat(commands.Cog):
             EventData.remove(winner.in_event)
             EventData.remove(loser.in_event)
 
-    async def verify_if_upwards_rank(self, ctx: Context, before_mmr: int, after_mmr: int, winner: Union[UserInQueue, BotMatchMaking], highest_mmr: int) -> None:
-        """Sends a notification if the user has uppwarded in rank."""
+    async def verify_if_upwards_rank(self, ctx: Context, before_mmr: int, after_mmr: int, 
+              winner: Union[UserInQueue, BotMatchMaking], highest_mmr: int) -> None:
+        """
+        Sends a notification if the user has been promoted to a higher rank.
+
+        Args:
+            ctx: (Context): The context of the command.
+            before_mmr: (int): The MMR before the combat.
+            after_mmr: (int): The MMR after the combat.
+            winner: (Union[UserInQueue, BotMatchMaking]): The winner of the combat.
+            highest_mmr: (int): The highest MMR of the user.
+
+        Returns:
+            None
+        """
         before_rank = await rank_determiner(before_mmr)
         after_rank = await rank_determiner(after_mmr)
         if before_rank != after_rank:
@@ -451,12 +678,32 @@ class ChickenCombat(commands.Cog):
         return
         
     async def score_string(self, score: int) -> str:
+        """
+        Returns a formatted string for the score.
+
+        Args:
+            score: (int): The score to format.
+
+        Returns:
+            str
+        """
         for key, value in reversed(score_determiner.items()):
             if score >= value:
                 return key
             
     async def rank_rewards(self, ctx: Context, mmr: int, highest_mmr: int, winner: Union[UserInQueue, BotMatchMaking]) -> None:
-        """Determines the rewards for the rank."""
+        """
+        Responsible for rewarding the user with a new chicken if they have upgraded their rank.
+
+        Args:
+            ctx: (Context): The context of the command.
+            mmr: (int): The MMR of the user.
+            highest_mmr: (int): The highest MMR of the user.
+            winner: (Union[UserInQueue, BotMatchMaking]): The winner of the combat.
+        
+        Returns:
+            None
+        """
         current_rank = await rank_determiner(mmr)
         highest_rank = await rank_determiner(highest_mmr)
         farm_data = await user_cache_retriever(winner.member.id)
@@ -486,6 +733,15 @@ class ChickenCombat(commands.Cog):
             return
             
     async def rewards_per_rank(self, rank: int) -> tuple:
+        """
+        Determines the rewards per rank.
+
+        Args:
+            rank: (int): The rank to determine the rewards for.
+
+        Returns:
+            tuple
+        """
         rank_list = list(chicken_ranking.values())
         chicken_list = list(rarities_weight.keys())
         rank_dictionary = zip(rank_list[1:], chicken_list[9:])
@@ -499,7 +755,16 @@ class ChickenCombat(commands.Cog):
     @commands.cooldown(1, QUEUE_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def friendly_combat(self, ctx: Context, user: discord.Member) -> None:
-        """Friendly combat with another user."""
+        """
+        Friendly combat with another user.
+
+        Args:
+            ctx: (Context): The context of the command.
+            user: (discord.Member): The user to combat with.
+
+        Returns:
+            None
+        """
         if user.id == ctx.author.id:
             await send_bot_embed(ctx, description=":no_entry_sign: You can't combat yourself.")
             return
@@ -535,7 +800,15 @@ class ChickenCombat(commands.Cog):
             return
         
     async def define_eight_chickens_for_match(self, chickens : list) -> list:
-        """Defines the eight chickens for the match."""
+        """
+        Defines the eight chickens for the match.
+
+        Args:
+            chickens: (list): The chickens to define for the match.
+        
+        Returns:
+            list
+        """
         combat_list = []
         iterations = 0
         for chicken in chickens:
@@ -547,7 +820,16 @@ class ChickenCombat(commands.Cog):
         return combat_list
 
     async def dynamic_match_cooldown(self, author_chickens: list, user_chickens: list) -> int:
-        """Determines the cooldown for the match based on the amount of chickens."""
+        """
+        Determines the cooldown for the match based on the amount of chickens.
+
+        Args:
+            author_chickens: (list): The chickens of the author.
+            user_chickens: (list): The chickens of the user.
+        
+        Returns:
+            int
+        """
         mean = (len(author_chickens) + len(user_chickens)) / 2
         return mean * 2
     

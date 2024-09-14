@@ -4,8 +4,8 @@ This module contains the bank commands.
 from discord.ext import commands
 from tools.shared import send_bot_embed, confirmation_embed
 from tools.settings import REGULAR_COOLDOWN
-from db.bankDB import Bank
-from db.userDB import User
+from db.bankdb import Bank
+from db.userdb import User
 from tools.pointscore import pricing
 from tools.listeners import on_user_transaction
 from discord.ext.commands import Context
@@ -14,15 +14,32 @@ class BankCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def register_bank(self, User: discord.Member):
-        """Registers the user in the bank database."""
+    def register_bank(self, User: discord.Member) -> None:
+        """
+        Registers the user in the bank database.
+
+        Args:
+            User (discord.Member): The user to register in the bank database.
+
+        Returns:
+            None
+        """
         Bank.create(User.id, 0)
 
     @commands.hybrid_command("deposit", aliases=["dep"], brief="Deposits points in the bank", parameters=["amount: int"], description=f"Deposits points in the bank.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def deposit(self, ctx: Context, amount) -> None:
-        """Deposits points in the bank"""
+        """
+        Deposits points in the bank.
+
+        Args:
+            ctx (Context): The context of the command.
+            amount Union(str, int): The amount of points to deposit.
+
+        Returns:
+            None
+        """
         user_data = ctx.data["user_data"]
         if amount.upper() == "ALL":
             amount = user_data["points"]
@@ -59,7 +76,16 @@ class BankCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def withdraw(self, ctx: Context, amount) -> None:
-        """Withdraws points from the bank"""
+        """
+        Withdraws points from the bank.
+
+        Args:
+            ctx (Context): The context of the command.
+            amount Union(str, int): The amount of points to withdraw.
+
+        Returns:
+            None
+        """
         bank_data = ctx.data["bank_data"]
         if amount.upper() == "ALL":
             amount = bank_data["bank"]
@@ -86,7 +112,15 @@ class BankCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def upgrade_bank_limit(self, ctx: Context) -> None:
-        """Upgrades the bank limit."""
+        """
+        Upgrades the bank limit.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         user_data = ctx.data["user_data"]
         bank_data = ctx.data["bank_data"]
         upgrades_formula = 10000 * bank_data['upgrades']
