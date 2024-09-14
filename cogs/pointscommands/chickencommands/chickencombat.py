@@ -8,7 +8,7 @@ from tools.pointscore import pricing
 from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, user_cache_retriever
 from tools.chickens.combatbot import BotMatchMaking, bot_maker
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit
+from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity_text, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit
 from tools.settings import MAX_BENCH, QUEUE_COOLDOWN
 from tools.chickens.chickeninfo import rarities_weight, upkeep_weight, score_determiner, chicken_ranking
 from db.farmdb import Farm
@@ -423,8 +423,8 @@ class ChickenCombat(commands.Cog):
         win_rate_for_user = 0.5
         rarity_chicken_author_position = list(rarities_weight.keys()).index(chicken1['rarity'])
         rarity_chicken_user_position = list(rarities_weight.keys()).index(chicken2['rarity'])
-        upkeep_chicken_author_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(chicken1['upkeep_multiplier']))
-        upkeep_chicken_user_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity(chicken2['upkeep_multiplier']))
+        upkeep_chicken_author_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity_text(chicken1['upkeep_multiplier']))
+        upkeep_chicken_user_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity_text(chicken2['upkeep_multiplier']))
         happy_chicken_author = chicken1['happiness']
         happy_chicken_user = chicken2['happiness']
 
@@ -710,11 +710,13 @@ class ChickenCombat(commands.Cog):
         farm_data = farm_data["farm_data"]
         user_data = await user_cache_retriever(winner.member.id)
         user_data = user_data["user_data"]
+
         if chicken_ranking[current_rank] > chicken_ranking[highest_rank]:
             chicken_rewarded, points_gained = await self.rewards_per_rank(chicken_ranking[current_rank])
             chicken_rewarded = await create_chicken(chicken_rewarded, "rewards")
             msg = await make_embed_object(title=f"🎉 {winner.member.name}'s rank rewards", description=f"You've managed to upgrade your rank, here are the following rewards:\n\n :money_with_wings: **{points_gained}** eggbux.")
             User.update_points(winner.member.id, user_data['points'] + points_gained)
+            
             if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data) and len(farm_data['bench'] )>= MAX_BENCH:
                 msg.description += f"\n\n:warning: You've reached the maximum amount of chickens in your farm. The **{get_rarity_emoji(chicken_rewarded['rarity'])}** **{chicken_rewarded['rarity']}** **{chicken_rewarded['name']}** has been added to the reedemable rewards. Type **redeemables** to claim it."
                 farm_data['redeemables'].append(chicken_rewarded)
@@ -768,27 +770,21 @@ class ChickenCombat(commands.Cog):
         if user.id == ctx.author.id:
             await send_bot_embed(ctx, description=":no_entry_sign: You can't combat yourself.")
             return
+        
         farm_data = ctx.data["farm_data"]
         user_data = await user_cache_retriever(user.id)
         user_data = user_data["farm_data"]
+
         if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
             return
+        
         if user_data:
             e = EventData(ctx.author)
             e2 = EventData(user)
             confirmation = await confirmation_embed(ctx, user, f"{user.name}, do you accept the friendly combat request from {ctx.author.name}?")
+
             if confirmation:
-                temp_farm_data_author = farm_data['chickens']
-                temp_farm_data_user = user_data['chickens']
-                temp_farm_data_author = await self.define_eight_chickens_for_match(farm_data['chickens'])
-                temp_farm_data_user = await self.define_eight_chickens_for_match(user_data['chickens'])
-                author = UserInQueue(ctx.author, temp_farm_data_author, ctx, e, farm_data['mmr'])
-                user = UserInQueue(user, temp_farm_data_user, ctx, e2, user_data['mmr'])
-                author.chicken_overrall_score = await define_chicken_overrall_score(author.chickens)
-                user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
-                author_msg, user_msg = await self.check_if_same_guild(author, user, await make_embed_object(description=f"🔥 The match will begin soon."))
-                await asyncio.sleep(3.5)
-                await self.define_chicken_matchups(author, user, "friendly", user_msg, author_msg, [], [])
+                await self.start_friendly_match(ctx, user, e, e2, farm_data, user_data)
             else:
                 await send_bot_embed(ctx, description=":no_entry_sign: The user has not responded or declined the friendly combat request.")
                 EventData.remove(e)
@@ -798,6 +794,33 @@ class ChickenCombat(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: one of the users does not have a farm.")
             return
+        
+    async def start_friendly_match(self, ctx: Context, user: discord.Member, e: EventData, e2: EventData, farm_data: dict, user_data: dict) -> None:
+        """
+        Starts the friendly match.
+
+        Args:
+            ctx: (Context): The context of the command.
+            user: (discord.Member): The user to combat with.
+            e: (EventData): The event data for the author.
+            e2: (EventData): The event data for the user.
+            farm_data: (dict): The farm data for the author.
+            user_data: (dict): The farm data for the user.
+
+        Returns:
+            None
+        """
+        temp_farm_data_author = farm_data['chickens']
+        temp_farm_data_user = user_data['chickens']
+        temp_farm_data_author = await self.define_eight_chickens_for_match(farm_data['chickens'])
+        temp_farm_data_user = await self.define_eight_chickens_for_match(user_data['chickens'])
+        author = UserInQueue(ctx.author, temp_farm_data_author, ctx, e, farm_data['mmr'])
+        user = UserInQueue(user, temp_farm_data_user, ctx, e2, user_data['mmr'])
+        author.chicken_overrall_score = await define_chicken_overrall_score(author.chickens)
+        user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
+        author_msg, user_msg = await self.check_if_same_guild(author, user, await make_embed_object(description=f"🔥 The match will begin soon."))
+        await asyncio.sleep(3.5)
+        await self.define_chicken_matchups(author, user, "friendly", user_msg, author_msg, [], [])
         
     async def define_eight_chickens_for_match(self, chickens : list) -> list:
         """

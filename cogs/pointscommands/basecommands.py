@@ -12,7 +12,7 @@ from db.userdb import User
 from db.bankdb import Bank
 from tools.pagination import PaginationView
 from tools.prices import Prices
-from tools.pointscore import pricing, refund
+from tools.pointscore import pricing
 from random import randint
 from discord.ext.commands import Context
 import discord

@@ -108,6 +108,7 @@ class ChickenCore(commands.Cog):
             None
         """
         global DEFAULT_ROLLS
+        
         farm_data = ctx.data["farm_data"]
         if action == "market":
             if not await self.verify_if_user_can_roll(farm_data):
