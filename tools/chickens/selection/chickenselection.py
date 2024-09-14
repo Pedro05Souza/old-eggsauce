@@ -103,14 +103,16 @@ class ChickenMarketMenu(ui.Select):
         Returns:
             None
         """
-        if interaction.user.id != self.author_id:
-            return await send_bot_embed(interaction, description=":no_entry_sign: You can't buy chickens for another user.", ephemeral=True)
+        if not await check_if_author(self.author_id, interaction.user.id, interaction):
+            return
+        
         index = self.values[0]
         chicken_selected = self.chickens[int(index)]
         data = await user_cache_retriever(interaction.user.id)
         farm_data = data["farm_data"]
         user_data = data["user_data"]
         price = get_chicken_price(chicken_selected, farm_data['farmer'])
+
         if price > user_data['points']:
             await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: You don't have enough eggbux to buy this chicken.")
             self.options = [
@@ -119,9 +121,11 @@ class ChickenMarketMenu(ui.Select):
             ]
             await interaction.message.edit(view=self.view)
             return
+        
         if not farm_data:
             await send_bot_embed(interaction, description=":no_entry_sign: You don't have a farm. Type !createfarm to start.", ephemeral=True)
             return
+        
         if len(farm_data['chickens']) == get_max_chicken_limit(farm_data) and len(farm_data['bench']) == await get_max_bench_limit():
             await send_bot_embed(interaction, description=":no_entry_sign: You hit the maximum limit of chickens in the farm.", ephemeral=True)
             self.options = [
@@ -130,6 +134,32 @@ class ChickenMarketMenu(ui.Select):
             ]
             await interaction.message.edit(view=self.view)
             return
+        
+        available_chickens = await self.handle_chicken_purchase(interaction, chicken_selected, farm_data, user_data, price)
+
+        if not available_chickens:
+            await interaction.message.delete()
+            return
+        
+        updated_view = ChickenSelectView(available_chickens, self.author_id, "M", self.message)
+        updated_message = await make_embed_object(title=f":chicken: {interaction.user.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken)} eggbux." for index, chicken in enumerate(available_chickens)]))
+        await interaction.message.edit(embed=updated_message, view=updated_view)
+        self.message = updated_message
+        return
+    
+    async def handle_chicken_purchase(self, interaction: discord.Interaction, chicken_selected: dict, farm_data: dict, user_data: dict, price: int) -> dict:
+        """
+        Handles the purchase of a chicken.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+            chicken_selected (dict): The selected chicken.
+            farm_data (dict): The farm data.
+            user_data (dict): The user data.
+
+        Returns:
+            dict
+        """
         aux = chicken_selected.copy()
         self.chickens[self.chickens.index(chicken_selected)] = aux
         chicken_selected = await create_chicken(chicken_selected['rarity'], "market")
@@ -141,11 +171,4 @@ class ChickenMarketMenu(ui.Select):
         embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: **{get_rarity_emoji(chicken_selected['rarity'])} {chicken_selected['rarity']} {chicken_selected['name']}**, costing {price} eggbux :money_with_wings:")
         await interaction.response.send_message(embed=embed)
         available_chickens = [chicken for chicken in self.chickens if not chicken.get('bought', False)]
-        if not available_chickens:
-            await interaction.message.delete()
-            return
-        updated_view = ChickenSelectView(available_chickens, self.author_id, "M", self.message)
-        updated_message = await make_embed_object(title=f":chicken: {interaction.user.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken)} eggbux." for index, chicken in enumerate(available_chickens)]))
-        await interaction.message.edit(embed=updated_message, view=updated_view)
-        self.message = updated_message
-        return
+        return available_chickens

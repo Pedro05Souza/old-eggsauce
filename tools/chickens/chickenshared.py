@@ -13,6 +13,7 @@ from tools.tips import tips
 from typing import Union
 from random import randint
 from discord.ext.commands import Context
+from discord.interactions import Interaction
 import discord
 import logging
 logger = logging.getLogger('botcore')
@@ -655,4 +656,20 @@ async def decrease_chicken_happiness(chicken: dict, hours_passed: int) -> dict:
     happiness_decreased = sum([randint(1, 3) for _ in range(hours_passed)])
     chicken['happiness'] = max(chicken['happiness'] - happiness_decreased, 0)
     return chicken
+
+async def check_if_author(author_id: int, user_interaction_id: int, ctx: Context | Interaction) -> None:
+    """
+    Checks if the author is the same as the user interaction.
+
+    Args:
+        author_id (int): The author id.
+        user_interaction_id (int): The user interaction id.
+
+    Returns:
+        bool
+    """
+    if author_id != user_interaction_id:
+        await send_bot_embed(ctx, ephemeral=True, description=":no_entry_sign: You can't interact with another user's chickens.")
+        return False
+    return True
      

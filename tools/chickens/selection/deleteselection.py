@@ -2,8 +2,8 @@ from discord import SelectOption, ui
 from db.farmdb import Farm
 from db.userdb import User
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji
-from tools.shared import make_embed_object, send_bot_embed, confirmation_embed, user_cache_retriever
+from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, check_if_author
+from tools.shared import make_embed_object, confirmation_embed, user_cache_retriever
 import asyncio
 import discord
 
@@ -30,17 +30,22 @@ class ChickenDeleteMenu(ui.Select):
         Returns:
             None
         """
-        if interaction.user.id != self.author.id:
-            return await send_bot_embed(interaction, description=":no_entry_sign: You can't delete chickens for another user.", ephemeral=True)
+        if not await check_if_author(self.author.id, interaction.user.id, interaction):
+            return
+        
         data = await user_cache_retriever(interaction.user.id)
         farm_data = data["farm_data"]
         chickens_selected = [self.chickens[int(value)] for value in self.values]
         price = sum([get_chicken_price(chicken, farm_data['farmer']) for chicken in chickens_selected])
+
         for chicken in chickens_selected:
             farm_data['chickens'].remove(chicken)
+            
         refund_price = 0
+
         if farm_data['farmer'] == 'Guardian Farmer':
             refund_price = price
+
         else:
             refund_price = price//2
         confirmation = await confirmation_embed(interaction, interaction.user, f"{interaction.user.display_name}, are you sure you want to delete the selected chickens for {refund_price} eggbux?")

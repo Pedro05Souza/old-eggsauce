@@ -247,20 +247,27 @@ class ChickenView(commands.Cog):
         if censor:
             await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't use profanity in the chicken name.")
             return
+        
         if not farm_data['chickens']:
                 await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
                 return
+        
         if len(nickname) > 15:
                 await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, the chicken name must have a maximum of 15 characters.")
                 return
+        
         if index > len(farm_data['chickens']) or index < 0:
                 await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
                 return
+        
         check_nickname = nickname.upper()
+
         if check_nickname in ChickenRarity.__members__:
                 await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't rename a chicken with a rarity name.")
                 return
+        
         chicken_arr = farm_data['chickens']
+
         for i, _ in enumerate(chicken_arr):
             if index == i:
                 chicken_arr[i]['name'] = nickname
@@ -285,6 +292,7 @@ class ChickenView(commands.Cog):
             None
         """
         farm_data = ctx.data["farm_data"]
+
         if index > len(farm_data['chickens']) or index < 0 or index2 > len(farm_data['chickens']) or index2 < 0:
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             return
@@ -331,14 +339,17 @@ class ChickenView(commands.Cog):
         farm_data = ctx.data["farm_data"]
         index -= 1
         e = EventData(ctx.author)
+
         if index > len(farm_data['chickens']) or index < 0:
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             EventData.remove(e)
             return
+        
         if len(farm_data['bench']) >= MAX_BENCH:
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the bench is full.")
             EventData.remove(e)
             return
+        
         farm_data['bench'].append(farm_data['chickens'][index])
         farm_data['chickens'].pop(index)
         EventData.remove(e)
@@ -362,14 +373,17 @@ class ChickenView(commands.Cog):
         farm_data = ctx.data["farm_data"]
         index -= 1
         e = EventData(ctx.author)
+
         if index > len(farm_data['bench']) or index < 0:
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             EventData.remove(e)
             return
+        
         if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum chicken limit.")
             EventData.remove(e)
             return
+        
         farm_data['chickens'].append(farm_data['bench'][index])
         farm_data['bench'].pop(index)
         Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
@@ -393,14 +407,17 @@ class ChickenView(commands.Cog):
         """
         if await verify_events(ctx, ctx.author):
             return
+        
         farm_data = ctx.data["farm_data"]
         index_farm -= 1
         index_bench_int -= 1
         e = EventData(ctx.author)
+
         if index_farm > len(farm_data['chickens']) or index_farm < 0 or index_bench_int > len(farm_data['bench']) or index_bench_int < 0:
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             EventData.remove(e)
             return
+        
         farm_data['chickens'][index_farm], farm_data['bench'][index_bench_int] = farm_data['bench'][index_bench_int], farm_data['chickens'][index_farm]
         Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
         await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
