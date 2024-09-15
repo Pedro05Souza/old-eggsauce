@@ -2,7 +2,7 @@
 from discord.ext import commands
 from dotenv import load_dotenv
 from pathlib import Path
-from cogs.botcore import BotCore
+from cogs.botmanager import BotManager
 import logging
 import os
 import discord
@@ -20,7 +20,7 @@ async def get_prefix_for_guild(bot, message) -> str:
     Returns:
         str
     """
-    return await BotCore.get_prefix_for_guild(bot, message)
+    return await BotManager.get_prefix_for_guild(bot, message)
 
 def setup_intents() -> discord.Intents:
     """
