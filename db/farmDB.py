@@ -70,7 +70,7 @@ class Farm:
         try:
             farm_data = request_threading(lambda: farm_collection.find_one({"user_id": user_id})).result()
             if farm_data:
-                update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
+                update_scheduler(lambda: cache_initiator.delete_from_user_cache(user_id))
                 request_threading(farm_collection.delete_one({"user_id": user_id}), user_id).result()
                 logger.info("Farm has been deleted successfully.")
             else:

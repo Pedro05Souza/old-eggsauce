@@ -13,7 +13,7 @@ logger = logging.getLogger('botcore')
 class Bank:
 
     @staticmethod
-    def create(user_id: int, points: int) -> None:
+    def create(user_id: int, points: int, upgrades: int) -> None:
         """
         Creates a user in the database.
 
@@ -30,14 +30,12 @@ class Bank:
                 logger.warning(f"User {user_id} already exists.")
                 return None
             else:
-                if not isinstance(points, int):
-                    points = 0
                 user = {
                     "user_id": user_id,
                     "bank": points,
-                    "upgrades": 1,
-                    #"credit_score": 0
+                    "upgrades": upgrades
                 }
+                logger.info(f"Creating user {user_id} with {points} points and {upgrades} upgrades.")
                 update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, bank_data=user))
                 request_threading(lambda: bank_collection.insert_one(user), user_id).result()
                 logger.info(f"User {user_id} has been created successfully.")
@@ -59,7 +57,7 @@ class Bank:
         try:
             user_data = request_threading(lambda: bank_collection.find_one({"user_id": user_id})).result()
             if user_data:
-                update_scheduler(lambda: cache_initiator.delete_user_cache(user_id))
+                update_scheduler(lambda: cache_initiator.delete_from_user_cache(user_id))
                 request_threading(lambda: bank_collection.delete_one({"user_id": user_id}), user_id).result()
                 logger.info("User has been deleted successfully.")
             else:
