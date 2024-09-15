@@ -11,6 +11,7 @@ from db.botconfigdb import BotConfig
 from tools.chickens.chickenshared import create_chicken
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import RollLimit
+from tools.listeners import listener_manager
 from tools.cache import cache_initiator
 from . import botcore
 from discord.ext.commands import Context
@@ -95,15 +96,17 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        user = user.id
-        if User.read(user):
+        if User.read(user.id):
             if is_dev(ctx):
-                User.delete(user)
+                User.delete(user.id)
+                Bank.delete(user.id)
+                Farm.delete(user.id)
+                Market.delete(user.id)
                 await send_bot_embed(ctx, description=f":warning: {user.display_name} has been deleted from the database.")
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
         else:
-                await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
+            await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
             
     @commands.command()
     async def reset(self, ctx: Context, user: discord.Member) -> None:
@@ -260,6 +263,64 @@ class DevCommands(commands.Cog):
                 await send_bot_embed(ctx, description=f"{user.display_name} received {amount} corn.")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+
+    @commands.command(name="lastPurchase", aliases=["lp"])
+    async def get_last_purchase(self, ctx: Context, user: discord.Member) -> None:
+        """
+        Check the last listener of an user.
+
+        Args:
+            user (discord.Member): The user to check the last listener.
+
+        Returns:
+            None
+        """
+        if is_dev(ctx):
+            last_listener = await listener_manager.get_last_listener(user.id)
+            if last_listener:
+                await send_bot_embed(
+                    ctx,
+                    description=f"""
+                    📢 **Listener name:** {last_listener['listener']}
+                    📝 **Command name:** {last_listener['context'].command.name}
+                    🔢 **Quantity:** {last_listener['spent']}
+                    💰 **Profit:** {"Yes" if last_listener['profit'] == 0 else "No"}
+                    🕒 **Timestamp:** {last_listener['context'].message.created_at.strftime('%Y-%m-%d %H:%M:%S')}
+                    🏰 **Guild:** {last_listener['context'].guild}
+                    """
+                )     
+            else:
+                await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
+
+    @commands.command(name="lastPurchases", aliases=["lps"])
+    async def get_last_purchases(self, ctx: Context, user: discord.Member, n: int) -> None:
+        """
+        Check the last n listeners of an user.
+
+        Args:
+            user (discord.Member): The user to check the last listeners.
+            n (int): The number of listeners to check.
+
+        Returns:
+            None
+        """
+        if is_dev(ctx):
+            last_listeners = await listener_manager.get_n_last_listeners(user.id, n)
+            if last_listeners:
+                for listener in last_listeners:
+                    await send_bot_embed(
+                        ctx,
+                        description=f"""
+                        📢 **Listener name:** {listener['listener']}
+                        📝 **Command name:** {listener['context'].command.name}
+                        🔢 **Quantity:** {listener['spent']}
+                        💰 **Profit:** {"Yes" if listener['profit'] == 0 else "No"}
+                        🕒 **Timestamp:** {listener['context'].message.created_at.strftime('%Y-%m-%d %H:%M:%S')}
+                        🏰 **Guild:** {listener['context'].guild}
+                        """
+                    )
+            else:
+                await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
 
     # @commands.command(name="announce")
     # async def announcements_message(self, ctx: Context) -> None:
