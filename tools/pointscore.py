@@ -35,6 +35,7 @@ async def get_points_commands_submodules(ctx: Context, config_data: dict) -> boo
         "C": set(chicken_cogs + shared_cogs),
         "I": set(interactive_cogs + shared_cogs)
     }
+    
     if active_module == "T":
         return True
     
@@ -181,16 +182,15 @@ async def automatic_register(user: discord.Member) -> None:
     Returns:
         None
     """
-    user_data = await user_cache_retriever(user.id)['user_data']
+    user_data = await user_cache_retriever(user.id)
+    user_data = user_data["user_data"]
     if user_data:
-        return
-    elif User.read(user.id):
         return
     elif user.bot:
         return
     else:
         User.create(user.id, 0)
-        Bank.create(user.id, 0)
+        Bank.create(user.id, 0, 1)
         logger.info(f"{user.display_name} has been registered.")
 
 async def verify_if_server_has_modules(ctx: Context, config_data: dict) -> bool:
@@ -285,8 +285,11 @@ def pricing() -> dict:
         if command_name in prices_members_set:
             
             if not ctx.command.get_cooldown_retry_after(ctx):
+
                 data = await user_cache_retriever(ctx.author.id)
                 user_data = data['user_data']
+
+                logger.info(f"{ctx.author.display_name}'s data: {data}")
 
                 if not user_data:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the bot. Try the command again.")
