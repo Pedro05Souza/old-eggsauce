@@ -10,7 +10,7 @@ from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, lo
 from tools.chickens.chickeninfo import rollRates
 from tools.pointscore import pricing
 from tools.shared import make_embed_object, send_bot_embed, return_data
-from tools.settings import REGULAR_COOLDOWN, SPAM_COOLDOWN, ROLL_PER_HOUR, DEFAULT_ROLLS
+from tools.settings import REGULAR_COOLDOWN, SPAM_COOLDOWN, ROLL_PER_HOUR, DEFAULT_ROLLS, CHICKENS_GENERATED
 from discord.ext import commands
 from discord.ext.commands import Context
 import discord
@@ -74,7 +74,7 @@ class ChickenCore(commands.Cog):
         Returns:
             None
         """	
-        await self.roll(ctx, 8, "market")
+        await self.roll(ctx, CHICKENS_GENERATED, "market")
 
     @commands.hybrid_command(name="eggpack", aliases=["ep"], usage="eggpack", description="Buy an egg pack.")
     @commands.cooldown(1, SPAM_COOLDOWN, commands.BucketType.user)
