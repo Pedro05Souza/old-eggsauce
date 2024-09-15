@@ -128,7 +128,7 @@ class BaseCommands(commands.Cog):
             msg.set_footer(text=tips[randint(0, len(tips) - 1)])
             await ctx.send(embed=msg)
         else:   
-            await send_bot_embed(ctx, description=f"{user.display_name} has no eggbux :cry:")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} isn't registered.")
         
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
