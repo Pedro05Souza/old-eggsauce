@@ -71,18 +71,22 @@ class ChickenEvents(commands.Cog):
         farm_target = user_cache_data["farm_data"]
 
         if farm_target:
+
             if not farm_author['chickens'] or not farm_target['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, {user.display_name} doesn't have any chickens.")
                 return
+            
             if user.id == ctx.author.id:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade with yourself.")
                 return
+            
             if len(farm_author['chickens']) == 1 and farm_author['chickens'][0]['rarity'] == "ETHEREAL":
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade an ethereal chicken.")
                 return
+            
             t = EventData(user=ctx.author)
             t2 = EventData(user=user)
-            msg = await send_bot_embed(ctx, description=f":chicken: {ctx.author.display_name} has sent a trade request to {user.display_name}. You have 40 seconds to react with ✅ to accept or ❌ to decline.")
+            msg = await send_bot_embed(ctx, description=f":chicken: **{ctx.author.display_name}** has sent a trade request to **{user.display_name}**. **{user.display_name}** has 40 seconds to react with ✅ to accept or ❌ to decline.")
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
             try:
@@ -102,7 +106,7 @@ class ChickenEvents(commands.Cog):
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
 
-    async def trade_chickens(self, ctx: Context, User: discord.Member, t: EventData, farm_author: dict, farm_target: dict, user_cache_data: dict) -> None:
+    async def trade_chickens(self, ctx: Context, user: discord.Member, t: EventData, farm_author: dict, farm_target: dict, user_cache_data: dict) -> None:
         """
         Trade the chickens.
 
@@ -118,11 +122,11 @@ class ChickenEvents(commands.Cog):
             None
         """
         authorEmbed = await get_usr_farm(ctx, ctx.author, ctx.data)
-        userEmbed = await get_usr_farm(ctx, User, user_cache_data)
+        userEmbed = await get_usr_farm(ctx, user, user_cache_data)
         trade_data = [farm_author['chickens'], farm_target['chickens']]
         trade_data[0] = [chicken for chicken in trade_data[0] if chicken['rarity'] != "DEAD" and chicken['rarity'] != "ETHEREAL"]
         trade_data[1] = [chicken for chicken in trade_data[1] if chicken['rarity'] != "DEAD" and chicken['rarity'] != "ETHEREAL"]
-        members_data = [ctx.author, User]
+        members_data = [ctx.author, user]
         embeds = [authorEmbed, userEmbed]
 
         if len(farm_target['chickens']) == 1 and farm_target['chickens'][0]['rarity'] == "ETHEREAL":
@@ -369,6 +373,9 @@ class ChickenEvents(commands.Cog):
     async def retrieve_farmer_dict(self) -> dict:
         """
         Retrieves a dictionary of the farmer roles.
+
+        Returns:
+            dict
         """
         farmer_dict = {
             "💰": "Rich Farmer",
@@ -434,8 +441,9 @@ class ChickenEvents(commands.Cog):
         
         elif len(ascended_chickens) > 8:
             extra_ascended_chickens = [chicken for chicken in ascended_chickens[8:]]
-            
+
         if await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to transcend your 8 ascended chickens to an ETHEREAL Chicken?"):
+
             transcended_chicken = await create_chicken("ETHEREAL", "transcend")
             farm_data['chickens'] = [for_chicken for for_chicken in farm_data['chickens'] if for_chicken['rarity'] != "ASCENDED"]
             farm_data['chickens'].extend(extra_ascended_chickens)
@@ -445,7 +453,15 @@ class ChickenEvents(commands.Cog):
         return
         
     async def verify_player_has_sustainable(self, farm_data: dict) -> bool:
-        """Verify if the player has the sustainable farmer role."""
+        """
+        Verify if the player has the sustainable farmer role.
+
+        Args:
+            farm_data (dict): The farm data.
+
+        Returns:
+            bool
+        """
         return farm_data['farmer'] == "Sustainable Farmer"
             
 async def setup(bot):
