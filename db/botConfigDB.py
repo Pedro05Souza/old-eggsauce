@@ -242,4 +242,4 @@ class BotConfig:
                 return config_data
         except Exception as e:
             logger.error("Error encountered while reading a server.", e)
-            return None     
+            return None

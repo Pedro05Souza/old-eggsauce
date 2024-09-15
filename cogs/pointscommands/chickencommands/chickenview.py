@@ -179,9 +179,11 @@ class ChickenView(commands.Cog):
                 farm_data, _ = await update_user_farm(ctx, user, data)
             totalProfit = 0
             totalcorn = 0
+
             if len(farm_data['chickens']) == 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have any chickens.")
                 return
+            
             for chicken in farm_data['chickens']:
                 totalcorn += ChickenFood[chicken['rarity']].value
                 chicken_loss = int((await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))
@@ -216,12 +218,15 @@ class ChickenView(commands.Cog):
         """
         farm_data = ctx.data["farm_data"]
         censor = profanity.contains_profanity(nickname)
+
         if censor:
             await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name}, you can't use profanity in the farm name.")
             return
+        
         if len(nickname) > 20:
             await send_bot_embed(ctx, description= f":no_entry_sign: {ctx.author.display_name} The farm name must have a maximum of 20 characters.")
             return
+        
         farm_data['farm_name'] = nickname
         Farm.update(ctx.author.id, farm_name=nickname)
         await send_bot_embed(ctx,description= f"{ctx.author.display_name} Your farm has been renamed to {nickname}.")
