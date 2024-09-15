@@ -129,7 +129,7 @@ class BotCore(commands.Cog):
         Returns:
             None
         """
-        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!help** to visualize every command i have to offer. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Type **!setPrefix** to select the prefix of the bot. My default prefix is **!**.\n5. Have fun! :tada:")
+        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!help** for a documentation link for a more detailed description. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Type **!setPrefix** to select the prefix of the bot. My default prefix is **!**.\n5. Have fun! :tada:")
         owner = target.owner
         if owner:
             try:
@@ -154,7 +154,7 @@ class BotCore(commands.Cog):
         """
         guild_data = await guild_cache_retriever(ctx.guild.id)
         if ctx.author.id == ctx.guild.owner_id:
-            embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. :star: **Friendly**\n3. :gun: **Hostiles**\n4. :x: **None**\n\n**Important note**: \n**Friendly module:** contains Chicken commands, bank commands, interactive commands, AI commands and friendly commands and activates users gaining one currency every 10 seconds during call-time.\n**Hostile module:** contains hostile commands, bank commands and activates users gaining one currency every 10 seconds during call-time.\n\nSelect one of the modules to enable/disable it.")
+            embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. 🐣 **Chickens**\n3. 🪩 **Interactives**\n4. :x: **None**\n\n**Important note**: \nSelect one of the modules to enable.")
             view = ShowPointsModules(ctx.author.id, guild_data)
             await ctx.send(embed=embed, view=view)
         else:
