@@ -45,8 +45,6 @@ class GuildCache(BotCache):
         Returns:
             None
         """
-        while True:
-            await asyncio.sleep(interval)
-            if len(self.cache) > 0:
-                await super().clear()
-                logger.info("Guild cache cleared.")
+        if len(self.cache) > 0:
+            await super().clear()
+            logger.info("Guild cache cleared.")

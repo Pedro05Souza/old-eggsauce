@@ -19,7 +19,7 @@ class CacheInitiator:
         Returns:
             None
         """
-        await self.user_cache.clear_users_cache_periondically(1800)
+        await self.user_cache.clear_users_cache_periondically()
         
     async def get_user_cache(self, user_id: int) -> Union[dict, None]:
         """
@@ -137,7 +137,7 @@ class CacheInitiator:
         Returns:
             None
         """
-        await self.guild_cache.clear_guild_cache_periodically(1800)
+        await self.guild_cache.clear_guild_cache_periodically()
     
 cache_initiator = CacheInitiator(16777216, 8388608)  # 16MB, 8MB
 
