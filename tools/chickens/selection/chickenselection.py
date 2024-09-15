@@ -129,12 +129,8 @@ class ChickenMarketMenu(ui.Select):
             await interaction.message.edit(view=self.view)
             return
         
-        if not farm_data:
-            await send_bot_embed(interaction, description=":no_entry_sign: You don't have a farm. Type !createfarm to start.", ephemeral=True)
-            return
-        
         if len(farm_data['chickens']) == get_max_chicken_limit(farm_data) and len(farm_data['bench']) == await get_max_bench_limit():
-            await send_bot_embed(interaction, description=":no_entry_sign: You hit the maximum limit of chickens in the farm.", ephemeral=True)
+            await send_bot_embed(interaction, description=":no_entry_sign: You hit the maximum limit of chickens in the farm and the farm.", ephemeral=True)
             self.options = [
                 SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken, farm_data['farmer'])}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
                 for index, chicken in enumerate(self.chickens)
@@ -170,12 +166,17 @@ class ChickenMarketMenu(ui.Select):
         aux = chicken_selected.copy()
         self.chickens[self.chickens.index(chicken_selected)] = aux
         chicken_selected = await create_chicken(chicken_selected['rarity'], "market")
-        farm_data['chickens'].append(chicken_selected)
+
+        if len(farm_data['chickens']) < get_max_chicken_limit(farm_data):
+            farm_data['chickens'].append(chicken_selected)
+        else:
+            farm_data['bench'].append(chicken_selected)
+
         aux['bought'] = True
-        Farm.update(interaction.user.id, chickens=farm_data['chickens'])
+        Farm.update(interaction.user.id, chickens=farm_data['chickens'], bench=farm_data['bench'])
         User.update_points(interaction.user.id, user_data["points"] - price)
         await on_user_transaction(interaction, price, 1)
-        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have bought the chicken: **{get_rarity_emoji(chicken_selected['rarity'])} {chicken_selected['rarity']} {chicken_selected['name']}**, costing {price} eggbux :money_with_wings:")
+        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} has bought the chicken: **{get_rarity_emoji(chicken_selected['rarity'])} {chicken_selected['rarity']} {chicken_selected['name']}**, costing {price} eggbux :money_with_wings:")
         await interaction.response.send_message(embed=embed)
         available_chickens = [chicken for chicken in self.chickens if not chicken.get('bought', False)]
         return available_chickens

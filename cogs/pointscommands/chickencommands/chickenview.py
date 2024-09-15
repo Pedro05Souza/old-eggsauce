@@ -341,6 +341,9 @@ class ChickenView(commands.Cog):
         Returns:
             None
         """
+        if await verify_events(ctx, ctx.author):
+            return
+        
         farm_data = ctx.data["farm_data"]
         index -= 1
         e = EventData(ctx.author)
