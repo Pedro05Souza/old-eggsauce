@@ -61,9 +61,11 @@ class BaseCommands(commands.Cog):
         bank_data = data["bank_data"]
         farm_data = data["farm_data"]
         market_data = Market.get_user_offers(user.id)
+        
         if not user_data:
             await send_bot_embed(ctx, description=f"{user.display_name} doesn't have a profile.")
             return
+        
         msg = await make_embed_object(title=f"{user.display_name}'s Profile:\n")
         msg.add_field(name=":coin: Title:", value=await get_user_title(user_data), inline=True)
         msg.add_field(name=":chicken: Farm Size:", value=len(farm_data['chickens']) if farm_data else 0, inline=True)
@@ -83,8 +85,8 @@ class BaseCommands(commands.Cog):
         """Check the current module active in the server"""
         modules = {
             "T": "Total",
-            "F": "Friendly",
-            "H": "Hostile",
+            "C": "Chickens",
+            "I": "Interactives",
             "N": "None"
         }
         current_module = await guild_cache_retriever(ctx.guild.id)
@@ -94,11 +96,11 @@ class BaseCommands(commands.Cog):
     @commands.hybrid_command(name="register", aliases=["reg"], brief="Registers the user in the database.", usage="register", description="Registers the user in the database.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     async def register(self, ctx: Context) -> None:
-        """Registers the user in the database."""
-        if User.read(ctx.author.id):
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is already registered.")
-        else:
-            User.create(ctx.author.id, 0)
+        """
+        Registers the user in the database.
+        """
+        account_creation = User.create(ctx.author.id, 0)
+        if account_creation:
             Bank.create(ctx.author.id, 0)
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} has been registered.")
  
@@ -106,7 +108,16 @@ class BaseCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def points(self, ctx: Context, user: discord.Member = None) -> None:
-        """Shows the amount of points the user has."""
+        """
+        Shows the amount of points the user has.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member, optional): The user to check the points. Defaults to None, which is the author of the command.
+
+        Returns:
+            None
+        """
         data, user = await return_data(ctx, user)
         user_data = data["user_data"]
         bank_data = data["bank_data"]
@@ -123,6 +134,15 @@ class BaseCommands(commands.Cog):
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
     async def points_Titles(self, ctx: Context) -> None:
+        """
+        Buy custom titles.
+
+        Args:
+            ctx (Context): The context of the command.
+
+        Returns:
+            None
+        """
         end_time = time.time() + 60
         roles = {
             "T" : "Egg Novice",
@@ -157,7 +177,20 @@ class BaseCommands(commands.Cog):
                     await self.buy_roles(ctx, user, rolePrices["H"], "H", roles["H"], user_data)
 
     async def buy_roles(self, ctx: Context, user: discord.Member, roleValue: int, roleChar: str, roleName: str, user_data: dict) -> None:
-        """Buy roles."""
+        """
+        Responds to the user's request to buy a role.
+
+        Args:
+            ctx (Context): The context of the command.
+            user (discord.Member): The user to buy the role.
+            roleValue (int): The price of the role.
+            roleChar (str): The character of the role.
+            roleName (str): The name of the role.
+            user_data (dict): The user data.
+
+        Returns:
+            None
+        """
         if user_data["points"] >= roleValue and roleChar not in user_data["roles"]:
             User.update_all(user.id, user_data["points"] - roleValue, user_data["roles"] + roleChar)
             await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name} has bought the role **{roleName}**.")
