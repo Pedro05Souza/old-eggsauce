@@ -46,7 +46,12 @@ class ChickenUserTradeMenu(ui.Select):
 
     def __init__(self, chickens: list, author: discord.Member, message: discord.Member, td: EventData, target: discord.Member, instance_bot: discord.Client):
         options = [
-            SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
+            SelectOption(
+                label=chicken['name'], 
+                description=f"{chicken['rarity']} {get_chicken_price(chicken)}", 
+                value=str(index), 
+                emoji=get_rarity_emoji(chicken['rarity'])
+                )
             for index, chicken in enumerate(chickens) if chicken['rarity'] != "ETHEREAL"
         ]
         self.chickens = chickens
@@ -139,4 +144,5 @@ async def trade_handler(ctx, td: EventData, target: discord.Member) -> discord.E
         Farm.update(ctx.user.id, chickens=author_farm['chickens'])
         Farm.update(target.id, chickens=user_farm['chickens'])
         embed = await make_embed_object(description=f":white_check_mark: {ctx.user.display_name} and {target.display_name} have traded chickens.")
+        EventData.remove(td)
         return embed

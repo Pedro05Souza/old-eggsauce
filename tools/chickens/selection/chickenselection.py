@@ -15,11 +15,12 @@ from tools.shared import make_embed_object, send_bot_embed
 class ChickenSelectView(ui.View):
 
     def __init__(self, chickens: list, author: Union[discord.Member, list], action:str, message: discord.Embed, *args, **kwargs):
-        super().__init__(*args, **kwargs, timeout=60)
-        menu = self.action_handler(chickens, author, action, message, *args, **kwargs)
+        menu, timeout = self.action_handler(chickens, author, action, message, *args, **kwargs)
+        kwargs = {k: kwargs[k] for k in kwargs if k not in ["role", "trade_data", "instance_bot", "offer_id"]}
+        super().__init__(*args, **kwargs, timeout=timeout)
         self.add_item(menu)
 
-    def action_handler(self, chickens: list, author: Union[discord.Member, list], action: str, message: discord.Embed, *args, **kwargs) -> ui.View:
+    def action_handler(self, chickens: list, author: Union[discord.Member, list], action: str, message: discord.Embed, **kwargs) -> ui.View:
         """
         Handles the action to be taken for the menu.
 
@@ -34,21 +35,21 @@ class ChickenSelectView(ui.View):
         Returns:
             ui.View
         """
-        role = kwargs.get("role", None)
-        t = kwargs.get("trade_data", None)
-        instance_bot = kwargs.get("instance_bot", None)
-        allowed_kw = ["role", "trade_data", "instance_bot", "offer_id"]
-        kwargs = {k: kwargs[k] for k in kwargs if k not in allowed_kw}
+        timeout = 60
+        if kwargs:
+            role = kwargs.get("role", None)
+            t = kwargs.get("trade_data", None)
+            instance_bot = kwargs.get("instance_bot", None)
         menu = None
         if action == "M":
-            self.timeout = 120
+            timeout = 120
             menu = ChickenMarketMenu(chickens, author, message)
         elif action == "D":
-            self.timeout = 30
+            timeout = 30
             s = EventData(author)
             menu = ChickenDeleteMenu(chickens, author, message, s)
         elif action == "T":
-            if role=="author":
+            if role == "author":
                 author = author[0]
                 chickens = chickens[0]
                 authorMessage = message[0]
@@ -59,12 +60,13 @@ class ChickenSelectView(ui.View):
                 chickens = chickens[1]
                 menu = ChickenUserTradeMenu(chickens, user, userMessage, t, author[0], instance_bot)
         elif action == "PM":
-            self.timeout = 120
+            timeout = 120
             menu = PlayerMarketMenu(chickens, message, author, instance_bot)
         elif action == "R":
-            self.timeout = 120
+            timeout = 120
             menu = RedeemPlayerMenu(chickens, author, message)
-        return menu
+
+        return menu, timeout
 
     async def on_timeout(self) -> None:
         """
@@ -88,7 +90,12 @@ class ChickenMarketMenu(ui.Select):
         self.message = message
         farm_data = Farm.read(author_id)
         options = [
-            SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"Price: {get_chicken_price(chicken, farm_data['farmer'])}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
+            SelectOption(
+                label=f"{chicken['rarity']} {chicken['name']}", 
+                description=f"Price: {get_chicken_price(chicken, farm_data['farmer'])}", 
+                value=str(index), 
+                emoji=get_rarity_emoji(chicken['rarity'])
+            )
             for index, chicken in enumerate(chickens)
         ]
         super().__init__(min_values=1, max_values=1, options=options, placeholder="Select the chicken to buy:")

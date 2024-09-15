@@ -15,7 +15,12 @@ class PlayerMarketMenu(ui.Select):
         self.author = author
         self.instance_bot = instance_bot
         options = [
-            SelectOption(label=f"{offer['chicken']['rarity']}", description=f"Price: {offer['price']} eggbux", value=str(index), emoji=get_rarity_emoji(offer['chicken']['rarity']))
+            SelectOption(
+                label=f"{offer['chicken']['rarity']}", 
+                description=f"Price: {offer['price']} eggbux", 
+                value=str(index), 
+                emoji=get_rarity_emoji(offer['chicken']['rarity'])
+                )
             for index, offer in enumerate(offers)
         ]
         super().__init__(min_values=1, max_values=1, options=options, placeholder="Select the chicken to buy:")

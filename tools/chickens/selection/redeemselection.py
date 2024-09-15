@@ -13,7 +13,11 @@ class RedeemPlayerMenu(ui.Select):
         self.author = author
         self.message = message
         options = [
-            SelectOption(label=f"{chicken['rarity']} {chicken['name']}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
+            SelectOption(
+                label=f"{chicken['rarity']} {chicken['name']}", 
+                value=str(index), 
+                emoji=get_rarity_emoji(chicken['rarity'])
+                )
             for index, chicken in enumerate(chickens)
         ]
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder="Select the chickens to redeem:")

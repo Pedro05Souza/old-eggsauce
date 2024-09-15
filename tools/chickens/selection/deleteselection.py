@@ -11,7 +11,12 @@ class ChickenDeleteMenu(ui.Select):
 
     def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, s: EventData):
         options = [
-            SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
+            SelectOption(
+                label=chicken['name'], 
+                description=f"{chicken['rarity']} {get_chicken_price(chicken)}", 
+                value=str(index), 
+                emoji=get_rarity_emoji(chicken['rarity'])
+                )
             for index, chicken in enumerate(chickens) if chicken['rarity'] != "DEAD" or chicken['rarity'] != "ETHEREAL"
         ]
         self.chickens = chickens
@@ -40,7 +45,7 @@ class ChickenDeleteMenu(ui.Select):
 
         for chicken in chickens_selected:
             farm_data['chickens'].remove(chicken)
-            
+
         refund_price = 0
 
         if farm_data['farmer'] == 'Guardian Farmer':
