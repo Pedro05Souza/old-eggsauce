@@ -10,6 +10,9 @@ from tools.pointscore import pricing
 from tools.listeners import on_user_transaction
 from discord.ext.commands import Context
 import discord
+import logging
+logger = logging.getLogger('botcore')
+
 class BankCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
