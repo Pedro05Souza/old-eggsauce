@@ -1,6 +1,6 @@
 from discord.ui import View, Select
 from discord import Interaction, SelectOption
-from tools.shared import make_embed_object, send_bot_embed, confirmation_embed
+from tools.shared import make_embed_object, send_bot_embed
 from db.botconfigdb import BotConfig
 
 class ShowPointsModules(View):
@@ -12,8 +12,8 @@ class ShowPointsModules(View):
                             max_values=1,  
                             options=[
                                 SelectOption(label="Total", value="T", description="Select this option to enable all points commands.", emoji="🔥"),
-                                SelectOption(label="Friendly", value="F", description="Select this option to enable friendly points commands.", emoji="🌟"),
-                                SelectOption(label="Hostile", value="H", description="Select this option to enable hostile points commands.", emoji="🔫"),
+                                SelectOption(label="Chicken", value="C", description="Select this option to enable chicken related commands.", emoji="🐣"),
+                                SelectOption(label="Interactive", value="H", description="Select this option to enable interactive related points commands.", emoji="🪩"),
                                 SelectOption(label="None", value="N", description="Select this option to disable all points commands.", emoji="❌")
                             ])
             select.callback = self.callback
@@ -28,21 +28,10 @@ class ShowPointsModules(View):
                 return
             possibleOptions = {
                 "T": "Total",
-                "F": "Friendly",
-                "H": "Hostile",
+                "C": "Chicken",
+                "I": "Interactive",
                 "N": "None"
             }
             moduleSelected = interaction.data["values"][0]
-            flag = 0
-            if moduleSelected in possibleOptions:
-                await send_bot_embed(interaction, ephemeral=True, description=f":white_check_mark: Module {possibleOptions[moduleSelected]} selected")
-                if possibleOptions[moduleSelected] == "Total" or possibleOptions[moduleSelected] == "Hostile":
-                    if await confirmation_embed(interaction, interaction.user, f"Enabling **{possibleOptions[moduleSelected]}** will require an extra confirmation. There are hostile commands that may/can affect the server enviroment. Do you want to enable the **Destructive Hostiles** commands?"):
-                        await send_bot_embed(interaction, ephemeral=True, description=":white_check_mark: **Destructive Hostiles** were enabled.")
-                        flag = 1
-                    else:
-                        await send_bot_embed(interaction, ephemeral=True, description=":white_check_mark: **Destructive Hostiles** were not enabled.")
-                if flag == 1:
-                    BotConfig.update_toggled_modules(interaction.guild_id, moduleSelected + "D")
-                else:
-                    BotConfig.update_toggled_modules(interaction.guild_id, moduleSelected)
+            await send_bot_embed(interaction, ephemeral=True, description=f":white_check_mark: Module {possibleOptions[moduleSelected]} selected")
+            BotConfig.update_toggled_modules(interaction.guild.id, moduleSelected)

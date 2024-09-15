@@ -29,14 +29,13 @@ async def get_points_commands_submodules(ctx: Context, config_data: dict) -> boo
     """
     active_module = config_data['toggled_modules']
     shared_cogs = ["BaseCommands", "BankCommands"]
-    friendly_cogs = ["ChickenCore", "ChickenEvents", "ChickenView", "InteractiveCommands", "AICommands", "CornCommands", "PlayerMarket", "ChickenCombat"]
-    hostile_cog = ["HostileCommands"]
-    destructive_cog = ["DestructiveCommands"]
+    chicken_cogs = ["ChickenCore", "ChickenEvents", "ChickenView", "CornCommands", "PlayerMarket", "ChickenCombat"]
+    interactive_cogs = ["InteractiveCommands"]
     module_cogs = {
-        "F": set(friendly_cogs + shared_cogs + destructive_cog) if active_module == "TD" else set(friendly_cogs + shared_cogs),
-        "H": set(hostile_cog + shared_cogs) if active_module == "TD" else set(hostile_cog + shared_cogs),
+        "C": set(chicken_cogs + shared_cogs),
+        "I": set(interactive_cogs + shared_cogs)
     }
-    if active_module == "T" or active_module == "TD":
+    if active_module == "T":
         return True
     
     if active_module == "N":
