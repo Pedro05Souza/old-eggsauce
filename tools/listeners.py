@@ -19,9 +19,7 @@ class ListenerManager():
         Returns:
             None
         """
-        self.store_last_listener = {
-            "on_user_transaction": [],
-        }
+        self.store_last_listener_per_user = {}
         self.__user_id = user_id
         self.__specific_listener = specific_listener
 
@@ -33,7 +31,40 @@ class ListenerManager():
     def specific_listener(self) -> Union[str, None]:
         return self.__specific_listener
     
-    async def listener_result(self, listener: str, *args) -> None:
+    async def handle_adding_data(self, listener: str, ctx: Context, quantity: int, flag: int) -> None:
+        """
+        This function is called whenever an user is added to the listener manager.
+
+        Args:
+            listener (str): The name of the listener that was added.
+            *args: The arguments passed to the listener.
+
+        Returns:
+            None
+        """
+        user_id = ctx.author.id
+        self.store_last_listener_per_user.setdefault(user_id, [])
+        if len(self.store_last_listener_per_user[user_id]) < 5:
+            self.store_last_listener_per_user[user_id].append(
+                {
+                    "listener": listener,
+                    "context": ctx,
+                    "spent": quantity,
+                    "profit": flag
+                }
+            )
+        else:
+            self.store_last_listener_per_user[user_id].pop(0)
+            self.store_last_listener_per_user[user_id].append(
+                {
+                    "listener": listener,
+                    "context": ctx,
+                    "spent": 0,
+                    "profit": 0
+                }
+            )
+    
+    async def listener_result(self, listener: str, ctx: Context, quantity: int, flag: int) -> None:
         """
         This function is called whenever a listener is executed.
 
@@ -46,15 +77,54 @@ class ListenerManager():
         """
         if self.specific_listener and listener != self.specific_listener:
             return
-        if self.user_id and args[0].author.id != self.user_id:
+        if self.user_id and ctx.author.id != self.user_id:
             return
-        self.store_last_listener[listener] = args
+        await self.handle_adding_data(listener, ctx, quantity, flag)
+
+    async def clear_listeners(self) -> None:
+        """
+        This function is called whenever the listeners are cleared.
+
+        Returns:
+            None
+        """
+        self.store_last_listener_per_user = {}
+        logger.info("Listeners cleared.")
+
+    async def get_last_listener(self, user_id: int) -> Union[dict, None]:
+        """
+        This function is called whenever the last listener is retrieved.
+
+        Args:
+            user_id (int): The id of the user.
+
+        Returns:
+            Union[dict, None]: The last listener of the user.
+        """
+        if not self.store_last_listener_per_user.get(user_id, None):
+            return None
+        return self.store_last_listener_per_user.get(user_id, None)[-1]
+    
+    async def get_n_last_listeners(self, user_id: int, n: int) -> Union[list, None]:
+        """
+        This function is called whenever the last n listeners are retrieved.
+
+        Args:
+            user_id (int): The id of the user.
+            n (int): The number of listeners to retrieve.
+
+        Returns:
+            Union[list, None]: The last n listeners of the user.
+        """
+        if n > 5:
+            raise ValueError("n must be less than 5")
+        return self.store_last_listener_per_user.get(user_id, None)[:n]
 
 listener_manager = ListenerManager()
 
 async def on_user_transaction(ctx: Context | Interaction , quantity: int, flag: int) -> None:
     """
-    This function is called whenever a user transaction is executed.
+    This function is called whenever an user transaction is executed.
     The flag parameter that indicates the context of the transaction.
     It receives the context of the command, the quantity of the transaction and the flag which is:
     0 for gain
@@ -69,5 +139,5 @@ async def on_user_transaction(ctx: Context | Interaction , quantity: int, flag: 
         None
     """
     if flag not in {0, 1}: 
-        raise ValueError("Flag parameter must be 0, 1 or 2.")
+        raise ValueError("Flag parameter must be 0 or 1")
     await listener_manager.listener_result(on_user_transaction.__name__, ctx, quantity, flag)
