@@ -44,7 +44,11 @@ class ListenerManager():
         Returns:
             None
         """
-        user_id = ctx.author.id
+        user_id = None
+        if isinstance(ctx, Interaction):
+            user_id = ctx.user.id
+        else:
+            user_id = ctx.author.id
         self.store_last_listener_per_user.setdefault(user_id, [])
         if len(self.store_last_listener_per_user[user_id]) < 5:
             self.store_last_listener_per_user[user_id].append(
