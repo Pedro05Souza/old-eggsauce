@@ -89,4 +89,3 @@ class BotCache():
     
     async def clear(self) -> None:
         self.cache.clear()
-        logger.info("Cache cleared.")
