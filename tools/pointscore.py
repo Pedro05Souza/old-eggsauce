@@ -5,6 +5,7 @@ This module contains the core of the bot's points system. It is responsible for 
 from db.userdb import User
 from db.bankdb import Bank
 from discord.ext import commands
+from tools.settings import USER_SALARY_DROP
 from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever, guild_cache_retriever, cooldown_user_tracker, format_number
 from tools.chickens.chickenshared import update_user_farm, update_player_corn
 from tools.prices import Prices
@@ -12,6 +13,7 @@ from discord.ext.commands import Context
 from tools.listeners import on_user_transaction
 import discord
 import logging
+import time
 logger = logging.getLogger('botcore')
 
 # This class is responsible for handling the prices of the commands.
@@ -267,6 +269,51 @@ async def send_away_user_rewards(ctx: Context, salary_gained: int, total_profit:
     if salary_gained > 0 or total_profit > 0 or corn_produced > 0:
         await send_bot_embed(ctx, description=description)
 
+async def get_salary_points(user: discord.Member, user_data: dict) -> int:
+    """
+    Calculates the salary of the user based on their roles.
+
+    Args:
+        user (discord.Member): The user to calculate the salary.
+        user_data (dict): The data of the user.
+
+    Returns:
+        int
+    """
+    last_title_drop = time.time() - user_data["salary_time"]
+    hours_passed = min(last_title_drop // USER_SALARY_DROP, 12)
+    hours_passed = int(hours_passed)
+    salary = await salary_role(user_data)
+    if hours_passed > 0 and user_data["roles"] != "":
+        points_gained = salary * hours_passed
+        User.update_points(user.id, user_data["points"] + points_gained)
+        user_data["points"] += points_gained
+        User.update_salary_time(user.id)
+        logger.info(f"{user.display_name} has received {salary * hours_passed} eggbux from their title.")
+        return points_gained
+    return 0
+
+async def salary_role(user_data: dict) -> int:
+    """
+    Returns the salary of a user based on their roles.
+
+    Args:
+        user_data (dict): The data of the user.
+
+    Returns:
+        int
+    """
+    salarios = {
+        "T": 20,
+        "L": 40,
+        "M": 60,
+        "H": 80
+    }
+    if user_data['roles'] != "":
+        return salarios[user_data["roles"][-1]]
+    else:
+        return 0
+
 def pricing() -> dict:
     """
     Decorator predicate for the points commands. This is the core of the bot's interactive system.
@@ -310,7 +357,8 @@ def pricing() -> dict:
                     ctx.data = data
                     if result:
                         points_manager = ctx.bot.get_cog("PointsManager")
-                        ctx.data['user_data'], salary_gained = await points_manager.update_user_points(ctx.author, data)
+                        await points_manager.update_user_points_in_voice(ctx.author, user_data)
+                        salary_gained = await get_salary_points(ctx.author, user_data)
                         if ctx.data['farm_data']:
                             ctx.data['farm_data'], total_profit = await update_user_farm(ctx, ctx.author, data)
                             corn_to_cache, corn_produced = await update_player_corn(ctx.author, data['farm_data'])

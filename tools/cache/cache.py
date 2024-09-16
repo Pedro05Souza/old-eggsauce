@@ -3,7 +3,6 @@ This file contains the cache for the bot. It is used to store data that is frequ
 The cache is used to reduce the number of database queries and improve the bot's performance.
 The cache is implemented as an LRU (Least Recently Used) cache, which evicts the least recently used items when the cache is full.
 """
-
 from pympler import asizeof
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -49,11 +48,14 @@ class BotCache():
             None
         """
         async with self.lock:
+
             if id not in self.cache:
                 self.cache[id] = {}
+
             for key, value in kwargs.items():
                 compressed_value = zlib.compress(pickle.dumps(value), level=9)
                 self.cache[id][key] = compressed_value
+
             self.cache.move_to_end(id)
         if asizeof.asizeof(self.cache) > self.memory_limit_bytes:
             await self._evict_if_needed()

@@ -92,7 +92,7 @@ class User:
             return None
 
     @staticmethod
-    def update_points(user_id : int, points : int) -> None:
+    def update_points(user_id: int, points: int) -> None:
         """
         Update n user's points in the user collection.
 
@@ -117,7 +117,7 @@ class User:
             return None
 
     @staticmethod
-    def update_roles(user_id : int, roles: str) -> None:
+    def update_roles(user_id: int, roles: str) -> None:
         """
         Updates a user's roles in the user collection.
 
@@ -140,7 +140,7 @@ class User:
             return None
 
     @staticmethod
-    def update_salary_time(user_id : int) -> None:
+    def update_salary_time(user_id: int) -> None:
         """
         Updates a user's salary time in the user collection.
 
@@ -162,7 +162,7 @@ class User:
             return None
         
     @staticmethod
-    def read(user_id : int) -> Union[dict, None]:
+    def read(user_id: int) -> Union[dict, None]:
         """
         Reads a user from the user collection.
 
