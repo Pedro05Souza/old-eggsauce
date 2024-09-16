@@ -118,3 +118,6 @@ class BotManager(commands.Cog):
         else:
             embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
             await ctx.author.send(embed=embed)
+
+async def setup(bot):
+    await bot.add_cog(BotManager(bot))
