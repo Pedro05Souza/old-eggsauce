@@ -3,11 +3,13 @@ This module contains shared functions that are used across multiple modules.
 """
 
 
+from datetime import datetime
 from dotenv import load_dotenv
 from tools.cache import cache_initiator
 from typing import Callable
 from discord.ext.commands import Context
 from contextlib import contextmanager
+from discord.utils import format_dt
 import os
 import discord
 import concurrent.futures
@@ -321,3 +323,15 @@ def lock_manager(id: int):
     finally:
         lock_tracker[id].release()
         lock_tracker.pop(id)
+
+async def format_date(date: datetime) -> str:
+    """
+    Format the date.
+
+    Args:
+        date (datetime): The date to format.
+
+    Returns:
+        str
+    """
+    return format_dt(date, "R")

@@ -289,8 +289,6 @@ def pricing() -> dict:
                 data = await user_cache_retriever(ctx.author.id)
                 user_data = data['user_data']
 
-                logger.info(f"{ctx.author.display_name}'s data: {data}")
-
                 if not user_data:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the bot. Try the command again.")
                     await automatic_register(ctx.author)

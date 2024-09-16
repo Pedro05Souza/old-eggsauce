@@ -1,6 +1,7 @@
 """
 This file contains the developer commands for the bot.
 """
+import time
 from discord.ext import commands
 from db.userdb import User
 from tools.shared import make_embed_object, send_bot_embed, is_dev, retrieve_threads
@@ -17,6 +18,8 @@ from . import botcore
 from discord.ext.commands import Context
 import psutil
 import discord
+import logging
+logger = logging.getLogger('botcore')
 
 class DevCommands(commands.Cog):
 
@@ -278,17 +281,7 @@ class DevCommands(commands.Cog):
         if is_dev(ctx):
             last_listener = await listener_manager.get_last_listener(user.id)
             if last_listener:
-                await send_bot_embed(
-                    ctx,
-                    description=f"""
-                    📢 **Listener name:** {last_listener['listener']}
-                    📝 **Command name:** {last_listener['context'].command.name}
-                    🔢 **Quantity:** {last_listener['spent']}
-                    💰 **Profit:** {"Yes" if last_listener['profit'] == 0 else "No"}
-                    🕒 **Timestamp:** {last_listener['context'].message.created_at.strftime('%Y-%m-%d %H:%M:%S')}
-                    🏰 **Guild:** {last_listener['context'].guild}
-                    """
-                )     
+                await send_bot_embed(ctx, description=await listener_manager.return_listener_description(last_listener))     
             else:
                 await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
 
@@ -307,18 +300,32 @@ class DevCommands(commands.Cog):
         if is_dev(ctx):
             last_listeners = await listener_manager.get_n_last_listeners(user.id, n)
             if last_listeners:
+                description = ""
                 for listener in last_listeners:
-                    await send_bot_embed(
-                        ctx,
-                        description=f"""
-                        📢 **Listener name:** {listener['listener']}
-                        📝 **Command name:** {listener['context'].command.name}
-                        🔢 **Quantity:** {listener['spent']}
-                        💰 **Profit:** {"Yes" if listener['profit'] == 0 else "No"}
-                        🕒 **Timestamp:** {listener['context'].message.created_at.strftime('%Y-%m-%d %H:%M:%S')}
-                        🏰 **Guild:** {listener['context'].guild}
-                        """
-                    )
+                    description += await listener_manager.return_listener_description(listener)
+                await send_bot_embed(ctx, description=description)
+            else:
+                await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
+
+    @commands.command(name="randomPurchases", aliases=["rps"])
+    async def get_random_purchases(self, ctx: Context, n: int) -> None:
+        """
+        Check the random n listeners.
+
+        Args:
+            n (int): The number of listeners to check.
+
+        Returns:
+            None
+        """
+        if is_dev(ctx):
+            random_listeners = await listener_manager.get_random_n_listeners(n)
+            random_listeners = random_listeners[0]
+            if random_listeners:
+                description = ""
+                for listener in random_listeners:
+                    description += await listener_manager.return_listener_description(listener)
+                await send_bot_embed(ctx, description=description)
             else:
                 await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
 
