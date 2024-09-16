@@ -24,6 +24,7 @@ class BotCore(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cache_task.start()
+        self.listener_task.start()
 
     async def restart_client(self) -> None:
         """
@@ -203,7 +204,6 @@ class BotCore(commands.Cog):
         """
         await cache_initiator.start_cache_clearing_for_users()
         await cache_initiator.start_cache_clearing_for_guilds()
-        await listener_manager.clear_listeners()
 
     @cache_task.before_loop
     async def before_cache_task(self) -> None:
@@ -214,6 +214,16 @@ class BotCore(commands.Cog):
             None
         """
         await self.bot.wait_until_ready()
+
+    @tasks.loop(hours=1)
+    async def listener_task(self) -> None:
+        """
+        Periodically clears the listeners.
+
+        Returns:
+            None
+        """
+        await listener_manager.clear_listeners()
     
 async def setup(bot):
     await bot.add_cog(BotCore(bot))
