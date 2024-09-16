@@ -194,7 +194,7 @@ class BotCore(commands.Cog):
                     await self.log_and_raise_error(ctx, error)
                     return
                           
-    @tasks.loop(minutes=30)
+    @tasks.loop(hours=1)
     async def cache_task(self) -> None:
         """
         Periodically clears the cache.
@@ -215,7 +215,7 @@ class BotCore(commands.Cog):
         """
         await self.bot.wait_until_ready()
 
-    @tasks.loop(hours=1)
+    @tasks.loop(hours=2)
     async def listener_task(self) -> None:
         """
         Periodically clears the listeners.
@@ -224,6 +224,16 @@ class BotCore(commands.Cog):
             None
         """
         await listener_manager.clear_listeners()
+
+    @listener_task.before_loop
+    async def before_listener_task(self) -> None:
+        """
+        Before the listener task starts.
+
+        Returns:
+            None
+        """
+        await self.bot.wait_until_ready()
     
 async def setup(bot):
     await bot.add_cog(BotCore(bot))
