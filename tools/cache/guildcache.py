@@ -35,7 +35,7 @@ class GuildCache(BotCache):
         """
         return asizeof.asizeof(self.cache)
     
-    async def clear_guild_cache_periodically(self, interval) -> None:
+    async def clear_guild_cache_periodically(self) -> None:
         """
         Periodically clear the guild cache.
 
