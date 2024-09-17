@@ -133,7 +133,7 @@ class BaseCommands(commands.Cog):
     @commands.hybrid_command(name="buytitles", aliases=["titles"], brief="Buy custom titles.", usage="Buytitles", description="Buy custom titles that comes with different salaries every 30 minutes.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
-    async def points_Titles(self, ctx: Context) -> None:
+    async def buy_titles(self, ctx: Context) -> None:
         """
         Buy custom titles.
 
@@ -144,19 +144,19 @@ class BaseCommands(commands.Cog):
             None
         """
         end_time = time.time() + 60
-        roles = {
-            "T" : "Egg Novice",
-            "L" : "Egg Apprentice",
-            "M" : "Egg wizard",
-            "H" : "Egg King",
-        }
-        rolePrices = {
-            "T" : 1500,
-            "L" : 2500,
-            "M" : 4000,
-            "H" : 5000
-        }
-        message = await send_bot_embed(ctx, title="Custom Titles:", description=f":poop: **{roles['T']}**\nIncome: 20 eggbux. :money_bag: \nPrice: {rolePrices['T']} eggbux.\n\n :farmer: **{roles['L']}** \nIncome: 40 eggbux. :money_bag:\n Price: {rolePrices['L']} eggbux. \n\n:man_mage: **{roles['M']}** \n Income: 60 eggbux. :money_bag:\n Price: {rolePrices['M']} eggbux. \n\n:crown: **{roles['H']}** \n Income: 80 eggbux. :money_bag:\n Price: {rolePrices['H']} eggbux. \n\n**The titles are bought sequentially.**\nReact with ✅ to buy a title.")
+        titles = await self.retrieve_titles_dictionary()
+        title_prices = await self.retrieve_titles_prices_dictionary()
+        message = await send_bot_embed(
+            ctx, 
+            title="Custom Titles:", 
+            description=(
+                f":poop: **{titles['T']}**\nIncome: 20 eggbux. :money_bag: \nPrice: {title_prices['T']} eggbux.\n\n"
+                f":farmer: **{titles['L']}** \nIncome: 40 eggbux. :money_bag:\nPrice: {title_prices['L']} eggbux.\n\n"
+                f":man_mage: **{titles['M']}** \n Income: 60 eggbux. :money_bag:\nPrice: {title_prices['M']} eggbux.\n\n"
+                f":crown: **{titles['H']}** \n Income: 80 eggbux. :money_bag:\nPrice: {title_prices['H']} eggbux.\n\n"
+                "**The titles are bought sequentially.**\nReact with ✅ to buy a title."
+            )
+            )
         await message.add_reaction("✅")
         while True:
             actual_time = end_time - time.time()
@@ -166,15 +166,56 @@ class BaseCommands(commands.Cog):
             check = lambda reaction, _: reaction.emoji == "✅" and reaction.message.id == message.id
             reaction, user = await self.bot.wait_for("reaction_add", check=check)
             if reaction.emoji == "✅":
-                user_data = await user_cache_retriever(user.id)
-                if user_data["roles"] == "":
-                    await self.buy_roles(ctx, user, rolePrices["T"], "T", roles["T"], user_data)
-                elif user_data["roles"][-1] == "T":
-                    await self.buy_roles(ctx, user, rolePrices["L"], "L", roles["L"], user_data)
-                elif user_data["roles"][-1] == "L":
-                    await self.buy_roles(ctx, user, rolePrices["M"], "M", roles["M"], user_data)
-                elif user_data["roles"][-1] == "M":
-                    await self.buy_roles(ctx, user, rolePrices["H"], "H", roles["H"], user_data)
+                data = await user_cache_retriever(user.id)
+                user_data = data["user_data"]
+                current_user_titles = await self.retrieve_user_roles_dictionary()
+                if user_data["roles"][-1] == "H":
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} already has the highest title.")
+                    return
+                title_available_for_user = current_user_titles[user_data["roles"][-1]] if user_data["roles"] != "" else ""
+                await self.buy_roles(ctx, user, title_prices[title_available_for_user], title_available_for_user, titles[title_available_for_user], user_data)
+
+    async def retrieve_titles_dictionary(self) -> dict:
+        """
+        Retrieves the titles dictionary.
+
+        Returns:
+            dict
+        """
+        return {
+            "T" : "Egg Novice",
+            "L" : "Egg Apprentice",
+            "M" : "Egg wizard",
+            "H" : "Egg King",
+        }
+    
+    async def retrieve_user_roles_dictionary(self) -> dict:
+        """
+        Retrieves the user roles dictionary.
+
+        Returns:
+            dict
+        """
+        return {
+            "T": "L",
+            "L": "M",
+            "M": "H"
+        }
+    
+    async def retrieve_titles_prices_dictionary(self) -> dict:
+        """
+        Retrieves the titles prices dictionary.
+
+        Returns:
+            dict
+        """
+        return {
+            "T" : 1500,
+            "L" : 2500,
+            "M" : 4000,
+            "H" : 5000
+        }
+
 
     async def buy_roles(self, ctx: Context, user: discord.Member, roleValue: int, roleChar: str, roleName: str, user_data: dict) -> None:
         """
