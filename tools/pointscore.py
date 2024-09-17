@@ -313,6 +313,40 @@ async def salary_role(user_data: dict) -> int:
         return salarios[user_data["roles"][-1]]
     else:
         return 0
+    
+async def update_user_farm_on_command(ctx: Context, user_data: dict, data: dict)  -> None:
+    """
+    Updates the user's farm data if the user uses any command.
+
+    Args:
+        ctx (Context): The context of the command.
+        user_data (dict): The data of the user.
+        farm_data (dict): The data of the farm.
+
+    Returns:
+        None
+    """
+    salary_gained = await get_salary_points(ctx.author, user_data)
+    if ctx.data['farm_data']:
+        ctx.data['farm_data'], total_profit = await update_user_farm(ctx, ctx.author, data)
+        corn_to_cache, corn_produced = await update_player_corn(ctx.author, data['farm_data'])
+        ctx.data['farm_data']['corn'] = corn_to_cache
+        await send_away_user_rewards(ctx, salary_gained, total_profit, corn_produced)
+
+
+async def update_user_points_in_voice(ctx: Context, user_data: dict) -> None:
+    """
+    Updates the user's points if they are in a voice channel.
+
+    Args:
+        ctx (Context): The context of the command.
+        user_data (dict): The data of the user.
+
+    Returns:
+        None
+    """
+    points_manager = ctx.bot.get_cog("PointsManager")
+    await points_manager.update_user_points_in_voice(ctx.author, user_data)
 
 def pricing() -> dict:
     """
@@ -329,50 +363,42 @@ def pricing() -> dict:
         command_ctx = ctx.command 
         prices_members_set = set(Prices.__members__)
             
-        if command_name in prices_members_set:
-            
-            if not ctx.command.get_cooldown_retry_after(ctx):
-
-                data = await user_cache_retriever(ctx.author.id)
-                user_data = data['user_data']
-
-                if not user_data:
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the bot. Try the command again.")
-                    await automatic_register(ctx.author)
-                    return False
-
-                if not await get_points_commands_submodules(ctx, config_data):
-                    return False
-                    
-                if await verify_if_farm_command(command_ctx):
-                    if not data['farm_data']:
-                        if await cooldown_user_tracker(ctx.author.id):
-                            await send_bot_embed(ctx, description=":no_entry_sign: You don't have a farm. Type **!createfarm** to create one.")
-                        result = command_name == "createfarm"
-                        if not result:
-                            return False
-                    
-                if await verify_points(command_name, user_data):
-                    result = await treat_exceptions(ctx, command_name, user_data, config_data, data)
-                    ctx.data = data
-                    if result:
-                        points_manager = ctx.bot.get_cog("PointsManager")
-                        await points_manager.update_user_points_in_voice(ctx.author, user_data)
-                        salary_gained = await get_salary_points(ctx.author, user_data)
-                        if ctx.data['farm_data']:
-                            ctx.data['farm_data'], total_profit = await update_user_farm(ctx, ctx.author, data)
-                            corn_to_cache, corn_produced = await update_player_corn(ctx.author, data['farm_data'])
-                            ctx.data['farm_data']['corn'] = corn_to_cache
-                            await send_away_user_rewards(ctx, salary_gained, total_profit, corn_produced)
-                    return result
-                
-                else:
-                    if await cooldown_user_tracker(ctx.author.id):
-                        await send_bot_embed(ctx, description=":no_entry_sign: You don't have enough points to use this command.")
-                    return False
-            else:
-                return False
-        else:
+        if command_name not in prices_members_set:
             await send_bot_embed(ctx, description=":no_entry_sign: Unknown points command.")
+            return False
+            
+        if ctx.command.get_cooldown_retry_after(ctx):
+            return False
+
+        data = await user_cache_retriever(ctx.author.id)
+        user_data = data['user_data']
+
+        if not user_data:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} is not registered in the bot. Try the command again.")
+            await automatic_register(ctx.author)
+            return False
+
+        if not await get_points_commands_submodules(ctx, config_data):
+            return False
+            
+        if await verify_if_farm_command(command_ctx):
+            if not data['farm_data']:
+                if await cooldown_user_tracker(ctx.author.id):
+                    await send_bot_embed(ctx, description=":no_entry_sign: You don't have a farm. Type **!createfarm** to create one.")
+                result = command_name == "createfarm"
+                if not result:
+                    return False
+            
+        if await verify_points(command_name, user_data):
+            result = await treat_exceptions(ctx, command_name, user_data, config_data, data)
+            ctx.data = data
+            if result:
+                await update_user_points_in_voice(ctx, user_data)
+                await update_user_farm_on_command(ctx, user_data, data)
+            return result
+        
+        else:
+            if await cooldown_user_tracker(ctx.author.id):
+                await send_bot_embed(ctx, description=":no_entry_sign: You don't have enough points to use this command.")
             return False
     return commands.check(predicate)
