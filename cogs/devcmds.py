@@ -1,7 +1,6 @@
 """
 This file contains the developer commands for the bot.
 """
-import time
 from discord.ext import commands
 from db.userdb import User
 from tools.shared import make_embed_object, send_bot_embed, is_dev, retrieve_threads
@@ -40,10 +39,10 @@ class DevCommands(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        user_data = User.read(user.id)
+        user_data = await User.read(user.id)
         if user_data:
             if is_dev(ctx):
-                User.update_points(user.id, user_data["points"] + amount)
+                await User.update_points(user.id, user_data["points"] + amount)
                 await send_bot_embed(ctx, description=f"{user.display_name} received {amount} eggbux")
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
@@ -64,10 +63,10 @@ class DevCommands(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        user_data = User.read(user.id)
+        user_data = await User.read(user.id)
         if user_data:
             if is_dev(ctx):
-                User.update_points(user.id, user_data["points"] - amount)
+                await User.update_points(user.id, user_data["points"] - amount)
                 await send_bot_embed(ctx, description=f"{user.display_name} lost {amount} eggbux")
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
@@ -99,12 +98,12 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if User.read(user.id):
+        if await User.read(user.id):
             if is_dev(ctx):
-                User.delete(user.id)
-                Bank.delete(user.id)
-                Farm.delete(user.id)
-                Market.delete(user.id)
+                await User.delete(user.id)
+                await Bank.delete(user.id)
+                await Farm.delete(user.id)
+                await Market.delete(user.id)
                 await send_bot_embed(ctx, description=f":warning: {user.display_name} has been deleted from the database.")
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
@@ -123,9 +122,9 @@ class DevCommands(commands.Cog):
             None
         """
         if is_dev(ctx) and User.read(user.id):
-            if Bank.read(user.id):
-                Bank.update(user.id, 0)
-            User.update_all(user.id, 0, "")
+            if await Bank.read(user.id):
+                await Bank.update(user.id, 0)
+            await User.update_all(user.id, 0, "")
             await send_bot_embed(ctx, description=f"{user.display_name} has been reset.")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
@@ -160,7 +159,7 @@ class DevCommands(commands.Cog):
             None
         """
         if is_dev(ctx):
-            total_users = User.count_users()
+            total_users = await User.count_users()
             await send_bot_embed(ctx, description=f"```Total users in the database: {total_users}```")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
@@ -179,14 +178,14 @@ class DevCommands(commands.Cog):
         """
         if is_dev(ctx):
             rarity = rarity.upper()
-            farm_data = Farm.read(user.id)
+            farm_data = await Farm.read(user.id)
             if farm_data:
                 chicken = await create_chicken(rarity, "dev")
                 if not chicken:
                     await send_bot_embed(ctx, description=":no_entry_sign: Invalid rarity.")
                     return
                 farm_data['chickens'].append(chicken)
-                Farm.update(user.id, chickens=farm_data['chickens'])
+                await Farm.update(user.id, chickens=farm_data['chickens'])
                 await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")
                               
     @commands.command(name="marketLogs")
@@ -202,7 +201,7 @@ class DevCommands(commands.Cog):
          
      """
      if is_dev(ctx):
-        total_offers = Market.count_all_offers()
+        total_offers = await Market.count_all_offers()
         await send_bot_embed(ctx, description=f"```Total active offers in the player market: {total_offers}```")
      else:
         await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
@@ -220,9 +219,9 @@ class DevCommands(commands.Cog):
         """
         if is_dev(ctx):
             process = psutil.Process()
-            user, guild = await cache_initiator.get_memory_usage()
+            cache = await cache_initiator.get_cache_memory_consuption()
             embed_obj = await make_embed_object(title="⚙️ Developer Panel")
-            embed_obj.add_field(name="🔧 Cache Memory Usage:", value=f"User Cache: {user} bytes\nGuild Cache: {guild} bytes")
+            embed_obj.add_field(name="🔧 Cache Memory Usage:", value=f"{cache} bytes")
             embed_obj.add_field(name="🧰 Current active threads:", value=f"{retrieve_threads()}")
             embed_obj.add_field(name="📊 CPU Usage:", value=f"{process.cpu_percent()}%")
             embed_obj.add_field(name="🧠 Memory Usage:", value=f"{process.memory_info().rss / 1024 ** 2} MB")
@@ -259,10 +258,10 @@ class DevCommands(commands.Cog):
         """
         if is_dev(ctx):
             user = ctx.author if user is None else user
-            farm_data = Farm.read(user.id)
+            farm_data = await Farm.read(user.id)
             if farm_data:
                 farm_data['corn'] = min(amount + farm_data['corn'], farm_data['corn_limit'])
-                Farm.update(user.id, corn=farm_data['corn'])
+                await Farm.update(user.id, corn=farm_data['corn'])
                 await send_bot_embed(ctx, description=f"{user.display_name} received {amount} corn.")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
