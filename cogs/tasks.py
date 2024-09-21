@@ -47,6 +47,9 @@ class Tasks(commands.Cog):
         """
         cooldown_tracker.clear()
 
+async def setup(bot):
+    await bot.add_cog(Tasks(bot))
+
     
 
     
