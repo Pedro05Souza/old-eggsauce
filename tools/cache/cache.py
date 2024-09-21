@@ -6,18 +6,17 @@ The cache is implemented as an LRU (Least Recently Used) cache, which evicts the
 from pympler import asizeof
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from asyncio import Lock
 from typing import Union
 import logging
-import asyncio
-import zlib
-import pickle
 logger = logging.getLogger('botcore')
 
 @dataclass
 class BotCache():
-    memory_limit_bytes: int
+    memory_limit_bytes_guild: int
+    memory_limit_bytes_user: int
     cache: OrderedDict = field(default_factory=OrderedDict)
-    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    lock: Lock = field(default_factory=Lock)
 
     async def get(self, key: str) -> Union[dict, None]:
         """
@@ -32,16 +31,15 @@ class BotCache():
         async with self.lock:
             if key in self.cache:
                 self.cache.move_to_end(key)
-                compressed_value = self.cache[key]
-                return {k: pickle.loads(zlib.decompress(v)) for k, v in compressed_value.items()}
+                return self.cache[key]
             return None
     
-    async def put(self, id: int, **kwargs) -> None:
+    async def put_cache(self, identifier: int, **kwargs) -> None:
         """
         Put a value in the cache.
 
         Args:
-            id (int): The id to put the value for.
+            identifier (int): The id to put the value for.
             **kwargs: The data to put in the cache.
 
         Returns:
@@ -49,15 +47,17 @@ class BotCache():
         """
         async with self.lock:
 
-            if id not in self.cache:
-                self.cache[id] = {}
+            if identifier not in self.cache:
+                self.cache[identifier] = {}
 
-            for key, value in kwargs.items():
-                compressed_value = zlib.compress(pickle.dumps(value), level=9)
-                self.cache[id][key] = compressed_value
-
-            self.cache.move_to_end(id)
-        if asizeof.asizeof(self.cache) > self.memory_limit_bytes:
+            for dict_key, value in kwargs.items():
+                if dict_key in self.cache[identifier]:
+                    self.cache[identifier][dict_key].update(value)
+                else:
+                    self.cache[identifier][dict_key] = value
+            self.cache.move_to_end(identifier)
+            
+        if asizeof.asizeof(self.cache) > self.memory_limit_bytes_guild + self.memory_limit_bytes_user:
             await self._evict_if_needed()
         
     async def delete(self, key: str) -> None:
@@ -71,11 +71,8 @@ class BotCache():
             None
         """
         async with self.lock:
-            dict_value = self.cache.pop(key, None)
-            if dict_value is None:
-                logger.warning(f"Key {key} not found in cache.")
-            else:
-                logger.info(f"Deleted {key} from cache.")
+            if key in self.cache:
+                del self.cache[key]
 
     async def _evict_if_needed(self) -> None:
         """
@@ -85,9 +82,58 @@ class BotCache():
             None
         """
         async with self.lock:
-            while asizeof.asizeof(self.cache) > self.memory_limit_bytes:
+            while asizeof.asizeof(self.cache) > self.memory_limit_bytes_guild + self.memory_limit_bytes_user:
                 evicted_key, _ = self.cache.popitem(last=False)
                 logger.info(f"Evicting {evicted_key} cache to free up memory.")
-    
-    async def clear(self) -> None:
-        self.cache.clear()
+
+    async def put_guild(self, key: int, **kwargs) -> None:
+        """
+        Put a value in the cache and validate the keyword arguments.
+        Args:
+            key (int): The key to put the value for.
+            **kwargs: The data to put in the cache.
+
+        Returns:
+            None
+        """
+        allowed_kw = {"prefix", "channel_id", "toggled_modules"}
+        if all(kw in allowed_kw for kw in kwargs):
+            await self.put_cache(key, **kwargs)
+        else:
+            raise ValueError("Invalid keyword arguments.")
+            
+    async def clear_cache_periodically(self) -> None:
+        """
+        Periodically clears the cache.
+
+        Returns:
+            None
+        """
+        if len(self.cache) > 0:
+            await self.cache.clear()
+            logger.info("Guild cache cleared.")
+
+    async def put_user(self, key: int, **kwargs) -> None:
+        """
+        Puts a value in the cache and validate the keyword arguments.
+        Args:
+            key (int): The key to put the value for.
+            **kwargs: The data to put in the cache.
+
+        Returns:
+            None
+        """
+        allowed_kw = {"farm_data", "bank_data", "user_data"}
+        if all(kw in allowed_kw for kw in kwargs):
+            await self.put_cache(key, **kwargs)
+        else:
+            raise ValueError("Invalid keyword arguments.")
+            
+    async def get_cache_memory_consuption(self) -> int:
+        """
+        Gets the memory consumption of the cache.
+
+        Returns:
+            int
+        """
+        return asizeof.asizeof(self.cache)
