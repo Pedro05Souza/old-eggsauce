@@ -132,17 +132,18 @@ async def trade_handler(ctx, td: EventData, target: discord.Member) -> discord.E
     if td.author is not None and td.target is not None:
         author_chickens = td.target[ctx.user.id]
         user_chickens = td.author[target.id]
-        author_farm = Farm.read(ctx.user.id)
-        user_farm = Farm.read(target.id)
+        author_farm = await Farm.read(ctx.user.id)
+        user_farm = await Farm.read(target.id)
         if len(author_chickens) + len(user_chickens) > get_max_chicken_limit(author_farm) or len(user_chickens) + len(author_chickens) > get_max_chicken_limit(user_farm):
             embed = await make_embed_object(description="Trade cannot be completed. The total number of chickens after the trade exceeds the maximum limit.")
+            EventData.remove(td)
             return embed
         author_farm['chickens'] = [chicken for chicken in author_farm['chickens'] if chicken not in author_chickens]
         user_farm['chickens'] = [chicken for chicken in user_farm['chickens'] if chicken not in user_chickens]
         author_farm['chickens'].extend(user_chickens)
         user_farm['chickens'].extend(author_chickens)
-        Farm.update(ctx.user.id, chickens=author_farm['chickens'])
-        Farm.update(target.id, chickens=user_farm['chickens'])
+        await Farm.update(ctx.user.id, chickens=author_farm['chickens'])
+        await Farm.update(target.id, chickens=user_farm['chickens'])
         embed = await make_embed_object(description=f":white_check_mark: {ctx.user.display_name} and {target.display_name} have traded chickens.")
         EventData.remove(td)
         return embed

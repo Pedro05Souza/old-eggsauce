@@ -35,7 +35,7 @@ class RedeemPlayerMenu(ui.Select):
         if interaction.user.id != self.author:
             await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem chickens for another user.", ephemeral=True)
             return
-        farm_data = Farm.read(interaction.user.id)
+        farm_data = await Farm.read(interaction.user.id)
         chickens_selected = [self.chickens[int(index)] for index in self.values]
         chickens_sucessfully_redeemed = []
         if len(chickens_selected) >= get_max_chicken_limit(farm_data):

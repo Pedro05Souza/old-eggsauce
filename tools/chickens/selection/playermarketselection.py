@@ -39,20 +39,25 @@ class PlayerMarketMenu(ui.Select):
             return await send_bot_embed(interaction, description=":no_entry_sign: You can't buy chickens for another user.", ephemeral=True)
         index = self.values[0]
         offer = self.offers[int(index)]
-        author_data = User.read(self.author.id)
-        farm_data = Farm.read(self.author.id)
+        author_data = await User.read(self.author.id)
+        farm_data = await Farm.read(self.author.id)
+
         if not farm_data:
             return await send_bot_embed(interaction, description=":no_entry_sign: You do not have a farm.", ephemeral=True)
         if offer['price'] > author_data['points']:
             return await send_bot_embed(interaction, description=":no_entry_sign: You don't have enough eggbux to buy this chicken.", ephemeral=True)
+        
         farm_data['chickens'].append(offer['chicken'])
+
         if len(farm_data['chickens']) > get_max_chicken_limit(farm_data):
             return await send_bot_embed(interaction, description=":no_entry_sign: You hit the maximum limit of chickens in the farm.", ephemeral=True)
+        
         msg = await make_embed_object(description=f":white_check_mark: {self.author.display_name} have successfully bought the **{get_rarity_emoji(offer['chicken']['rarity'])}{offer['chicken']['rarity']}** chicken for {offer['price']} eggbux.")
+        
         await interaction.response.send_message(embed=msg)
-        Market.delete(offer['offer_id'])
-        User.update_points(self.author.id, points=author_data['points'] - offer['price'])
-        Farm.update(self.author.id, chickens=farm_data['chickens'])
+        await Market.delete(offer['offer_id'])
+        await User.update_points(self.author.id, points=author_data['points'] - offer['price'])
+        await Farm.update(self.author.id, chickens=farm_data['chickens'])
         await self.on_chicken_bought(offer)
         await interaction.message.delete()
 
@@ -66,10 +71,10 @@ class PlayerMarketMenu(ui.Select):
         Returns:
             None
         """
-        user_data = User.read(offer['author_id'])
+        user_data = await User.read(offer['author_id'])
         take_off = int(offer['price'] * TAX)
         total = offer['price'] - take_off
-        User.update_points(offer['author_id'], points=user_data['points'] + total)
+        await User.update_points(offer['author_id'], points=user_data['points'] + total)
         user = self.instance_bot.get_user(offer['author_id'])
         user = user if user else await self.instance_bot.fetch_user(offer['author_id'])
         if user:
