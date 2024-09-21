@@ -2,7 +2,8 @@
 This file contains the interactive commands of the bot.
 """
 from discord.ext import commands
-from tools.pointscore import pricing, refund
+from tools.decorators import pricing
+from tools.pointscore import refund
 from tools.shared import *
 from db.userdb import User
 from collections import Counter
@@ -51,8 +52,8 @@ class InteractiveCommands(commands.Cog):
                     taxed_amount = amount * TAX
                     amount -= taxed_amount
                     amount = int(amount)
-                    User.update_points(ctx.author.id, user_data["points"] - amount)
-                    User.update_points(user.id, target_data["points"] + amount)
+                    await User.update_points(ctx.author.id, user_data["points"] - amount)
+                    await User.update_points(user.id, target_data["points"] + amount)
                     await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} donated **{amount}** eggbux to {user.display_name}. The donation was taxed by **{int(TAX * 100)}%** eggbux.")
                     await on_user_transaction(ctx, amount, 1)
             else:
@@ -120,15 +121,15 @@ class InteractiveCommands(commands.Cog):
                 cassino = randint(0, 36)
                 random_color = color[cassino]
                 if random_color == "GREEN" and cor == "GREEN":
-                    User.update_points(ctx.author.id, user_data["points"] + (amount * 14))
+                    await User.update_points(ctx.author.id, user_data["points"] + (amount * 14))
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount * 14} eggbux! The selected color was {random_color} {emoji_color[random_color]}")
                     await on_user_transaction(ctx, amount * 14, 0)
                 elif random_color == cor:
-                    User.update_points(ctx.author.id, user_data["points"] + amount)
+                    await User.update_points(ctx.author.id, user_data["points"] + amount)
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **won** {amount} eggbux!")
                     await on_user_transaction(ctx, amount * 2, 0)
                 else:                  
-                    User.update_points(ctx.author.id, user_data["points"] - amount)
+                    await User.update_points(ctx.author.id, user_data["points"] - amount)
                     await send_bot_embed(ctx, description=f":slot_machine: {ctx.author.display_name} has **lost!** The selected color was {random_color} {emoji_color[random_color]}")
                     await on_user_transaction(ctx, amount, 1)
                     return
@@ -198,8 +199,8 @@ class InteractiveCommands(commands.Cog):
                 return
             elif chance >= 10:
                 random_integer = randint(1, int(target_points//2))
-                User.update_points(ctx.author.id, user_data['points'] + random_integer)
-                User.update_points(user.id, target_data['points'] - random_integer)
+                await User.update_points(ctx.author.id, user_data['points'] + random_integer)
+                await User.update_points(user.id, target_data['points'] - random_integer)
                 await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} stole {random_integer} eggbux from {user.display_name}")
                 await on_user_transaction(ctx, random_integer, 0)
                 return
@@ -255,6 +256,7 @@ class InteractiveCommands(commands.Cog):
         """
         global hungergames_status
         cooldown = HUNGER_GAMES_WAIT_TIME
+        
         if guild_id in hungergames_status:
             await send_bot_embed(ctx, description=":no_entry_sign: A hunger games is already in progress.")
             return
@@ -358,13 +360,13 @@ class InteractiveCommands(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: Insufficient tributes to start the hunger games. The game has been cancelled. The minimum number of tributes is **{MIN_TRIBUTES}**.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
-                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + HUNGER_GAMES_MATCH_VALUE)
+                    await User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + HUNGER_GAMES_MATCH_VALUE)
             return False
         elif len(tributes) > MAX_TRIBUTES:
             await send_bot_embed(ctx, description=f":no_entry_sign: The maximum number of tributes is **{MAX_TRIBUTES}**. The game has been cancelled.")
             hungergames_status.pop(guild_id)
             for tribute in tributes:
-                    User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + HUNGER_GAMES_MATCH_VALUE)
+                    await User.update_points(tribute['tribute'].id, User.read(tribute['tribute'].id)["points"] + HUNGER_GAMES_MATCH_VALUE)
             return False
         return True
     
@@ -383,7 +385,7 @@ class InteractiveCommands(commands.Cog):
         """
         prizeMultiplier = len(tributes) * HUNGER_GAMES_PRIZE
         await send_bot_embed(ctx, description=f":trophy: The winner is {winner['tribute'].display_name}! They have won {prizeMultiplier} eggbux.")
-        User.update_points(winner['tribute'].id, User.read(winner['tribute'].id)["points"] + prizeMultiplier)
+        await User.update_points(winner['tribute'].id, User.read(winner['tribute'].id)["points"] + prizeMultiplier)
         hungergames_status.pop(guild_id)
         await self.statistics(ctx, tributes)
 
@@ -400,7 +402,7 @@ class InteractiveCommands(commands.Cog):
         """
         tribute_data = User.read(tribute.id)
         if tribute_data and tribute_data["points"] >= default_game_value:
-            User.update_points(tribute.id, tribute_data["points"] - default_game_value)
+            await User.update_points(tribute.id, tribute_data["points"] - default_game_value)
             return True
         else:
             return False

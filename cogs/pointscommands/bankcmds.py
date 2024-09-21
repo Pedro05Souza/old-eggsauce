@@ -6,7 +6,7 @@ from tools.shared import send_bot_embed, confirmation_embed
 from tools.settings import REGULAR_COOLDOWN
 from db.bankdb import Bank
 from db.userdb import User
-from tools.pointscore import pricing
+from tools.decorators import pricing
 from tools.listeners import on_user_transaction
 from discord.ext.commands import Context
 import discord
@@ -67,8 +67,8 @@ class BankCommands(commands.Cog):
                 if amount <= 0:
                     await send_bot_embed(ctx, description=f":bank: {ctx.author.display_name}, you can't have more than **{maxAmount}** eggbux in the bank.")
                     return
-            Bank.update(ctx.author.id, bankAmount + amount)
-            User.update_points(ctx.author.id, user_data["points"] - amount)
+            await Bank.update(ctx.author.id, bankAmount + amount)
+            await User.update_points(ctx.author.id, user_data["points"] - amount)
             await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name}, you deposited {amount} eggbux in the bank.")
             await on_user_transaction(ctx, amount, 1)
             return
@@ -104,8 +104,8 @@ class BankCommands(commands.Cog):
         currentAmount = bank_data['bank']
         if currentAmount >= amount:
             await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name} You withdrew {amount} eggbux from the bank.")
-            Bank.update(ctx.author.id, currentAmount - amount)
-            User.update_points(ctx.author.id, User.read(ctx.author.id)["points"] + amount)
+            await Bank.update(ctx.author.id, currentAmount - amount)
+            await User.update_points(ctx.author.id, await User.read(ctx.author.id)["points"] + amount)
             await on_user_transaction(ctx, amount, 0)
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} You don't have enough eggbux in the bank.")
@@ -132,9 +132,9 @@ class BankCommands(commands.Cog):
             return
         confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to upgrade the bank to level **{bank_data['upgrades']}** for **{upgrades_formula}** eggbux?")
         if confirmation:
-            User.update_points(ctx.author.id, user_data['points'] - upgrades_formula)
+            await User.update_points(ctx.author.id, user_data['points'] - upgrades_formula)
             upgrades = bank_data['upgrades'] + 1
-            Bank.update_upgrades(ctx.author.id, upgrades)
+            await Bank.update_upgrades(ctx.author.id, upgrades)
             await send_bot_embed(ctx, description=f":bank: {ctx.author.display_name}, you upgraded the bank to level {upgrades - 1}. Now you can have up to **{upgrades * 10000}** eggbux in the bank.")
             await on_user_transaction(ctx, upgrades_formula, 1)
             return
