@@ -1,5 +1,4 @@
 from discord.ext import commands
-from discord.ext.commands import Context
 from tools.decorators import before_loop_decorator
 from discord.ext import tasks
 from tools.cache import cache_initiator
@@ -11,6 +10,9 @@ class Tasks(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.cache__clear_task.start()
+        self.listener__clear_task.start()
+        self.cooldown__clear_task.start()
 
     @before_loop_decorator
     @tasks.loop(hours=1)

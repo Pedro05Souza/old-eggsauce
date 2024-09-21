@@ -21,8 +21,6 @@ class BotCore(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.cache_task.start()
-        self.listener_task.start()
 
     async def restart_client(self) -> None:
         """
