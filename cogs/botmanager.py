@@ -74,10 +74,10 @@ class BotManager(commands.Cog):
             None
         """
         if ctx.author.guild_permissions.administrator:
-            if len(prefix) > 1:
-                await send_bot_embed(ctx, description=":no_entry_sign: The prefix can't have more than one character.")
+            if len(prefix) > 3:
+                await send_bot_embed(ctx, description=":no_entry_sign: The prefix can't have more than 3 characters.")
                 return
-            BotConfig.update_prefix(ctx.guild.id, prefix)
+            await BotConfig.update_prefix(ctx.guild.id, prefix)
             await send_bot_embed(ctx, description=f":white_check_mark: Prefix has been set to **{prefix}**.")
         else:
             embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
@@ -94,9 +94,7 @@ class BotManager(commands.Cog):
     Returns:
         str
      """
-     if message:
-        if not message.guild:
-            return "!"
+     if message and message.guild:        
         guild_id = message.guild.id
         guild_data = await guild_cache_retriever(guild_id)
         return guild_data['prefix']
@@ -113,7 +111,7 @@ class BotManager(commands.Cog):
             None
         """
         if ctx.author.guild_permissions.administrator:
-            BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
+            await BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
             await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
         else:
             embed = await make_embed_object(description=":no_entry_sign: You don't have the necessary permissions to use this command.")
