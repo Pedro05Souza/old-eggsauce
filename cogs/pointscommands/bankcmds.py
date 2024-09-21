@@ -105,7 +105,7 @@ class BankCommands(commands.Cog):
         if currentAmount >= amount:
             await send_bot_embed(ctx, description=f":dollar: {ctx.author.display_name} You withdrew {amount} eggbux from the bank.")
             await Bank.update(ctx.author.id, currentAmount - amount)
-            await User.update_points(ctx.author.id, await User.read(ctx.author.id)["points"] + amount)
+            await User.update_points(ctx.author.id, ctx.data["user_data"]["points"] + amount)
             await on_user_transaction(ctx, amount, 0)
         else:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} You don't have enough eggbux in the bank.")
