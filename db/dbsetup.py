@@ -1,8 +1,7 @@
 """
 This module is responsible for establishing a connection to the database.
 """
-
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 import logging
 
 logger = logging.getLogger('botcore')
@@ -20,17 +19,12 @@ def connect(uri):
         MongoClient | None
     """
     try:
-        client = MongoClient(uri)
-        client.admin.command('ping')
+        client = AsyncIOMotorClient(uri)
         logger.info("Connected to the database.")
         logger.info(client)
         return client
     except Exception as e:
         logger.error(f"Could not connect to the database: {e}")
-    return None    
-
+    return None
+    
 mongo_client = connect(uri)
-if mongo_client is None:
-    logger.critical("Could not connect to the database.")
-    exit(1)
-db = mongo_client['BotDiscord']

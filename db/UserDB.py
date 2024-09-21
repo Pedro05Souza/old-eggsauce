@@ -1,7 +1,6 @@
 from db.dbsetup import mongo_client
 from time import time
 from tools.cache import cache_initiator
-from tools.shared import update_scheduler, request_threading
 from typing import Union
 import logging
 users_collection = mongo_client.BotDiscord.user
@@ -12,7 +11,7 @@ logger = logging.getLogger('botcore')
 class User:
     
     @staticmethod
-    def create(user_id: int, points: int) -> None:
+    async def create(user_id: int, points: int) -> None:
         """
         Creates an user in the user collection.
 
@@ -24,7 +23,7 @@ class User:
             None
         """
         try:            
-            user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
+            user_data = await users_collection.find_one({"user_id": user_id})
             if user_data:
                 logger.warning(f"User {user_id} already exists.")
                 return None 
@@ -37,15 +36,15 @@ class User:
                     "roles" : "",
                     "salary_time": time()
                 }
-                update_scheduler(lambda: cache_initiator.add_to_user_cache(user_id, user_data=user))
-                request_threading(lambda: users_collection.insert_one(user), user_id).result()
+                await cache_initiator.put_user(user_id, user_data=user)
+                await users_collection.insert_one(user)
                 logger.info(f"User {user_id} has been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the user.", e)
             return None    
         
     @staticmethod
-    def delete(user_id: int) -> None:
+    async def delete(user_id: int) -> None:
         """
         Deletes an user from the user collection.
 
@@ -56,10 +55,10 @@ class User:
             None
         """
         try:
-            user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
+            user_data = await users_collection.find_one({"user_id": user_id})
             if user_data:
-                update_scheduler(lambda: cache_initiator.delete_from_user_cache(user_id))
-                request_threading(lambda: users_collection.delete_one({"user_id" : user_id}), user_id).result()
+                await cache_initiator.delete(user_id)
+                await users_collection.delete_one({"user_id" : user_id})
             else:
                 logger.warning("User not found.")
         except Exception as e:
@@ -67,7 +66,7 @@ class User:
             return None
     
     @staticmethod
-    def update_all(user_id: int, points: int, roles: str) -> None:
+    async def update_all(user_id: int, points: int, roles: str) -> None:
         """
         Updates an user's attributes in the user collection.
 
@@ -80,25 +79,25 @@ class User:
             None
         """
         try:
-            user_data = request_threading(lambda: users_collection.find_one({"user_id" : user_id})).result()
+            user_data = await users_collection.find_one({"user_id" : user_id})
             if user_data:
                 user_data['points'] = points
                 user_data['roles'] = roles
-                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}}), 
-                                  user_id).result()
+                await cache_initiator.put_user(user_id, user_data=user_data)
+                await users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})
         except Exception as e:
             logger.error("Error encountered while trying to update user's status.", e)
             return None
 
     @staticmethod
-    def update_points(user_id: int, points: int) -> None:
+    async def update_points(user_id: int, points: int) -> None:
         """
         Update n user's points in the user collection.
 
         Args:
             user_id (int): The id of the user to update.
             points (int): The points of the user to update.
+            user_cache (dict): The user cache to update.
 
         Returns:
             None
@@ -106,18 +105,17 @@ class User:
         try:
             if points < 0:
                 points = 0
-            user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
+            user_data = await users_collection.find_one({"user_id": user_id})
             if user_data:
                 user_data['points'] = points
-                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"points": points}}), 
-                                  user_id).result()
+                await cache_initiator.put_user(user_id, user_data=user_data)
+                await users_collection.update_one({"user_id": user_id}, {"$set": {"points": points}})
         except Exception as e:
             logger.error("Error encountered while trying to update user's points.", e)
             return None
-
+        
     @staticmethod
-    def update_roles(user_id: int, roles: str) -> None:
+    async def update_roles(user_id: int, roles: str) -> None:
         """
         Updates a user's roles in the user collection.
 
@@ -129,18 +127,17 @@ class User:
             None
         """
         try:
-            user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
+            user_data = await users_collection.find_one({"user_id": user_id})
             if user_data:
                 user_data['roles'] = roles
-                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"roles": roles}}), 
-                                  user_id).result()
+                cache_initiator.put_user(user_id, user_data=user_data)
+                await users_collection.update_one({"user_id": user_id}, {"$set": {"roles": roles}})
         except Exception as e:
             logger.error("Error encountered while trying to update user's roles.", e)
             return None
 
     @staticmethod
-    def update_salary_time(user_id: int) -> None:
+    async def update_salary_time(user_id: int) -> None:
         """
         Updates a user's salary time in the user collection.
 
@@ -151,18 +148,17 @@ class User:
             None
         """
         try:
-            user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
+            user_data = await users_collection.find_one({"user_id": user_id})
             if user_data:
                 user_data['salary_time'] = time()
-                update_scheduler(lambda: cache_initiator.update_user_cache(user_id, user_data=user_data))
-                request_threading(lambda: users_collection.update_one({"user_id": user_id}, {"$set": {"salary_time": time()}}),
-                                  user_id).result()
+                await cache_initiator.put_user(user_id, user_data=user_data)
+                await users_collection.update_one({"user_id": user_id}, {"$set": {"salary_time": time()}})
         except Exception as e:
             logger.error("Error encountered while trying to update user's salary time.", e)
             return None
         
     @staticmethod
-    def read(user_id: int) -> Union[dict, None]:
+    async def read(user_id: int) -> Union[dict, None]:
         """
         Reads a user from the user collection.
 
@@ -173,7 +169,7 @@ class User:
             Union[dict, None]
         """
         try:
-            user_data = request_threading(lambda: users_collection.find_one({"user_id": user_id})).result()
+            user_data = await users_collection.find_one({"user_id": user_id})
             if user_data:
                 return user_data
             else:
@@ -183,7 +179,7 @@ class User:
             return None
         
     @staticmethod
-    def resetAll() -> None:
+    async def resetAll() -> None:
         """
         Resets all users from the user collection.
 
@@ -191,13 +187,13 @@ class User:
             None
         """
         try:
-            request_threading(lambda: users_collection.update_many({}, {"$set": {"points": 0, "roles": ""}})).result()
+            await users_collection.update_many({}, {"$set": {"points": 0, "roles": ""}})
         except Exception as e:
             logger.error("Error encountered while trying to reset all users.", e)
             return None
     
     @staticmethod
-    def count_users() -> Union[int, None]:
+    async def count_users() -> Union[int, None]:
         """
         Counts all users from the user collection.
 
@@ -205,7 +201,7 @@ class User:
             Union[int, None]
         """
         try:
-            count = request_threading(lambda: users_collection.count_documents({})).result()
+            count = await users_collection.count_documents({})
             return count
         except Exception as e:
             logger.error("Error encountered while trying to count all users.", e)

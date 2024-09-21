@@ -2,7 +2,6 @@
 This module contains the class BotConfig which is responsible for creating, updating, deleting, and reading server configurations from the database.
 """
 from db.dbsetup import mongo_client
-from tools.shared import update_scheduler, request_threading
 from tools.cache import cache_initiator
 from typing import Union
 import logging
@@ -13,7 +12,7 @@ logger = logging.getLogger('botcore')
 class BotConfig:
 
     @staticmethod
-    def create(server_id: int, toggled_modules: list = None, channel_id: int = None, prefix: str = None) -> None:
+    async def create(server_id: int, toggled_modules: list = None, channel_id: int = None, prefix: str = None) -> None:
         """
         Creates a server in the bot config collection.
 
@@ -27,7 +26,7 @@ class BotConfig:
             None
         """
         try:
-            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+            toggle_data = await config_collection.find_one({"server_id": server_id})
             if toggle_data:
                 logger.warning("This server already exists.")
                 return None
@@ -38,15 +37,15 @@ class BotConfig:
                     "channel_id": channel_id,
                     "prefix": prefix,
                 }
-                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, prefix="!", toggled_modules=toggled_modules, channel_id=channel_id))
-                request_threading(lambda: config_collection.insert_one(toggle), server_id).result()
+                await cache_initiator.put_guild(server_id, prefix="!", toggled_modules=toggled_modules, channel_id=channel_id)
+                await config_collection.insert_one(toggle)
                 logger.info("Server created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a server.", e)
             return None
         
     @staticmethod
-    def create_toggle(server_id: int, toggled_modules: list) -> None:
+    async def create_toggle(server_id: int, toggled_modules: list) -> None:
         """
         Creates a toggle in the bot config collection.
 
@@ -58,7 +57,7 @@ class BotConfig:
             None
         """
         try:
-            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+            toggle_data = await config_collection.find_one({"server_id": server_id})
             if toggle_data:
                 logger.warning("This toggle already exists.")
                 return None
@@ -67,15 +66,15 @@ class BotConfig:
                     "server_id": server_id,
                     "toggle_modules": toggled_modules,
                 }
-                request_threading(lambda: config_collection.insert_one(toggle), server_id).result()
-                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, toggled_modules=toggled_modules))
+                await config_collection.insert_one(toggle)
+                await cache_initiator.put_guild(server_id, toggled_modules=toggled_modules)
                 logger.info("Toggle created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a toggle.", e)
             return None
         
     @staticmethod
-    def create_channel(server_id: int, channel_id: int) -> None:
+    async def create_channel(server_id: int, channel_id: int) -> None:
         """
         Creates a channel in the bot config collection.
 
@@ -87,7 +86,7 @@ class BotConfig:
             None
         """
         try:
-            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+            toggle_data = await config_collection.find_one({"server_id": server_id})
             if toggle_data:
                 logger.warning("This channel already exists.")
                 return None
@@ -96,15 +95,15 @@ class BotConfig:
                     "server_id": server_id,
                     "channel_id": channel_id,
                 }
-                request_threading(lambda: config_collection.insert_one(toggle), server_id).result()
-                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, channel_id=channel_id))
+                await config_collection.insert_one(toggle)
+                await cache_initiator.put_guild(server_id, channel_id=channel_id)
                 logger.info("Channel created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a channel.", e)
             return
         
     @staticmethod
-    def create_prefix(server_id: int, prefix: str) -> None:
+    async def create_prefix(server_id: int, prefix: str) -> None:
         """
         Creates a prefix in the bot config collection.
 
@@ -116,7 +115,7 @@ class BotConfig:
             None
         """
         try:
-            prefix_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+            prefix_data = await config_collection.find_one({"server_id": server_id})
             if prefix_data:
                 logger.warning("This prefix already exists.")
                 return None
@@ -125,15 +124,15 @@ class BotConfig:
                     "server_id": server_id,
                     "prefix": prefix,
                 }
-                request_threading(lambda: config_collection.insert_one(prefix), server_id).result()
-                update_scheduler(lambda: cache_initiator.add_to_guild_cache(server_id, prefix=prefix))
+                await config_collection.insert_one(prefix)
+                await cache_initiator.put_guild(server_id, prefix=prefix)
                 logger.info("Prefix created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating a prefix.", e)
             return None
         
     @staticmethod
-    def update_prefix(server_id: int, prefix: str) -> None:
+    async def update_prefix(server_id: int, prefix: str) -> None:
         """
         Update a prefix in the bot config collection.
 
@@ -145,18 +144,18 @@ class BotConfig:
             None
         """
         try:
-            prefix_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+            prefix_data = await config_collection.find_one({"server_id": server_id})
             if prefix_data:
-                request_threading(lambda: config_collection.update_one({"server_id": server_id}, {"$set": {"prefix": prefix}}), server_id).result()
-                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, prefix=prefix))
-                logger.info("Prefix updated successfully.")
+                await config_collection.update_one({"server_id": server_id}, {"$set": {"prefix": prefix}})
+                await cache_initiator.put_guild(server_id, prefix=prefix)
+                logger.info(f"Prefix updated for server {server_id}.")
             else:
                 logger.warning("Prefix not found.")
         except Exception as e:
             logger.error("Error encountered while updating a prefix.", e)
         
     @staticmethod
-    def update_toggled_modules(server_id: int, toggled_modules: list) -> None:
+    async def update_toggled_modules(server_id: int, toggled_modules: list) -> None:
         """
         Update a toggle in the database.
 
@@ -168,10 +167,10 @@ class BotConfig:
             None
         """
         try:
-            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+            toggle_data = await config_collection.find_one({"server_id": server_id})
             if toggle_data:
-                request_threading(lambda: config_collection.update_one({"server_id": server_id}, {"$set": {"toggled_modules": toggled_modules}}), server_id).result()
-                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, toggled_modules=toggled_modules))
+                await config_collection.update_one({"server_id": server_id}, {"$set": {"toggled_modules": toggled_modules}})
+                await cache_initiator.put_guild(server_id, toggled_modules=toggled_modules)
                 logger.info("Toggle updated successfully.")
             else:
                 logger.warning("Toggle not found.")
@@ -179,7 +178,7 @@ class BotConfig:
             logger.error("Error encountered while updating a toggle.", e)
     
     @staticmethod
-    def update_channel_id(server_id: int, channel_id: int) -> None: 
+    async def update_channel_id(server_id: int, channel_id: int) -> None: 
         """
         Updates a channel in the database.
 
@@ -191,10 +190,10 @@ class BotConfig:
             None
         """
         try:
-            toggle_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+            toggle_data = await config_collection.find_one({"server_id": server_id})
             if toggle_data:
-                request_threading(lambda: config_collection.update_one({"server_id": toggle_data["server_id"]}, {"$set": {"channel_id": channel_id}}), server_id).result()
-                update_scheduler(lambda: cache_initiator.update_guild_cache(server_id, channel_id=channel_id))
+                await config_collection.update_one({"server_id": toggle_data["server_id"]}, {"$set": {"channel_id": channel_id}})
+                await cache_initiator.put_guild(server_id, channel_id=channel_id)
                 logger.info("Channel updated successfully.")
             else:
                 logger.warning("Channel not found.")
@@ -202,7 +201,7 @@ class BotConfig:
             logger.error("Error encountered while updating a channel.", e)
         
     @staticmethod
-    def delete(server_id: int) -> None:
+    async def delete(server_id: int) -> None:
         """
         Deletes a toggle from the database.
 
@@ -213,10 +212,10 @@ class BotConfig:
             None
         """
         try:
-            config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+            config_data = await config_collection.find_one({"server_id": server_id})
             if config_data:
-                request_threading(lambda: config_collection.delete_one({"server_id" : server_id}), server_id).result()
-                update_scheduler(lambda: cache_initiator.delete_from_user_cache(server_id))
+                await config_collection.delete_one({"server_id" : server_id})
+                await cache_initiator.delete(server_id)
                 logger.info("Server deleted successfully.")
             else:
                 logger.warning("Server not found.")
@@ -224,7 +223,7 @@ class BotConfig:
                 logger.error("Error encountered while deleting a server.", e)
     
     @staticmethod
-    def read(server_id: int) -> Union[dict, None]:
+    async def read(server_id: int) -> Union[dict, None]:
         """
         Reads a server from the database.
 
@@ -232,13 +231,12 @@ class BotConfig:
             server_id (int): The id of the server to read.
         """
         try:
-            config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+            config_data = await config_collection.find_one({"server_id": server_id})
             if config_data:
                 return config_data
             else:
-                logger.warning("Server not found.")
-                BotConfig.create(server_id)
-                config_data = request_threading(lambda: config_collection.find_one({"server_id": server_id})).result()
+                await BotConfig.create(server_id)
+                config_data = await config_collection.find_one({"server_id": server_id})
                 return config_data
         except Exception as e:
             logger.error("Error encountered while reading a server.", e)

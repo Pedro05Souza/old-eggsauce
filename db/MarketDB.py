@@ -1,6 +1,5 @@
 from db.dbsetup import mongo_client
 from time import time
-from tools.shared import request_threading
 from typing import Union
 import logging
 import uuid
@@ -10,7 +9,7 @@ logger = logging.getLogger('botcore')
 class Market:
 
     @staticmethod
-    def create(offer_id, chicken, price: int, description: str, author_id) -> None:
+    async def create(offer_id, chicken, price: int, description: str, author_id) -> None:
         """
         Create an offer in the market collection.
 
@@ -25,7 +24,7 @@ class Market:
             None
         """
         try:
-            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
+            offer_data = await market_collection.find_one({"offer_id": offer_id})
             if offer_data:
                 logger.warning(f"Offer {offer_id} already exists.")
                 return None
@@ -38,14 +37,14 @@ class Market:
                     "author_id": author_id,
                     "created_at": time()
                 }
-                request_threading(lambda: market_collection.insert_one(offer), offer_id).result()
+                await market_collection.insert_one(offer)
                 logger.info(f"Offer has been created successfully.")
         except Exception as e:
             logger.error("Error encountered while creating the offer.", e)
             return None
     
     @staticmethod
-    def get(offer_id: int) -> Union[dict, None]:
+    async def get(offer_id: int) -> Union[dict, None]:
         """
         Get an offer from the market collection.
 
@@ -56,7 +55,7 @@ class Market:
             Union[dict, None]
         """
         try:
-            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
+            offer_data = await market_collection.find_one({"offer_id": offer_id})
             if offer_data:
                 return offer_data
             else:
@@ -67,7 +66,7 @@ class Market:
             return None
         
     @staticmethod
-    def update(offer_id: int, **kwargs) -> None:
+    async def update(offer_id: int, **kwargs) -> None:
         """
         Updates an offer in the market collection.
 
@@ -81,14 +80,14 @@ class Market:
         possible_keywords = ["chicken", "description", "author_id"]
         query = {}
         try:
-            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
+            offer_data = await market_collection.find_one({"offer_id": offer_id})
             if offer_data:
                 if kwargs:
                     for key, value in kwargs.items():
                         if key in possible_keywords:
                             query[key] = value
                     if query:
-                        request_threading(lambda: market_collection.update_one({"offer_id": offer_id}, {"$set": query}), offer_id).result()
+                        await market_collection.update_one({"offer_id": offer_id}, {"$set": query})
                         logger.info(f"Offer {offer_id} has been updated successfully.")
                 else:
                     logger.warning("Keyword arguments aren't being passed.")
@@ -99,7 +98,7 @@ class Market:
             return None
     
     @staticmethod
-    def delete(offer_id: int) -> None:
+    async def delete(offer_id: int) -> None:
         """
         Deletes an item from the market.
 
@@ -110,9 +109,9 @@ class Market:
             None
         """
         try:
-            offer_data = request_threading(lambda: market_collection.find_one({"offer_id": offer_id})).result()
+            offer_data = await market_collection.find_one({"offer_id": offer_id})
             if offer_data:
-                request_threading(lambda: market_collection.delete_one({"offer_id": offer_id}), offer_id).result()
+                await market_collection.delete_one({"offer_id": offer_id})
                 logger.info(f"Offer {offer_id} has been deleted successfully.")
             else:
                 logger.warning(f"Offer {offer_id} does not exist.")
@@ -121,7 +120,7 @@ class Market:
             return None
     
     @staticmethod
-    def get_user_offers(author_id: int) -> Union[list, None]:
+    async def get_user_offers(author_id: int) -> Union[list, None]:
         """
         Get all offers from a user in the market collection.
 
@@ -132,9 +131,10 @@ class Market:
             Union[list, None]
         """
         try:
-            offers = request_threading(lambda: market_collection.find({"author_id": author_id})).result()
+            offers = market_collection.find({"author_id": author_id}).sort("price", 1).limit(10)
+            offers = await offers.to_list(length=10)
             if offers:
-                return list(offers)
+                return offers
             else:
                 logger.warning(f"User {author_id} has no offers.")
                 return None
@@ -143,7 +143,7 @@ class Market:
             return None
                 
     @staticmethod
-    def get_chicken_offers(**kwargs) -> Union[list, None]:
+    async def get_chicken_offers(**kwargs) -> Union[list, None]:
         """
         Performs search in the market collection based on the parameters provided.
 
@@ -175,7 +175,7 @@ class Market:
                 else:
                     query["chicken.rarity"] = value
         try:
-            offers = request_threading(lambda: market_collection.find(query).sort("price", 1).limit(10)).result()
+            offers = await market_collection.find(query).sort("price", 1).limit(10)
             if offers:
                 return list(offers)
             else:
@@ -186,7 +186,7 @@ class Market:
             return None
         
     @staticmethod    
-    def count_all_offers() -> Union[int, None]:
+    async def count_all_offers() -> Union[int, None]:
         """
         Counts all offers in the market.
 
@@ -194,12 +194,12 @@ class Market:
             Union[int, None]
         """
         try:
-            count = request_threading(lambda: market_collection.count_documents({})).result()
+            count = await market_collection.count_documents({})
             return count
         except Exception as e:
             logger.error("Error encountered while counting the offers.", e)
             return None
         
     @staticmethod
-    def generate_uuid() -> str:
+    async def generate_uuid() -> str:
         return str(uuid.uuid4())

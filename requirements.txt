@@ -1,6 +1,6 @@
 discord.py
 python-dotenv
-pymongo[svr,tls]
+motor[svr,tls]
 colorlog
 better_profanity
 pympler
