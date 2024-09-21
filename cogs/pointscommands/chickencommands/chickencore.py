@@ -8,7 +8,7 @@ from tools.chickens.selection.chickenselection import ChickenSelectView
 from tools.chickens.chickenhandlers import RollLimit
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
 from tools.chickens.chickeninfo import rollRates
-from tools.pointscore import pricing
+from tools.decorators import pricing
 from tools.shared import make_embed_object, send_bot_embed, return_data
 from tools.settings import REGULAR_COOLDOWN, SPAM_COOLDOWN, ROLL_PER_HOUR, DEFAULT_ROLLS, CHICKENS_GENERATED
 from discord.ext import commands
@@ -110,27 +110,35 @@ class ChickenCore(commands.Cog):
         global DEFAULT_ROLLS
         
         farm_data = ctx.data["farm_data"]
+
         if action == "market":
+
             if not await self.verify_if_user_can_roll(farm_data):
                 minutes_remaining = round((ROLL_PER_HOUR - (time() - farm_data['last_market_drop'])) / 60)
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you can only roll once every **{ROLL_PER_HOUR // 3600}** hour(s). Try again in **{minutes_remaining}** minutes.")
                 return
+            
             if not RollLimit.read_key(ctx.author.id):
+
                 if farm_data['farmer'] == "Executive Farmer":
                     farmer_upgrades = load_farmer_upgrades("Executive Farmer")
                     farmer_upgd = farmer_upgrades[0]
                     RollLimit.create(ctx.author.id, farmer_upgd + DEFAULT_ROLLS)
                 else:
                     RollLimit.create(ctx.author.id, DEFAULT_ROLLS)
+
             RollLimit.update(ctx.author.id, RollLimit.read(ctx.author.id) - 1)
+
             if RollLimit.read(ctx.author.id) == 1:
-                Farm.update_last_market_drop(ctx.author.id)
+                await Farm.update_last_market_drop(ctx.author.id)
                 RollLimit.remove(ctx.author.id)
+
         if farm_data['farmer'] == "Generous Farmer":
             DEFAULT_ROLLS += load_farmer_upgrades("Generous Farmer")[0]
+            
         generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
         message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux." for index, chicken in enumerate(generated_chickens)]))
-        view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message)
+        view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message, farm_data=farm_data)
         await ctx.send(embed=message, view=view)
                          
     def roll_rates_sum(self) -> tuple:

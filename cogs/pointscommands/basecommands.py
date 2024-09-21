@@ -12,7 +12,7 @@ from db.userdb import User
 from db.bankdb import Bank
 from tools.pagination import PaginationView
 from tools.prices import Prices
-from tools.pointscore import pricing
+from tools.decorators import pricing
 from random import randint
 from discord.ext.commands import Context
 import discord
@@ -60,7 +60,7 @@ class BaseCommands(commands.Cog):
         user_data = data["user_data"]
         bank_data = data["bank_data"]
         farm_data = data["farm_data"]
-        market_data = Market.get_user_offers(user.id)
+        market_data = await Market.get_user_offers(user.id)
         
         if not user_data:
             await send_bot_embed(ctx, description=f"{user.display_name} doesn't have a profile.")
@@ -99,9 +99,9 @@ class BaseCommands(commands.Cog):
         """
         Registers the user in the database.
         """
-        account_creation = User.create(ctx.author.id, 0)
+        account_creation = await User.create(ctx.author.id, 0)
         if account_creation:
-            Bank.create(ctx.author.id, 0)
+            await Bank.create(ctx.author.id, 0)
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} has been registered.")
  
     @commands.hybrid_command(name="points", aliases=["pts", "eggbux", "p"], brief="Shows the amount of points the user has.", usage="points OPTIONAL [user]", description="Shows the amount of points a usr has. If not usr, shows author's points.")
@@ -233,7 +233,7 @@ class BaseCommands(commands.Cog):
             None
         """
         if user_data["points"] >= roleValue and roleChar not in user_data["roles"]:
-            User.update_all(user.id, user_data["points"] - roleValue, user_data["roles"] + roleChar)
+            await User.update_all(user.id, user_data["points"] - roleValue, user_data["roles"] + roleChar)
             await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name} has bought the role **{roleName}**.")
         elif user_data["points"] < roleValue:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have enough eggbux to buy the role **{roleName}**.")
