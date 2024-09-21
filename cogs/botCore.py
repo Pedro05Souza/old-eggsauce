@@ -2,13 +2,11 @@
 This module contains the core of the bot, performing essential functions.
 """
 
-from discord.ext import commands, tasks
+from discord.ext import commands
 from tools.shared import *
 from db.botconfigdb import BotConfig
-from tools.cache import cache_initiator
 from tools.pointscore import refund
 from tools.prices import Prices
-from tools.listeners import listener_manager
 from discord.ext.commands import Context
 import discord.ext.commands.errors
 import logging
@@ -36,28 +34,12 @@ class BotCore(commands.Cog):
         try:
             logger.info("Restarting bot...")
             await self.cancel_all_async_tasks()
-            await self.close_aiohttp_sessions()
             await self.bot.close()
-            await asyncio.sleep(4)
             logger.info("Bot has been restarted.")
             command = [sys.executable, 'main.py'] + sys.argv[1:]
             os.execv(sys.executable, command)
         except Exception as e:
             logger.critical(f"Error restarting bot: {e}")
-
-    async def close_aiohttp_sessions(self) -> None:
-        """
-        Close all aiohttp ClientSession instances.
-
-        Returns:
-            None
-        """
-        if hasattr(self.bot, "http_session") and self.bot.http_session:
-            try:
-                await self.bot.http_session.close()
-                logger.info("Aiohttp session has been closed.")
-            except Exception as e:
-                logger.error(f"Error closing aiohttp session: {e}")
 
     async def cancel_all_async_tasks(self) -> None:
         """
@@ -166,12 +148,12 @@ class BotCore(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild) -> None:
         await self.tutorial(guild)
-        BotConfig.create(guild.id)
+        await BotConfig.create(guild.id)
         logger.info(f"Joined guild {guild.name}")
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild) -> None:
-        BotConfig.delete(guild.id)
+        await BotConfig.delete(guild.id)
         logger.info(f"Left guild {guild.name}")
     
     @commands.Cog.listener()
@@ -179,7 +161,7 @@ class BotCore(commands.Cog):
         guild_cache = await guild_cache_retriever(channel.guild.id)
         channel_cache = guild_cache.get('channel_id')
         if channel_cache and channel_cache == channel.id:
-            BotConfig.update_channel_id(channel.guild.id, None)
+            await BotConfig.update_channel_id(channel.guild.id, None)
             logger.info(f"Channel {channel.name} has been deleted. Commands channel has been reset.")
 
     @commands.Cog.listener()
@@ -193,47 +175,6 @@ class BotCore(commands.Cog):
                     await self.refund_price_command_on_error(ctx)
                     await self.log_and_raise_error(ctx, error)
                     return
-                          
-    @tasks.loop(hours=1)
-    async def cache_task(self) -> None:
-        """
-        Periodically clears the cache.
-
-        Returns:
-            None
-        """
-        await cache_initiator.start_cache_clearing_for_users()
-        await cache_initiator.start_cache_clearing_for_guilds()
-
-    @cache_task.before_loop
-    async def before_cache_task(self) -> None:
-        """
-        Before the cache task starts.
-
-        Returns:
-            None
-        """
-        await self.bot.wait_until_ready()
-
-    @tasks.loop(hours=2)
-    async def listener_task(self) -> None:
-        """
-        Periodically clears the listeners.
-
-        Returns:
-            None
-        """
-        await listener_manager.clear_listeners()
-
-    @listener_task.before_loop
-    async def before_listener_task(self) -> None:
-        """
-        Before the listener task starts.
-
-        Returns:
-            None
-        """
-        await self.bot.wait_until_ready()
-    
+                        
 async def setup(bot):
     await bot.add_cog(BotCore(bot))
