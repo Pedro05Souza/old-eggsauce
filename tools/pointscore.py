@@ -267,11 +267,11 @@ async def send_away_user_rewards(ctx: Context, salary_gained: int, total_profit:
     description = f":tada: while **{user.display_name}** was away, they gained:\n"
 
     if salary_gained > 0:
-        description += f":money_with_wings: **{await format_number(salary_gained)}** eggbux from your salary.\n"
+        description += f":money_with_wings: **{await format_number(salary_gained)}** eggbux from their salary.\n"
     if total_profit > 0:
-        description += f":wood: **{await format_number(total_profit)}** eggbux from your farm.\n"
+        description += f":wood: **{await format_number(total_profit)}** eggbux from their farm.\n"
     if corn_produced > 0:
-        description += f":corn: **{await format_number(corn_produced)}** corn from your farm."
+        description += f":corn: **{await format_number(corn_produced)}** corn from their farm."
     if salary_gained > 0 or total_profit > 0 or corn_produced > 0:
         await send_bot_embed(ctx, description=description)
 
