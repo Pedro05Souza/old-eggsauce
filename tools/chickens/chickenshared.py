@@ -112,10 +112,8 @@ async def get_usr_farm(ctx: Context, user: discord.Member, data) -> discord.Embe
             discord.Embed
         """
         farm_data = data['farm_data']
+        
         if farm_data:
-
-            if user.id != ctx.author.id:
-                 farm_data = await update_user_farm(ctx, user, data)
 
             farm_data = await get_player_chicken_from_market(ctx, user, data)
 
@@ -290,15 +288,9 @@ async def drop_egg_for_player(farm_data: dict, hours_passed: int) -> Union[dict,
         Returns:
             Union[dict, int]
         """
-        farm_dictionary = {}
-        farm_data_copy = farm_data['chickens'].copy()
-        total_profit = await give_total_farm_profit(farm_data, hours_passed)
+        total_profit, farm_data = await give_total_farm_profit(farm_data.copy(), hours_passed)
         if total_profit > 0:
             farm_data['eggs_generated'] += min(total_profit, MAX_EGG_GENERATED)
-        farm_data['chickens'] = farm_data_copy
-        farm_dictionary = {"chickens" : farm_data['chickens'], "eggs_generated" : farm_data['eggs_generated']}
-        farm_data['chickens'] = farm_dictionary['chickens']
-        farm_data['eggs_generated'] = farm_dictionary['eggs_generated']
         return farm_data, total_profit
                     
 async def feed_eggs_auto(farm_data: dict, bank_amount: int) -> int:
@@ -356,8 +348,8 @@ async def update_user_farm(ctx: Context, user: discord.Member, data: dict) -> tu
     updated_farm_data = farm_data
     hours_passed_since_last_egg_drop = min((last_drop_time // FARM_DROP), 24)
     hours_passed_since_last_egg_drop = int(hours_passed_since_last_egg_drop)
-
     total_profit = 0
+
     if hours_passed_since_last_egg_drop != 0:
         user_data = data['user_data']
         updated_farm_data, total_money_earned_without_tax = await drop_egg_for_player(farm_data, hours_passed_since_last_egg_drop)
@@ -647,19 +639,19 @@ async def quick_sell_chicken(ctx: Context, farm_data: dict, debt: int) -> int:
     await send_bot_embed(ctx, description=description)
     return money_earned
 
-async def give_total_farm_profit(farm_data: dict, hours_passed: int) -> int:
+async def give_total_farm_profit(farm_data_copy: dict, hours_passed: int) -> int:
     """
     Gives the total farm profit.
 
     Args:
-        farm_data (dict): The farm data to give the profit for.
+        farm_data_copy (dict): The copy of a farm data to give the profit for.
         hours_passed (int): The hours passed.
 
     Returns:
         int
     """
     total_profit = 0
-    for chicken in farm_data['chickens']:
+    for chicken in farm_data_copy['chickens']:
 
         if chicken['rarity'] == 'DEAD':
             continue
@@ -674,11 +666,11 @@ async def give_total_farm_profit(farm_data: dict, hours_passed: int) -> int:
         if chicken['happiness'] == 0:
             await devolve_chicken(chicken)
 
-    if farm_data['farmer'] == 'Rich Farmer':
+    if farm_data_copy['farmer'] == 'Rich Farmer':
         to_increase = (total_profit * load_farmer_upgrades('Rich Farmer')[0]) // 100
         total_profit += to_increase
 
-    return total_profit
+    return total_profit, farm_data_copy
 
 async def decrease_chicken_happiness(chicken: dict, hours_passed: int) -> dict:
     """
