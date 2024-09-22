@@ -4,19 +4,21 @@ from discord.ext import tasks
 from tools.cache import cache_initiator
 from tools.listeners import listener_manager
 from tools.shared import cooldown_tracker
+from cogs.pointscommands.interactive import steal_status
 
 
 class Tasks(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.cache__clear_task.start()
-        self.listener__clear_task.start()
-        self.cooldown__clear_task.start()
+        self.cache_clear_task.start()
+        self.listener_clear_task.start()
+        self.cooldown_clear_task.start()
+        self.steal_status_task.start()
 
     @before_loop_decorator
     @tasks.loop(hours=1)
-    async def cache__clear_task(self) -> None:
+    async def cache_clear_task(self) -> None:
         """
         Periodically clears the cache.
 
@@ -27,7 +29,7 @@ class Tasks(commands.Cog):
 
     @before_loop_decorator
     @tasks.loop(hours=2)
-    async def listener__clear_task(self) -> None:
+    async def listener_clear_task(self) -> None:
         """
         Periodically clears the listeners.
 
@@ -38,14 +40,25 @@ class Tasks(commands.Cog):
 
     @before_loop_decorator
     @tasks.loop(hours=2)
-    async def cooldown__clear_task(self) -> None:
+    async def cooldown_clear_task(self) -> None:
         """
-        Periodically clears the cooldown tracker.
+        Periodically clears the cooldown tracker for the users.
 
         Returns:
             None
         """
         cooldown_tracker.clear()
+
+    @before_loop_decorator
+    @tasks.loop(hours=4)
+    async def steal_status_task(self) -> None:
+        """
+        Periodically clears the steal status.
+
+        Returns:
+            None
+        """
+        steal_status.clear()
 
 async def setup(bot):
     await bot.add_cog(Tasks(bot))
