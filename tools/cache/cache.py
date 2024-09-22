@@ -110,7 +110,7 @@ class BotCache():
             None
         """
         if len(self.cache) > 0:
-            await self.cache.clear()
+            self.cache.clear()
             logger.info("Guild cache cleared.")
 
     async def put_user(self, key: int, **kwargs) -> None:
