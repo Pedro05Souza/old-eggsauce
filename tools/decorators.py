@@ -1,23 +1,24 @@
+from typing import Any, Callable
 from discord.ext import commands
 from discord.ext.commands import Context
 from tools.pointscore import *
 
 
-def pricing(cache_copy: bool = False) -> dict:
+def pricing(cache_copy: bool = False) -> Callable[[Callable [..., Any]], Callable[..., Any]]:
     """
     Decorator predicate for the points commands. This is the core of the bot's interactive system.
     Always use this when making a points command.
 
     Args:
-        cache_copy (bool): Whether to use the cache copy or reference.
-        If false, the cache reference will be used, meaning it can change states
-        during runtime. If true, the cache copy will be used, meaning it won't change states.
+        cache_copy (bool): Whether to use the cache copy or reference. 
+        If false, the cache reference will be used, meaing it can change
+        states during runtime. If true, the cache copy will be used, meaning
+        the cache data will be frozen at the time of the command invocation.
 
     Returns:
         dict
     """
     async def predicate(ctx: Context) -> bool:
-
         config_data = await get_config_data(ctx)
 
         if not config_data:
