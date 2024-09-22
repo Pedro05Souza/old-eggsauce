@@ -1,5 +1,5 @@
 """
-This module contains the core of the bot's points system. It is responsible for handling the prices of the commands, cooldowns and checks.
+This module contains functions that are used in the decorator predicates of the points commands.
 """
 
 from typing import Optional
@@ -250,7 +250,7 @@ async def check_server_requirements(ctx: Context, config_data: dict) -> bool:
         return False
     return True
 
-async def send_away_user_rewards(ctx: Context, salary_gained: int, total_profit: int, corn_produced: int) -> None:
+async def send_away_user_rewards(ctx: Context, salary_gained: int, total_profit: int, corn_produced: int, user: discord.Member) -> None:
     """
     Sends a message to the user to see how many he gained during his time away.
 
@@ -259,11 +259,12 @@ async def send_away_user_rewards(ctx: Context, salary_gained: int, total_profit:
         salary_gained (int): The amount of salary the user gained.
         total_profit (int): The total profit the user gained.
         corn_produced (int): The amount of corn the user produced.
+        user (discord.Member): The user to send the message.
 
     Returns:
         None
     """
-    description = f":tada: **{ctx.author.display_name}** While you were away, you gained:\n"
+    description = f":tada: while **{user.display_name}** was away, they gained:\n"
 
     if salary_gained > 0:
         description += f":money_with_wings: **{await format_number(salary_gained)}** eggbux from your salary.\n"
@@ -318,7 +319,7 @@ async def salary_role(user_data: dict) -> int:
     else:
         return 0
     
-async def update_user_farm_on_command(ctx: Context, user_data: dict, data: dict)  -> None:
+async def update_user_farm_on_command(ctx: Context, user_data: dict, data: dict, user: discord.Member)  -> None:
     """
     Updates the user's farm data if the user uses any command.
 
@@ -326,31 +327,34 @@ async def update_user_farm_on_command(ctx: Context, user_data: dict, data: dict)
         ctx (Context): The context of the command.
         user_data (dict): The data of the user.
         farm_data (dict): The data of the farm.
+        user (discord.Member): The user to update the farm.
 
     Returns:
         None
     """
-    salary_gained = await get_salary_points(ctx.author, user_data)
-    if ctx.data['farm_data']:
-        ctx.data['farm_data'], total_profit = await update_user_farm(ctx, ctx.author, data)
-        corn_to_cache, corn_produced = await update_player_corn(ctx.author, data['farm_data'])
-        ctx.data['farm_data']['corn'] = corn_to_cache
-        await send_away_user_rewards(ctx, salary_gained, total_profit, corn_produced)
+    salary_gained = await get_salary_points(user, user_data)
+
+    if data['farm_data']:     
+        data['farm_data'], total_profit = await update_user_farm(ctx, user, data)
+        corn_to_cache, corn_produced = await update_player_corn(user, data['farm_data'])
+        data['farm_data']['corn'] = corn_to_cache
+        await send_away_user_rewards(ctx, salary_gained, total_profit, corn_produced, user)
 
 
-async def update_user_points_in_voice(ctx: Context, user_data: dict) -> None:
+async def update_user_points_in_voice(ctx: Context, user_data: dict, author: discord.Member) -> None:
     """
     Updates the user's points if they are in a voice channel.
 
     Args:
         ctx (Context): The context of the command.
         user_data (dict): The data of the user.
+        author_id (discord.Member): The user to update the points.
 
     Returns:
         None
     """
     points_manager = ctx.bot.get_cog("PointsManager")
-    await points_manager.update_user_points_in_voice(ctx.author, user_data)
+    await points_manager.update_user_points_in_voice(author, user_data)
 
 async def get_config_data(ctx: Context) -> Optional[dict]:
     """
@@ -418,8 +422,8 @@ async def verify_and_handle_points(ctx: Context, command_name: str, user_data: d
         result = await treat_exceptions(ctx, command_name, user_data, config_data, data)
         ctx.data = data
         if result:
-            await update_user_points_in_voice(ctx, user_data)
-            await update_user_farm_on_command(ctx, user_data, data)
+            await update_user_points_in_voice(ctx, user_data, ctx.author)
+            await update_user_farm_on_command(ctx, user_data, data, ctx.author)
         return result
     else:
         await send_bot_embed(ctx, description=":no_entry_sign: You don't have enough points to use this command.")
