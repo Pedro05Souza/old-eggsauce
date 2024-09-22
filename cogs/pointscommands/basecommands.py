@@ -12,6 +12,7 @@ from db.userdb import User
 from db.bankdb import Bank
 from tools.pagination import PaginationView
 from tools.prices import Prices
+from tools.shared import update_user_param
 from tools.decorators import pricing
 from random import randint
 from discord.ext.commands import Context
@@ -118,13 +119,17 @@ class BaseCommands(commands.Cog):
         Returns:
             None
         """
-        data, user = await return_data(ctx, user)
+        data, discord_member = await return_data(ctx, user)
         user_data = data["user_data"]
         bank_data = data["bank_data"]
+
         if user_data:
-            msg = await make_embed_object(title=f":egg: {user.display_name}'s eggbux", description=f":briefcase: Wallet: {await format_number(user_data['points'])}\n :bank: Bank: {await format_number(bank_data['bank'])}")
+            if user:
+                await update_user_param(ctx, user_data, data, user)
+                
+            msg = await make_embed_object(title=f":egg: {discord_member.display_name}'s eggbux", description=f":briefcase: Wallet: {await format_number(user_data['points'])}\n :bank: Bank: {await format_number(bank_data['bank'])}")
             msg.add_field(name=":money_with_wings: Total eggbux:", value=f"{await format_number(user_data['points'] + bank_data['bank'])}")
-            msg.set_thumbnail(url=user.display_avatar)
+            msg.set_thumbnail(url=discord_member.display_avatar)
             msg.set_footer(text=tips[randint(0, len(tips) - 1)])
             await ctx.send(embed=msg)
         else:   

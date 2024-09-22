@@ -236,7 +236,7 @@ def retrieve_threads() -> int:
     """
     return len(threading.enumerate())
 
-async def return_data(ctx: Context, user=None) -> tuple:
+async def return_data(ctx: Context, user= None) -> tuple:
     """
     Returns the user data and the user object. This is only used in case of a command that has an optional user parameter.
 
@@ -298,3 +298,21 @@ async def format_date(date: datetime) -> str:
         str
     """
     return format_dt(date, "R")
+
+async def update_user_param(ctx: Context, user_data: dict, data: dict, user: discord.Member) -> None:
+    """
+    Updates the user that the author of the command pinged.
+
+    Args:
+        ctx (Context): The context of the command.
+        user_data (dict): The user data.
+        data (dict): The data to update.
+        user (discord.Member): The user to update the data for.
+
+    Returns:
+        None
+    """
+    from tools.pointscore import update_user_farm_on_command, update_user_points_in_voice
+    
+    await update_user_farm_on_command(ctx, user_data, data, user)
+    await update_user_points_in_voice(ctx, user_data, user)

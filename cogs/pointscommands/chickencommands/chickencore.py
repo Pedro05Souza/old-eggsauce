@@ -9,7 +9,7 @@ from tools.chickens.chickenhandlers import RollLimit
 from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
 from tools.chickens.chickeninfo import rollRates
 from tools.decorators import pricing
-from tools.shared import make_embed_object, send_bot_embed, return_data
+from tools.shared import make_embed_object, send_bot_embed, return_data, update_user_param
 from tools.settings import REGULAR_COOLDOWN, SPAM_COOLDOWN, ROLL_PER_HOUR, DEFAULT_ROLLS, CHICKENS_GENERATED
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -54,11 +54,17 @@ class ChickenCore(commands.Cog):
         Returns:
             None
         """
-        data, user = await return_data(ctx, user)
-        msg = await get_usr_farm(ctx, user, data)
+        data, discord_member = await return_data(ctx, user)
+
+        if user and data['user_data']:
+            await update_user_param(ctx, data["user_data"], data, user)
+
+        msg = await get_usr_farm(ctx, discord_member, data)
+
         if not msg:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have any chickens.")
             return
+        
         await ctx.send(embed=msg)
 
     @commands.hybrid_command(name="market", aliases=["m"], usage="market", description="Market that generates 8 random chickens to buy.")

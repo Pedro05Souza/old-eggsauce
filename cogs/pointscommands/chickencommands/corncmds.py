@@ -5,10 +5,10 @@ from discord.ext import commands
 from db.farmdb import Farm
 from db.userdb import User
 from tools.chickens.chickeninfo import ChickenFood
-from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, return_data
+from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, return_data, update_user_param
 from tools.settings import REGULAR_COOLDOWN, MAX_CORN_LIMIT, MAX_PLOT_LIMIT, FARM_DROP
 from tools.decorators import pricing
-from tools.chickens.chickenshared import preview_corn_produced, update_player_corn
+from tools.chickens.chickenshared import preview_corn_produced
 from tools.listeners import on_user_transaction
 from better_profanity import profanity
 from discord.ext.commands import Context
@@ -35,9 +35,13 @@ class CornCommands(commands.Cog):
         Returns:
             None
         """
-        data, user = await return_data(ctx, user)
+        data, discord_member = await return_data(ctx, user)
+
+        if user and data['user_data']:
+            await update_user_param(ctx, data["user_data"], data, user)
+            
         if data:
-            await ctx.send(embed=await self.show_plr_food_farm(ctx, user, data))
+            await ctx.send(embed=await self.show_plr_food_farm(discord_member, data))
     
     @commands.hybrid_command(name="renamecornfield", aliases=["rcf"], usage="renameCornfield <nickname>", description="Rename the cornfield.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
@@ -68,12 +72,11 @@ class CornCommands(commands.Cog):
         await Farm.update(ctx.author.id, plant_name=nickname)
         await send_bot_embed(ctx, description=f"{ctx.author.display_name} Your cornfield has been renamed to {nickname}.")
 
-    async def show_plr_food_farm(self, ctx: Context, user: discord.Member, data: dict) -> discord.Embed:
+    async def show_plr_food_farm(self, user: discord.Member, data: dict) -> discord.Embed:
         """
         Show the player's food farm.
 
         Args:
-            ctx (Context): The context of the command.
             user (discord.Member): The user to check the corn field.
             data (dict): The data of the user.
         
@@ -84,9 +87,6 @@ class CornCommands(commands.Cog):
             return await make_embed_object(title=f":no_entry_sign: {user.display_name}", description=f":no_entry_sign: {user.display_name} You don't have a farm.")
         
         farm_data = data["farm_data"]
-
-        if user.id != ctx.author.id:
-            farm_data['corn'], _ = await update_player_corn(user, farm_data)
 
         food_embed = await make_embed_object(
             title=f":corn: {farm_data['plant_name']}",
