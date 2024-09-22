@@ -29,7 +29,6 @@ class ChickenSelectView(ui.View):
             **kwargs
         ):
         menu, timeout = self.action_handler(chickens, author, action, message, farm_data, role, trade_data, instance_bot)
-        kwargs = {k: kwargs[k] for k in kwargs if k not in ["role", "trade_data", "instance_bot", "offer_id"]}
         super().__init__(*args, **kwargs, timeout=timeout)
         self.add_item(menu)
 
