@@ -7,7 +7,7 @@ from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRa
 from tools.chickens.chickenshared import *
 from tools.chickens.chickenhandlers import EventData
 from tools.chickens.selection.chickenselection import ChickenSelectView
-from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever, return_data
+from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever, return_data, format_number
 from tools.settings import REGULAR_COOLDOWN, FARM_DROP, MAX_BENCH
 from tools.decorators import pricing
 from better_profanity import profanity
@@ -43,7 +43,8 @@ class ChickenView(commands.Cog):
             
             chicken = farm_data['chickens'][index - 1]
             chicken_egg_value = await get_chicken_egg_value(chicken) - int((await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))
-            total_profit = (chicken_egg_value * chicken['happiness']) // 100
+            happiness_loss = int((chicken_egg_value * (100 - chicken['happiness'])) // 100)
+            total_profit = chicken_egg_value - happiness_loss
             msg = await make_embed_object(
                 title=f":chicken: {chicken['rarity']} {chicken['name']}",
                 description=(
@@ -51,8 +52,9 @@ class ChickenView(commands.Cog):
                     f":moneybag: **Price**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux\n"
                     f":egg: **Egg value**: {chicken_egg_value}/{ChickenMultiplier[chicken['rarity']].value}\n"
                     f":gem: **Upkeep rarity**: {round(chicken['upkeep_multiplier'] * 100)}%\n"
-                    f":coin: **Eggs generated:** {chicken['eggs_generated']}\n"
+                    f":coin: **Eggs generated:** {await format_number(chicken['eggs_generated'])}\n"
                     f":corn: **Food necessary:** {ChickenFood[chicken['rarity']].value}\n"
+                    f":warning: **Happiness penalty:** {happiness_loss}\n" 
                     f":money_with_wings: **Total profit: {total_profit} eggbux.**"
                 )
             )
@@ -217,12 +219,12 @@ class ChickenView(commands.Cog):
             status_emoji = ""
             if totalProfit > 0:
                 status_emoji = ":white_check_mark:"
-                status_message = f"Your farm is expected to generate a profit of {result} eggbux per **{FARM_DROP // 3600}** hour(s)."
+                status_message = f"Your farm is expected to generate a profit of **{result}** eggbux per **{FARM_DROP // 3600}** hour(s)."
             elif totalProfit == 0:
                 description= f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss."
             else:
                 status_emoji = ":no_entry_sign:"
-                status_message = f"Your farm is expected to generate a loss of {result} eggbux per **{FARM_DROP // 3600}** hour(s)."
+                status_message = f"Your farm is expected to generate a loss of **{result}** eggbux per **{FARM_DROP // 3600}** hour(s)."
 
             if totalProfit != 0:
                     description = (
