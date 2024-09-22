@@ -16,6 +16,7 @@ import logging
 import time
 import asyncio
 import discord
+
 hungergames_status = {}
 steal_status = {}
 
@@ -179,24 +180,31 @@ class InteractiveCommands(commands.Cog):
             return
         else:
             steal_status[ctx.author.id] = user.id
+    
         chance  = randint(0, 100)
+
         if user.bot:
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from a bot.")
             await refund(ctx.author, ctx)
             return
+        
         user_data = ctx.data["user_data"]
         target_data = await user_cache_retriever(user.id)
         target_data = target_data["user_data"]
+
         if user_data:
             if ctx.author.id == user.id:
                 await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from yourself.")
                 await refund(ctx.author, ctx)
                 return
+            
             target_points = target_data["points"]
+
             if target_points <= 150:
                 await send_bot_embed(ctx, description=f"{ctx.author.display_name} You can't steal from a user with less than 150 eggbux.")
                 await refund(ctx.author, ctx)
                 return
+            
             elif chance >= 10:
                 random_integer = randint(1, int(target_points//2))
                 await User.update_points(ctx.author.id, user_data['points'] + random_integer)
@@ -204,6 +212,7 @@ class InteractiveCommands(commands.Cog):
                 await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} stole {random_integer} eggbux from {user.display_name}")
                 await on_user_transaction(ctx, random_integer, 0)
                 return
+            
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} failed to steal from {user.display_name}")
                 return
@@ -214,7 +223,7 @@ class InteractiveCommands(commands.Cog):
     @commands.command(aliases=["hg"])
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
-    async def hungergames(self, ctx: Context, *args) -> None:
+    async def hungergames(self, ctx: Context) -> None:
         """
         Starts a hunger games event.
 
@@ -226,23 +235,25 @@ class InteractiveCommands(commands.Cog):
             None
         """
         guild_id = ctx.guild.id
-        cooldown = await self.hunger_games_starter(ctx, guild_id, args)
+        cooldown = await self.hunger_games_starter(ctx, guild_id)
         day = 1
         tributes = []
         messageHg = await send_bot_embed(ctx, description=f":hourglass: The hunger games will start in **{cooldown} seconds.** React with ✅ to join.")
-        for member in ctx.guild.members:
-            tributes.append({"tribute": member, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
+
         await messageHg.add_reaction("✅")
+
         if await self.match_starter(ctx, tributes, guild_id, cooldown):
             await send_bot_embed(ctx, description=f":white_check_mark: The hunger games have started with {len(tributes)} tributes.")
             alive_tributes = tributes
+
             while len(alive_tributes) > 1:
                 await self.day_events(ctx, alive_tributes, day, guild_id, tributes)
                 await self.day_switch_events(ctx, alive_tributes, day, tributes)
+
             winner = await self.get_winner(tributes)
             await self.on_match_end(ctx, tributes, winner, guild_id)
 
-    async def hunger_games_starter(self, ctx: Context, guild_id: int, args) -> int:
+    async def hunger_games_starter(self, ctx: Context, guild_id: int) -> int:
         """
         Starts the hunger games event.
 
@@ -255,22 +266,19 @@ class InteractiveCommands(commands.Cog):
             int: The cooldown of the hunger games.
         """
         global hungergames_status
+
         cooldown = HUNGER_GAMES_WAIT_TIME
         
         if guild_id in hungergames_status:
             await send_bot_embed(ctx, description=":no_entry_sign: A hunger games is already in progress.")
             return
-        if args and args[0].isdigit():
-            args = [int(arg) for arg in args] 
-            if ctx.guild.owner.id == ctx.author.id:
-                cooldown = args[0] * 60  
-            else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have permission to set a custom time for the hunger games. The default time is 60 seconds.")
+        
         hungergames_status[guild_id] = {
         "game_Start": False,
         "dead_tribute": None,
         "bear_disabled": False
         }
+
         return cooldown
     
     async def day_events(self, ctx: Context, alive_tributes: list, day: int, guild_id: int, tributes: list) -> None:
@@ -290,7 +298,9 @@ class InteractiveCommands(commands.Cog):
         shuffle_tributes = sample(alive_tributes, len(alive_tributes))
         alive_tributes = shuffle_tributes
         await send_bot_embed(ctx, title=f"Day {day}", description=f"**Tributes remaining: {len(alive_tributes)}**")
+
         for tribute in alive_tributes:
+
             if tribute['is_alive']:
                 await asyncio.sleep(3)
                 random_tribute = await self.pick_random_tribute(tribute, alive_tributes)
@@ -298,6 +308,7 @@ class InteractiveCommands(commands.Cog):
                 random_event = await self.choose_random_event(event_possibilities)
                 await self.event_actions(ctx, tribute, random_tribute, alive_tributes, random_event)
                 alive_tributes = await self.check_alive_tributes(alive_tributes)
+                
                 if len(alive_tributes) == 1:
                     break
 
@@ -337,20 +348,27 @@ class InteractiveCommands(commands.Cog):
             bool
         """
         end_time = time.time() + cooldown
+
         while True:
             actual_time = end_time - time.time()
+
             if actual_time <= 0:
                 break
+
             try:
                 reaction, user = await self.bot.wait_for("reaction_add", timeout=cooldown)
+
                 if reaction.emoji == "✅":
                     allowplay = await self.check_tribute_play(discord.utils.get(ctx.guild.members, id=user.id), HUNGER_GAMES_MATCH_VALUE)
+
                     if allowplay:
-                        if not any(tribute['tribute'] == user for tribute in tributes):
+
+                        if not any(tribute['tribute'].id == user.id for tribute in tributes):
                             tributes.append({"tribute": user, "is_alive": True, "has_event": False,"team": None, "kills": 0, "inventory" : [], "days_alive" : 0, "Killed_by": None})
                             await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name} has joined the hunger games.")
                         else:
                             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} is already in the hunger games.")
+
                     else:
                         await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have enough eggbux to join the hunger games.")
             except asyncio.TimeoutError:
