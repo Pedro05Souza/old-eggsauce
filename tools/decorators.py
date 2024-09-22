@@ -63,6 +63,15 @@ def listener_checks() -> bool:
     return checks
 
 def before_loop_decorator(task_func):
+    """
+    Decorator for the before_loop function in the task.
+
+    Args:
+        task_func: The task function.
+
+    Returns:
+        None
+    """
     async def before_loop(self):
         await self.bot.wait_until_ready()
     task_func.before_loop = before_loop
