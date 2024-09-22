@@ -609,7 +609,7 @@ class ChickenCombat(commands.Cog):
             list
         """
         if not await self.check_if_user_is_bot(user):
-            farm_data = Farm.read(user.member.id)
+            farm_data = await Farm.read(user.member.id)
             return [farm_data['mmr'], farm_data['highest_mmr'], farm_data['wins'], farm_data['losses']]
         return [user.score, 0, 0, 0]
 
