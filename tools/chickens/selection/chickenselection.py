@@ -178,7 +178,7 @@ class ChickenMarketMenu(ui.Select):
             await interaction.message.delete()
             return
         
-        updated_view = ChickenSelectView(available_chickens, self.author_id, "M", self.message)
+        updated_view = ChickenSelectView(available_chickens, self.author_id, "M", self.message, farm_data=farm_data)
         updated_message = await make_embed_object(title=f":chicken: {interaction.user.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken)} eggbux." for index, chicken in enumerate(available_chickens)]))
         await interaction.message.edit(embed=updated_message, view=updated_view)
         self.message = updated_message
