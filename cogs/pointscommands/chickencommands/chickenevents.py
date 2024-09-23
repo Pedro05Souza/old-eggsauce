@@ -78,8 +78,8 @@ class ChickenEvents(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade with yourself.")
                 return
             
-            if len(farm_author['chickens']) == 1 and farm_author['chickens'][0]['rarity'] == "ETHEREAL":
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade an ethereal chicken.")
+            if len(farm_author['chickens']) == 1 and is_non_tradable_chicken(farm_author['chickens'][0]['rarity']):
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade this chicken.")
                 return
             
             if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
@@ -125,8 +125,8 @@ class ChickenEvents(commands.Cog):
         authorEmbed = await get_usr_farm(ctx, ctx.author, ctx.data)
         userEmbed = await get_usr_farm(ctx, user, user_cache_data)
         trade_data = [farm_author['chickens'], farm_target['chickens']]
-        trade_data[0] = [chicken for chicken in trade_data[0] if chicken['rarity'] != "DEAD" and chicken['rarity'] != "ETHEREAL"]
-        trade_data[1] = [chicken for chicken in trade_data[1] if chicken['rarity'] != "DEAD" and chicken['rarity'] != "ETHEREAL"]
+        trade_data[0] = [chicken for chicken in trade_data[0] if chicken['rarity'] not in get_non_tradable_chickens()]
+        trade_data[1] = [chicken for chicken in trade_data[1] if chicken['rarity'] not in get_non_tradable_chickens()]
         members_data = [ctx.author, user]
         embeds = [authorEmbed, userEmbed]
 
@@ -178,8 +178,8 @@ class ChickenEvents(commands.Cog):
         
         gifted_chicken = author_data['chickens'][index]
 
-        if gifted_chicken['rarity'] == "ETHEREAL":
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift an ethereal chicken.")
+        if is_non_tradable_chicken(gifted_chicken['rarity']):
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift this chicken.")
             return
         
         confirmation = await confirmation_embed(ctx, ctx.author, f":question: {ctx.author.display_name}, are you sure you want to gift **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']} to {user.display_name}?")
@@ -271,12 +271,8 @@ class ChickenEvents(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chickens must be of the same rarity to evolve.")
             return
         
-        if chicken_selected['rarity'] == "ASCENDED" or chicken_removed['rarity'] == "ASCENDED" or chicken_selected['rarity'] == "ETHEREAL" or chicken_removed['rarity'] == "ETHEREAL":
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve an ascended or ethereal chicken.")
-            return
-        
-        if chicken_selected['rarity'] == "DEAD" or chicken_removed['rarity'] == "DEAD":
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve a dead chicken.")
+        if is_non_evolvable_chicken(chicken_selected['rarity']) or is_non_evolvable_chicken(chicken_removed['rarity']):
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve this chicken.")
             return
         
         confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to evolve your **{get_rarity_emoji(chicken_selected['rarity'])}{chicken_selected['rarity']} {chicken_selected['name']}** to a higher rarity?")

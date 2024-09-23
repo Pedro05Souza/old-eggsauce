@@ -30,6 +30,7 @@ async def bot_maker(user_score: int) -> BotMatchMaking:
     bot_farm_size = randint(await define_bot_min_farm_size(user_score), DEFAULT_FARM_SIZE)
     all_rarities = list(ChickenRarity.__members__)
     all_rarities.remove("DEAD")
+    all_rarities.remove("BETA")
     all_rarities_dict = {rarity: position for position, rarity in enumerate(all_rarities)}
     bot_chickens = []
     bot_rarity_list = await define_chicken_rarity_list(user_score, all_rarities_dict)

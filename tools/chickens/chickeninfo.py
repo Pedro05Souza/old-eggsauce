@@ -36,6 +36,7 @@ defineRarityEmojis = {
     "GALATIC": "🌌",
     "OMINOUS": "💥",
     "CELESTIAL": "🌟",
+    "BETA": "🐣",
     "IMMORTAL": "☄️",
     "CHOSEN": "🌀",
     "ASCENDED": "🌠",
@@ -57,6 +58,9 @@ chicken_rarities = {
 }
 
 class ChickenRarity(Enum):
+    """
+    Retrieves the multipleir for the chicken price based on the rarity.
+    """
     DEAD = 0
     COMMON = 1
     UNCOMMON = 2
@@ -74,9 +78,13 @@ class ChickenRarity(Enum):
     IMMORTAL = 14
     CHOSEN = 15
     ASCENDED = 16
+    BETA = 17
     ETHEREAL = 250
 
 class ChickenMultiplier(Enum):
+    """
+    Retrieves the egg value for the chicken based on the rarity.
+    """
     DEAD = 0
     COMMON = 2
     UNCOMMON = 4
@@ -91,6 +99,7 @@ class ChickenMultiplier(Enum):
     GALATIC = 121
     OMINOUS = 144
     CELESTIAL = 169
+    BETA = 174
     IMMORTAL = 196
     CHOSEN = 225
     ASCENDED = 256
@@ -111,6 +120,7 @@ class ChickenFood(Enum):
     GALATIC = 74
     OMINOUS = 87
     CELESTIAL = 101
+    BETA = 105
     IMMORTAL = 115
     CHOSEN = 130
     ASCENDED = 146
@@ -131,6 +141,7 @@ rarities_weight = {
     "GALATIC": 58,
     "OMINOUS": 68,
     "CELESTIAL": 78,
+    "BETA": 80,
     "IMMORTAL": 88,
     "CHOSEN": 99,
     "ASCENDED": 111,
@@ -183,4 +194,21 @@ chicken_ranking = {
     "EGG GRANDMASTER": 1250,
     "EGG CHALLENGER": 1750,
     "LEGGEND": 2000
+}
+
+non_trandable_chickens = {
+    "ETHEREAL",
+    "DEAD",
+}
+
+non_evolveable_chickens = {
+    "ETHEREAL",
+    "BETA",
+    "DEAD",
+    "ASCENDED", # In this case theres a special command where you need 8 ascendeds to evolve, but we need to stop the normal evolution
+}
+
+non_marketplace_chickens = {
+    "ETHEREAL",
+    "DEAD",
 }

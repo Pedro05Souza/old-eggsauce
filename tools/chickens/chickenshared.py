@@ -702,4 +702,67 @@ async def check_if_author(author_id: int, user_interaction_id: int, ctx: Context
         await send_bot_embed(ctx, ephemeral=True, description=":no_entry_sign: You can't interact with another user's chickens.")
         return False
     return True
+
+async def is_non_tradable_chicken(chicken_rarity: str) -> bool:
+    """
+    Checks if the chicken is negotiable. (If the chicken can be sold to the market or traded with another user.)
+
+    Args:
+        chicken_rarity (str): The chicken rarity to check.
+
+    Returns:
+        bool
+    """
+    return chicken_rarity in non_trandable_chickens
+
+async def get_non_tradable_chickens() -> set:
+    """
+    Gets the transferable chickens.
+
+    Returns:
+        set
+    """
+    return non_trandable_chickens
+
+async def is_non_evolvable_chicken(chicken_rarity: str) -> bool:
+    """
+    Checks if the chicken is evolvable.
+
+    Args:
+        chicken_rarity (str): The chicken rarity to check.
+
+    Returns:
+        bool
+    """
+    return chicken_rarity in non_evolveable_chickens
+
+async def get_non_evolvable_chickens() -> set:
+    """
+    Gets the evolvable chickens.
+
+    Returns:
+        set
+    """
+    return non_evolveable_chickens
+
+async def is_non_market_place_chicken(chicken_rarity: str) -> bool:
+    """
+    Checks if the chicken can be placed in the player market.
+
+    Args:
+        chicken_rarity (str): The chicken rarity to check.
+
+    Returns:
+        bool
+    """
+    return chicken_rarity in non_marketplace_chickens
+
+async def get_non_market_place_chickens() -> set:
+    """
+    Gets the non market place chickens.
+
+    Returns:
+        set
+    """
+    return non_marketplace_chickens
      

@@ -5,7 +5,7 @@ from discord.ext import commands
 from db.farmdb import Farm
 from db.marketdb import Market
 from tools.shared import send_bot_embed, make_embed_object
-from tools.chickens.chickenshared import get_rarity_emoji, verify_events
+from tools.chickens.chickenshared import get_rarity_emoji, verify_events, is_non_market_place_chicken
 from tools.shared import send_bot_embed
 from tools.settings import REGULAR_COOLDOWN, OFFER_EXPIRE_TIME
 from tools.decorators import pricing
@@ -42,50 +42,54 @@ class PlayerMarket(commands.Cog):
         description = ""
         farm_data = ctx.data['farm_data']
         if farm_data:
-            if await verify_events(ctx, ctx.author):
-             return
-            r = EventData(ctx.author)
-            total_user_offers = Market.get_user_offers(ctx.author.id)
+            
+            total_user_offers = await Market.get_user_offers(ctx.author.id)
+
             if not total_user_offers:
                 total_user_offers = []
+
             if index < 0 or index >= len(farm_data['chickens']):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a chicken at that index.")
-                EventData.remove(r)
                 return
+            
             if price < 50 or price > 500000:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you cannot set a price lower than **50** eggbux or higher than **250,000** eggbux.")
-                EventData.remove(r)
                 return
+            
             if desc:
                 censor = profanity.contains_profanity(desc)
                 if censor:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, your description contains profanity.")
-                    EventData.remove(r)
+
                     return
                 if len(desc) > 25:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, your description cannot be longer than **25** characters.")
-                    EventData.remove(r)
+
                     return
                 else:
                     description = desc
             else:
                 description = "No description provided."
+            
             if len(total_user_offers) >= 8:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can only have a maximum of 8 active offers.")
-                EventData.remove(r)
                 return
+            
             selected_chicken = farm_data['chickens'][index]
-            if selected_chicken['rarity'] == "DEAD":
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you cannot sell a dead chicken.")
-                EventData.remove(r)
+
+            if is_non_market_place_chicken(selected_chicken):
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you cannot register this chicken to the player market.")
                 return
-            if selected_chicken['rarity'] == "ETHEREAL":
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you cannot sell an ethereal chicken.")
-                EventData.remove(r)
+
+            
+            if await verify_events(ctx, ctx.author):
                 return
+            
+            r = EventData(ctx.author)
             confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to register your **{get_rarity_emoji(selected_chicken['rarity'])}{selected_chicken['rarity']} {selected_chicken['name']}** to the player market for **{price}** eggbux?")
+            
             if confirmation:
-                Market.create(ctx.author.id, selected_chicken, price, description, ctx.author.id)
+                await Market.create(ctx.author.id, selected_chicken, price, description, ctx.author.id)
                 await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have successfully registered your chicken to the player market. If no one buys it, it automatically gets back to your farm after **{OFFER_EXPIRE_TIME}** hours.")
                 farm_data['chickens'].pop(index)
                 await Farm.update(ctx.author.id, chickens=farm_data['chickens'])
