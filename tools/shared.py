@@ -1,34 +1,29 @@
 """
 This module contains shared functions that are used across multiple modules.
 """
-
-
 from datetime import datetime
 from dotenv import load_dotenv
 from tools.cache import cache_initiator
 from typing import Union
 from discord.ext.commands import Context
+from discord import Interaction
 from discord.utils import format_dt
-from copy import copy
+from copy import deepcopy
 import os
 import discord
-import concurrent.futures
 import threading
 import asyncio
 import logging
 
 logger = logging.getLogger('botcore')
-num_cores = os.cpu_count()
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_cores // 2) # half of CPU cores
-global_lock = threading.Lock()
 cooldown_tracker = {}
 
-async def send_bot_embed(ctx: Context, ephemeral=False, **kwargs) -> discord.Message:
+async def send_bot_embed(ctx: Context | Interaction , ephemeral=False, **kwargs) -> discord.Message:
     """
     Bot embed for modularization. Use this method whenever another command needs to send an embed.
 
     Args:
-        ctx (Context): The context of the command.
+        ctx (Context | Interaction): The context of the command.
         ephemeral (bool): Whether the message should be ephemeral or not. 
         (This is only used for interactions, will raise an error if used for non-interactions)
         **kwargs: The keyword arguments for the embed.
@@ -36,9 +31,9 @@ async def send_bot_embed(ctx: Context, ephemeral=False, **kwargs) -> discord.Mes
     Returns:
         discord.Message
     """
-        
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
-    if isinstance(ctx, discord.Interaction):
+
+    if isinstance(ctx, Interaction):
         if not ctx.response.is_done():
             message = await ctx.response.send_message(embed=embed, ephemeral=ephemeral)
         else:
@@ -105,12 +100,12 @@ async def get_user_title(user_data: dict) -> str:
                 return "Unemployed"
             return userRoles[user_data["roles"][-1]]
 
-async def confirmation_embed(ctx, user: discord.Member, description: str) -> bool:
+async def confirmation_embed(ctx: Context | Interaction , user: discord.Member, description: str) -> bool:
      """
     Confirmation embed for modularization. Use this method whenever another command needs confirmation from the user.
 
     Args:
-        ctx (Context): The context of the command.
+        ctx (Context | Interaction): The context of the command.
         user (discord.Member): The user to confirm.
         description (str): The description of the embed.
 
@@ -119,6 +114,7 @@ async def confirmation_embed(ctx, user: discord.Member, description: str) -> boo
      """
      embed = await make_embed_object(title=f":warning: {user.display_name}, you need to confirm this first:", description=description)
      embed.set_footer(text="React with ✅ to confirm or ❌ to cancel.")
+
      if isinstance(ctx, discord.Interaction):
         if not ctx.response.is_done():
             await ctx.response.send_message(embed=embed)
@@ -127,6 +123,7 @@ async def confirmation_embed(ctx, user: discord.Member, description: str) -> boo
             msg = await ctx.followup.send(embed=embed)   
      else:
         msg = await ctx.send(embed=embed)
+
      await msg.add_reaction("✅")
      await msg.add_reaction("❌")
      client = ctx.client if isinstance(ctx, discord.Interaction) else ctx.bot
@@ -195,7 +192,7 @@ async def user_cache_retriever_copy(user_id: int) -> Union[dict, None]:
     cache = await user_cache_retriever(user_id)
 
     if cache:
-        return copy(cache)
+        return deepcopy(cache)
     
     return None
 
@@ -225,7 +222,6 @@ async def guild_cache_retriever(guild_id: int) -> dict:
         await cache_initiator.put_guild(guild_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id)
         return await cache_initiator.get(guild_id)
     return guild_cache
-
 
 def retrieve_threads() -> int:
     """
