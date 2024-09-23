@@ -264,8 +264,7 @@ class CornCommands(commands.Cog):
         farm_data = ctx.data["farm_data"]
         total_chickens = len(farm_data['chickens'])
         chickens_fed = 0
-
-        logger.info(f"{ctx.author.display_name} is feeding all the chickens.")
+        
         if farm_data['corn'] == 0:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have any corn.")
             return
