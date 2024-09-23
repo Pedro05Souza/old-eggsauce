@@ -5,7 +5,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import logging
 
 logger = logging.getLogger('botcore')
-
 uri = "mongodb://db:27017/"
 
 def connect(uri):
@@ -21,7 +20,6 @@ def connect(uri):
     try:
         client = AsyncIOMotorClient(uri)
         logger.info("Connected to the database.")
-        logger.info(client)
         return client
     except Exception as e:
         logger.error(f"Could not connect to the database: {e}")
