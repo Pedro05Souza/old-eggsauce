@@ -5,6 +5,9 @@ from tools.cache import cache_initiator
 from tools.listeners import listener_manager
 from tools.shared import cooldown_tracker
 from cogs.pointscommands.interactive import steal_status
+import logging
+
+logger = logging.getLogger('botcore')
 
 
 class Tasks(commands.Cog):
@@ -16,8 +19,14 @@ class Tasks(commands.Cog):
         self.cooldown_clear_task.start()
         self.steal_status_task.start()
 
+    def cog_unload(self):
+        self.cache_clear_task.cancel()
+        self.listener_clear_task.cancel()
+        self.cooldown_clear_task.cancel()
+        self.steal_status_task.cancel()
+
     @before_loop_decorator
-    @tasks.loop(hours=1)
+    @tasks.loop(hours=2)
     async def cache_clear_task(self) -> None:
         """
         Periodically clears the cache.
@@ -28,7 +37,7 @@ class Tasks(commands.Cog):
         await cache_initiator.clear_cache_periodically()
 
     @before_loop_decorator
-    @tasks.loop(hours=2)
+    @tasks.loop(hours=4)
     async def listener_clear_task(self) -> None:
         """
         Periodically clears the listeners.
@@ -39,7 +48,7 @@ class Tasks(commands.Cog):
         await listener_manager.clear_listeners()
 
     @before_loop_decorator
-    @tasks.loop(hours=2)
+    @tasks.loop(hours=4)
     async def cooldown_clear_task(self) -> None:
         """
         Periodically clears the cooldown tracker for the users.
@@ -48,6 +57,7 @@ class Tasks(commands.Cog):
             None
         """
         cooldown_tracker.clear()
+        logger.info("Cleared the cooldown tracker.")
 
     @before_loop_decorator
     @tasks.loop(hours=4)
@@ -59,12 +69,7 @@ class Tasks(commands.Cog):
             None
         """
         steal_status.clear()
+        logger.info("Cleared the steal status.")
 
 async def setup(bot):
     await bot.add_cog(Tasks(bot))
-
-    
-
-    
-
-    
