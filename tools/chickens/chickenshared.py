@@ -1,3 +1,6 @@
+"""
+This module provides essential functions and utilities that support the core operations of the chicken management system.
+"""
 from random import randint, uniform, choice
 from time import time
 from db.bankdb import Bank

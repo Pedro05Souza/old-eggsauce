@@ -1,5 +1,5 @@
 """
-This module contains the view commands for the chicken system.
+This module contains commands that are used to display information about the chickens in the game.
 """
 from discord.ext import commands
 from db.farmdb import Farm

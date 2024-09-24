@@ -1,5 +1,5 @@
 """
-This module contains the class BotConfig which is responsible for creating, updating, deleting, and reading server configurations from the database.
+This module contains the database functions for the bot config collection.
 """
 from db.dbsetup import mongo_client
 from tools.cache import cache_initiator

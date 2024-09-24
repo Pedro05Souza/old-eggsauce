@@ -1,3 +1,8 @@
+"""
+This module contains the decorators used in the bot. The  pricing decorator is the core of the bot's economy system.
+The listener_checks decorator is used to check if the listener can happen given guild active modules.
+The before_loop_decorator is used to decorate the before_loop function in the task.
+"""
 from typing import Any, Callable
 from discord.ext import commands
 from discord.ext.commands import Context

@@ -1,7 +1,6 @@
 """
 This module contains functions that are used in the decorator predicates of the points commands.
 """
-
 from typing import Optional
 from db.userdb import User
 from db.bankdb import Bank

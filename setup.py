@@ -1,4 +1,6 @@
-
+"""
+This moodule handles the setup of the bot and the loading of the cogs.
+"""
 from discord.ext import commands
 from dotenv import load_dotenv
 from pathlib import Path
@@ -6,8 +8,8 @@ from cogs.botmanager import BotManager
 import logging
 import os
 import discord
+
 logger = logging.getLogger('botcore')
-load_dotenv()   
 
 async def get_prefix_for_guild(bot, message) -> str:
     """
@@ -61,6 +63,7 @@ def load_bot_token() -> str:
     Returns:
         str
     """
+    load_dotenv()   
     token = os.getenv("DISCORD_TOKEN")
     if token is None:
         raise ValueError("Token not found.")

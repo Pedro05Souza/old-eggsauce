@@ -1,6 +1,5 @@
 """
-This file contains all the base commands in the bot.
-This cog is shared between all configurable bot modules.
+This module contains all the base commands in the bot, it is shared between all the bot's configurable modules.
 """
 from discord.ext import commands
 from db.marketdb import Market

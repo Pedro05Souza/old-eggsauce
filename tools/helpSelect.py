@@ -1,3 +1,6 @@
+"""
+This module contains the class ShowPointsModules which is a discord.ui.View class that is used to create a select menu for the user to select which points module they want to enable or disable.
+"""
 from discord.ui import View, Select
 from discord import Interaction, SelectOption
 from tools.shared import make_embed_object, send_bot_embed

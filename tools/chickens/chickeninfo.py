@@ -1,6 +1,21 @@
-from enum import Enum
+"""
+This module represents the information of the chickens in the game. It contains the following informations:
 
-# Chicken information module
+- rollRates: The rates of each rarity to be rolled in the game.
+- defineRarityEmojis: The emojis that represent each rarity.
+- ChickenRarity: The enum that represents the multiplier of the chicken based on the rarity.
+- ChickenMultiplier: The enum that represents the egg value for the chicken based on the rarity.
+- ChickenFood: The enum that represents the food cost for the chicken based on the rarity.
+- rarities_weight: The weight of each rarity.
+- upkeep_weight: The weight of each upkeep.
+- score_determiner: The score of each rarity. (This is used for matchmaking)
+- farm_size_weights: The weight of each farm size. (This is used for matchmaking)
+- chicken_ranking: The ranking of each chicken. (This is used for matchmaking)
+- non_trandable_chickens: The chickens that are not tradable.
+- non_evolveable_chickens: The chickens that are not evolveable.
+- non_marketplace_chickens: The chickens that are not in the marketplace.
+"""
+from enum import Enum
 
 rollRates = {
         "COMMON": 5000,
@@ -58,9 +73,6 @@ chicken_rarities = {
 }
 
 class ChickenRarity(Enum):
-    """
-    Retrieves the multipleir for the chicken price based on the rarity.
-    """
     DEAD = 0
     COMMON = 1
     UNCOMMON = 2

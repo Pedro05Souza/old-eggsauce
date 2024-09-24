@@ -1,3 +1,7 @@
+"""
+This module contains the tasks that are run periodically by the bot.
+Clears the cache, listeners, cooldown tracker and steal status dictionary.
+"""
 from discord.ext import commands
 from tools.decorators import before_loop_decorator
 from discord.ext import tasks

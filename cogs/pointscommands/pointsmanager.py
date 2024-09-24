@@ -1,3 +1,6 @@
+"""
+This module contains the PointsManager class which is responsible for managing and giving points to the users in the bot.
+"""
 from discord.ext import commands
 from tools.shared import user_cache_retriever
 from db.userdb import User

@@ -1,3 +1,6 @@
+"""
+This module contains a pagination view for discord.py.
+"""
 import discord
 
 class PaginationView(discord.ui.View):

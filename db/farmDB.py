@@ -1,3 +1,7 @@
+"""
+This module contains the database functions for the farm collection.
+"""
+
 from db.dbsetup import mongo_client
 from time import time
 from tools.cache import cache_initiator

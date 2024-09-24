@@ -1,5 +1,5 @@
 """
-This module contains the core commands and processes for the chicken system in order for it to work properly.
+This module contains the core commands for the chicken system.
 """
 from random import uniform
 from time import time

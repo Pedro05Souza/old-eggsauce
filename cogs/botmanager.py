@@ -1,3 +1,6 @@
+"""
+A cog that contains commands for managing the bot. Sets up logging for the bot.
+"""
 from discord.ext import commands
 from discord.ext.commands import Context
 from db.botconfigdb import BotConfig
@@ -7,7 +10,6 @@ from tools.helpSelect import ShowPointsModules
 import discord
 import logging
 from colorlog import ColoredFormatter
-
 
 class BotManager(commands.Cog):
 

@@ -1,3 +1,8 @@
+"""
+This module contains a handler that stops any player in participating in an event if they are already in one.
+Also, it contains a handler that limits the amount of rolls a player can do in a certain time frame.
+"""
+
 import logging
 import discord
 logger = logging.getLogger('botcore')

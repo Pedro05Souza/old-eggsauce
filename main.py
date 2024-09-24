@@ -1,3 +1,6 @@
+"""
+Main file to run the bot.
+"""
 from setup import *
 import logging
 import discord

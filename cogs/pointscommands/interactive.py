@@ -1,5 +1,5 @@
 """
-This file contains the interactive commands of the bot.
+This module contains interactive commands that can be used in the bot.
 """
 from discord.ext import commands
 from tools.decorators import pricing

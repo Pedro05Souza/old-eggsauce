@@ -1,5 +1,5 @@
 """
-This file contains the corn commands for the chicken food farm.
+This module contains the corn commands for the chicken system. This is the core of the corn farming system.
 """
 from discord.ext import commands
 from db.farmdb import Farm

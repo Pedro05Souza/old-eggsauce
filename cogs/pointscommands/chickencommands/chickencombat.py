@@ -1,7 +1,6 @@
 """
-This file contains the chicken combat system for the bot.
+This module contains the functions responsible for the chicken combat system.
 """
-
 from discord.ext import commands
 from dataclasses import dataclass
 from tools.decorators import pricing

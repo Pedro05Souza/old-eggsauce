@@ -1,7 +1,6 @@
 """
-This module contains the core of the bot, performing essential functions.
+This module contains core functionalities of the bot.
 """
-
 from discord.ext import commands
 from tools.shared import *
 from db.botconfigdb import BotConfig
