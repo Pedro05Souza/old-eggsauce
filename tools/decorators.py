@@ -67,7 +67,7 @@ def listener_checks() -> bool:
         return wrapper
     return checks
 
-def before_loop_decorator(task_func):
+def before_loop_decorator(task_func) -> Callable[..., Any]:
     """
     Decorator for the before_loop function in the task.
 
