@@ -406,15 +406,18 @@ async def devolve_chicken(chicken: dict) -> None:
         """
         devolveChance = randint(1, 10)
         cr = chicken['rarity']
-        if cr in ChickenRarity.__members__ and cr != 'COMMON':
-            if devolveChance == 1 and chicken['happiness'] <= 0:
-                rarity_list = list(ChickenRarity)
-                index = rarity_list.index(ChickenRarity[cr])
-                devolded_rarity = rarity_list[index - 1].name
-                chicken['happiness'] = 100
-                chicken['rarity'] = devolded_rarity
-                chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
-                return
+
+        if await is_non_devolvable_chicken(cr):
+            return
+
+        if devolveChance == 1 and chicken['happiness'] <= 0:
+            rarity_list = list(ChickenRarity)
+            index = rarity_list.index(ChickenRarity[cr])
+            devolded_rarity = rarity_list[index - 1].name
+            chicken['happiness'] = 100
+            chicken['rarity'] = devolded_rarity
+            chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
+            return
         elif cr == 'COMMON' and chicken['happiness'] <= 0 and devolveChance == 1:
             chicken['rarity'] = 'DEAD'
             chicken['happiness'] = 0
@@ -768,4 +771,16 @@ async def get_non_market_place_chickens() -> set:
         set
     """
     return non_marketplace_chickens
+
+async def is_non_devolvable_chicken(chicken_rarity: str) -> bool:
+    """
+    Checks if the chicken can be devolved.
+
+    Args:
+        chicken_rarity (str): The chicken rarity to check.
+
+    Returns:
+        bool
+    """
+    return chicken_rarity in non_devolvable_chickens
      

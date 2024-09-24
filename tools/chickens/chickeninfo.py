@@ -224,3 +224,9 @@ non_marketplace_chickens = {
     "ETHEREAL",
     "DEAD",
 }
+
+non_devolvable_chickens = {
+    "ETHEREAL",
+    "DEAD",
+    "BETA"
+}
