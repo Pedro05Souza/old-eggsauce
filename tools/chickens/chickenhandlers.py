@@ -2,12 +2,15 @@
 This module contains a handler that stops any player in participating in an event if they are already in one.
 Also, it contains a handler that limits the amount of rolls a player can do in a certain time frame.
 """
-
+from contextlib import asynccontextmanager
+from discord.ext.commands import Context
+from tools.chickens.shared_state import get_shared_event
+from tools.shared import send_bot_embed
 import logging
+import asyncio
 import discord
 logger = logging.getLogger('botcore')
-
-# Shared event classes for the chicken commands        
+    
 class RollLimit:
     obj_list = {}
 
@@ -99,43 +102,86 @@ class RollLimit:
         cls.obj_list.clear()
 
 class EventData():
-    current_users_in_event = {}
-
-    def __init__(self, user: discord.Member):
-        self.user = user
-        EventData.current_users_in_event[user.id] = self
+    event_users = {}
 
     @staticmethod
-    def check_user_in_event(user_id: int) -> bool:
+    async def check_user_in_event(author_id: int, optional_user: int = None) -> bool:
         """
         Check if a user is in an active event.
 
         Args:
             user_id (int): The id of the user to check.
+            optional_user (int): An optional user to check against.
         
         Returns:
             bool
         """
-        if user_id in EventData.current_users_in_event.keys():
+        if author_id in EventData.event_users or (optional_user and optional_user in EventData.event_users):
             return True
         return False
         
+    @asynccontextmanager
     @staticmethod
-    def remove(obj: object) -> None:
+    async def manage_event_context(author: discord.Member, optional_user: discord.Member = None, awaitable: bool = False):
         """
-        Remove a user from the active event list.
+        Context manager for handling user events.
 
         Args:
-            obj (object): The object to remove.
+            ctx (Context): The context of the command.
+            author (discord.Member): The author of the command.
+            optional_user (discord.Member): An optional user to check against.
+            awaitable (bool): flag to determine if the event is awaitable. (If the context manager should wait for the event to finish.)
 
         Returns:
             None
         """
         try:
-            del EventData.current_users_in_event[obj.user.id]
-        except ValueError:
-            logger.warning("Error removing object from list. Probably already removed.")
-        except KeyError:
-            logger.warning("Error removing object from list. Probably already removed.")
-        except Exception as e:
-            logger.error("Error removing object from list.", e)
+            EventData.event_users[author.id] = author
+
+            if optional_user:
+                EventData.event_users[optional_user.id] = optional_user 
+
+            yield
+
+            if awaitable:
+                await EventData.awaitable_handler(author, optional_user)
+        finally:
+            EventData.event_users.pop(author.id)
+            if optional_user:
+                EventData.event_users.pop(optional_user.id)
+
+    @staticmethod
+    async def awaitable_handler(author: discord.Member, optional_user: discord.Member = None):
+        """
+        Handles awaitable events.
+
+        Args:
+            ctx (Context): The context of the command.
+            author (discord.Member): The author of the command.
+            optional_user (discord.Member): An optional user to check against.
+
+        Returns:
+            None
+        """
+        event_author = await get_shared_event(author.id)
+        event_user = await get_shared_event(optional_user.id) if optional_user else None
+
+        try:
+            await asyncio.wait_for(event_author.wait(), timeout=120)
+            if optional_user:
+                await asyncio.wait_for(event_user.wait(), timeout=120)
+        except asyncio.TimeoutError:
+            return
+        
+    @staticmethod
+    async def is_yieldable(ctx: Context, author: discord.Member, optional_user: discord.Member = None) -> bool:
+        """
+        Check if the context manager is yieldable given the current context.
+
+        Returns:
+            bool
+        """
+        if await EventData.check_user_in_event(author.id, optional_user):
+            await send_bot_embed(ctx, description=":no_entry_sign: You are already in an event. Please wait for it to finish.")
+            return False
+        return True
