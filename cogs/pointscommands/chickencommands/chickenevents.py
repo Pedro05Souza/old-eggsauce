@@ -42,10 +42,14 @@ class ChickenEvents(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You don't have any chickens.")
             return
         
-        message = await get_usr_farm(ctx, ctx.author, ctx.data)      
+        if not await EventData.is_yieldable(ctx, ctx.author):
+            return
+        
+        message = await get_usr_farm(ctx, ctx.author, ctx.data)
+              
         async with EventData.manage_event_context(ctx.author, awaitable=True):
             view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author, action="D")
-            await ctx.send(embed=message,view=view)
+            await ctx.send(embed=message, view=view)
 
     @commands.hybrid_command(name="tradechicken", aliases=["tc", "trade"], usage="tradeChicken <user>", description="Trade a chicken(s) with another user.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
@@ -127,9 +131,9 @@ class ChickenEvents(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade an ethereal chicken.")
                 await on_awaitable(ctx.author.id, user.id)
                 return
-            
-            view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="author")
-            view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="user", instance_bot = self.bot)
+            shared_trade_dict = {}
+            view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="author", shared_trade_dict=shared_trade_dict)
+            view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="user", instance_bot=self.bot, shared_trade_dict=shared_trade_dict)
             await ctx.send(embed=authorEmbed, view=view_author)
             await ctx.send(embed=userEmbed, view=view_user)
 
