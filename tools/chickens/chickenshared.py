@@ -7,11 +7,11 @@ from db.bankdb import Bank
 from db.farmdb import Farm
 from db.userdb import User
 from db.marketdb import Market
-from tools.chickens.chickenhandlers import EventData
 from tools.chickens.chickeninfo import *
 from tools.shared import send_bot_embed, make_embed_object, format_number
 from tools.listeners import on_user_transaction
 from tools.settings import *
+from uuid import uuid4
 from tools.tips import tips
 from typing import Union
 from random import randint
@@ -226,6 +226,7 @@ async def create_chicken(rarity: str, author: str) -> Union[dict, None]:
                     "name": "Chicken",
                     "eggs_generated": 0,
                     "upkeep_multiplier": 0,
+                    "chicken_id": await generate_chicken_id()
                     }
         
         if author == "bot":
@@ -240,6 +241,15 @@ async def create_chicken(rarity: str, author: str) -> Union[dict, None]:
 
         return chicken
     return None
+
+async def generate_chicken_id() -> int:
+    """
+    Generates a chicken id.
+
+    Returns:
+        int
+    """
+    return str(uuid4())
 
 async def define_chicken_overrall_score(chickens: list) -> int:
         """
@@ -420,6 +430,7 @@ async def update_player_corn(user: discord.Member, data: dict) -> int:
     """
     if not data:
         return 0
+    
     farm_data = data
     last_drop_time = time() - farm_data['last_corn_drop']
     hours_passed_since_last_drop = min(last_drop_time // FARM_DROP, 24)
@@ -765,5 +776,4 @@ async def is_non_devolvable_chicken(chicken_rarity: str) -> bool:
     Returns:
         bool
     """
-    return chicken_rarity in non_devolvable_chickens
-     
+    return chicken_rarity in non_devolvable_chickens     
