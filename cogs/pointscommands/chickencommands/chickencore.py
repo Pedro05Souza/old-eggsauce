@@ -37,7 +37,7 @@ class ChickenCore(commands.Cog):
         if farm_data:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} You already have a farm.")
         else:
-            Farm.create(ctx.author.id, ctx)
+            await Farm.create(ctx.author.id, ctx)
             await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name} You have created a farm.")
 
     @commands.hybrid_command(name="farm", aliases=["f"], usage="farm OPTIONAL [user]", description="Check the chickens in the farm.")
