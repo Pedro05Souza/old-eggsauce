@@ -6,7 +6,7 @@ from tools.chickens.selection.deleteselection import ChickenDeleteMenu
 from tools.chickens.selection.redeemselection import RedeemPlayerMenu
 from tools.chickens.selection.tradeselection import ChickenAuthorTradeMenu, ChickenUserTradeMenu
 from tools.chickens.selection.playermarketselection import PlayerMarketMenu
-from tools.listeners import on_user_transaction
+from tools.listeners import on_user_transaction, on_awaitable
 from typing import Union
 from discord import SelectOption, ui
 from db.farmdb import Farm
@@ -23,12 +23,12 @@ class ChickenSelectView(ui.View):
             message: discord.Embed, 
             farm_data: dict = None, 
             role: str = None,
-            trade_data: EventData = None,
             instance_bot: discord.Client = None,
             *args, 
             **kwargs
         ):
-        menu, timeout = self.action_handler(chickens, author, action, message, farm_data, role, trade_data, instance_bot)
+        self.author = author
+        menu, timeout = self.action_handler(chickens, author, action, message, farm_data, role, instance_bot)
         super().__init__(*args, **kwargs, timeout=timeout)
         self.add_item(menu)
 
@@ -40,7 +40,6 @@ class ChickenSelectView(ui.View):
             message: discord.Embed, 
             farm_data: dict, 
             role: str = None, 
-            trade_data: EventData = None, 
             instance_bot: discord.Client = None
             ) -> ui.View:
         """
@@ -66,21 +65,22 @@ class ChickenSelectView(ui.View):
 
         elif action == "D":
             timeout = 30
-            s = EventData(author)
-            menu = ChickenDeleteMenu(chickens, author, message, s)
+            menu = ChickenDeleteMenu(chickens, author, message)
 
         elif action == "T":
+            shared_trade_dict = {}
+
             if role == "author":
                 author = author[0]
                 chickens = chickens[0]
                 authorMessage = message[0]
-                menu = ChickenAuthorTradeMenu(chickens, author, authorMessage, trade_data)
+                menu = ChickenAuthorTradeMenu(chickens, author, authorMessage, shared_trade_dict)
 
             else:
                 user = author[1]
                 userMessage = message[1]
                 chickens = chickens[1]
-                menu = ChickenUserTradeMenu(chickens, user, userMessage, trade_data, author[0], instance_bot)
+                menu = ChickenUserTradeMenu(chickens, user, userMessage, author[0], instance_bot, shared_trade_dict)
 
         elif action == "PM":
             timeout = 120
@@ -99,12 +99,13 @@ class ChickenSelectView(ui.View):
         Returns:
             None
         """
-        if self.children[0].__class__.__name__ == "ChickenDeleteMenu":
-            if hasattr(self.children[0], "delete_object"):
-                EventData.remove(self.children[0].delete_object)
-        if self.children[0].__class__.__name__ == "ChickenUserTradeMenu":
-            EventData.remove(self.children[0].td)
-        return
+        if type(self.author) == list:
+            author = self.author[0]
+            user = self.author[1]
+            await on_awaitable(author, user)
+        else:
+            author = self.author
+            await on_awaitable(author)
 
 class ChickenMarketMenu(ui.Select):
     

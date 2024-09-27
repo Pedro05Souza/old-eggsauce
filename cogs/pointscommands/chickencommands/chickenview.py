@@ -362,7 +362,7 @@ class ChickenView(commands.Cog):
             await get_user_bench(ctx, farm_data, user)
         else:
             await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have a farm.")
-    
+
     @commands.hybrid_command(name="addbench", aliases=["ab"], usage="addbench <index>", description="Add a chicken from the farm to the bench.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
@@ -389,16 +389,15 @@ class ChickenView(commands.Cog):
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the bench is full.")
             return
         
-        if await verify_events(ctx, ctx.author):
+        if not await EventData.is_yieldable(ctx, ctx.author):
             return
         
-        e = EventData(ctx.author)
-        farm_data['bench'].append(farm_data['chickens'][index])
-        farm_data['chickens'].pop(index)
-        EventData.remove(e)
-        await Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
-        await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, **{get_rarity_emoji(farm_data['bench'][-1]['rarity'])}{farm_data['bench'][-1]['rarity']} {farm_data['bench'][-1]['name']}** has been added to the bench.")
-    
+        async with EventData.manage_event_context(ctx.author):
+            farm_data['bench'].append(farm_data['chickens'][index])
+            farm_data['chickens'].pop(index)
+            await Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, **{get_rarity_emoji(farm_data['bench'][-1]['rarity'])}{farm_data['bench'][-1]['rarity']} {farm_data['bench'][-1]['name']}** has been added to the bench.")
+ 
     @commands.hybrid_command(name="removebench", aliases=["rb"], usage="removebench <index>", description="Remove a chicken from the bench to the farm.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
@@ -424,16 +423,15 @@ class ChickenView(commands.Cog):
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum chicken limit.")
             return
         
-        if await verify_events(ctx, ctx.author):
+        if not await EventData.is_yieldable(ctx, ctx.author):
             return
         
-        e = EventData(ctx.author)
-        farm_data['chickens'].append(farm_data['bench'][index])
-        farm_data['bench'].pop(index)
-        await Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
-        await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the **{get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']}** has been removed from the bench.")
-        EventData.remove(e)
-    
+        async with EventData.manage_event_context(ctx.author):
+            farm_data['chickens'].append(farm_data['bench'][index])
+            farm_data['bench'].pop(index)
+            await Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the **{get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']}** has been removed from the bench.")
+            
     @commands.hybrid_command(name="switchbench", aliases=["sb"], usage="switchb <index_farm> <index_bench>", description="Switch a chicken from the farm to the bench.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
@@ -458,15 +456,10 @@ class ChickenView(commands.Cog):
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             return
         
-        if await verify_events(ctx, ctx.author):
-            return
-        
-        e = EventData(ctx.author)
-        farm_data['chickens'][index_farm], farm_data['bench'][index_bench_int] = farm_data['bench'][index_bench_int], farm_data['chickens'][index_farm]
-        await Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
-        await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
-
-        EventData.remove(e)
+        async with EventData.manage_event_context(ctx.author):
+            farm_data['chickens'][index_farm], farm_data['bench'][index_bench_int] = farm_data['bench'][index_bench_int], farm_data['chickens'][index_farm]
+            await Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
 
     @commands.hybrid_command(name="redeemables", aliases=["redeem"], usage="reedemables", description="Check the reedemable items.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)

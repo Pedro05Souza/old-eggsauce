@@ -37,6 +37,7 @@ class PlayerMarketMenu(ui.Select):
         """
         if interaction.user.id != self.author.id:
             return await send_bot_embed(interaction, description=":no_entry_sign: You can't buy chickens for another user.", ephemeral=True)
+        
         index = self.values[0]
         offer = self.offers[int(index)]
         author_data = await User.read(self.author.id)
@@ -44,6 +45,7 @@ class PlayerMarketMenu(ui.Select):
 
         if not farm_data:
             return await send_bot_embed(interaction, description=":no_entry_sign: You do not have a farm.", ephemeral=True)
+        
         if offer['price'] > author_data['points']:
             return await send_bot_embed(interaction, description=":no_entry_sign: You don't have enough eggbux to buy this chicken.", ephemeral=True)
         
