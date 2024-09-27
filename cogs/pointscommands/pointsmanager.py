@@ -79,7 +79,6 @@ class PointsManager(commands.Cog):
         Returns:
             int
         """
-
         if user.id not in self.join_time and user.voice:
             self.join_time[user.id] = self.init_time
 

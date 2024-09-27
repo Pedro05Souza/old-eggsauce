@@ -47,7 +47,6 @@ def pricing(cache_copy: bool = False) -> Callable[[Callable [..., Any]], Callabl
     
     return commands.check(predicate)
 
-
 def listener_checks() -> bool:
     """
     Checks if the listener can happen given guild active modules.

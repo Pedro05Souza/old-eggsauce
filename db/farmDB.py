@@ -280,5 +280,3 @@ class Farm:
         except Exception as e:
             logger.error("Error encountered while trying to update farm's last drop.", e)
             return None
-        
-    
