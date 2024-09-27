@@ -81,4 +81,3 @@ def before_loop_decorator(task_func) -> Callable[..., Any]:
         await self.bot.wait_until_ready()
     task_func.before_loop = before_loop
     return task_func
-    
