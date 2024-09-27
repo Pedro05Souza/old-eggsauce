@@ -178,23 +178,6 @@ async def get_max_bench_limit() -> int:
     """
     return MAX_BENCH
         
-async def verify_events(ctx: Context, user: discord.Member):
-        """Verify if the user is in an event. This method should be called whenever a user is performing critical actions
-        that could duplicate the chicken data.
-        Example: Selling a chicken and starting a trade with another user, if you trade before selling the chicken, the chicken duplicates.
-
-        Args:
-            ctx (Context): The context of the command.
-            user (discord.Member): The user to verify the event for.
-
-        Returns:
-            bool
-        """
-        if EventData.check_user_in_event(user.id):
-            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} is already in an event.")
-            return True
-        return False
-      
 async def get_user_bench(ctx: Context, farm_data: dict, user: discord.Member) -> discord.Embed:
     """
     Display the user's bench.

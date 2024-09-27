@@ -5,7 +5,7 @@ from discord.ext import commands
 from db.farmdb import Farm
 from db.marketdb import Market
 from tools.shared import send_bot_embed, make_embed_object
-from tools.chickens.chickenshared import get_rarity_emoji, verify_events, is_non_market_place_chicken
+from tools.chickens.chickenshared import get_rarity_emoji, is_non_market_place_chicken
 from tools.shared import send_bot_embed
 from tools.settings import REGULAR_COOLDOWN, OFFER_EXPIRE_TIME
 from tools.decorators import pricing
@@ -80,23 +80,20 @@ class PlayerMarket(commands.Cog):
             if is_non_market_place_chicken(selected_chicken):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you cannot register this chicken to the player market.")
                 return
-
             
-            if await verify_events(ctx, ctx.author):
-                return
-            
-            r = EventData(ctx.author)
             confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to register your **{get_rarity_emoji(selected_chicken['rarity'])}{selected_chicken['rarity']} {selected_chicken['name']}** to the player market for **{price}** eggbux?")
             
             if confirmation:
-                await Market.create(ctx.author.id, selected_chicken, price, description, ctx.author.id)
-                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have successfully registered your chicken to the player market. If no one buys it, it automatically gets back to your farm after **{OFFER_EXPIRE_TIME}** hours.")
-                farm_data['chickens'].pop(index)
-                await Farm.update(ctx.author.id, chickens=farm_data['chickens'])
-                EventData.remove(r)
+                if not await EventData.is_yieldable(ctx, ctx.author):
+                    return
+                
+                async with EventData(ctx, ctx.author):
+                    await Market.create(ctx.author.id, selected_chicken, price, description, ctx.author.id)
+                    await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have successfully registered your chicken to the player market. If no one buys it, it automatically gets back to your farm after **{OFFER_EXPIRE_TIME}** hours.")
+                    farm_data['chickens'].pop(index)
+                    await Farm.update(ctx.author.id, chickens=farm_data['chickens'])
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the offer registration.")
-                EventData.remove(r)
     
     @commands.hybrid_command(name="viewoffers", aliases=["offers"], description="Shows your current market offers.", usage="viewplrmarket OPTIONAL [user]")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
@@ -171,6 +168,7 @@ class PlayerMarket(commands.Cog):
             if chicken_rarity not in ChickenRarity.__members__:
                 await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: {interaction.user.display_name}, the chicken rarity provided is not valid.")
                 return
+            
         search = await Market.get_chicken_offers(chicken_rarity=chicken_rarity, upkeep_rarity=upkeep_rarity, price=price, author_id=author.id if author else None)
 
         if search:

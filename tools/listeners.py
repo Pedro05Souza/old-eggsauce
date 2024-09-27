@@ -4,6 +4,7 @@ This module contains the event listeners for the bot.
 from typing import Union
 from discord.ext.commands import Context
 from discord.interactions import Interaction
+from tools.chickens.shared_state import get_shared_event
 from tools.shared import format_date
 import random
 import logging
@@ -191,3 +192,20 @@ async def on_user_transaction(ctx: Context | Interaction , quantity: int, flag: 
     if flag not in {0, 1}: 
         raise ValueError("Flag parameter must be 0 or 1")
     await listener_manager.listener_result(on_user_transaction.__name__, ctx, quantity, flag)
+
+async def on_awaitable(author_id: int, user_id: int = None) -> None:
+    """
+    This function is called whenever an awaitable event is executed.
+
+    Args:
+        author_id (int): The id of the author.
+        user_id (int): The id of the user.
+
+    Returns:
+        None
+    """
+    event_author = await get_shared_event(author_id)
+    event_author.set()
+    if user_id:
+        event_user = await get_shared_event(user_id)
+        event_user.set()

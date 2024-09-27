@@ -7,7 +7,7 @@ from tools.decorators import pricing
 from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, user_cache_retriever
 from tools.chickens.combatbot import BotMatchMaking, bot_maker
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickenshared import verify_events, determine_upkeep_rarity_text, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit
+from tools.chickens.chickenshared import determine_upkeep_rarity_text, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit
 from tools.settings import MAX_BENCH, QUEUE_COOLDOWN
 from tools.chickens.chickeninfo import rarities_weight, upkeep_weight, score_determiner, chicken_ranking
 from db.farmdb import Farm
@@ -24,7 +24,6 @@ class UserInQueue():
     member: discord.Member
     chickens: list
     ctx: commands.Context   
-    in_event: EventData
     score: int
     chicken_overrall_score: int = 0
     has_opponent: bool = False
@@ -48,27 +47,22 @@ class ChickenCombat(commands.Cog):
         Returns:
             None
         """
-        farm_data = ctx.data["farm_data"]
+        async with EventData.event_handler(ctx, ctx.author):
+            farm_data = ctx.data["farm_data"]
+            author_chickens = await self.define_eight_chickens_for_match(farm_data['chickens'])
+            user = UserInQueue(ctx.author, author_chickens, ctx, farm_data['mmr'])
 
-        if await verify_events(ctx, ctx.author):
-            return
-        
-        author_chickens = await self.define_eight_chickens_for_match(farm_data['chickens'])
-        e = EventData(ctx.author)
-        user = UserInQueue(ctx.author, author_chickens, ctx, e, farm_data['mmr'])
-
-        if not user.chickens:
-            await send_bot_embed(ctx, description=":no_entry_sign: You need to have chickens to participate in combat.")
-            EventData.remove(user.in_event)
-            return
-        
-        await self.add_user_in_queue(user)
-        user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
-        match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data['mmr'])}**.")
-        match_matching_obj.set_footer(text=tips[randint(0, len(tips) - 1)])
-        author_msg, user_msg = await self.check_if_same_guild(user, user, match_matching_obj)
-        opponent = await self.search(user)
-        await self.combat_handler(user, opponent, user_msg, author_msg, ctx, e)
+            if not user.chickens:
+                await send_bot_embed(ctx, description=":no_entry_sign: You need to have chickens to participate in combat.")
+                return
+            
+            await self.add_user_in_queue(user)
+            user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
+            match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data['mmr'])}**.")
+            match_matching_obj.set_footer(text=tips[randint(0, len(tips) - 1)])
+            author_msg, user_msg = await self.check_if_same_guild(user, user, match_matching_obj)
+            opponent = await self.search(user)
+            await self.combat_handler(user, opponent, user_msg, author_msg, ctx)
 
     async def add_user_in_queue(self, user: UserInQueue):
         """
@@ -103,7 +97,7 @@ class ChickenCombat(commands.Cog):
             if user.score >= score:
                 return score
 
-    async def combat_handler(self, user: UserInQueue, opponent: Union[UserInQueue, str], user_msg: discord.Message, author_msg: discord.Message, ctx: Context, e: EventData) -> None:
+    async def combat_handler(self, user: UserInQueue, opponent: Union[UserInQueue, str], user_msg: discord.Message, author_msg: discord.Message, ctx: Context) -> None:
         """
         Handles the combat between the two users.
 
@@ -143,10 +137,10 @@ class ChickenCombat(commands.Cog):
 
         elif opponent == "opponent":
             return 
+        
         elif opponent == "No opponent found.":
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.member.name}, no opponent has been found. Please try again later.")
             self.user_queue.remove(user)
-            EventData.remove(e)
             self.queue.reset_cooldown(ctx)
             return
             
@@ -336,10 +330,7 @@ class ChickenCombat(commands.Cog):
         """
 
         loser = author if winner == user else user
-        EventData.remove(author.in_event)
 
-        if not await self.check_if_user_is_bot(user):
-            EventData.remove(user.in_event)
         if dead_chickens_author:
             embed_per_round.add_field(name=f"{author.member.name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_author]), inline=False)
 
@@ -683,7 +674,6 @@ class ChickenCombat(commands.Cog):
 
         return mmr_gain
         
-
     async def verify_if_upwards_rank(self, ctx: Context, before_mmr: int, after_mmr: int, 
               winner: Union[UserInQueue, BotMatchMaking], highest_mmr: int) -> None:
         """
@@ -738,10 +728,9 @@ class ChickenCombat(commands.Cog):
         """
         current_rank = await rank_determiner(mmr)
         highest_rank = await rank_determiner(highest_mmr)
-        farm_data = await user_cache_retriever(winner.member.id)
-        farm_data = farm_data["farm_data"]
-        user_data = await user_cache_retriever(winner.member.id)
-        user_data = user_data["user_data"]
+        cache = await user_cache_retriever(winner.member.id)
+        farm_data = cache["farm_data"]
+        user_data = cache["user_data"]
 
         if chicken_ranking[current_rank] > chicken_ranking[highest_rank]:
             chicken_rewarded, points_gained = await self.rewards_per_rank(chicken_ranking[current_rank])
@@ -808,35 +797,31 @@ class ChickenCombat(commands.Cog):
         user_data = await user_cache_retriever(user.id)
         user_data = user_data["farm_data"]
 
-        if await verify_events(ctx, ctx.author) or await verify_events(ctx, user):
-            return
-        
         if user_data:
-            e = EventData(ctx.author)
-            e2 = EventData(user)
             confirmation = await confirmation_embed(ctx, user, f"{user.name}, do you accept the friendly combat request from {ctx.author.name}?")
 
             if confirmation:
-                await self.start_friendly_match(ctx, user, e, e2, farm_data, user_data)
+                
+                if not await EventData.is_yieldable(ctx, ctx.author, user):
+                    return
+                
+                async with EventData.manage_event_context(ctx, ctx.author, user):
+                    await self.start_friendly_match(ctx, user, farm_data, user_data)
             else:
                 await send_bot_embed(ctx, description=":no_entry_sign: The user has not responded or declined the friendly combat request.")
-                EventData.remove(e)
-                EventData.remove(e2)
                 self.friendly_combat.reset_cooldown(ctx)
                 return
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: one of the users does not have a farm.")
             return
         
-    async def start_friendly_match(self, ctx: Context, user: discord.Member, e: EventData, e2: EventData, farm_data: dict, user_data: dict) -> None:
+    async def start_friendly_match(self, ctx: Context, user: discord.Member, farm_data: dict, user_data: dict) -> None:
         """
         Starts the friendly match.
 
         Args:
             ctx: (Context): The context of the command.
             user: (discord.Member): The user to combat with.
-            e: (EventData): The event data for the author.
-            e2: (EventData): The event data for the user.
             farm_data: (dict): The farm data for the author.
             user_data: (dict): The farm data for the user.
 
@@ -847,8 +832,8 @@ class ChickenCombat(commands.Cog):
         temp_farm_data_user = user_data['chickens']
         temp_farm_data_author = await self.define_eight_chickens_for_match(farm_data['chickens'])
         temp_farm_data_user = await self.define_eight_chickens_for_match(user_data['chickens'])
-        author = UserInQueue(ctx.author, temp_farm_data_author, ctx, e, farm_data['mmr'])
-        user = UserInQueue(user, temp_farm_data_user, ctx, e2, user_data['mmr'])
+        author = UserInQueue(ctx.author, temp_farm_data_author, ctx, farm_data['mmr'])
+        user = UserInQueue(user, temp_farm_data_user, ctx, user_data['mmr'])
         author.chicken_overrall_score = await define_chicken_overrall_score(author.chickens)
         user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
         author_msg, user_msg = await self.check_if_same_guild(author, user, await make_embed_object(description=f"🔥 The match will begin soon."))
