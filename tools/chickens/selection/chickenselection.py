@@ -24,11 +24,12 @@ class ChickenSelectView(ui.View):
             farm_data: dict = None, 
             role: str = None,
             instance_bot: discord.Client = None,
+            shared_trade_dict: dict = None,
             *args, 
             **kwargs
         ):
         self.author = author
-        menu, timeout = self.action_handler(chickens, author, action, message, farm_data, role, instance_bot)
+        menu, timeout = self.action_handler(chickens, author, action, message, farm_data, role, instance_bot, shared_trade_dict)
         super().__init__(*args, **kwargs, timeout=timeout)
         self.add_item(menu)
 
@@ -40,7 +41,8 @@ class ChickenSelectView(ui.View):
             message: discord.Embed, 
             farm_data: dict, 
             role: str = None, 
-            instance_bot: discord.Client = None
+            instance_bot: discord.Client = None,
+            shared_trade_dict: dict = None
             ) -> ui.View:
         """
         Handles the action to be taken for the menu.
@@ -68,7 +70,6 @@ class ChickenSelectView(ui.View):
             menu = ChickenDeleteMenu(chickens, author, message)
 
         elif action == "T":
-            shared_trade_dict = {}
 
             if role == "author":
                 author = author[0]
