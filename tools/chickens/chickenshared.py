@@ -17,8 +17,6 @@ from typing import Union
 from random import randint
 from discord.ext.commands import Context
 import discord
-import logging
-logger = logging.getLogger('botcore')
 
 # Shared functions between the chicken commands
             

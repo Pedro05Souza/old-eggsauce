@@ -11,10 +11,9 @@ from tools.chickens.chickenshared import update_user_farm, update_player_corn
 from tools.prices import Prices
 from discord.ext.commands import Context
 from tools.listeners import on_user_transaction
+from tools.logger import logger
 import discord
-import logging
 import time
-logger = logging.getLogger('botcore')
 
 # This class is responsible for handling the prices of the commands.
 

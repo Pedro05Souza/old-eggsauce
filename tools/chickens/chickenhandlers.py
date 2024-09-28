@@ -6,10 +6,9 @@ from contextlib import asynccontextmanager
 from discord.ext.commands import Context
 from tools.chickens.shared_state import get_shared_event
 from tools.shared import send_bot_embed
-import logging
+from tools.logger import logger
 import asyncio
 import discord
-logger = logging.getLogger('botcore')
     
 class RollLimit:
     obj_list = {}

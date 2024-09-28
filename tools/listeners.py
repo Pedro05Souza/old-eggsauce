@@ -7,8 +7,7 @@ from discord.interactions import Interaction
 from tools.chickens.shared_state import get_shared_event
 from tools.shared import format_date
 import random
-import logging
-logger = logging.getLogger('botcore')
+from tools.logger import logger
 
 class ListenerManager():
 
@@ -48,6 +47,7 @@ class ListenerManager():
         user_id = None
         if isinstance(ctx, Interaction):
             user_id = ctx.user.id
+            
         else:
             user_id = ctx.author.id
         self.store_last_listener_per_user.setdefault(user_id, [])

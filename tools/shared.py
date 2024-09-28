@@ -13,9 +13,7 @@ import os
 import discord
 import threading
 import asyncio
-import logging
 
-logger = logging.getLogger('botcore')
 cooldown_tracker = {}
 
 async def send_bot_embed(ctx: Context | Interaction , ephemeral=False, **kwargs) -> discord.Message:

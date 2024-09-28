@@ -1,4 +1,4 @@
-from tools.settings import CORN_PER_PLOT, MAX_PLOT_LIMIT, MAX_BENCH
+from tools.settings import CORN_PER_PLOT, MAX_PLOT_LIMIT, MAX_BENCH, CHICKENS_GENERATED
 
 tips = {
     0: "You earn 1 eggbux every 10 seconds of call time.",
@@ -8,7 +8,7 @@ tips = {
     4: "Type !titles to see the available titles.",
     5: "You can start a farm and buy chickens with eggbux.",
     6: "Type !farm to see your farm.",
-    7: "The market command generates 8 random chickens.",
+    7: f"The market command generates {CHICKENS_GENERATED} random chickens.",
     8: "You gain 10 rolls every 2 hours, you can use them with the !market command.",
     9: "You can trade chickens with other players, using !trade command.",
     10:"You can gift chickens to other players, using !gift command.",

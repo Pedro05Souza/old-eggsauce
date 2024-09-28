@@ -14,9 +14,7 @@ from tools.shared import send_bot_embed, confirmation_embed, user_cache_retrieve
 from tools.settings import REGULAR_COOLDOWN, FARMER_PRICE
 from discord.ext.commands import Context
 import asyncio
-import logging
 import discord
-logger = logging.getLogger('botcore')
 
 class ChickenEvents(commands.Cog):
 

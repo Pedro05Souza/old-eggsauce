@@ -8,9 +8,6 @@ from tools.decorators import listener_checks
 import discord
 import time
 import math
-import logging
-logger = logging.getLogger("botcore")
-
 class PointsManager(commands.Cog):
 
     def __init__(self, bot):

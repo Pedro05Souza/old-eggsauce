@@ -13,10 +13,6 @@ from tools.listeners import on_user_transaction
 from better_profanity import profanity
 from discord.ext.commands import Context
 import discord
-import logging
-
-logger = logging.getLogger("botcore")
-
 class CornCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

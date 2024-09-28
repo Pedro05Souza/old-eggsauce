@@ -8,13 +8,11 @@ from tools.pointscore import refund
 from tools.prices import Prices
 from discord.ext.commands import Context
 import discord.ext.commands.errors
-import logging
+from tools.logger import logger
 import asyncio
 import discord
 import sys
 import os
-logger = logging.getLogger('botcore')
-
 
 class BotCore(commands.Cog):
 

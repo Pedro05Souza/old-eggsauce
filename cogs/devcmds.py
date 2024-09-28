@@ -13,8 +13,6 @@ from tools.cache import cache_initiator
 from discord.ext.commands import Context
 import psutil
 import discord
-import logging
-logger = logging.getLogger('botcore')
 
 class DevCommands(commands.Cog):
 

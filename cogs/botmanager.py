@@ -1,5 +1,5 @@
 """
-A cog that contains commands for managing the bot. Sets up logging for the bot.
+A cog that contains commands for managing the bot.
 """
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -8,40 +8,11 @@ from tools.shared import guild_cache_retriever
 from tools.shared import make_embed_object, send_bot_embed
 from tools.helpSelect import ShowPointsModules
 import discord
-import logging
-from colorlog import ColoredFormatter
 
 class BotManager(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.setup_logging()
-
-    def setup_logging(self) -> logging.Logger:
-        """
-        Setup the logging for the bot.
-
-        Returns:
-            logging.Logger
-        """
-        logger = logging.getLogger('botcore')
-        logger.setLevel(logging.INFO)
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        formatter = ColoredFormatter(
-            "%(log_color)s%(asctime)s - %(levelname)-8s%(reset)s - %(message)s",
-            datefmt=None,
-            reset=True,
-            log_colors={
-                "DEBUG": "cyan",
-                "INFO": "green",
-                "WARNING": "yellow",
-                "ERROR": "red",
-                "CRITICAL": "purple",
-            },
-        )
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
 
     @commands.command("setModule", aliases=["setM"])
     async def set_module(self, ctx: Context) -> None:

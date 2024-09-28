@@ -97,7 +97,7 @@ class ChickenCore(commands.Cog):
         """
         farm_data = ctx.data["farm_data"]
         if farm_data:
-            await self.roll(ctx, 8, 'eggpack')
+            await self.roll(ctx, CHICKENS_GENERATED, 'eggpack')
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have a farm.")
             

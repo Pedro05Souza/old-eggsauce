@@ -9,9 +9,7 @@ from tools.cache import cache_initiator
 from tools.listeners import listener_manager
 from tools.shared import cooldown_tracker
 from cogs.pointscommands.interactive import steal_status
-import logging
-
-logger = logging.getLogger('botcore')
+from tools.logger import logger
 
 
 class Tasks(commands.Cog):

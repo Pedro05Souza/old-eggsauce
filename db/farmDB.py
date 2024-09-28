@@ -1,15 +1,13 @@
 """
 This module contains the database functions for the farm collection.
 """
-
 from db.dbsetup import mongo_client
 from time import time
 from tools.cache import cache_initiator
 from discord.ext.commands import Context
 from typing import Union
-import logging
+from tools.logger import logger
 farm_collection = mongo_client.BotDiscord.farm
-logger = logging.getLogger('botcore')
 
 class Farm:
 
