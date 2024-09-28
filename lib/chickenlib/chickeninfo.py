@@ -17,6 +17,24 @@ This module represents the information of the chickens in the game. It contains 
 """
 from enum import Enum
 
+__all__ = [
+    "rollRates",
+    "defineRarityEmojis",
+    "ChickenRarity",
+    "ChickenMultiplier",
+    "ChickenFood",
+    "rarities_weight",
+    "upkeep_weight",
+    "score_determiner",
+    "farm_size_weights",
+    "chicken_ranking",
+    "non_trandable_chickens",
+    "non_evolveable_chickens",
+    "non_marketplace_chickens",
+    "non_devolvable_chickens",
+    "chicken_rarities"
+]
+
 rollRates = {
         "COMMON": 5000,
         "UNCOMMON": 2500,

@@ -1,5 +1,7 @@
 from resources.settings import CORN_PER_PLOT, MAX_PLOT_LIMIT, MAX_BENCH, CHICKENS_GENERATED
 
+__all__ = ["tips"]
+
 tips = {
     0: "You earn 1 eggbux every 10 seconds of call time.",
     1: "The currency name is eggbux.",

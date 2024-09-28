@@ -2,12 +2,11 @@
 This module contains core functionalities of the bot.
 """
 from discord.ext import commands
-from lib.shared import *
-from db.botconfigdb import BotConfig
-from tools.pointscore import refund
-from resources.prices import Prices
+from lib import *
+from db import BotConfig
+from tools import refund, setup_logging
+from resources import Prices
 from discord.ext.commands import Context
-from tools.logger import setup_logging
 import discord.ext.commands.errors
 import asyncio
 import discord
@@ -16,6 +15,8 @@ import os
 import logging
 
 logger = logging.getLogger('bot_logger')
+
+__all__ = ['BotCore']
 
 class BotCore(commands.Cog):
 

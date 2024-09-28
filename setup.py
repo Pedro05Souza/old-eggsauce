@@ -11,6 +11,14 @@ import logging
 
 logger = logging.getLogger('bot_logger')
 
+__all__ = [
+    "get_prefix_for_guild",
+    "setup_intents",
+    "bot",
+    "load_cogs",
+    "load_bot_token"
+]
+
 async def get_prefix_for_guild(bot, message) -> str:
     """
     Get the prefix for the guild.
@@ -52,6 +60,8 @@ async def load_cogs() -> None:
     """
     cogs_dir = Path('./cogs')
     for filepath in cogs_dir.rglob('*.py'):
+        if filepath.stem == '__init__':
+            continue
         module_path = filepath.relative_to(cogs_dir).with_suffix('').as_posix().replace('/', '.')
         logger.info(f"Loading... {module_path}")
         await bot.load_extension(f'cogs.{module_path}')

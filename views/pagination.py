@@ -3,6 +3,8 @@ This module contains a pagination view for discord.py.
 """
 import discord
 
+__all__ = ['PaginationView']
+
 class PaginationView(discord.ui.View):
 
 

@@ -2,12 +2,13 @@
 This module contains the database functions for the bot config collection.
 """
 from db.dbsetup import mongo_client
-from temp.init import cache_initiator
+from temp import cache_initiator
 from typing import Union
 import logging
 config_collection = mongo_client.BotDiscord.botcfg
 
 logger = logging.getLogger('bot_logger')
+__all__ = ['BotConfig']
 
 class BotConfig:
 

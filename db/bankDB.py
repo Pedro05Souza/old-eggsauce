@@ -2,12 +2,13 @@
 This module contains the database functions for the bank collection.
 """
 from db.dbsetup import mongo_client
-from temp.init import cache_initiator
+from temp import cache_initiator
 from typing import Union
 import logging
 bank_collection = mongo_client.BotDiscord.bank
 
 logger = logging.getLogger('bot_logger')
+__all__ = ['Bank']
 
 class Bank:
 

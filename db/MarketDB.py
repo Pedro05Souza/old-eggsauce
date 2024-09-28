@@ -9,6 +9,7 @@ import logging
 market_collection = mongo_client.BotDiscord.market
 
 logger = logging.getLogger('bot_logger')
+__all__ = ['Market']
 
 class Market:
 

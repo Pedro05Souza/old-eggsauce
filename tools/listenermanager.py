@@ -1,11 +1,13 @@
 from discord.ext.commands import Context
 from discord.interactions import Interaction
 from typing import Union
-from lib.shared import format_date
+from lib import format_date
 import logging
 import random
 
 logger = logging.getLogger('bot_logger')
+
+__all__ = ['ListenerManager', 'listener_manager']
 
 class ListenerManager():
 

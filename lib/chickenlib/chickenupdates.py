@@ -5,15 +5,23 @@ from random import randint
 from time import time
 from typing import Union
 from discord.ext.commands import Context
-from db.farmdb import Farm
-from db.bankdb import Bank
-from db.userdb import User
-from db.marketdb import Market
-from resources.settings import FARM_DROP, MAX_EGG_GENERATED, CORN_PER_PLOT
-from resources.tips import tips
+from db import Farm, Bank, User, Market
+from resources import FARM_DROP, MAX_EGG_GENERATED, CORN_PER_PLOT, OFFER_EXPIRE_TIME, tips
 from tools.listeners import on_user_transaction
-from lib.shared import make_embed_object, format_number
-from lib.chickenshared import *
+from lib.shared import make_embed_object, format_number, send_bot_embed
+from lib.chickenlib import get_chicken_egg_value, farm_maintence_tax, get_max_chicken_limit, get_rarity_emoji, load_farmer_upgrades, determine_upkeep_rarity_text, decrease_chicken_happiness, devolve_chicken, quick_sell_chicken
+import discord
+
+__all__ = [
+    'drop_egg_for_player',
+    'update_user_farm',
+    'update_farmer',
+    'get_usr_farm',
+    'update_player_corn',
+    'calculate_corn',
+    'update_user_points',
+    'give_total_farm_profit',
+]
 
 async def drop_egg_for_player(farm_data: dict, hours_passed: int) -> Union[dict, int]:
         """
@@ -120,10 +128,12 @@ async def update_farmer(user: discord.Member, data: dict) -> None:
         for _ in range(int(hours_passed_since_feed)):
             total_upkeep = await feed_eggs_auto(farm_data, bank_amount)
             bank_amount -= total_upkeep
+            
             if total_upkeep == 0:
                 break
             if bank_amount < total_upkeep:
                 break
+
         if hours_passed_since_feed != 0:
             await Bank.update(farm_data['user_id'], bank_amount)
             await Farm.update(farm_data['user_id'], chickens=farm_data['chickens'], eggs_generated=farm_data['eggs_generated'])

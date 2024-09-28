@@ -2,14 +2,27 @@
 Library module chickens.
 """
 from random import randint, uniform, choice
-from tools.chickens.chickeninfo import *
+from lib.chickenlib.chickeninfo import *
 from lib.shared import send_bot_embed
-from resources.settings import *
+from resources import *
 from uuid import uuid4
 from typing import Union
 from random import randint
 from discord.ext.commands import Context
 import discord
+
+
+__all__ = [
+    "determine_chicken_upkeep", "get_chicken_egg_value", "get_chicken_price", 
+    "load_farmer_upgrades", "get_rarity_emoji", "determine_upkeep_rarity_text", 
+    "get_max_chicken_limit", "get_max_bench_limit", "get_user_bench", 
+    "rank_determiner", "create_chicken", "generate_chicken_id", 
+    "define_chicken_overrall_score", "devolve_chicken", "preview_corn_produced",
+    "quick_sell_chicken", "decrease_chicken_happiness", "check_if_author", 
+    "is_non_tradable_chicken", "get_non_tradable_chickens", "is_non_evolvable_chicken", 
+    "get_non_evolvable_chickens", "is_non_market_place_chicken", "get_non_market_place_chickens", "is_non_devolvable_chicken", 
+    "farm_maintence_tax"
+           ]
             
 def determine_chicken_upkeep(chicken: dict) -> float:
     """

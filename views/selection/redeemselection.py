@@ -1,10 +1,12 @@
 from discord import SelectOption, ui
-from db.farmdb import Farm
-from lib.shared import make_embed_object, send_bot_embed
-from lib.chickenshared import get_rarity_emoji, get_max_chicken_limit
-from resources.settings import MAX_BENCH
+from db import Farm
+from lib import make_embed_object, send_bot_embed
+from lib.chickenlib import get_rarity_emoji, get_max_chicken_limit
+from resources import MAX_BENCH
 import asyncio
 import discord
+
+__all__ = ["RedeemPlayerMenu"]
 
 class RedeemPlayerMenu(ui.Select):
 

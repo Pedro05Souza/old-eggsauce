@@ -2,9 +2,11 @@
 This module is responsible for creating a bot for the matchmaking system.
 """
 from random import randint, random, choice
-from lib.chickenshared import ChickenRarity, create_chicken, define_chicken_overrall_score
-from resources.settings import DEFAULT_FARM_SIZE
+from lib.chickenlib import create_chicken, ChickenRarity, define_chicken_overrall_score
+from resources import DEFAULT_FARM_SIZE
 import bisect
+
+__all__ = ['BotMatchMaking', 'bot_maker']
 
 class BotMatchMaking():
 

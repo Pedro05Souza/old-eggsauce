@@ -2,6 +2,8 @@ import asyncio
 
 shared_events = {}
 
+__all__ = ['get_shared_event']
+
 async def get_shared_event(user_id: int) -> asyncio.Event:
     """
     Get a shared event.

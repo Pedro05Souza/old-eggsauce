@@ -12,6 +12,8 @@ import logging
 
 logger = logging.getLogger('bot_logger')
 
+__all__ = ["BotCache"]
+
 @dataclass
 class BotCache():
     memory_limit_bytes_guild: int

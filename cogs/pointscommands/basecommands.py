@@ -2,21 +2,18 @@
 This module contains all the base commands in the bot, it is shared between all the bot's configurable modules.
 """
 from discord.ext import commands
-from db.marketdb import Market
-from resources.tips import tips
-from lib.shared import *
-from resources.settings import REGULAR_COOLDOWN
-from lib.chickenshared import rank_determiner
-from db.userdb import User
-from db.bankdb import Bank
-from views.pagination import PaginationView
-from resources.prices import Prices
-from lib.shared import update_user_param
-from tools.decorators import pricing
+from lib import *
+from lib.chickenlib import rank_determiner
+from db import User, Bank, Market
+from views import PaginationView
+from resources import Prices, REGULAR_COOLDOWN, tips
+from tools import pricing
 from random import randint
 from discord.ext.commands import Context
 import discord
 import time
+
+__all__ = ['BaseCommands']
 
 class BaseCommands(commands.Cog):
     def __init__(self, bot):

@@ -1,6 +1,8 @@
 from colorlog import ColoredFormatter
 import logging
 
+__all__ = ['setup_logging']
+
 def setup_logging() -> logging.Logger:
         """
         Setup the logging for the bot.

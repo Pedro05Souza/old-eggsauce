@@ -1,5 +1,7 @@
 from enum import Enum
 
+__all__ = ['Prices']
+
 class Prices(Enum):
     points = 0
     leaderboard = 0
