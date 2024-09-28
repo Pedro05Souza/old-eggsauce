@@ -3,7 +3,7 @@ This module contains shared functions that are used across multiple modules.
 """
 from datetime import datetime
 from dotenv import load_dotenv
-from temp import cache_initiator
+from temp import cache_initiator, cooldown_tracker
 from typing import Union
 from discord.ext.commands import Context
 from discord import Interaction
@@ -13,8 +13,6 @@ import os
 import discord
 import threading
 import asyncio
-
-cooldown_tracker = {}
 
 __all__ = [
     'send_bot_embed',
@@ -33,7 +31,6 @@ __all__ = [
     'update_user_param',
     'get_user_title',
     'format_date',
-    'cooldown_tracker',
 ]
 
 async def send_bot_embed(ctx: Context | Interaction , ephemeral=False, **kwargs) -> discord.Message:

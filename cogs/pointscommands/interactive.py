@@ -3,11 +3,12 @@ This module contains interactive commands that can be used in the bot.
 """
 from discord.ext import commands
 from tools import pricing, refund, on_user_transaction
-from lib.shared import *
+from lib import *
 from db import User
 from collections import Counter
 from random import randint, sample, choice
 from views import PaginationView
+from temp import steal_status
 from resources import *
 from discord.ext.commands import Context
 import os
@@ -17,9 +18,8 @@ import asyncio
 import discord
 
 hungergames_status = {}
-steal_status = {}
 
-_all__ = ['InteractiveCommands']
+__all__ = ['InteractiveCommands']
 
 class InteractiveCommands(commands.Cog):
     def __init__(self, bot):
