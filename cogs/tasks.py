@@ -60,8 +60,9 @@ class Tasks(commands.Cog):
         Returns:
             None
         """
-        cooldown_tracker.clear()
-        logger.info("Cleared the cooldown tracker.")
+        if len(cooldown_tracker) > 0:
+            cooldown_tracker.clear()
+            logger.info("Cleared the cooldown tracker.")
 
     @before_loop_decorator
     @tasks.loop(hours=4)
@@ -72,8 +73,9 @@ class Tasks(commands.Cog):
         Returns:
             None
         """
-        steal_status.clear()
-        logger.info("Cleared the steal status.")
+        if len(steal_status) > 0:
+            steal_status.clear()
+            logger.info("Cleared the steal status.")
 
 async def setup(bot):
     await bot.add_cog(Tasks(bot))
