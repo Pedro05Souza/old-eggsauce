@@ -4,12 +4,12 @@ This module contains interactive commands that can be used in the bot.
 from discord.ext import commands
 from tools.decorators import pricing
 from tools.pointscore import refund
-from tools.shared import *
+from lib.shared import *
 from db.userdb import User
 from collections import Counter
 from random import randint, sample, choice
-from tools.pagination import PaginationView
-from tools.settings import *
+from views.pagination import PaginationView
+from resources.settings import *
 from tools.listeners import on_user_transaction
 from discord.ext.commands import Context
 import logging

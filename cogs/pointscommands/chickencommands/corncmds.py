@@ -5,14 +5,15 @@ from discord.ext import commands
 from db.farmdb import Farm
 from db.userdb import User
 from tools.chickens.chickeninfo import ChickenFood
-from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, return_data, update_user_param
-from tools.settings import REGULAR_COOLDOWN, MAX_CORN_LIMIT, MAX_PLOT_LIMIT, FARM_DROP
+from lib.shared import send_bot_embed, make_embed_object, confirmation_embed, return_data, update_user_param
+from resources.settings import REGULAR_COOLDOWN, MAX_CORN_LIMIT, MAX_PLOT_LIMIT, FARM_DROP
 from tools.decorators import pricing
-from tools.chickens.chickenshared import preview_corn_produced
+from lib.chickenshared import preview_corn_produced
 from tools.listeners import on_user_transaction
 from better_profanity import profanity
 from discord.ext.commands import Context
 import discord
+
 class CornCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

@@ -9,7 +9,8 @@ from dataclasses import dataclass, field
 from asyncio import Lock
 from typing import Union
 import logging
-logger = logging.getLogger('botcore')
+
+logger = logging.getLogger('bot_logger')
 
 @dataclass
 class BotCache():

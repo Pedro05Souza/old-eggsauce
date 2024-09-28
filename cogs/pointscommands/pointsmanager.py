@@ -2,12 +2,13 @@
 This module contains the PointsManager class which is responsible for managing and giving points to the users in the bot.
 """
 from discord.ext import commands
-from tools.shared import user_cache_retriever
+from lib.shared import user_cache_retriever
 from db.userdb import User
 from tools.decorators import listener_checks
 import discord
 import time
 import math
+
 class PointsManager(commands.Cog):
 
     def __init__(self, bot):

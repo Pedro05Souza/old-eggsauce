@@ -5,9 +5,11 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from pathlib import Path
 from cogs.botmanager import BotManager
-from tools.logger import logger
 import os
 import discord
+import logging
+
+logger = logging.getLogger('bot_logger')
 
 async def get_prefix_for_guild(bot, message) -> str:
     """

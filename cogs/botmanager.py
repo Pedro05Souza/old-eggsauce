@@ -4,9 +4,9 @@ A cog that contains commands for managing the bot.
 from discord.ext import commands
 from discord.ext.commands import Context
 from db.botconfigdb import BotConfig
-from tools.shared import guild_cache_retriever
-from tools.shared import make_embed_object, send_bot_embed
-from tools.helpSelect import ShowPointsModules
+from lib.shared import guild_cache_retriever
+from lib.shared import make_embed_object, send_bot_embed
+from views.helpSelect import ShowPointsModules
 import discord
 
 class BotManager(commands.Cog):

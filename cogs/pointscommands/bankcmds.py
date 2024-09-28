@@ -2,14 +2,15 @@
 This module contains the bank commands.
 """
 from discord.ext import commands
-from tools.shared import send_bot_embed, confirmation_embed
-from tools.settings import REGULAR_COOLDOWN
+from lib.shared import send_bot_embed, confirmation_embed
+from resources.settings import REGULAR_COOLDOWN
 from db.bankdb import Bank
 from db.userdb import User
 from tools.decorators import pricing
 from tools.listeners import on_user_transaction
 from discord.ext.commands import Context
 import discord
+
 class BankCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

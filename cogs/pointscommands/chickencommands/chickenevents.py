@@ -4,14 +4,15 @@ This module handles events between users and their chickens.
 from discord.ext import commands
 from db.farmdb import Farm
 from db.userdb import User
-from tools.chickens.selection.chickenselection import ChickenSelectView
+from views.selection.chickenselection import ChickenSelectView
 from tools.chickens.chickeninfo import ChickenRarity
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickenshared import *
+from lib.chickenshared import *
+from lib.chickenupdates import get_usr_farm
 from tools.listeners import on_user_transaction, on_awaitable
 from tools.decorators import pricing
-from tools.shared import send_bot_embed, confirmation_embed, user_cache_retriever
-from tools.settings import REGULAR_COOLDOWN, FARMER_PRICE
+from lib.shared import send_bot_embed, confirmation_embed, user_cache_retriever
+from resources.settings import REGULAR_COOLDOWN, FARMER_PRICE
 from discord.ext.commands import Context
 import asyncio
 import discord

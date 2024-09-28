@@ -4,13 +4,14 @@ This module contains the core commands for the chicken system.
 from random import uniform
 from time import time
 from db.farmdb import Farm
-from tools.chickens.selection.chickenselection import ChickenSelectView
+from views.selection.chickenselection import ChickenSelectView
 from tools.chickens.chickenhandlers import RollLimit
-from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades, get_usr_farm
+from lib.chickenshared import get_chicken_price, get_rarity_emoji, load_farmer_upgrades
+from lib.chickenupdates import get_usr_farm
 from tools.chickens.chickeninfo import rollRates
 from tools.decorators import pricing
-from tools.shared import make_embed_object, send_bot_embed, return_data, update_user_param
-from tools.settings import REGULAR_COOLDOWN, SPAM_COOLDOWN, ROLL_PER_HOUR, DEFAULT_ROLLS, CHICKENS_GENERATED
+from lib.shared import make_embed_object, send_bot_embed, return_data, update_user_param
+from resources.settings import REGULAR_COOLDOWN, SPAM_COOLDOWN, ROLL_PER_HOUR, DEFAULT_ROLLS, CHICKENS_GENERATED
 from discord.ext import commands
 from discord.ext.commands import Context
 import discord

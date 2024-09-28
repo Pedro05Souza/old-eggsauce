@@ -5,10 +5,12 @@ Also, it contains a handler that limits the amount of rolls a player can do in a
 from contextlib import asynccontextmanager
 from discord.ext.commands import Context
 from tools.chickens.shared_state import get_shared_event
-from tools.shared import send_bot_embed
-from tools.logger import logger
+from lib.shared import send_bot_embed
 import asyncio
 import discord
+import logging
+
+logger = logging.getLogger('bot_logger')
     
 class RollLimit:
     obj_list = {}

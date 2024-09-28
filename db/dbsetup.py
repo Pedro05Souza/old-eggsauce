@@ -2,7 +2,9 @@
 This module is responsible for establishing a connection to the database.
 """
 from motor.motor_asyncio import AsyncIOMotorClient
-from tools.logger import logger
+import logging
+
+logger = logging.getLogger('bot_logger')
 
 uri = "mongodb://db:27017/"
 

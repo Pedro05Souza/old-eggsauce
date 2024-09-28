@@ -2,8 +2,10 @@
 Main file to run the bot.
 """
 from setup import *
-from tools.logger import logger
 import discord
+import logging
+
+logger = logging.getLogger('bot_logger')
         
 @bot.event
 async def on_ready():   

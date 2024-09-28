@@ -1,7 +1,7 @@
 from discord import SelectOption, ui
-from tools.chickens.chickenshared import get_rarity_emoji, get_max_chicken_limit
-from tools.shared import make_embed_object, send_bot_embed
-from tools.settings import TAX
+from lib.chickenshared import get_rarity_emoji, get_max_chicken_limit
+from lib.shared import make_embed_object, send_bot_embed
+from resources.settings import TAX
 from db.userdb import User
 from db.farmdb import Farm
 from db.marketdb import Market

@@ -4,9 +4,11 @@ This module contains the database functions for the market collection.
 from db.dbsetup import mongo_client
 from time import time
 from typing import Union
-from tools.logger import logger
 import uuid
+import logging
 market_collection = mongo_client.BotDiscord.market
+
+logger = logging.getLogger('bot_logger')
 
 class Market:
 

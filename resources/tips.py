@@ -1,4 +1,4 @@
-from tools.settings import CORN_PER_PLOT, MAX_PLOT_LIMIT, MAX_BENCH, CHICKENS_GENERATED
+from resources.settings import CORN_PER_PLOT, MAX_PLOT_LIMIT, MAX_BENCH, CHICKENS_GENERATED
 
 tips = {
     0: "You earn 1 eggbux every 10 seconds of call time.",

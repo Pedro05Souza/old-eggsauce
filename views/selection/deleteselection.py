@@ -2,8 +2,8 @@ from discord import SelectOption, ui
 from db.farmdb import Farm
 from db.userdb import User
 from tools.listeners import on_awaitable
-from tools.chickens.chickenshared import get_chicken_price, get_rarity_emoji, check_if_author
-from tools.shared import make_embed_object, confirmation_embed, user_cache_retriever_copy
+from lib.chickenshared import get_chicken_price, get_rarity_emoji, check_if_author
+from lib.shared import make_embed_object, confirmation_embed, user_cache_retriever_copy
 import asyncio
 import discord
 

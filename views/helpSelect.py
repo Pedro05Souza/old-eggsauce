@@ -3,7 +3,7 @@ This module contains the class ShowPointsModules which is a discord.ui.View clas
 """
 from discord.ui import View, Select
 from discord import Interaction, SelectOption
-from tools.shared import make_embed_object, send_bot_embed
+from lib.shared import make_embed_object, send_bot_embed
 from db.botconfigdb import BotConfig
 
 class ShowPointsModules(View):

@@ -3,10 +3,12 @@ This module contains the database functions for the user collection.
 """
 from db.dbsetup import mongo_client
 from time import time
-from tools.cache import cache_initiator
+from temp.init import cache_initiator
 from typing import Union
-from tools.logger import logger
+import logging
 users_collection = mongo_client.BotDiscord.user
+
+logger = logging.getLogger('bot_logger')
 
 # This class is responsible for handling user data in the database.
 

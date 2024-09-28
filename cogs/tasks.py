@@ -5,11 +5,13 @@ Clears the cache, listeners, cooldown tracker and steal status dictionary.
 from discord.ext import commands
 from tools.decorators import before_loop_decorator
 from discord.ext import tasks
-from tools.cache import cache_initiator
-from tools.listeners import listener_manager
-from tools.shared import cooldown_tracker
+from temp.init import cache_initiator
+from tools.listenermanager import listener_manager
+from lib.shared import cooldown_tracker
 from cogs.pointscommands.interactive import steal_status
-from tools.logger import logger
+import logging
+
+logger = logging.getLogger('bot_logger')
 
 
 class Tasks(commands.Cog):

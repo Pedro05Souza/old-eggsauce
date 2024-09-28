@@ -5,17 +5,17 @@ from typing import Optional
 from db.userdb import User
 from db.bankdb import Bank
 from discord.ext import commands
-from tools.settings import USER_SALARY_DROP
-from tools.shared import *
-from tools.chickens.chickenshared import update_user_farm, update_player_corn
-from tools.prices import Prices
+from resources.settings import USER_SALARY_DROP
+from lib.shared import *
+from lib.chickenupdates import update_player_corn, update_user_farm
+from resources.prices import Prices
 from discord.ext.commands import Context
 from tools.listeners import on_user_transaction
-from tools.logger import logger
+import logging
 import discord
 import time
 
-# This class is responsible for handling the prices of the commands.
+logger = logging.getLogger('bot_logger')
 
 async def get_points_commands_submodules(ctx: Context, config_data: dict) -> bool:
     """
@@ -292,7 +292,6 @@ async def get_salary_points(user: discord.Member, user_data: dict) -> int:
         points_gained = salary * hours_passed
         await User.update_points(user.id, user_data["points"] + points_gained)
         await User.update_salary_time(user.id)
-        logger.info(f"{user.display_name} has received {salary * hours_passed} eggbux from their title.")
         return points_gained
     return 0
 
@@ -337,7 +336,6 @@ async def update_user_farm_on_command(ctx: Context, user_data: dict, data: dict,
         corn_to_cache, corn_produced = await update_player_corn(user, data['farm_data'])
         data['farm_data']['corn'] = corn_to_cache
         await send_away_user_rewards(ctx, salary_gained, total_profit, corn_produced, user)
-
 
 async def update_user_points_in_voice(ctx: Context, user_data: dict, author: discord.Member) -> None:
     """

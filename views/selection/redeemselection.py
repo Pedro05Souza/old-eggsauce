@@ -1,8 +1,8 @@
 from discord import SelectOption, ui
 from db.farmdb import Farm
-from tools.shared import make_embed_object, send_bot_embed
-from tools.chickens.chickenshared import get_rarity_emoji, get_max_chicken_limit
-from tools.settings import MAX_BENCH
+from lib.shared import make_embed_object, send_bot_embed
+from lib.chickenshared import get_rarity_emoji, get_max_chicken_limit
+from resources.settings import MAX_BENCH
 import asyncio
 import discord
 

@@ -3,13 +3,14 @@ This module contains commands that are used to display information about the chi
 """
 from discord.ext import commands
 from db.farmdb import Farm
-from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, chicken_ranking
-from tools.chickens.chickenshared import *
+from lib.chickenshared import *
+from lib.chickenupdates import update_user_farm, farm_maintence_tax
+from lib.shared import send_bot_embed, make_embed_object, user_cache_retriever, return_data, format_number
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.selection.chickenselection import ChickenSelectView
-from tools.shared import send_bot_embed, make_embed_object, user_cache_retriever, return_data, format_number
-from tools.settings import REGULAR_COOLDOWN, FARM_DROP, MAX_BENCH
+from views.selection.chickenselection import ChickenSelectView
+from resources.settings import REGULAR_COOLDOWN, FARM_DROP, MAX_BENCH
 from tools.decorators import pricing
+from tools.chickens.chickeninfo import ChickenFood, ChickenMultiplier, ChickenRarity, rollRates, chicken_ranking
 from better_profanity import profanity
 from discord.ext.commands import Context
 import discord

@@ -1,12 +1,12 @@
 from discord import SelectOption, ui
 from db.farmdb import Farm
-from tools.chickens.chickenshared import get_chicken_price, get_max_chicken_limit, get_rarity_emoji, check_if_author
-from tools.shared import make_embed_object, send_bot_embed, user_cache_retriever
+from lib.chickenshared import get_chicken_price, get_max_chicken_limit, get_rarity_emoji, check_if_author
+from lib.shared import make_embed_object, send_bot_embed, user_cache_retriever
 import asyncio
 import discord
 import logging
 
-logger = logging.getLogger("botcore")
+logger = logging.getLogger("bot_logger")
 
 
 class ChickenAuthorTradeMenu(ui.Select):

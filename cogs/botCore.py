@@ -2,22 +2,26 @@
 This module contains core functionalities of the bot.
 """
 from discord.ext import commands
-from tools.shared import *
+from lib.shared import *
 from db.botconfigdb import BotConfig
 from tools.pointscore import refund
-from tools.prices import Prices
+from resources.prices import Prices
 from discord.ext.commands import Context
+from tools.logger import setup_logging
 import discord.ext.commands.errors
-from tools.logger import logger
 import asyncio
 import discord
 import sys
 import os
+import logging
+
+logger = logging.getLogger('bot_logger')
 
 class BotCore(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        setup_logging()
 
     async def restart_client(self) -> None:
         """

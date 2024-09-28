@@ -4,15 +4,15 @@ This module contains the functions responsible for the chicken combat system.
 from discord.ext import commands
 from dataclasses import dataclass
 from tools.decorators import pricing
-from tools.shared import send_bot_embed, make_embed_object, confirmation_embed, user_cache_retriever
+from lib.shared import send_bot_embed, make_embed_object, confirmation_embed, user_cache_retriever
 from tools.chickens.combatbot import BotMatchMaking, bot_maker
 from tools.chickens.chickenhandlers import EventData
-from tools.chickens.chickenshared import determine_upkeep_rarity_text, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit
-from tools.settings import MAX_BENCH, QUEUE_COOLDOWN
+from lib.chickenshared import determine_upkeep_rarity_text, get_rarity_emoji, rank_determiner, define_chicken_overrall_score, create_chicken, get_max_chicken_limit
+from resources.settings import MAX_BENCH, QUEUE_COOLDOWN
 from tools.chickens.chickeninfo import rarities_weight, upkeep_weight, score_determiner, chicken_ranking
 from db.farmdb import Farm
 from db.userdb import User
-from tools.tips import tips
+from resources.tips import tips
 from random import random, randint
 from discord.ext.commands import Context
 from typing import Union, Dict, List

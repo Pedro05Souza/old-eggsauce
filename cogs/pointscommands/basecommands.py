@@ -3,15 +3,15 @@ This module contains all the base commands in the bot, it is shared between all 
 """
 from discord.ext import commands
 from db.marketdb import Market
-from tools.tips import tips
-from tools.shared import *
-from tools.settings import REGULAR_COOLDOWN
-from tools.chickens.chickenshared import rank_determiner
+from resources.tips import tips
+from lib.shared import *
+from resources.settings import REGULAR_COOLDOWN
+from lib.chickenshared import rank_determiner
 from db.userdb import User
 from db.bankdb import Bank
-from tools.pagination import PaginationView
-from tools.prices import Prices
-from tools.shared import update_user_param
+from views.pagination import PaginationView
+from resources.prices import Prices
+from lib.shared import update_user_param
 from tools.decorators import pricing
 from random import randint
 from discord.ext.commands import Context
