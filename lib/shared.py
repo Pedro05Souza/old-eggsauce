@@ -150,9 +150,10 @@ async def confirmation_embed(ctx: Context | Interaction , user: discord.Member, 
     view = await button_view_builder(confirmation_button, cancel_button)
     await msg.edit(view=view)
     client = ctx.client if isinstance(ctx, discord.Interaction) else ctx.bot
-    
+
     try:
         interaction = await client.wait_for("interaction", check=lambda i: i.message.id == msg.id and i.user.id == user.id, timeout=30)
+        await interaction.response.defer()
         if interaction.data["custom_id"] == "confirm":
             return True
         else:

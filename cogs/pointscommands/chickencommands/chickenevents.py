@@ -299,6 +299,7 @@ class ChickenEvents(commands.Cog):
 
         try:
             interaction = await self.bot.wait_for("interaction", check=lambda i: i.message.id == message.id and i.user.id == ctx.author.id, timeout=60)
+            await interaction.response.defer()
             user_data = ctx.data["user_data"]
             farm_data = ctx.data["farm_data"]
 
