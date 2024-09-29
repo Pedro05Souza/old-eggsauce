@@ -9,11 +9,14 @@ from lib.chickenlib import (
     is_non_tradable_chicken, is_non_evolvable_chicken, EventData, ChickenRarity, load_farmer_upgrades
 )
 from tools import pricing, on_awaitable, on_user_transaction
-from lib import send_bot_embed, confirmation_embed, user_cache_retriever
+from lib import send_bot_embed, confirmation_embed, user_cache_retriever, button_builder, button_view_builder
 from resources import REGULAR_COOLDOWN, FARMER_PRICE
 from discord.ext.commands import Context
 import asyncio
 import discord
+import logging
+
+logger = logging.getLogger("bot_logger")
 
 __all__ = ["ChickenEvents"]
 
@@ -83,19 +86,12 @@ class ChickenEvents(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade this chicken.")
                 return
             
-            msg = await send_bot_embed(ctx, description=f":chicken: **{ctx.author.display_name}** has sent a trade request to **{user.display_name}**. **{user.display_name}** has 40 seconds to react with ✅ to accept or ❌ to decline.")
-            await msg.add_reaction("✅")
-            await msg.add_reaction("❌")
-            try:
-                reaction, _ = await self.bot.wait_for("reaction_add", check=lambda reaction, usr: usr == user and reaction.message == msg, timeout=40)
-                if reaction.emoji == "✅":
-                        await self.trade_chickens(ctx, user, farm_author, farm_target, user_cache_data)
-                        return
-                elif reaction.emoji == "❌":
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the trade request.")
-                    return
-            except asyncio.TimeoutError:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has not responded to the trade request.")
+            confirmation = await confirmation_embed(ctx, user, f":question: :chicken: **{ctx.author.display_name}** has sent a trade request to **{user.display_name}**. **{user.display_name}**. Do you accept the trade request?")
+
+            if confirmation:
+                await self.trade_chickens(ctx, user, farm_author, farm_target, user_cache_data)
+            else:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the trade request.")
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
 
@@ -204,30 +200,21 @@ class ChickenEvents(commands.Cog):
             return
              
         async with EventData.manage_event_context(ctx.author, user, awaitable=True):
-            msg = await send_bot_embed(ctx, description=f":gift: {user.display_name}, {ctx.author.display_name} wants to gift you a {gifted_chicken['rarity']} {gifted_chicken['name']}. You have 20 seconds to react with ✅ to accept or ❌ to decline the gift request.")
-            await msg.add_reaction("✅")
-            await msg.add_reaction("❌")
-            try:
-                reaction, _ = await self.bot.wait_for("reaction_add", check=lambda reaction, jogador: jogador == user and reaction.message == msg, timeout=40)
-
-                if reaction.emoji == "✅":
-                    chicken = author_data['chickens'][index]
-                    user_data['chickens'].append(chicken)
-                    author_data['chickens'].remove(chicken)
-                    await Farm.update(ctx.author.id, chickens=author_data['chickens'])
-                    await Farm.update(user.id, chickens=user_data['chickens'])
-                    await send_bot_embed(ctx, description=f":gift: {ctx.author.display_name}, the chicken has been gifted to {user.display_name}.")
-                    await on_awaitable(ctx.author.id, user.id)
-                    return
-                elif reaction.emoji == "❌":
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the gift request.")
-                    await on_awaitable(ctx.author.id, user.id)
-                    return
-                
-            except asyncio.TimeoutError:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has not responded to the gift request.")
+            confirmation = await confirmation_embed(ctx, user, f":question: {user.display_name}, {ctx.author.display_name} has sent you a gift request for **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']}. Do you accept the gift request?")
+            if confirmation:
+                chicken = author_data['chickens'][index]
+                user_data['chickens'].append(chicken)
+                author_data['chickens'].remove(chicken)
+                await Farm.update(ctx.author.id, chickens=author_data['chickens'])
+                await Farm.update(user.id, chickens=user_data['chickens'])
+                await send_bot_embed(ctx, description=f":gift: {ctx.author.display_name}, the chicken has been gifted to {user.display_name}.")
                 await on_awaitable(ctx.author.id, user.id)
-       
+                return
+            else:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the gift request.")
+                await on_awaitable(ctx.author.id, user.id)
+                return
+                
     @commands.hybrid_command(name="evolvechicken", aliases=["ec", "fuse"], usage="evolveChicken <index> <index2>", description="Evolve a chicken if having 2 of the same rarity.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
@@ -302,22 +289,32 @@ class ChickenEvents(commands.Cog):
         eggs_needed = FARMER_PRICE * 2
         message = await send_bot_embed(ctx, title=":farmer: Farmer roles:\n", description="\n".join(await self.farmers_descriptions(eggs_needed)))
         emojis = ["💰", "🛡️", "💼", "⚔️", "🍃", "🎟️"]
+        buttons = []
+
         for emoji in emojis:
-            await message.add_reaction(emoji)
+            buttons.append(await button_builder(emoji=emoji, style=discord.ButtonStyle.secondary, custom_id=emoji))
+
+        view = await button_view_builder(*buttons)
+        await message.edit(view=view)
+
         try:
-            reaction, user = await self.bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.message == message, timeout=40)
+            interaction = await self.bot.wait_for("interaction", check=lambda i: i.message.id == message.id and i.user.id == ctx.author.id, timeout=60)
             user_data = ctx.data["user_data"]
             farm_data = ctx.data["farm_data"]
+
             if user_data['points'] >= FARMER_PRICE:
                 if farm_data['eggs_generated'] < eggs_needed:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to produce at least {eggs_needed} eggs in order to purchase a farmer role.")
                     return
+                
                 farm_size = get_max_chicken_limit(farm_data)
+
                 if len(farm_data['chickens']) >= farm_size and len(farm_data['chickens']) > 8:
-                    await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} you have a Warrior farmer, you need to sell the extra farm slots to buy another farmer.")
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you have a Warrior farmer, you need to sell the extra farm slots to buy another farmer.")
                     return
+                
                 farmer_dict = await self.retrieve_farmer_dict()
-                await self.buy_farmer_upgrade(ctx, farmer_dict[reaction.emoji], FARMER_PRICE, user_data, farm_data)
+                await self.buy_farmer_upgrade(ctx, farmer_dict[interaction.data['custom_id']], FARMER_PRICE, user_data, farm_data)
             else:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have enough eggbux to purchase a farmer role.")
         except asyncio.TimeoutError:
@@ -380,10 +377,10 @@ class ChickenEvents(commands.Cog):
             return
         
         if name == "Sustainable Farmer":
-            Farm.add_last_farm_drop_attribute(ctx.author.id)
+            await Farm.add_last_farm_drop_attribute(ctx.author.id)
 
         if await self.verify_player_has_sustainable(farm_data) and not name == "Sustainable Farmer":
-            Farm.remove_last_farm_drop_attribute(ctx.author.id)
+            await Farm.remove_last_farm_drop_attribute(ctx.author.id)
 
         farm_data['farmer'] = name
         await User.update_points(ctx.author.id, user_data['points'] - farmer_price)
