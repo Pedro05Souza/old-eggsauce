@@ -185,6 +185,6 @@ class EventData():
             bool
         """
         if await EventData.check_user_in_event(author.id, optional_user):
-            await send_bot_embed(ctx, description=":no_entry_sign: You are already in an event. Please wait for it to finish.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {author.display_name} is already in an event. Please wait for the event to finish.")
             return False
         return True
