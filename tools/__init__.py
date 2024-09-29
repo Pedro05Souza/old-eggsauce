@@ -17,3 +17,4 @@ from .listenermanager import *
 from .listeners import *
 from .logger import *
 from .shared_state import *
+from .pointscore import *

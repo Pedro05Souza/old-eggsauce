@@ -7,7 +7,6 @@ Modules included:
 * devcmds: Contains developer commands.
 * tasks: Contains tasks for the bot.
 """
-
 from .botcore import *
 from .botmanager import *
 from .devcmds import *

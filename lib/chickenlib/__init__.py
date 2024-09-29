@@ -8,7 +8,6 @@ Modules included:
 * chickeninfo: Contains functions for retrieving information about chickens.
 * chickenupdates: Contains functions for updating the player's farm data.
 """
-
 from .chickenhandlers import *
 from .chickenshared import *
 from .chickeninfo import *
