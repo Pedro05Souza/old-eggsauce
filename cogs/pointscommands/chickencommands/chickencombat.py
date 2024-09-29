@@ -49,7 +49,10 @@ class ChickenCombat(commands.Cog):
         Returns:
             None
         """
-        async with EventData.event_handler(ctx, ctx.author):
+        if not await EventData.is_yieldable(ctx, ctx.author):
+            return
+        
+        async with EventData.manage_event_context(ctx.author):
             farm_data = ctx.data["farm_data"]
             author_chickens = await self.define_eight_chickens_for_match(farm_data['chickens'])
             user = UserInQueue(ctx.author, author_chickens, ctx, farm_data['mmr'])
