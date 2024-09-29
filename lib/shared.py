@@ -8,11 +8,15 @@ from typing import Union
 from discord.ext.commands import Context
 from discord import Interaction
 from discord.utils import format_dt
+from discord.ui import View
 from copy import deepcopy
 import os
 import discord
 import threading
 import asyncio
+import logging
+
+logger = logging.getLogger("bot_logger")
 
 __all__ = [
     'send_bot_embed',
@@ -31,6 +35,8 @@ __all__ = [
     'update_user_param',
     'get_user_title',
     'format_date',
+    "button_builder",
+    "button_view_builder"
 ]
 
 async def send_bot_embed(ctx: Context | Interaction , ephemeral=False, **kwargs) -> discord.Message:
@@ -116,7 +122,7 @@ async def get_user_title(user_data: dict) -> str:
             return userRoles[user_data["roles"][-1]]
 
 async def confirmation_embed(ctx: Context | Interaction , user: discord.Member, description: str) -> bool:
-     """
+    """
     Confirmation embed for modularization. Use this method whenever another command needs confirmation from the user.
 
     Args:
@@ -126,29 +132,32 @@ async def confirmation_embed(ctx: Context | Interaction , user: discord.Member, 
 
     Returns:
         bool
-     """
-     embed = await make_embed_object(title=f":warning: {user.display_name}, you need to confirm this first:", description=description)
-     embed.set_footer(text="React with ✅ to confirm or ❌ to cancel.")
+    """
+    embed = await make_embed_object(title=f":warning: {user.display_name}, you need to confirm this first:", description=description)
+    embed.set_footer(text="Press ✅ to confirm or ❌ to cancel.")
 
-     if isinstance(ctx, discord.Interaction):
+    if isinstance(ctx, discord.Interaction):
         if not ctx.response.is_done():
             await ctx.response.send_message(embed=embed)
             msg = await ctx.original_response()
         else:
             msg = await ctx.followup.send(embed=embed)   
-     else:
+    else:
         msg = await ctx.send(embed=embed)
 
-     await msg.add_reaction("✅")
-     await msg.add_reaction("❌")
-     client = ctx.client if isinstance(ctx, discord.Interaction) else ctx.bot
-     try:
-        reaction, _ = await client.wait_for("reaction_add", check=lambda reaction, author: reaction.message.id == msg.id and author.id == user.id and reaction.emoji in ["✅", "❌"], timeout=60)
-        if reaction.emoji == "✅":
+    confirmation_button = await button_builder(label="Accept", style=discord.ButtonStyle.green, custom_id="confirm")
+    cancel_button = await button_builder(label="Cancel", style=discord.ButtonStyle.red, custom_id="cancel")
+    view = await button_view_builder(confirmation_button, cancel_button)
+    await msg.edit(view=view)
+    client = ctx.client if isinstance(ctx, discord.Interaction) else ctx.bot
+    
+    try:
+        interaction = await client.wait_for("interaction", check=lambda i: i.message.id == msg.id and i.user.id == user.id, timeout=30)
+        if interaction.data["custom_id"] == "confirm":
             return True
         else:
             return False
-     except asyncio.TimeoutError:
+    except asyncio.TimeoutError:
         return False
 
 async def user_cache_retriever(user_id: int) -> Union[dict, None]:
@@ -327,3 +336,32 @@ async def update_user_param(ctx: Context, user_data: dict, data: dict, user: dis
     
     await update_user_farm_on_command(ctx, user_data, data, user)
     await update_user_points_in_voice(ctx, user_data, user)
+
+async def button_builder(**kwargs) -> discord.Button:
+    """
+    Builds a button.
+
+    Args:
+        label (str): The label of the button.
+        style (discord.ButtonStyle): The style of the button.
+        custom_id (str): The custom id of the button.
+
+    Returns:
+        discord.Button
+    """
+    return discord.ui.Button(**kwargs)
+
+async def button_view_builder(*buttons) -> discord.ui.View:
+    """
+    Builds a view with buttons.
+
+    Args:
+        *buttons: The buttons to add to the view.
+
+    Returns:
+        discord.ui.View
+    """
+    view = View()
+    for button in buttons:
+        view.add_item(button)
+    return view
