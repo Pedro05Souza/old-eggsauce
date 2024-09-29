@@ -252,7 +252,7 @@ class Farm:
             None
         """
         try:
-            farm_data = farm_collection.find_one({"user_id": user_id})
+            farm_data = await farm_collection.find_one({"user_id": user_id})
             if farm_data:
                 farm_data.pop('last_farmer_drop')
                 await cache_initiator.put_user(user_id, farm_data=farm_data)
