@@ -55,12 +55,11 @@ Both the setup commands run the `Makefile` and:
 * Creates the python virtual enviroment (venv)
 * Installs all dependencies listed on `requirements.txt`
 
-
 ## Running the Bot
 
 Important Notice: Certain configuration `files` and `environment variables` have been excluded from this repository for security purposes. To access these, please reach out to the lead developer.
 
-Please note that sharing any provided files or information is strictly prohibited. The bot will **NOT** execute without the correct setup.
+Please note that sharing any provided files is **strictly** prohibited. The bot will **NOT** execute without the correct setup.
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop.).
 
