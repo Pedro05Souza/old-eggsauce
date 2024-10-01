@@ -5,3 +5,4 @@ colorlog
 better_profanity
 pympler
 psutil
+numpy
