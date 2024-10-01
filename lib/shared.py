@@ -36,7 +36,8 @@ __all__ = [
     'get_user_title',
     'format_date',
     "button_builder",
-    "button_view_builder"
+    "button_view_builder",
+    "can_listener_run",
 ]
 
 async def send_bot_embed(ctx: Context | Interaction , ephemeral=False, **kwargs) -> discord.Message:
@@ -364,3 +365,13 @@ async def button_view_builder(*buttons) -> discord.ui.View:
     for button in buttons:
         view.add_item(button)
     return view
+
+async def can_listener_run(guild_id: int) -> bool:
+    """
+    Checks if the listener can happen based on the guild and the bot's configuration.
+    """
+    guild_data = await guild_cache_retriever(guild_id)
+
+    if guild_data['toggled_modules'] == 'N':
+        return False
+    return True
