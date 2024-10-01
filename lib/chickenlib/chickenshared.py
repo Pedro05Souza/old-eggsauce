@@ -70,6 +70,7 @@ def get_chicken_price(chicken: dict, farmer: str = None) -> int:
             default_discount = int(default_discount)
             chicken_discount = CHICKEN_DEFAULT_VALUE - default_discount
             return ChickenRarity[chicken['rarity']].value * chicken_discount
+        
     return ChickenRarity[chicken['rarity']].value * CHICKEN_DEFAULT_VALUE
 
 def load_farmer_upgrades(farmer) -> Union[list, int]:
