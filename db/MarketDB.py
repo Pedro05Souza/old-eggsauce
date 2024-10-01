@@ -103,7 +103,7 @@ class Market:
             return None
     
     @staticmethod
-    async def delete(offer_id: int) -> None:
+    async def delete(offer_id: str) -> None:
         """
         Deletes an item from the market.
 
@@ -122,6 +122,25 @@ class Market:
                 logger.warning(f"Offer {offer_id} does not exist.")
         except Exception as e:
             logger.error("Error encountered while deleting the offer.", e)
+            return None
+        
+    @staticmethod
+    async def bulk_delete(*offer_ids: str) -> None:
+        """
+        Deletes multiple offers from the market.
+
+        Args:
+            *offer_ids: The ids of the offers to delete.
+
+        Returns:
+            None
+        """
+        try:
+            for offer_id in offer_ids:
+                await market_collection.delete_one({"offer_id": offer_id})
+            logger.info(f"Offers {offer_ids} have been deleted successfully.")
+        except Exception as e:
+            logger.error("Error encountered while deleting the offers.", e)
             return None
     
     @staticmethod
