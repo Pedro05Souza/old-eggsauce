@@ -2,41 +2,46 @@
 This module contains the PointsManager class which is responsible for managing and giving points to the users in the bot.
 """
 from discord.ext import commands
-from lib import user_cache_retriever
+from lib import user_cache_retriever, can_listener_run
 from db import User
-from tools import listener_checks
+from temp import message_cache
 import discord
 import time
 import math
+import logging
 
 __all__ = ['PointsManager']
+
+logger = logging.getLogger('bot_logger')
 
 class PointsManager(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.message_cache = {}
         self.join_time = {}
         self.init_time = math.ceil(time.time())
 
-    async def reward_points_if_possible(self, user_id: int, user_data: dict) -> int | None:
+    async def reward_points_if_possible(self, user_id: int) -> int | None:
         """
         Rewards the user with points in the bot cache's system if he is in the message cache.
 
-        Args:
-            user_id (int): The id of the user to reward.
-
         Returns:
             int | None
-        """        
+        """      
         current_time = math.ceil(time.time())
-        message_time = self.message_cache[user_id]
+        message_time = message_cache[user_id]
         time_difference = current_time - message_time
         time_passed = min(time_difference // 20, 1)
-        
         if time_passed > 0:
+            cache = await user_cache_retriever(user_id)
+        
+            if not cache:
+                message_cache.pop(user_id)
+                return
+
+            user_data = cache["user_data"]  
             time_passed = int(time_passed)
-            self.message_cache.pop(user_id)
+            message_cache.pop(user_id)
             await User.update_points(user_id, user_data["points"] + time_passed)
     
     async def count_points(self, user: discord.Member) -> None:
@@ -49,8 +54,6 @@ class PointsManager(commands.Cog):
         Returns:
             None
         """
-        if user.bot:
-            return
         if user.id not in self.join_time.keys():
             self.join_time[user.id] = math.ceil(time.time())
         else:
@@ -112,27 +115,26 @@ class PointsManager(commands.Cog):
         """
         if user.id not in self.join_time:
             self.join_time[user.id] = self.init_time
+
         total_points = await self.add_points(user)
         cache = await user_cache_retriever(user.id)
+        if not cache:
+            return
+        
         user_data = cache["user_data"]
         await User.update_points(user.id, user_data["points"] + total_points)
         self.join_time.pop(user.id)
         
-    @listener_checks()
     @commands.Cog.listener()
     async def on_voice_state_update(self, user: discord.Member, before, after):
         """
         Listens to the voice state update event.
         """
-        cache = await user_cache_retriever(user.id)
-
-        if not user_data:
-            return
-
-        if user.bot:
+        if not await can_listener_run(user.guild.id):
             return
         
-        user_data = cache["user_data"]
+        if user.bot:
+            return
         
         if before.channel is None and after.channel is not None:
             await self.count_points(user)
@@ -140,26 +142,21 @@ class PointsManager(commands.Cog):
         elif before.channel is not None and after.channel is None:
             await self.on_user_leaving_voice(user)
 
-    @listener_checks()        
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         """
         Listens to the message event.
         """
+        if not await can_listener_run(message.guild.id):
+            return
+        
         if message.author.bot:
             return
         
-        cache = await user_cache_retriever(message.author.id)
+        if message.author.id not in message_cache:
+            message_cache[message.author.id] = time.time()
 
-        if not user_data:
-            return
-        
-        user_data = cache["user_data"]
-
-        if message.author.id not in self.message_cache:
-            self.message_cache[message.author.id] = time.time()
-
-        await self.reward_points_if_possible(message.author.id, user_data)
+        await self.reward_points_if_possible(message.author.id)
 
 async def setup(bot):
     await bot.add_cog(PointsManager(bot))
