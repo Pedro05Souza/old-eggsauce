@@ -27,7 +27,7 @@ class UserInQueue():
     chickens: list
     ctx: commands.Context   
     score: int
-    chicken_overrall_score: int = 0
+    user_chicken_overrall_score: int = 0
     has_opponent: bool = False
     
 class ChickenCombat(commands.Cog):
@@ -62,8 +62,8 @@ class ChickenCombat(commands.Cog):
                 return
             
             await self.add_user_in_queue(user)
-            user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
-            match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data['mmr'])}**.")
+            user.user_chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
+            match_matching_obj = await make_embed_object(description=f"🔍 {ctx.author.name} has joined the queue. Attemping to find balanced matches. Your current chicken overrall is: **{await self.score_string(user.user_chicken_overrall_score)}**. Your current rank is: **{await rank_determiner(farm_data['mmr'])}**.")
             match_matching_obj.set_footer(text=tips[randint(0, len(tips) - 1)])
             author_msg, user_msg = await self.check_if_same_guild(user, user, match_matching_obj)
             opponent = await self.search(user)
@@ -648,8 +648,6 @@ class ChickenCombat(commands.Cog):
             return
         elif match_type == "friendly":
             await send_bot_embed(ctx, description=f"🎉 **{await self.check_user_name(winner)}** has won the combat.")
-            EventData.remove(winner.in_event)
-            EventData.remove(loser.in_event)
 
 
     async def handle_mmr_changes(self, farm_data_winner: list, farm_data_loser: list, 
@@ -667,7 +665,7 @@ class ChickenCombat(commands.Cog):
             int
         """
         base_mmr_gain = 28
-        multiplier = (loser.score + loser.chicken_overrall_score) / (winner.score + winner.chicken_overrall_score)
+        multiplier = (loser.score + loser.user_chicken_overrall_score) / (winner.score + winner.user_chicken_overrall_score)
         mmr_diff = farm_data_loser[0] - farm_data_winner[0]
         multiplier = 1 + abs(mmr_diff / 1000)
         mmr_gain = base_mmr_gain * multiplier
@@ -810,7 +808,7 @@ class ChickenCombat(commands.Cog):
                 if not await EventData.is_yieldable(ctx, ctx.author, user):
                     return
                 
-                async with EventData.manage_event_context(ctx, ctx.author, user):
+                async with EventData.manage_event_context(ctx.author, user):
                     await self.start_friendly_match(ctx, user, farm_data, user_data)
             else:
                 await send_bot_embed(ctx, description=":no_entry_sign: The user has not responded or declined the friendly combat request.")
@@ -839,8 +837,8 @@ class ChickenCombat(commands.Cog):
         temp_farm_data_user = await self.define_eight_chickens_for_match(user_data['chickens'])
         author = UserInQueue(ctx.author, temp_farm_data_author, ctx, farm_data['mmr'])
         user = UserInQueue(user, temp_farm_data_user, ctx, user_data['mmr'])
-        author.chicken_overrall_score = await define_chicken_overrall_score(author.chickens)
-        user.chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
+        author.user_chicken_overrall_score = await define_chicken_overrall_score(author.chickens)
+        user.user_chicken_overrall_score = await define_chicken_overrall_score(user.chickens)
         author_msg, user_msg = await self.check_if_same_guild(author, user, await make_embed_object(description=f"🔥 The match will begin soon."))
         await asyncio.sleep(3.5)
         await self.define_chicken_matchups(author, user, "friendly", user_msg, author_msg, [], [])

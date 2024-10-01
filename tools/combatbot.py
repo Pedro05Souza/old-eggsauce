@@ -10,11 +10,11 @@ __all__ = ['BotMatchMaking', 'bot_maker']
 
 class BotMatchMaking():
 
-    def __init__(self, bot_name):
+    def __init__(self, bot_name): 
         self.name = bot_name
         self.chickens = []
         self.score = 0
-        self.chicken_overrall_score = 0
+        self.user_chicken_overrall_score = 0
         self.has_opponent = False
         self.bot_id = randint(0, 999999)
 
@@ -33,9 +33,8 @@ async def bot_maker(user_score: int) -> BotMatchMaking:
     """
     bot = BotMatchMaking(await name_maker())
     bot_farm_size = randint(await define_bot_min_farm_size(user_score), DEFAULT_FARM_SIZE)
-    all_rarities = list(ChickenRarity.__members__)
-    all_rarities.remove("DEAD")
-    all_rarities.remove("BETA")
+    all_rarities = set(ChickenRarity.__members__)
+    all_rarities = [rarity for rarity in all_rarities if rarity not in await non_allowed_chickens()]
     all_rarities_dict = {rarity: position for position, rarity in enumerate(all_rarities)}
     bot_chickens = []
     bot_rarity_list = await define_chicken_rarity_list(user_score, all_rarities_dict)
@@ -61,8 +60,17 @@ async def bot_maker(user_score: int) -> BotMatchMaking:
     bot.score = randint(negative_score, positive_score)
     if bot.score < 0:
         bot.score = 0 
-    bot.chicken_overrall_score = await define_chicken_overrall_score(bot.chickens)
+    bot.user_chicken_overrall_score = await define_chicken_overrall_score(bot.chickens)
     return bot
+
+async def non_allowed_chickens() -> set:
+    """
+    Returns the set of non-allowed chickens.
+
+    Returns:
+        set
+    """
+    return {"DEAD", "BETA"}
 
 async def define_bot_min_farm_size(player_mmr: int) -> int:
     """
