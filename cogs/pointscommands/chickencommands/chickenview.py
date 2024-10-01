@@ -3,12 +3,11 @@ This module contains commands that are used to display information about the chi
 """
 from discord.ext import commands
 from db import Farm
-from lib import send_bot_embed, make_embed_object, user_cache_retriever, return_data, format_number
+from lib import send_bot_embed, make_embed_object, user_cache_retriever, return_data, format_number, update_user_param
 from lib.chickenlib import (
     get_chicken_egg_value, get_rarity_emoji, get_chicken_price, get_max_chicken_limit,
     get_rarity_emoji, ChickenMultiplier, ChickenRarity, ChickenFood, rollRates, chicken_ranking,
-    rank_determiner, farm_maintence_tax, load_farmer_upgrades, get_user_bench, update_user_farm,
-    EventData
+    rank_determiner, get_user_bench, EventData, give_total_farm_profit, farm_maintence_tax
 )
 from views.selection import ChickenSelectView
 from resources import REGULAR_COOLDOWN, FARM_DROP, MAX_BENCH
@@ -196,51 +195,45 @@ class ChickenView(commands.Cog):
             None
         """
         data, user = await return_data(ctx, user)
-        farm_data = data["farm_data"]   
+        farm_data = data["farm_data"]
+        user_data = data["user_data"]   
 
         if data["farm_data"]:
-            if user.id != ctx.author.id:
-                farm_data, _ = await update_user_farm(ctx, user, data)
-            totalProfit = 0
-            totalcorn = 0
+            if user:
+                await update_user_param(ctx, user_data, data, user)
 
             if len(farm_data['chickens']) == 0:
                 await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have any chickens.")
                 return
             
-            for chicken in farm_data['chickens']:
-                totalcorn += ChickenFood[chicken['rarity']].value
-                chicken_loss = int((await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']))
-                chicken_profit = await get_chicken_egg_value(chicken) - chicken_loss
-                totalProfit += (chicken_profit * chicken['happiness']) // 100
-            if farm_data['farmer'] == "Rich Farmer":
-                to_add = load_farmer_upgrades("Rich Farmer")[0]
-                added_value = (totalProfit * to_add) // 100
-                totalProfit += added_value
+            income, _ = await give_total_farm_profit(farm_data, 1, update=False)
             taxes = await farm_maintence_tax(farm_data)
-            result = totalProfit - taxes
-            
+            income_with_tax = income - taxes
+            total_corn = sum([ChickenFood[chicken['rarity']].value for chicken in farm_data['chickens']])
+
             status_message = ""
             status_emoji = ""
-            if totalProfit > 0:
+
+            if income_with_tax > 0:
                 status_emoji = ":white_check_mark:"
-                status_message = f"Your farm is expected to generate a profit of **{result}** eggbux per **{FARM_DROP // 3600}** hour(s)."
-            elif totalProfit == 0:
+                status_message = f"Your farm is expected to generate a profit of **{income_with_tax}** eggbux per **{FARM_DROP // 3600}** hour(s)."
+            elif income_with_tax == 0:
                 description= f":no_entry_sign: {user.display_name}, your farm is expected to generate neither profit nor loss."
             else:
                 status_emoji = ":no_entry_sign:"
-                status_message = f"Your farm is expected to generate a loss of **{result}** eggbux per **{FARM_DROP // 3600}** hour(s)."
+                status_message = f"Your farm is expected to generate a loss of **{income_with_tax}** eggbux per **{FARM_DROP // 3600}** hour(s)."
 
-            if totalProfit != 0:
+            if income_with_tax != 0:
                     description = (
                     f"{status_emoji} {user.display_name}, "
                     f"{status_message} :money_with_wings:.\n"
-                    f":egg: Eggs produced: **{totalProfit}**\n"
-                    f":corn: Corn going to the chickens: **{totalcorn}**\n"
+                    f":egg: Eggs produced: **{income}**\n"
+                    f":corn: Corn going to the chickens: **{total_corn}**\n"
                     f"🚜 Farm maintenance: **{taxes}**"
                 )
 
-            await send_bot_embed(ctx, description=description)
+            await send_bot_embed(ctx,description=description)
+
         else:
             await send_bot_embed(ctx,description= f":no_entry_sign: {user.display_name}, you don't have a farm.")
 
@@ -466,12 +459,12 @@ class ChickenView(commands.Cog):
             await Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
             await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the chickens have been switched.")
 
-    @commands.hybrid_command(name="redeemables", aliases=["redeem"], usage="reedemables", description="Check the reedemable items.")
+    @commands.hybrid_command(name="redeemables", aliases=["redeem"], usage="redeemables", description="Check the redeemable items.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()
-    async def reedemables(self, ctx: Context) -> None:
+    async def redeemables(self, ctx: Context) -> None:
         """
-        Check the reedemable items.
+        Check the redeemable items.
 
         Args:
             ctx (Context): The context of the command.
@@ -481,15 +474,29 @@ class ChickenView(commands.Cog):
         """
         farm_data = await user_cache_retriever(ctx.author.id)
         farm_data = farm_data["farm_data"]
-        reedemables = farm_data['redeemables']
+        redeemables = farm_data['redeemables']
 
-        if not reedemables:
-            await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you don't have any reedemable items.")
+        if not redeemables:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have any redeemable items.")
             return
         
-        reedemables_info = "\n".join([f"**{index + 1}.** {get_rarity_emoji(reedemable['rarity'])} **{reedemable['rarity']}** **{reedemable['name']}**" for index, reedemable in enumerate(reedemables)])
-        msg = await make_embed_object(title=f":gift: {ctx.author.display_name}'s reedemable items:", description=reedemables_info)
-        view = ChickenSelectView(chickens=reedemables, author=ctx.author, action="R", embed_text=msg)
+        redeemables_info = "\n".join(
+            [f"**{index + 1}.** {get_rarity_emoji(redeemable['rarity'])} **{redeemable['rarity']}** **{redeemable['name']}**" 
+            for index, redeemable in enumerate(redeemables)]
+        )
+        msg = await make_embed_object(
+            title=f":gift: {ctx.author.display_name}'s redeemable items:", 
+            description=redeemables_info
+        )
+        
+        view = ChickenSelectView(
+            chickens=redeemables, 
+            author=ctx.author, 
+            action="R", 
+            embed_text=msg, 
+            author_cached_data=ctx.data, 
+            has_cancel_button=False
+        )
         await ctx.send(embed=msg, view=view)
         
 async def setup(bot):
