@@ -16,7 +16,7 @@ import time
 
 logger = logging.getLogger('bot_logger')
 
-__all__ = ["refund"]
+__all__ = ["refund", "update_user_farm_on_command", "update_user_points_in_voice"]
 
 async def get_points_commands_submodules(ctx: Context, config_data: dict) -> bool:
     """
