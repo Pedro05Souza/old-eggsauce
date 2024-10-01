@@ -50,7 +50,7 @@ class ChickenEvents(commands.Cog):
         message = await get_usr_farm(ctx, ctx.author, ctx.data)
               
         async with EventData.manage_event_context(ctx.author, awaitable=True):
-            view = ChickenSelectView(embed_text=message, chickens=farm_data['chickens'], author=ctx.author, action="D")
+            view = ChickenSelectView(embed_text=message, chickens=farm_data['chickens'], author=ctx.author, action="D", author_cached_data=ctx.data)
             await ctx.send(embed=message, view=view)
 
     @commands.hybrid_command(name="tradechicken", aliases=["tc", "trade"], usage="tradeChicken <user>", description="Trade a chicken(s) with another user.")
@@ -129,10 +129,10 @@ class ChickenEvents(commands.Cog):
         
         shared_trade_dict = {}
         view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", embed_text=embeds, role="author", shared_trade_dict=shared_trade_dict)
-        msg = await ctx.send(embed=authorEmbed, view=view_author)
-        view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", embed_text=embeds, role="user", instance_bot=self.bot, shared_trade_dict=shared_trade_dict, discord_message=msg)
-        user_msg = await ctx.send(embed=userEmbed, view=view_user)
-        view_author.message = user_msg
+        view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", embed_text=embeds, role="user", instance_bot=self.bot, shared_trade_dict=shared_trade_dict, user_view=view_author)
+        view_author.user_view = view_user
+        await ctx.send(embed=authorEmbed, view=view_author)
+        await ctx.send(embed=userEmbed, view=view_user)
 
     @commands.hybrid_command(name="giftchicken", aliases=["gc"], usage="giftChicken <index> <user>", description="Gift a chicken to another user.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
