@@ -1,4 +1,4 @@
-from resources.settings import CORN_PER_PLOT, MAX_PLOT_LIMIT, MAX_BENCH, CHICKENS_GENERATED
+from resources import CORN_PER_PLOT, MAX_PLOT_LIMIT, MAX_BENCH, CHICKENS_GENERATED
 
 __all__ = ["tips"]
 
