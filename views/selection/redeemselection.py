@@ -1,6 +1,5 @@
 from discord import SelectOption, ui
-from db import Farm
-from lib import make_embed_object, send_bot_embed
+from lib import make_embed_object, send_bot_embed, user_cache_retriever
 from lib.chickenlib import get_rarity_emoji, get_max_chicken_limit
 from resources import MAX_BENCH
 import asyncio
@@ -34,11 +33,11 @@ class RedeemPlayerMenu(ui.Select):
         Returns:
             None
         """
-        if interaction.user.id != self.author:
+        if interaction.user.id != self.author.id:
             await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem chickens for another user.", ephemeral=True)
             return
         
-        farm_data = await Farm.read(interaction.user.id)
+        farm_data = await user_cache_retriever(interaction.user.id)
         chickens_selected = [self.chickens[int(index)] for index in self.values]
         chickens_sucessfully_redeemed = []
         
@@ -47,7 +46,9 @@ class RedeemPlayerMenu(ui.Select):
             return
         
         for chicken in chickens_selected:
+
             if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
+
                 if len(farm_data['bench']) >= MAX_BENCH:
                     await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem more chickens than the farm size.", ephemeral=True)
                     return

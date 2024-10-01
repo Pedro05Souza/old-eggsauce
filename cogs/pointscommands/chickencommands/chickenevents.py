@@ -50,7 +50,7 @@ class ChickenEvents(commands.Cog):
         message = await get_usr_farm(ctx, ctx.author, ctx.data)
               
         async with EventData.manage_event_context(ctx.author, awaitable=True):
-            view = ChickenSelectView(message=message, chickens=farm_data['chickens'], author=ctx.author, action="D")
+            view = ChickenSelectView(embed_text=message, chickens=farm_data['chickens'], author=ctx.author, action="D")
             await ctx.send(embed=message, view=view)
 
     @commands.hybrid_command(name="tradechicken", aliases=["tc", "trade"], usage="tradeChicken <user>", description="Trade a chicken(s) with another user.")
@@ -74,6 +74,9 @@ class ChickenEvents(commands.Cog):
 
         if farm_target:
 
+            if not await EventData.is_yieldable(ctx, ctx.author, user):
+                return
+
             if not farm_author['chickens'] or not farm_target['chickens']:
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, {user.display_name} doesn't have any chickens.")
                 return
@@ -86,12 +89,13 @@ class ChickenEvents(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade this chicken.")
                 return
             
-            confirmation = await confirmation_embed(ctx, user, f":question: :chicken: **{ctx.author.display_name}** has sent a trade request to **{user.display_name}**. **{user.display_name}**. Do you accept the trade request?")
+            async with EventData.manage_event_context(ctx.author, user, awaitable=True):
+                confirmation = await confirmation_embed(ctx, user, f":question: :chicken: **{ctx.author.display_name}** has sent a trade request to **{user.display_name}**. **{user.display_name}**. Do you accept the trade request?")
 
-            if confirmation:
-                await self.trade_chickens(ctx, user, farm_author, farm_target, user_cache_data)
-            else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the trade request.")
+                if confirmation:
+                    await self.trade_chickens(ctx, user, farm_author, farm_target, user_cache_data)
+                else:
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the trade request.")
         else:
             await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
 
@@ -110,27 +114,25 @@ class ChickenEvents(commands.Cog):
         Returns:
             None
         """
-        if not await EventData.is_yieldable(ctx, ctx.author, user):
+        authorEmbed = await get_usr_farm(ctx, ctx.author, ctx.data)
+        userEmbed = await get_usr_farm(ctx, user, user_cache_data)
+        trade_data = [farm_author['chickens'], farm_target['chickens']]
+        trade_data[0] = [chicken for chicken in trade_data[0] if chicken['rarity'] not in await get_non_tradable_chickens()]
+        trade_data[1] = [chicken for chicken in trade_data[1] if chicken['rarity'] not in await get_non_tradable_chickens()]
+        members_data = [ctx.author, user]
+        embeds = [authorEmbed, userEmbed]
+
+        if len(farm_target['chickens']) == 1 and farm_target['chickens'][0]['rarity'] == "ETHEREAL":
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade an ethereal chicken.")
+            await on_awaitable(ctx.author.id, user.id)
             return
         
-        async with EventData.manage_event_context(ctx.author, user, awaitable=True):
-            authorEmbed = await get_usr_farm(ctx, ctx.author, ctx.data)
-            userEmbed = await get_usr_farm(ctx, user, user_cache_data)
-            trade_data = [farm_author['chickens'], farm_target['chickens']]
-            trade_data[0] = [chicken for chicken in trade_data[0] if chicken['rarity'] not in await get_non_tradable_chickens()]
-            trade_data[1] = [chicken for chicken in trade_data[1] if chicken['rarity'] not in await get_non_tradable_chickens()]
-            members_data = [ctx.author, user]
-            embeds = [authorEmbed, userEmbed]
-
-            if len(farm_target['chickens']) == 1 and farm_target['chickens'][0]['rarity'] == "ETHEREAL":
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't trade an ethereal chicken.")
-                await on_awaitable(ctx.author.id, user.id)
-                return
-            shared_trade_dict = {}
-            view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="author", shared_trade_dict=shared_trade_dict)
-            view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", message=embeds, role="user", instance_bot=self.bot, shared_trade_dict=shared_trade_dict)
-            await ctx.send(embed=authorEmbed, view=view_author)
-            await ctx.send(embed=userEmbed, view=view_user)
+        shared_trade_dict = {}
+        view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", embed_text=embeds, role="author", shared_trade_dict=shared_trade_dict)
+        msg = await ctx.send(embed=authorEmbed, view=view_author)
+        view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", embed_text=embeds, role="user", instance_bot=self.bot, shared_trade_dict=shared_trade_dict, discord_message=msg)
+        user_msg = await ctx.send(embed=userEmbed, view=view_user)
+        view_author.message = user_msg
 
     @commands.hybrid_command(name="giftchicken", aliases=["gc"], usage="giftChicken <index> <user>", description="Gift a chicken to another user.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
@@ -149,38 +151,43 @@ class ChickenEvents(commands.Cog):
         """
         
         author_data = ctx.data["farm_data"]
-        user_data = await user_cache_retriever(user.id)
-        user_data = user_data["farm_data"]
+        cache = await user_cache_retriever(user.id)
+        user_farm_data = cache["farm_data"]
         index -= 1
 
-        if not author_data['chickens']:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you don't have any chickens.")
-            return
-        
-        if index > len(author_data['chickens']) or index < 0:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
-            return
-        
-        if user.id == ctx.author.id:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift a chicken to yourself.")
-            return
-        
-        if len(user_data['chickens']) >= get_max_chicken_limit(user_data):
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, {user.display_name} already has the maximum amount of chickens.")
-            return
-        
-        gifted_chicken = author_data['chickens'][index]
+        if user_farm_data:
 
-        if await is_non_tradable_chicken(gifted_chicken['rarity']):
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift this chicken.")
-            return
-        
-        confirmation = await confirmation_embed(ctx, ctx.author, f":question: {ctx.author.display_name}, are you sure you want to gift **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']} to {user.display_name}?")
+            if not await EventData.is_yieldable(ctx, ctx.author, user):
+                return
+            
+            if index > len(author_data['chickens']) or index < 0:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
+                return
+            
+            if user.id == ctx.author.id:
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift a chicken to yourself.")
+                return
+            
+            if len(user_farm_data['chickens']) >= get_max_chicken_limit(user_farm_data):
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, {user.display_name} already has the maximum amount of chickens.")
+                return
+            
+            gifted_chicken = author_data['chickens'][index]
 
-        if confirmation:
-            await self.gift_request(ctx, user, gifted_chicken, author_data, user_data, index)
+            if await is_non_tradable_chicken(gifted_chicken['rarity']):
+                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift this chicken.")
+                return
+            
+            async with EventData.manage_event_context(ctx.author, user, awaitable=True):
+            
+                confirmation = await confirmation_embed(ctx, ctx.author, f":question: {ctx.author.display_name}, are you sure you want to gift **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']} to {user.display_name}?")
+
+                if confirmation:
+                    await self.gift_request(ctx, user, gifted_chicken, author_data, user_farm_data, index)
+                else:
+                    await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the gift request.")
         else:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you have cancelled the gift request.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} doesn't have a farm.")
 
     async def gift_request(self, ctx: Context, user: discord.Member, gifted_chicken: dict, author_data: dict, user_data: dict, index: int) -> None:
         """
@@ -195,25 +202,21 @@ class ChickenEvents(commands.Cog):
 
         Returns:
             None
-        """
-        if not await EventData.is_yieldable(ctx, ctx.author, user):
+        """  
+        confirmation = await confirmation_embed(ctx, user, f":question: {user.display_name}, {ctx.author.display_name} has sent you a gift request for **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']}. Do you accept the gift request?")
+        if confirmation:
+            chicken = author_data['chickens'][index]
+            user_data['chickens'].append(chicken)
+            author_data['chickens'].remove(chicken)
+            await Farm.update(ctx.author.id, chickens=author_data['chickens'])
+            await Farm.update(user.id, chickens=user_data['chickens'])
+            await send_bot_embed(ctx, description=f":gift: {ctx.author.display_name}, the chicken has been gifted to {user.display_name}.")
+            await on_awaitable(ctx.author.id, user.id)
             return
-             
-        async with EventData.manage_event_context(ctx.author, user, awaitable=True):
-            confirmation = await confirmation_embed(ctx, user, f":question: {user.display_name}, {ctx.author.display_name} has sent you a gift request for **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']}. Do you accept the gift request?")
-            if confirmation:
-                chicken = author_data['chickens'][index]
-                user_data['chickens'].append(chicken)
-                author_data['chickens'].remove(chicken)
-                await Farm.update(ctx.author.id, chickens=author_data['chickens'])
-                await Farm.update(user.id, chickens=user_data['chickens'])
-                await send_bot_embed(ctx, description=f":gift: {ctx.author.display_name}, the chicken has been gifted to {user.display_name}.")
-                await on_awaitable(ctx.author.id, user.id)
-                return
-            else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the gift request.")
-                await on_awaitable(ctx.author.id, user.id)
-                return
+        else:
+            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name} has declined the gift request.")
+            await on_awaitable(ctx.author.id, user.id)
+            return
                 
     @commands.hybrid_command(name="evolvechicken", aliases=["ec", "fuse"], usage="evolveChicken <index> <index2>", description="Evolve a chicken if having 2 of the same rarity.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
@@ -256,13 +259,12 @@ class ChickenEvents(commands.Cog):
             await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't evolve this chicken.")
             return
         
+        if not await EventData.is_yieldable(ctx, ctx.author):
+            return
+        
         confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to evolve your **{get_rarity_emoji(chicken_selected['rarity'])}{chicken_selected['rarity']} {chicken_selected['name']}** to a higher rarity?")
 
         if confirmation:
-
-            if not await EventData.is_yieldable(ctx, ctx.author):
-                return
-
             async with EventData.manage_event_context(ctx.author):
                 rarity_list = list(ChickenRarity.__members__)
                 chicken_selected['rarity'] = rarity_list[rarity_list.index(chicken_selected['rarity']) + 1]
@@ -413,11 +415,12 @@ class ChickenEvents(commands.Cog):
         
         elif len(ascended_chickens) > 8:
             extra_ascended_chickens = [chicken for chicken in ascended_chickens[8:]]
+        
+        if not await EventData.is_yieldable(ctx, ctx.author):
+            return
 
         if await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to transcend your 8 ascended chickens to an ETHEREAL Chicken?"):
-            if not await EventData.is_yieldable(ctx, ctx.author):
-                return
-            
+
             async with EventData.manage_event_context(ctx.author):
                 transcended_chicken = await create_chicken("ETHEREAL", "transcend")
                 farm_data['chickens'] = [for_chicken for for_chicken in farm_data['chickens'] if for_chicken['rarity'] != "ASCENDED"]

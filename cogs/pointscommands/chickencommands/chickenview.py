@@ -489,7 +489,7 @@ class ChickenView(commands.Cog):
         
         reedemables_info = "\n".join([f"**{index + 1}.** {get_rarity_emoji(reedemable['rarity'])} **{reedemable['rarity']}** **{reedemable['name']}**" for index, reedemable in enumerate(reedemables)])
         msg = await make_embed_object(title=f":gift: {ctx.author.display_name}'s reedemable items:", description=reedemables_info)
-        view = ChickenSelectView(chickens=reedemables, author=ctx.author.id, action="R", message=msg)
+        view = ChickenSelectView(chickens=reedemables, author=ctx.author, action="R", embed_text=msg)
         await ctx.send(embed=msg, view=view)
         
 async def setup(bot):
