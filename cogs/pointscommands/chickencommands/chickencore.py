@@ -62,7 +62,7 @@ class ChickenCore(commands.Cog):
         msg = await get_usr_farm(ctx, discord_member, data)
 
         if not msg:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you don't have any chickens.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {discord_member.display_name}, you don't have any chickens.")
             return
         
         await ctx.send(embed=msg)
@@ -144,7 +144,7 @@ class ChickenCore(commands.Cog):
             
         generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
         message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux." for index, chicken in enumerate(generated_chickens)]))
-        view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", message=message, farm_data=farm_data)
+        view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", embed_text=message, author_cached_data=ctx.data)
         await ctx.send(embed=message, view=view)
                          
     def roll_rates_sum(self) -> tuple:
