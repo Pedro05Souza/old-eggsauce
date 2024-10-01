@@ -11,11 +11,14 @@ from tools.listeners import on_user_transaction
 from lib.shared import make_embed_object, format_number, send_bot_embed
 from lib.chickenlib import get_chicken_egg_value, farm_maintence_tax, get_max_chicken_limit, get_rarity_emoji, load_farmer_upgrades, determine_upkeep_rarity_text, decrease_chicken_happiness, devolve_chicken, quick_sell_chicken
 import discord
+import numpy as np
+import logging
+
+logger = logging.getLogger('bot_logger')
 
 __all__ = [
     'drop_egg_for_player',
     'update_user_farm',
-    'update_farmer',
     'get_usr_farm',
     'update_player_corn',
     'calculate_corn',
@@ -39,36 +42,31 @@ async def drop_egg_for_player(farm_data: dict, hours_passed: int) -> Union[dict,
             farm_data['eggs_generated'] += min(total_profit, MAX_EGG_GENERATED)
         return farm_data, total_profit
                     
-async def feed_eggs_auto(farm_data: dict, bank_amount: int) -> int:
+async def feed_eggs_auto(farm_data: dict, bank_amount: int, hours_passed: int) -> int:
     """
     Feeds the chickens automatically.
 
     Args:
         farm_data (dict): The farm data to feed the chickens for.
         bank_amount (int): The bank amount to feed the chickens with.
+        hours_passed (int): The hours passed.
 
     Returns:
         int
     """
-    total_upkeep = 0
-
     if farm_data['farmer'] == "Sustainable Farmer":
-        random_range = load_farmer_upgrades('Sustainable Farmer')[1]
-        for chicken in farm_data['chickens']:
-            if chicken['happiness'] == 100:
-                continue
-            generated_happiness = randint(random_range[0], random_range[1])
-            cHappiness = chicken['happiness'] + generated_happiness
-            if cHappiness > 100:
-                cHappiness = 100
-            chicken['happiness'] = cHappiness
-            chicken_cost = int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier'])
-            total_upkeep += chicken_cost
+        total_upkeep = 0
+        np_chickens = np.array([chicken['happiness'] + await increase_chicken_happiness(hours_passed) for chicken in farm_data['chickens']])
+        np_chickens = np.clip(np_chickens, 0, 100)
+        total_cost = np.array([int(await get_chicken_egg_value(chicken) * chicken['upkeep_multiplier']) for chicken in farm_data['chickens']])
+        total_upkeep = np.sum(total_cost)
+
+        for i, chicken in enumerate(farm_data['chickens']):
+            chicken['happiness'] = int(np_chickens[i])
 
         if bank_amount < total_upkeep:
             return 0
-        
-        return total_upkeep
+        return int(total_upkeep)
 
 async def update_user_farm(ctx: Context, user: discord.Member, data: dict) -> tuple[dict, int]:
     """
@@ -107,7 +105,7 @@ async def update_user_farm(ctx: Context, user: discord.Member, data: dict) -> tu
 
     return updated_farm_data, total_profit
 
-async def update_farmer(user: discord.Member, data: dict) -> None:
+async def update_sustanaible_farmer(user: discord.Member, data: dict) -> None:
     """
     Feeds the chickens automatically for the sustainable farmer.
 
@@ -119,21 +117,17 @@ async def update_farmer(user: discord.Member, data: dict) -> None:
         None
     """
     farm_data = data['farm_data']
-    last_drop_time = time() - farm_data['last_farmer_drop']
-    hours_passed_since_feed = 0
-    bank_data = data['bank_data']
-    bank_amount = bank_data['bank']
     if farm_data['farmer'] == "Sustainable Farmer":
-        hours_passed_since_feed = min(last_drop_time // load_farmer_upgrades('Sustainable Farmer')[0], 2)
-        for _ in range(int(hours_passed_since_feed)):
-            total_upkeep = await feed_eggs_auto(farm_data, bank_amount)
+        last_drop_time = time() - farm_data['last_farmer_drop']
+        hours_passed_since_feed = 0
+        bank_data = data['bank_data']
+        bank_amount = bank_data['bank']
+        hours_passed_since_feed = min(last_drop_time // load_farmer_upgrades('Sustainable Farmer')[0], 10)
+
+        if hours_passed_since_feed > 0:
+            total_upkeep = await feed_eggs_auto(farm_data, bank_amount, hours_passed_since_feed)
             bank_amount -= total_upkeep
             
-            if total_upkeep == 0:
-                break
-            if bank_amount < total_upkeep:
-                break
-
         if hours_passed_since_feed != 0:
             await Bank.update(farm_data['user_id'], bank_amount)
             await Farm.update(farm_data['user_id'], chickens=farm_data['chickens'], eggs_generated=farm_data['eggs_generated'])
@@ -160,8 +154,7 @@ async def get_usr_farm(ctx: Context, user: discord.Member, data) -> discord.Embe
             if len(farm_data['chickens']) == 0:
                 return
 
-            if farm_data['farmer'] == 'Sustainable Farmer':
-                await update_farmer(user, data)
+            await update_sustanaible_farmer(user, data)
 
             msg = await make_embed_object(
                 title=
@@ -195,6 +188,7 @@ async def update_player_corn(user: discord.Member, data: dict) -> int:
     hours_passed_since_last_drop = min(last_drop_time // FARM_DROP, 24)
     corn_produced = 0
     current_corn = farm_data['corn']
+
     if hours_passed_since_last_drop != 0:
         corn_produced = await calculate_corn(farm_data, hours_passed_since_last_drop)
         current_corn += corn_produced
@@ -216,9 +210,9 @@ async def calculate_corn(farm_data: dict, hours_passed: int) -> int:
     """
     corn_produced = farm_data['plot'] * CORN_PER_PLOT   
     corn_produced *= hours_passed
+
     if farm_data['farmer'] == 'Rich Farmer':
-        corn_produced += corn_produced * load_farmer_upgrades('Rich Farmer')[1] / 100
-    corn_produced = int(corn_produced)
+        corn_produced += corn_produced * load_farmer_upgrades('Rich Farmer')[1] // 100
     return corn_produced
 
 async def update_user_points(ctx: Context, user_data: dict, bank_data: dict, farm_data: dict, taxes: int, total_profit: int) -> int:
@@ -260,37 +254,45 @@ async def update_user_points(ctx: Context, user_data: dict, bank_data: dict, far
     await on_user_transaction(ctx, profit_with_taxes, 0 if profit_with_taxes > 0 else 1)
     return profit_with_taxes
 
-async def give_total_farm_profit(farm_data_copy: dict, hours_passed: int) -> int:
+async def give_total_farm_profit(farm_data_copy: dict, hours_passed: int, update: bool=True) -> int:
     """
     Gives the total farm profit.
 
     Args:
         farm_data_copy (dict): The copy of a farm data to give the profit for.
         hours_passed (int): The hours passed.
+        update (bool): Whether to update the farm data.
 
     Returns:
         int
     """
     total_profit = 0
-    for chicken in farm_data_copy['chickens']:
 
-        if chicken['rarity'] == 'DEAD':
-            continue
+    chickens = farm_data_copy['chickens']
+    egg_values = np.array([await get_chicken_egg_value(chicken) for chicken in chickens])
+    upkeep_multipliers = np.array([chicken['upkeep_multiplier'] for chicken in chickens])
+    happiness = np.array([chicken['happiness'] for chicken in chickens])
+    eggs_generated = np.array([chicken['eggs_generated'] for chicken in chickens])
 
-        egg_value = await get_chicken_egg_value(chicken)
-        chicken_loss = int(egg_value * chicken['upkeep_multiplier'])
-        chicken_profit = egg_value - chicken_loss
-        total_profit += ((chicken_profit * chicken['happiness']) * hours_passed) // 100
-        chicken['eggs_generated'] += chicken_profit
-        chicken = await decrease_chicken_happiness(chicken, hours_passed)
+    chicken_losses = egg_values * upkeep_multipliers
+    chicken_profits = egg_values - chicken_losses
+    chicken_profits = np.ceil(chicken_profits)
+    total_profit += np.sum((chicken_profits * happiness * hours_passed) // 100)
+    eggs_generated += chicken_profits.astype(int)
 
-        if chicken['happiness'] == 0:
-            await devolve_chicken(chicken)
+    if update:
+        for i, chicken in enumerate(chickens):
+            chicken['eggs_generated'] = int(eggs_generated[i])
+            chicken = await decrease_chicken_happiness(chicken, hours_passed)
+            if chicken['happiness'] == 0:
+                await devolve_chicken(chicken)
 
     if farm_data_copy['farmer'] == 'Rich Farmer':
         to_increase = (total_profit * load_farmer_upgrades('Rich Farmer')[0]) // 100
         total_profit += to_increase
 
+    total_profit = int(total_profit)
+    
     return total_profit, farm_data_copy
 
 async def chicken_retriever_handler(ctx: Context, user: discord.Member, farm_data: dict, offers_list: list) -> None:
@@ -308,19 +310,24 @@ async def chicken_retriever_handler(ctx: Context, user: discord.Member, farm_dat
     """
     offers_to_process = offers_list.copy()
     chickens_added = []
+    
     for offer in offers_to_process:
         chicken = offer['chicken']
         var = farm_data['chickens'] + [chicken]
+
         if len(var) > get_max_chicken_limit(farm_data):
             break
+
         farm_data['chickens'] = var
         offers_list.remove(offer)
         chickens_added.append(chicken)
-        await Market.delete(offer['offer_id'])
+
     if chickens_added:
         chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_added])
         await send_bot_embed(ctx, description=f":white_check_mark: {user.display_name}, you have successfully added the following chickens to your farm: \n\n{chicken_desc}\n Those chickens have been removed from the market.")
         await Farm.update(user.id, chickens=farm_data['chickens'])
+        await Market.bulk_delete(*[offer['offer_id'] for offer in offers_to_process])
+
     if offers_list:
         chicken_desc = "\n\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for offer in offers_list for chicken in [offer['chicken']]])
         await send_bot_embed(ctx, description=f":no_entry_sign: {user.display_name}, you can't add the following chickens to your farm: \n\n{chicken_desc}\n They have been automatically put back in the market.")
@@ -343,11 +350,27 @@ async def get_player_chicken_from_market(ctx: Context, user: discord.Member, dat
 
     if not market_data:
         return farm_data
+
     for offer in market_data:
         last_offer_time = time() - offer['created_at']
+
         if last_offer_time // 3600 > OFFER_EXPIRE_TIME:
                 offers_list.append(offer)
     if offers_list:
         await chicken_retriever_handler(ctx, user, farm_data, offers_list)
 
     return farm_data
+
+async def increase_chicken_happiness(hours_passed: int) -> int:
+    """
+    Increases the chicken's happiness. This is only usable for the sustainable farmer.
+
+    Args:
+        hours_passed (int): The hours passed.
+
+    Returns:
+        dict
+    """
+    range_farmer = load_farmer_upgrades('Sustainable Farmer')[1]
+    happiness_increased = sum([randint(range_farmer[0], range_farmer[1]) for _ in range(hours_passed)])
+    return happiness_increased
