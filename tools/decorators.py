@@ -7,10 +7,9 @@ from typing import Any, Callable
 from discord.ext import commands
 from discord.ext.commands import Context
 from tools.pointscore import get_config_data, retrieve_user_data, validate_command, get_points_commands_submodules, verify_farm_command, verify_and_handle_points
-from lib import guild_cache_retriever
 
 
-__all__ = ['pricing', 'listener_checks', 'before_loop_decorator']
+__all__ = ['pricing', 'before_loop_decorator']
 
 
 def pricing(cache_copy: bool = False) -> Callable[[Callable [..., Any]], Callable[..., Any]]:
@@ -50,25 +49,6 @@ def pricing(cache_copy: bool = False) -> Callable[[Callable [..., Any]], Callabl
         return await verify_and_handle_points(ctx, ctx.command.name, data["user_data"], config_data, data)
     
     return commands.check(predicate)
-
-def listener_checks() -> bool:
-    """
-    Checks if the listener can happen given guild active modules.
-
-    Returns:
-        bool
-    """
-    async def checks(func):
-        async def wrapper(self, *args, **kwargs):
-            guild_data = await guild_cache_retriever(args[0].guild.id)
-
-            if guild_data['toggled_modules'] == "N":
-                return False
-
-            return await func(self, *args, **kwargs)
-
-        return wrapper
-    return checks
 
 def before_loop_decorator(task_func) -> Callable[..., Any]:
     """
