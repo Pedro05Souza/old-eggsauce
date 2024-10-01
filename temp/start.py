@@ -1,4 +1,4 @@
-from temp.cache import BotCache
+from temp import BotCache
 
 __all__ = ['cache_initiator', 'cooldown_tracker', 'steal_status']
 
