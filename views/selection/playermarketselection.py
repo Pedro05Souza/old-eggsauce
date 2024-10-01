@@ -9,11 +9,13 @@ __all__ = ["PlayerMarketMenu"]
 
 class PlayerMarketMenu(ui.Select):
 
-    def __init__(self, offers: list, message: discord.Embed, author: discord.Member, instance_bot: discord.Client):
+    def __init__(self, offers: list, message: discord.Embed, author: discord.Member, instance_bot: discord.Client, author_cached_data: dict):
         self.offers = offers
         self.message = message
         self.author = author
         self.instance_bot = instance_bot
+        self.farm_data = author_cached_data['farm_data']
+        self.user_data = author_cached_data['user_data']
         options = [
             SelectOption(
                 label=f"{offer['chicken']['rarity']}", 
@@ -40,26 +42,24 @@ class PlayerMarketMenu(ui.Select):
         
         index = self.values[0]
         offer = self.offers[int(index)]
-        author_data = await User.read(self.author.id)
-        farm_data = await Farm.read(self.author.id)
 
-        if not farm_data:
+        if not self.farm_data:
             return await send_bot_embed(interaction, description=":no_entry_sign: You do not have a farm.", ephemeral=True)
         
-        if offer['price'] > author_data['points']:
+        if offer['price'] > self.user_data['points']:
             return await send_bot_embed(interaction, description=":no_entry_sign: You don't have enough eggbux to buy this chicken.", ephemeral=True)
         
-        farm_data['chickens'].append(offer['chicken'])
+        self.farm_data['chickens'].append(offer['chicken'])
 
-        if len(farm_data['chickens']) > get_max_chicken_limit(farm_data):
+        if len(self.farm_data['chickens']) > get_max_chicken_limit(self.farm_data):
             return await send_bot_embed(interaction, description=":no_entry_sign: You hit the maximum limit of chickens in the farm.", ephemeral=True)
         
         msg = await make_embed_object(description=f":white_check_mark: {self.author.display_name} have successfully bought the **{get_rarity_emoji(offer['chicken']['rarity'])}{offer['chicken']['rarity']}** chicken for {offer['price']} eggbux.")
         
         await interaction.response.send_message(embed=msg)
         await Market.delete(offer['offer_id'])
-        await User.update_points(self.author.id, points=author_data['points'] - offer['price'])
-        await Farm.update(self.author.id, chickens=farm_data['chickens'])
+        await User.update_points(self.author.id, points=self.user_data['points'] - offer['price'])
+        await Farm.update(self.author.id, chickens=self.farm_data['chickens'])
         await self.on_chicken_bought(offer)
         await interaction.message.delete()
 

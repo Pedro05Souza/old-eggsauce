@@ -39,7 +39,6 @@ class ChickenAuthorTradeMenu(ui.Select):
         
         selected_chickens = [self.chickens[int(value)] for value in self.values]
         self.shared_trade_dict[self.author.id] = selected_chickens
-        logger.info(f"Shared trade dict id for {self.author.display_name}: {id(self.shared_trade_dict)}")
         embed = await make_embed_object(description=f":white_check_mark: {self.author.display_name} have selected the chickens to trade.")
         await interaction.response.send_message(embed=embed)
         

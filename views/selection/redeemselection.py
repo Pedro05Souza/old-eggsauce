@@ -9,10 +9,11 @@ __all__ = ["RedeemPlayerMenu"]
 
 class RedeemPlayerMenu(ui.Select):
 
-    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed):
+    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, author_cached_data: dict):
         self.chickens = chickens
         self.author = author
         self.message = message
+        self.farm_data = author_cached_data
         options = [
             SelectOption(
                 label=f"{chicken['rarity']} {chicken['name']}", 
@@ -37,26 +38,25 @@ class RedeemPlayerMenu(ui.Select):
             await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem chickens for another user.", ephemeral=True)
             return
         
-        farm_data = await user_cache_retriever(interaction.user.id)
         chickens_selected = [self.chickens[int(index)] for index in self.values]
         chickens_sucessfully_redeemed = []
         
-        if len(chickens_selected) >= get_max_chicken_limit(farm_data):
+        if len(chickens_selected) >= get_max_chicken_limit(self.farm_data):
             await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem more chickens than the farm size.", ephemeral=True)
             return
         
         for chicken in chickens_selected:
 
-            if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
+            if len(self.farm_data['chickens']) >= get_max_chicken_limit(self.farm_data):
 
-                if len(farm_data['bench']) >= MAX_BENCH:
+                if len(self.farm_data['bench']) >= MAX_BENCH:
                     await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem more chickens than the farm size.", ephemeral=True)
                     return
                 chickens_sucessfully_redeemed.append(chicken)
-                farm_data['bench'].append(chicken)
+                self.farm_data['bench'].append(chicken)
             else:
                 chickens_sucessfully_redeemed.append(chicken)
-                farm_data['chickens'].append(chicken)
+                self.farm_data['chickens'].append(chicken)
 
         await asyncio.sleep(1)
         await interaction.delete_original_response()

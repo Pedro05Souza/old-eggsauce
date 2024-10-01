@@ -24,13 +24,12 @@ class ChickenSelectView(ui.View):
             author: Union[discord.Member, list], 
             action: str, 
             embed_text: discord.Embed, 
-            farm_data: dict = None, 
+            author_cached_data: dict = None,
             role: str = None,
             instance_bot: discord.Client = None,
             shared_trade_dict: dict = None,
-            discord_message: discord.Message = None,
-            *args, 
-            **kwargs
+            user_view: discord.ui.View = None,
+            has_cancel_button: bool = True,
         ):
         """
         Initializes the view.
@@ -40,21 +39,24 @@ class ChickenSelectView(ui.View):
             author (Union[discord.Member, list]): The author of the message.
             action (str): The action to take.
             embed_text (discord.Embed): The message to display.
-            farm_data (dict): The farm data.
+            author_cached_data (dict): The author's cached data.
             role (str): The role of the author (this is used for trade views).
             instance_bot (discord.Client): The bot instance.
-            shared_trade_dict (dict): The shared trade dictionary.
-            discord_message (discord.Message): The discord message.
+            shared_trade_dict (dict): The shared trade dictionary. (this is used for trade views)
+            user_view (discord.ui.View): The user view.
+            has_cancel_button (bool): Whether the view has a cancel button.
             *args: The arguments.
             **kwargs: The keyword arguments.
         """
         self.author = author
-        self.message = discord_message
-        menu, timeout = self.action_handler(chickens, author, action, embed_text, farm_data, role, instance_bot, shared_trade_dict)
-        super().__init__(*args, **kwargs, timeout=timeout)
+        self.user_view = user_view
+        menu, timeout = self.action_handler(chickens, author, action, embed_text, author_cached_data, role, instance_bot, shared_trade_dict)
+        super().__init__(timeout=timeout)
         self.add_item(menu)
-        is_trade_view = True if action == "T" else False
-        self.add_item(CancelButton(author, is_trade_view, self.message))
+
+        if has_cancel_button:
+            is_trade_view = True if action == "T" else False
+            self.add_item(CancelButton(author, self, is_trade_view, self.user_view))
 
     def action_handler(
             self, 
@@ -62,7 +64,7 @@ class ChickenSelectView(ui.View):
             author: Union[discord.Member, list], 
             action: str, 
             embed_text: discord.Embed, 
-            farm_data: dict, 
+            author_cached_data: dict,
             role: str = None, 
             instance_bot: discord.Client = None,
             shared_trade_dict: dict = None
@@ -86,11 +88,11 @@ class ChickenSelectView(ui.View):
 
         if action == "M":
             timeout = 120
-            menu = ChickenMarketMenu(chickens, author, embed_text, farm_data)
+            menu = ChickenMarketMenu(chickens, author, embed_text, author_cached_data)
 
         elif action == "D":
             timeout = 30
-            menu = ChickenDeleteMenu(chickens, author, embed_text)
+            menu = ChickenDeleteMenu(chickens, author, embed_text, author_cached_data)
 
         elif action == "T":
 
@@ -112,7 +114,7 @@ class ChickenSelectView(ui.View):
 
         elif action == "R":
             timeout = 120
-            menu = RedeemPlayerMenu(chickens, author, embed_text)
+            menu = RedeemPlayerMenu(chickens, author, embed_text, author_cached_data)
 
         return menu, timeout
 
@@ -133,11 +135,11 @@ class ChickenSelectView(ui.View):
 
 class ChickenMarketMenu(ui.Select):
     
-    def __init__(self, chickens: list, author_id: int, message: discord.Embed, farm_data: dict):
+    def __init__(self, chickens: list, author_id: int, message: discord.Embed, author_cached_data: dict):
         self.chickens = chickens
         self.author_id = author_id
         self.message = message
-        self.farm_data = farm_data
+        self.farm_data = author_cached_data['farm_data']
         super().__init__(min_values=1, max_values=1, options=self.initiaize_options(), placeholder="Select the chicken to buy:")
 
     def initiaize_options(self) -> list:
@@ -242,11 +244,12 @@ class ChickenMarketMenu(ui.Select):
     
 class CancelButton(ui.Button):
 
-    def __init__(self, view_author_id: Union[int, list], is_trade_view: bool = False, other_message: discord.Message = None):
+    def __init__(self, view_author_id: Union[int, list], author_view: discord.ui.View, is_trade_view: bool = False, other_view: discord.ui.View = None):
         super().__init__(style=discord.ButtonStyle.danger, label="Cancel", custom_id="cancel_button")
         self.view_author_id = view_author_id
+        self.author_view = author_view
         self.is_trade_view = is_trade_view
-        self.other_message = other_message
+        self.other_view = other_view
 
     async def callback(self, interaction: discord.Interaction):
         """
@@ -261,7 +264,7 @@ class CancelButton(ui.Button):
         if self.is_trade_view:
             await self.trade_cancel(interaction)
         else:
-            await interaction.message.delete()
+            self.author_view.stop()
             logger.info(self.view_author_id)
             await send_bot_embed(interaction, description=":white_check_mark: The action has been cancelled.", ephemeral=True)
             
@@ -285,9 +288,9 @@ class CancelButton(ui.Button):
         Returns:
             None
         """
-        await interaction.message.delete()
-        if self.other_message:
-            await self.other_message.delete()
+        self.author_view.stop()
+        if self.other_view:
+            self.other_view.stop()
 
         await send_bot_embed(interaction, description=f":white_check_mark: {interaction.user.display_name} has cancelled the event.")
         await on_awaitable(self.view_author_id[0].id, self.view_author_id[1].id)
