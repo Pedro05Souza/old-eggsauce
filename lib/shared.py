@@ -189,9 +189,7 @@ async def read_and_update_cache(user_id: int) -> dict:
     Returns:
         dict
     """
-    from db.userdb import User # this is like this to avoid circular imports
-    from db.bankdb import Bank # its terrible but it works
-    from db.farmdb import Farm
+    from db import User, Farm, Bank # this is like this to avoid circular imports its terrible but it works
     
     user_data = await User.read(user_id)
 
@@ -231,7 +229,7 @@ async def guild_cache_retriever(guild_id: int) -> dict:
     Returns:
         dict
     """
-    from db.botconfigdb import BotConfig # same as above
+    from db import BotConfig # same as above
     
     guild_cache = await cache_initiator.get(guild_id)
     
@@ -333,7 +331,7 @@ async def update_user_param(ctx: Context, user_data: dict, data: dict, user: dis
     Returns:
         None
     """
-    from tools.pointscore import update_user_farm_on_command, update_user_points_in_voice
+    from tools import update_user_farm_on_command, update_user_points_in_voice
     
     await update_user_farm_on_command(ctx, user_data, data, user)
     await update_user_points_in_voice(ctx, user_data, user)
