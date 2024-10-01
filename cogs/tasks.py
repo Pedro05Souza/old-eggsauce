@@ -16,16 +16,18 @@ class Tasks(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.cache_clear_task.start()
-        self.listener_clear_task.start()
-        self.cooldown_clear_task.start()
-        self.steal_status_task.start()
+        self.tasks = [
+            self.cache_clear_task, 
+            self.listener_clear_task, 
+            self.cooldown_clear_task, 
+            self.steal_status_task, 
+            ]
+        for task in self.tasks:
+            task.start()
 
     def cog_unload(self):
-        self.cache_clear_task.cancel()
-        self.listener_clear_task.cancel()
-        self.cooldown_clear_task.cancel()
-        self.steal_status_task.cancel()
+        for task in self.tasks:
+            task.cancel()
 
     @before_loop_decorator
     @tasks.loop(hours=2)
