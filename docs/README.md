@@ -24,6 +24,8 @@ Here are the main technologies and dependencies used in this project:
 
 ![Static Badge](https://img.shields.io/badge/discord.py-7289DA?style=for-the-badge&logo=discord&logoColor=white)
 ![Static Badge](https://img.shields.io/badge/MongoDB%20(Motor)-47a248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Static Badge](https://img.shields.io/badge/numpy-blue?style=for-the-badge&logo=numpy)
+
 
 ## Project Dependencies
 
