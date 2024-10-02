@@ -123,6 +123,7 @@ async def update_sustanaible_farmer(user: discord.Member, data: dict) -> None:
         bank_data = data['bank_data']
         bank_amount = bank_data['bank']
         hours_passed_since_feed = min(last_drop_time // load_farmer_upgrades('Sustainable Farmer')[0], 10)
+        hours_passed_since_feed = int(hours_passed_since_feed)
 
         if hours_passed_since_feed > 0:
             total_upkeep = await feed_eggs_auto(farm_data, bank_amount, hours_passed_since_feed)

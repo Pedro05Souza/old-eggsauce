@@ -2,6 +2,7 @@ from discord import SelectOption, ui
 from db import Farm
 from lib.chickenlib import get_chicken_price, get_max_chicken_limit, get_rarity_emoji, check_if_author
 from lib import make_embed_object, send_bot_embed, user_cache_retriever
+from tools import on_awaitable
 import asyncio
 import discord
 import logging
@@ -92,6 +93,7 @@ class ChickenUserTradeMenu(ui.Select):
                 return
             await asyncio.sleep(1)
             current_time += 1
+        await on_awaitable(self.author.id, self.target.id if self.target else None)
         await send_bot_embed(interaction, description=":no_entry_sign: Trade has timed out.")
         
     async def trade_confirmation(self, interaction: discord.Interaction) -> None:
@@ -121,18 +123,25 @@ class ChickenUserTradeMenu(ui.Select):
                     check=lambda _, user: user.id in {self.author.id, self.target.id},
                     timeout=40
                 )
+
                 if reaction.emoji == "✅":
                     users_reacted.add(reactUsr.id)
                 elif reaction.emoji == "❌":
                     await send_bot_embed(interaction, description="Trade has been cancelled.")
                     await self.delete_shared_dict(self.author)
+                    await on_awaitable(self.author.id, self.target.id if self.target else None)
                     return
+                
         except asyncio.TimeoutError:
             await send_bot_embed(interaction, description="Trade confirmation has timed out.")
             await self.delete_shared_dict(self.author)
+            await on_awaitable(self.author.id, self.target.id if self.target else None)
             return 
             
         if len(users_reacted) == 2:
+            if self.view.is_finished():
+                return
+            
             msg = await self.trade_handler(interaction)
             await interaction.followup.send(embed=msg)
             return
