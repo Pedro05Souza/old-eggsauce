@@ -3,7 +3,7 @@ This module contains the player market commands for the chicken system.
 """
 from discord.ext import commands
 from db import Farm, Market
-from lib import send_bot_embed, make_embed_object, confirmation_embed
+from lib import send_bot_embed, make_embed_object, confirmation_embed, format_number, user_cache_retriever
 from lib.chickenlib import get_rarity_emoji, is_non_market_place_chicken, ChickenRarity, EventData
 from resources import REGULAR_COOLDOWN, OFFER_EXPIRE_TIME
 from tools import pricing
@@ -11,8 +11,11 @@ from views.selection import ChickenSelectView
 from better_profanity import profanity
 from discord.ext.commands import Context
 import discord
+import logging
 
 __all__ = ["PlayerMarket"]
+
+logger = logging.getLogger("bot_logger")
 
 class PlayerMarket(commands.Cog):
 
@@ -74,17 +77,18 @@ class PlayerMarket(commands.Cog):
             
             selected_chicken = farm_data['chickens'][index]
 
-            if is_non_market_place_chicken(selected_chicken):
+            if await is_non_market_place_chicken(selected_chicken['rarity']):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you cannot register this chicken to the player market.")
+                return
+            
+            if not await EventData.is_yieldable(ctx, ctx.author):
                 return
             
             confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to register your **{get_rarity_emoji(selected_chicken['rarity'])}{selected_chicken['rarity']} {selected_chicken['name']}** to the player market for **{price}** eggbux?")
             
             if confirmation:
-                if not await EventData.is_yieldable(ctx, ctx.author):
-                    return
                 
-                async with EventData(ctx, ctx.author):
+                async with EventData.manage_event_context(ctx.author):
                     await Market.create(ctx.author.id, selected_chicken, price, description, ctx.author.id)
                     await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have successfully registered your chicken to the player market. If no one buys it, it automatically gets back to your farm after **{OFFER_EXPIRE_TIME}** hours.")
                     farm_data['chickens'].pop(index)
@@ -117,7 +121,7 @@ class PlayerMarket(commands.Cog):
                     "\n\n".join([
                         f"**{i+1}.** **{get_rarity_emoji(offer['chicken']['rarity'])}"
                         f"{offer['chicken']['rarity']} {offer['chicken']['name']}** - "
-                        f"**Price:** {offer['price']} eggbux. :money_with_wings: \n"
+                        f"**Price:** {await format_number(offer['price'])} eggbux. :money_with_wings: \n"
                         f"**:gem: Upkeep rarity**: {(offer['chicken']['upkeep_multiplier']) * 100}% \n"
                         f"**:scroll: Description:** {offer['description']}"
                         for i, offer in enumerate(current_offers)
@@ -148,7 +152,9 @@ class PlayerMarket(commands.Cog):
             price (int, optional): The price of the chicken. Defaults to None.
             author (discord.Member, optional): The author of the chicken. Defaults to None.
         """
+        cache = await user_cache_retriever(interaction.user.id)
         search_param = [chicken_rarity, upkeep_rarity, price, author]
+
         if all([not param for param in search_param]):
             await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: {interaction.user.display_name}, you need to provide at least one search parameter.")
             return
@@ -156,9 +162,8 @@ class PlayerMarket(commands.Cog):
         if upkeep_rarity:
             if upkeep_rarity < 0 or upkeep_rarity > 100:
                 await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: {interaction.user.display_name}, the upkeep rarity must be between **0%** and **100%**.")
-                return
-            
-        upkeep_rarity = upkeep_rarity / 100
+                return  
+            upkeep_rarity = upkeep_rarity / 100
 
         if chicken_rarity:
             chicken_rarity = chicken_rarity.upper()
@@ -179,7 +184,7 @@ class PlayerMarket(commands.Cog):
                     "\n\n".join([
                         f"**{i+1}.** **{get_rarity_emoji(offer['chicken']['rarity'])}"
                         f"{offer['chicken']['rarity']} {offer['chicken']['name']}** - "
-                        f"**Price:** {offer['price']} eggbux. :money_with_wings:\n"
+                        f"**Price:** {await format_number(offer['price'])} eggbux. :money_with_wings:\n"
                         f"**:gem: Upkeep rarity**: {(offer['chicken']['upkeep_multiplier']) * 100}% \n"
                         f"**:scroll: Description:** {offer['description']} \n"
                         f"**:bust_in_silhouette: Seller:** {offer['author_name']}"
@@ -187,8 +192,8 @@ class PlayerMarket(commands.Cog):
                     ])
                 )
             )
-                view = ChickenSelectView(chickens=search, author=interaction.user, message=msg, action="PM", instance_bot=self.bot)
-                await interaction.response.send_message(embed=msg, view=view, ephemeral=True)
+                view = ChickenSelectView(chickens=search, author=interaction.user, embed_text=msg, action="PM", instance_bot=self.bot, author_cached_data=cache, has_cancel_button=False)
+                await interaction.response.send_message(embed=msg, view=view)
             else:
                 await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: No offers found with the parameters provided.")
         else:
