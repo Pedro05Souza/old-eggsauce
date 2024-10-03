@@ -144,7 +144,7 @@ class ChickenCore(commands.Cog):
             
         generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
         message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux." for index, chicken in enumerate(generated_chickens)]))
-        view = ChickenSelectView(chickens=generated_chickens, author=ctx.author.id, action="M", embed_text=message, author_cached_data=ctx.data)
+        view = ChickenSelectView(chickens=generated_chickens, author=ctx.author, action="M", embed_text=message, author_cached_data=ctx.data, has_cancel_button=False)
         await ctx.send(embed=message, view=view)
                          
     def roll_rates_sum(self) -> tuple:
