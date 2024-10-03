@@ -5,7 +5,7 @@ from typing import Optional
 from db.userdb import User
 from db.bankdb import Bank
 from discord.ext import commands
-from lib.shared import *
+from lib.core_utils import *
 from lib.chickenlib import update_user_farm, update_player_corn
 from resources import Prices, USER_SALARY_DROP
 from discord.ext.commands import Context

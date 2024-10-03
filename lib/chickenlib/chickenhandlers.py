@@ -5,7 +5,7 @@ Also, it contains a handler that limits the amount of rolls a player can do in a
 from contextlib import asynccontextmanager
 from discord.ext.commands import Context
 from tools.shared_state import get_shared_event
-from lib.shared import send_bot_embed
+from lib.core_utils import send_bot_embed
 import asyncio
 import discord
 import logging

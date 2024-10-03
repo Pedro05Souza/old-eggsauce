@@ -8,7 +8,7 @@ from discord.ext.commands import Context
 from db import Farm, Bank, User, Market
 from resources import FARM_DROP, MAX_EGG_GENERATED, CORN_PER_PLOT, OFFER_EXPIRE_TIME, tips
 from tools.listeners import on_user_transaction
-from lib.shared import make_embed_object, format_number, send_bot_embed
+from lib.core_utils import make_embed_object, format_number, send_bot_embed
 from lib.chickenlib import get_chicken_egg_value, farm_maintence_tax, get_max_chicken_limit, get_rarity_emoji, load_farmer_upgrades, determine_upkeep_rarity_text, decrease_chicken_happiness, devolve_chicken, quick_sell_chicken
 import discord
 import numpy as np
