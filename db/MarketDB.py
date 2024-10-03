@@ -35,7 +35,7 @@ class Market:
                 return None
             else:
                 offer = {
-                    "offer_id": str(author_id) + "_" + Market.generate_uuid(),
+                    "offer_id": str(author_id) + "_" + await  Market.generate_uuid(),
                     "chicken": chicken,
                     "price": price,
                     "description": description,
@@ -199,9 +199,10 @@ class Market:
                 else:
                     query["chicken.rarity"] = value
         try:
-            offers = await market_collection.find(query).sort("price", 1).limit(10)
+            offers = market_collection.find(query).sort("price", 1).limit(10)
+            offers = await offers.to_list(length=10)
             if offers:
-                return list(offers)
+                return offers
             else:
                 logger.warning(f"No offers found with the parameters provided.")
                 return None
