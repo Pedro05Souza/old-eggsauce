@@ -1,5 +1,4 @@
 from lib.chickenlib import get_chicken_price, get_rarity_emoji, get_max_chicken_limit, get_max_bench_limit, create_chicken, check_if_author
-from lib.shared import user_cache_retriever
 from views.selection.deleteselection import ChickenDeleteMenu
 from views.selection.playermarketselection import PlayerMarketMenu
 from views.selection.redeemselection import RedeemPlayerMenu
@@ -8,7 +7,7 @@ from tools import on_user_transaction, on_awaitable
 from typing import Union
 from discord import SelectOption, ui
 from db import Farm, User
-from lib.shared import make_embed_object, send_bot_embed
+from lib.core_utils import make_embed_object, send_bot_embed
 import discord
 import logging
 
@@ -64,7 +63,7 @@ class ChickenSelectView(ui.View):
             author: Union[discord.Member, list], 
             action: str, 
             embed_text: discord.Embed, 
-            author_cached_data: dict,
+            author_cached_data: dict = None,
             role: str = None, 
             instance_bot: discord.Client = None,
             shared_trade_dict: dict = None
@@ -110,7 +109,7 @@ class ChickenSelectView(ui.View):
 
         elif action == "PM":
             timeout = 120
-            menu = PlayerMarketMenu(chickens, embed_text, author, instance_bot)
+            menu = PlayerMarketMenu(chickens, embed_text, author, instance_bot, author_cached_data)
 
         elif action == "R":
             timeout = 120
@@ -135,11 +134,11 @@ class ChickenSelectView(ui.View):
 
 class ChickenMarketMenu(ui.Select):
     
-    def __init__(self, chickens: list, author_id: int, message: discord.Embed, author_cached_data: dict):
+    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, author_cached_data: dict):
         self.chickens = chickens
-        self.author_id = author_id
+        self.author = author
         self.message = message
-        self.farm_data = author_cached_data['farm_data']
+        self.author_cached_data = author_cached_data
         super().__init__(min_values=1, max_values=1, options=self.initiaize_options(), placeholder="Select the chicken to buy:")
 
     def initiaize_options(self) -> list:
@@ -153,7 +152,7 @@ class ChickenMarketMenu(ui.Select):
         options = [
             SelectOption(
                 label=f"{chicken['rarity']} {chicken['name']}", 
-                description=f"Price: {get_chicken_price(chicken, self.farm_data['farmer'])}", 
+                description=f"Price: {get_chicken_price(chicken, self.author_cached_data['farm_data']['farmer'])}", 
                 value=str(index), 
                 emoji=get_rarity_emoji(chicken['rarity'])
             )
@@ -171,41 +170,38 @@ class ChickenMarketMenu(ui.Select):
         Returns:
             None
         """
-        if not await check_if_author(self.author_id, interaction.user.id, interaction):
+        if not await check_if_author(self.author.id, interaction.user.id, interaction):
             return
         
         index = self.values[0]
         chicken_selected = self.chickens[int(index)]
-        data = await user_cache_retriever(interaction.user.id)
-        farm_data = data["farm_data"]
-        user_data = data["user_data"]
-        price = get_chicken_price(chicken_selected, farm_data['farmer'])
+        price = get_chicken_price(chicken_selected, self.author_cached_data['farm_data']['farmer'])
 
-        if price > user_data['points']:
+        if price > self.author_cached_data['user_data']['points']:
             await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: You don't have enough eggbux to buy this chicken.")
             self.options = [
-                SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken, farm_data['farmer'])}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
+                SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken, self.author_cached_data['farm_data']['farmer'])}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
                 for index, chicken in enumerate(self.chickens)
             ]
             await interaction.message.edit(view=self.view)
             return
         
-        if len(farm_data['chickens']) == get_max_chicken_limit(farm_data) and len(farm_data['bench']) == await get_max_bench_limit():
+        if len(self.author_cached_data['farm_data']['chickens']) == get_max_chicken_limit(self.author_cached_data['farm_data']) and len(self.author_cached_data['farm_data']['bench']) == await get_max_bench_limit():
             await send_bot_embed(interaction, description=":no_entry_sign: You hit the maximum limit of chickens in the farm and the farm.", ephemeral=True)
             self.options = [
-                SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken, farm_data['farmer'])}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
+                SelectOption(label=f"{chicken['rarity']} {chicken['name']}", description=f"{chicken['rarity']} {get_chicken_price(chicken, self.author_cached_data['farm_data']['farmer'])}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
                 for index, chicken in enumerate(self.chickens)
             ]
             await interaction.message.edit(view=self.view)
             return
         
-        available_chickens = await self.handle_chicken_purchase(interaction, chicken_selected, farm_data, user_data, price)
+        available_chickens = await self.handle_chicken_purchase(interaction, chicken_selected, self.author_cached_data['farm_data'], self.author_cached_data['user_data'], price)
 
         if not available_chickens:
             await interaction.message.delete()
             return
         
-        updated_view = ChickenSelectView(available_chickens, self.author_id, "M", self.message, farm_data=farm_data)
+        updated_view = ChickenSelectView(available_chickens, self.author, "M", self.message, author_cached_data=self.author_cached_data)
         updated_message = await make_embed_object(title=f":chicken: {interaction.user.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken)} eggbux." for index, chicken in enumerate(available_chickens)]))
         await interaction.message.edit(embed=updated_message, view=updated_view)
         self.message = updated_message
