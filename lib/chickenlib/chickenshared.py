@@ -3,7 +3,7 @@ Library module chickens.
 """
 from random import randint, uniform, choice
 from lib.chickenlib.chickeninfo import *
-from lib.shared import send_bot_embed
+from lib import send_bot_embed
 from resources import *
 from uuid import uuid4
 from typing import Union
@@ -22,7 +22,7 @@ __all__ = [
     "is_non_tradable_chicken", "get_non_tradable_chickens", "is_non_evolvable_chicken", 
     "get_non_evolvable_chickens", "is_non_market_place_chicken", "get_non_market_place_chickens", "is_non_devolvable_chicken", 
     "farm_maintence_tax"
-           ]
+    ]
             
 def determine_chicken_upkeep(chicken: dict) -> float:
     """
