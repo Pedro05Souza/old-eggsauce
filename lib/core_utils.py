@@ -4,10 +4,11 @@ This module contains shared functions that are used across multiple modules.
 from datetime import datetime
 from dotenv import load_dotenv
 from temp import cache_initiator, cooldown_tracker
-from typing import Union
+from typing import Optional
 from discord.ext.commands import Context
 from discord import Interaction
 from discord.utils import format_dt
+from db import User, Farm, Bank, BotConfig
 from discord.ui import View
 from copy import deepcopy
 import os
@@ -162,7 +163,7 @@ async def confirmation_embed(ctx: Context | Interaction , user: discord.Member, 
     except asyncio.TimeoutError:
         return False
 
-async def user_cache_retriever(user_id: int) -> Union[dict, None]:
+async def user_cache_retriever(user_id: int) -> Optional[dict]:
     """
     Retrieves the user cache.
 
@@ -190,8 +191,6 @@ async def read_and_update_cache(user_id: int) -> dict:
     Returns:
         dict
     """
-    from db import User, Farm, Bank # this is like this to avoid circular imports its terrible but it works
-    
     user_data = await User.read(user_id)
 
     if not user_data:
@@ -203,7 +202,7 @@ async def read_and_update_cache(user_id: int) -> dict:
     user_cache = await cache_initiator.get(user_id)
     return user_cache
 
-async def user_cache_retriever_copy(user_id: int) -> Union[dict, None]:
+async def user_cache_retriever_copy(user_id: int) -> Optional[dict]:
     """
     Retrieves a copy of the user cache. This is used in case you don't want the cache to be updated during runtime.
 
@@ -230,8 +229,6 @@ async def guild_cache_retriever(guild_id: int) -> dict:
     Returns:
         dict
     """
-    from db import BotConfig # same as above
-    
     guild_cache = await cache_initiator.get(guild_id)
     
     if not guild_cache:
