@@ -3,7 +3,7 @@ This module contains the event listeners for the bot.
 """
 from discord.ext.commands import Context
 from discord.interactions import Interaction
-from tools.listenermanager import listener_manager
+from tools.listener_manager import listener_manager
 from tools.shared_state import get_shared_event
 import logging
 

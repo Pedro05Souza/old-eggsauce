@@ -2,7 +2,7 @@
 Library module chickens.
 """
 from random import randint, uniform, choice
-from lib.chickenlib.chickeninfo import *
+from lib.chickenlib.chicken_info import *
 from lib import send_bot_embed
 from resources import *
 from uuid import uuid4

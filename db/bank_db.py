@@ -1,7 +1,7 @@
 """
 This module contains the database functions for the bank collection.
 """
-from db.dbsetup import mongo_client
+from db.db_setup import mongo_client
 from temp import cache_initiator
 from typing import Union
 import logging

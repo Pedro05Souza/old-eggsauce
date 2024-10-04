@@ -9,8 +9,8 @@ Modules included:
 * botconfigdb: Contains the bot configuration database collection.
 """
 
-from .bankdb import *
-from .userdb import *
-from .farmdb import *
-from .marketdb import *
-from .botconfigdb import *
+from .bank_db import *
+from .user_db import *
+from .farm_db import *
+from .market_db import *
+from .bot_config_db import *

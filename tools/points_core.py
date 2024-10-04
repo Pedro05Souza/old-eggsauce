@@ -2,8 +2,8 @@
 This module contains functions that are used in the decorator predicates of the points commands.
 """
 from typing import Optional
-from db.userdb import User
-from db.bankdb import Bank
+from db.user_db import User
+from db.bank_db import Bank
 from discord.ext import commands
 from lib.core_utils import *
 from lib.chickenlib import update_user_farm, update_player_corn
@@ -31,7 +31,7 @@ async def get_points_commands_submodules(ctx: Context, config_data: dict) -> boo
     """
     active_module = config_data['toggled_modules']
     shared_cogs = ["BaseCommands", "BankCommands"]
-    chicken_cogs = ["ChickenCore", "ChickenEvents", "ChickenView", "CornCommands", "PlayerMarket", "ChickenCombat"]
+    chicken_cogs = ["ChickenCore", "ChickenEvents", "ChickenView", "CornCommands", "PlayerMarket", "ChickenCombat", "ChickenInteractive", "ChickenBench"]
     interactive_cogs = ["InteractiveCommands"]
     module_cogs = {
         "C": set(chicken_cogs + shared_cogs),

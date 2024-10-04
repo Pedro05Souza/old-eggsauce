@@ -6,7 +6,7 @@ The before_loop_decorator is used to decorate the before_loop function in the ta
 from typing import Any, Callable
 from discord.ext import commands
 from discord.ext.commands import Context
-from tools.pointscore import get_config_data, retrieve_user_data, validate_command, get_points_commands_submodules, verify_farm_command, verify_and_handle_points
+from tools.points_core import get_config_data, retrieve_user_data, validate_command, get_points_commands_submodules, verify_farm_command, verify_and_handle_points
 
 
 __all__ = ['pricing', 'before_loop_decorator']

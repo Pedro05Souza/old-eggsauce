@@ -1,8 +1,8 @@
 from lib.chickenlib import get_chicken_price, get_rarity_emoji, get_max_chicken_limit, get_max_bench_limit, create_chicken, check_if_author
-from views.selection.deleteselection import ChickenDeleteMenu
-from views.selection.playermarketselection import PlayerMarketMenu
-from views.selection.redeemselection import RedeemPlayerMenu
-from views.selection.tradeselection import ChickenAuthorTradeMenu, ChickenUserTradeMenu
+from views.selection.delete_selection import ChickenDeleteMenu
+from views.selection.player_market_selection import PlayerMarketMenu
+from views.selection.redeem_selection import RedeemPlayerMenu
+from views.selection.trade_selection import ChickenAuthorTradeMenu, ChickenUserTradeMenu
 from tools import on_user_transaction, on_awaitable
 from typing import Union
 from discord import SelectOption, ui

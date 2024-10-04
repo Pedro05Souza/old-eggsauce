@@ -1,5 +1,6 @@
 """
-This module contains the PointsManager class which is responsible for managing and giving points to the users in the bot.
+This module contains the PointsManager class which is responsible for giving points to the users in the bot
+for being in a voice channel and for sending messages.
 """
 from discord.ext import commands
 from lib import user_cache_retriever, can_listener_run
@@ -32,6 +33,7 @@ class PointsManager(commands.Cog):
         message_time = message_cache[user_id]
         time_difference = current_time - message_time
         time_passed = min(time_difference // 20, 1)
+        
         if time_passed > 0:
             cache = await user_cache_retriever(user_id)
         

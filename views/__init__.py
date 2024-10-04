@@ -6,5 +6,5 @@ Modules included:
 * pagination: Contains functions for paginating messages.
 """
 
-from .helpSelect import *
-from .pagination import *
+from .help_select import *
+from .paginator import *

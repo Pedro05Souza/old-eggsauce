@@ -15,4 +15,4 @@ async def on_ready():
     logger.info(f"Logged in as {bot.user.name} - {bot.user.id}")
 
 if __name__ == "__main__":
-    bot.run(load_bot_token())
+    bot_start()

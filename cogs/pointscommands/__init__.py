@@ -7,7 +7,7 @@ Modules included:
 * interactive: Contains interactive commands.
 * pointsmanager: Contains functions for managing points.
 """
-from .bankcmds import *
-from .basecommands import *
+from .bank_commands import *
+from .base_commands import *
 from .interactive import *
-from .pointsmanager import *
+from .points_manager import *

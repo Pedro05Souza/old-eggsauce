@@ -11,10 +11,10 @@ Modules included:
 """
 
 
-from .combatbot import *
+from .combat_bot import *
 from .decorators import *
-from .listenermanager import *
+from .listener_manager import *
 from .listeners import *
 from .logger import *
 from .shared_state import *
-from .pointscore import *
+from .points_core import *

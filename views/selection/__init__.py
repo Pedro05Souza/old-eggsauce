@@ -9,8 +9,8 @@ Modules included:
 * tradeselection: Contains functions for selecting chickens to trade.
 """
 
-from .chickenselection import *
-from .deleteselection import *
-from .playermarketselection import *
-from .redeemselection import *
-from .tradeselection import *
+from .chicken_selection import *
+from .delete_selection import *
+from .player_market_selection import *
+from .redeem_selection import *
+from .trade_selection import *
