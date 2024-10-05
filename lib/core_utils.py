@@ -15,9 +15,9 @@ import os
 import discord
 import threading
 import asyncio
-import logging
 
-logger = logging.getLogger("bot_logger")
+cache_lock = asyncio.Lock()
+
 
 __all__ = [
     'send_bot_embed',
@@ -78,7 +78,7 @@ async def make_embed_object(**kwargs) -> discord.Embed:
     embed = discord.Embed(**kwargs, color=discord.Color.yellow())
     return embed
 
-def is_dev(ctx: Context) -> bool:
+async def is_dev(author_id: int) -> bool:
     """
     Checks if the user is a developer.
 
@@ -89,7 +89,7 @@ def is_dev(ctx: Context) -> bool:
         bool
     """
     devs = dev_list()
-    return str(ctx.author.id) in devs
+    return str(author_id) in devs
 
 def dev_list() -> list:
     """
@@ -232,16 +232,20 @@ async def guild_cache_retriever(guild_id: int) -> dict:
     guild_cache = await cache_initiator.get(guild_id)
     
     if not guild_cache:
-        guild_data = await BotConfig.read(guild_id)
-        prefix = guild_data['prefix']  
+        async with cache_lock:
+            guild_cache = await cache_initiator.get(guild_id)
 
-        if prefix is None:
-            prefix = "!"
-        
-        toggled_modules = guild_data.get('toggled_modules', None)
-        channel_id = guild_data.get('channel_id', None)
-        await cache_initiator.put_guild(guild_id, prefix=prefix, toggled_modules=toggled_modules, channel_id=channel_id)
-        return await cache_initiator.get(guild_id)
+            if guild_cache:
+                return guild_cache
+            
+            guild_data = await BotConfig.read(guild_id)
+            prefix = guild_data['prefix']  
+
+            if prefix is None:
+                prefix = "!"
+            
+            await cache_initiator.put_guild(guild_id, prefix=prefix, toggled_modules=guild_data['toggled_modules'], channel_id=guild_data['channel_id'])
+            return await cache_initiator.get(guild_id)
     return guild_cache
 
 def retrieve_threads() -> int:

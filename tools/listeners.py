@@ -5,9 +5,6 @@ from discord.ext.commands import Context
 from discord.interactions import Interaction
 from tools.listener_manager import listener_manager
 from tools.shared_state import get_shared_event
-import logging
-
-logger = logging.getLogger('bot_logger')
 
 __all__ = ['on_user_transaction', 'on_awaitable']
 

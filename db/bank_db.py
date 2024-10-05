@@ -4,10 +4,9 @@ This module contains the database functions for the bank collection.
 from db.db_setup import mongo_client
 from temp import cache_initiator
 from typing import Union
-import logging
+from logs import log_info, log_warning, log_error
 bank_collection = mongo_client.BotDiscord.bank
 
-logger = logging.getLogger('bot_logger')
 __all__ = ['Bank']
 
 class Bank:
@@ -27,7 +26,7 @@ class Bank:
         try:
             user_data = await bank_collection.find_one({"user_id": user_id})
             if user_data:
-                logger.warning(f"User {user_id} already exists.")
+                log_warning(f"User {user_id} already exists.")
                 return None
             else:
                 user = {
@@ -35,12 +34,12 @@ class Bank:
                     "bank": points,
                     "upgrades": upgrades
                 }
-                logger.info(f"Creating user {user_id} with {points} points and {upgrades} upgrades.")
+                log_info(f"Creating user {user_id} with {points} points and {upgrades} upgrades.")
                 await cache_initiator.put_user(user_id, bank_data=user)
                 await bank_collection.insert_one(user)
-                logger.info(f"User {user_id} has been created successfully.")
+                log_info(f"User {user_id} has been created successfully.")
         except Exception as e:
-            logger.error("Error encountered while creating the user.", e)
+            log_error(f"Error encountered while creating user {user_id}.", e)
             return None
         
     @staticmethod
@@ -59,11 +58,11 @@ class Bank:
             if user_data:
                 await cache_initiator.delete(user_id)
                 await bank_collection.delete_one({"user_id": user_id})
-                logger.info("User has been deleted successfully.")
+                log_info(f"User {user_id} has been deleted successfully.")
             else:
-                logger.warning("User not found.")
+                log_warning(f"User {user_id} not found.")
         except Exception as e:
-            logger.error("Error encountered while deleting the user.", e)
+            log_error(f"Error encountered while deleting the user {user_id}.", e)
             return None
         
     @staticmethod
@@ -81,11 +80,11 @@ class Bank:
                 user_data['bank'] = points
                 await cache_initiator.put_user(user_id, bank_data=user_data)
                 await bank_collection.update_one({"user_id": user_id}, {"$set": {"bank": points}})
-                logger.info("User has been updated successfully.")
+                log_info(f"User {user_id} has been updated successfully.")
             else:
-                logger.warning("User not found.")
+                log_warning(f"User {user_id} not found.")
         except Exception as e:
-            logger.error("Error encountered while updating the user.", e)
+            log_error(f"Error encountered while updating the user {user_id}.", e)
             return None
         
     @staticmethod
@@ -106,11 +105,11 @@ class Bank:
                 user_data['upgrades'] = upgrades
                 await cache_initiator.put_user(user_id, bank_data=user_data)
                 await bank_collection.update_one({"user_id": user_id}, {"$set": {"upgrades": upgrades}})
-                logger.info("User has been updated successfully.")
+                log_info(f"User {user_id} has been updated successfully.")
             else:
-                logger.warning("User not found.")
+                log_warning(f"User {user_id} not found.")
         except Exception as e:
-            logger.error("Error encountered while updating the user.", e)
+            log_error(f"Error encountered while updating the user {user_id}.", e)
             return None
         
     @staticmethod
@@ -129,5 +128,5 @@ class Bank:
             if user_data:
                 return user_data
         except Exception as e:
-            logger.error("Error encountered while trying to read the user.", e)
+            log_error(f"Error encountered while trying to read the user {user_id}.", e)
             return None

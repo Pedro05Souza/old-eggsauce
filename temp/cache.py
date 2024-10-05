@@ -8,6 +8,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from asyncio import Lock
 from typing import Union
+from logs import log_info
 import logging
 
 logger = logging.getLogger('bot_logger')
@@ -52,12 +53,17 @@ class BotCache():
 
             if identifier not in self.cache:
                 self.cache[identifier] = {}
-
+ 
             for dict_key, value in kwargs.items():
+
                 if dict_key in self.cache[identifier]:
-                    self.cache[identifier][dict_key].update(value)
+                    if isinstance(value, dict):
+                        self.cache[identifier][dict_key].update(value)
+                    else:
+                        self.cache[identifier][dict_key] = value
                 else:
                     self.cache[identifier][dict_key] = value
+
             self.cache.move_to_end(identifier)
             
         if asizeof.asizeof(self.cache) > self.memory_limit_bytes_guild + self.memory_limit_bytes_user:
@@ -114,7 +120,7 @@ class BotCache():
         """
         if len(self.cache) > 0:
             self.cache.clear()
-            logger.info("Cleared the cache.")
+            log_info("Cache has been cleared.")
 
     async def put_user(self, key: int, **kwargs) -> None:
         """

@@ -5,11 +5,11 @@ from discord.ext import commands
 from db import Farm, User
 from views.selection import ChickenSelectView
 from lib.chickenlib import (
-    get_usr_farm, get_rarity_emoji, create_chicken, determine_chicken_upkeep, get_max_chicken_limit, get_non_tradable_chickens,
-    is_non_tradable_chicken, is_non_evolvable_chicken, EventData, ChickenRarity, load_farmer_upgrades
+    get_usr_farm, get_rarity_emoji, create_chicken, determine_chicken_upkeep, get_max_chicken_limit,
+    is_non_evolvable_chicken, EventData, ChickenRarity, load_farmer_upgrades
 )
-from tools import pricing, on_awaitable, on_user_transaction
-from lib import send_bot_embed, confirmation_embed, user_cache_retriever, button_builder, button_view_builder
+from tools import pricing, on_user_transaction
+from lib import send_bot_embed, confirmation_embed, button_builder, button_view_builder
 from resources import REGULAR_COOLDOWN, FARMER_PRICE
 from discord.ext.commands import Context
 import asyncio

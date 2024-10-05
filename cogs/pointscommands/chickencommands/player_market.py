@@ -11,11 +11,8 @@ from views.selection import ChickenSelectView
 from better_profanity import profanity
 from discord.ext.commands import Context
 import discord
-import logging
 
 __all__ = ["PlayerMarket"]
-
-logger = logging.getLogger("bot_logger")
 
 class PlayerMarket(commands.Cog):
 

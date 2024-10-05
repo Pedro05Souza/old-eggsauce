@@ -10,11 +10,9 @@ from lib.chickenlib import update_user_farm, update_player_corn
 from resources import Prices, USER_SALARY_DROP
 from discord.ext.commands import Context
 from tools.listeners import on_user_transaction
-import logging
+from logs import log_info, log_error
 import discord
 import time
-
-logger = logging.getLogger('bot_logger')
 
 __all__ = ["refund", "update_user_farm_on_command", "update_user_points_in_voice"]
 
@@ -122,7 +120,7 @@ async def refund(user: discord.Member, ctx: Context) -> None:
         user_data = user_data["user_data"]
         await User.update_points(user.id, user_data["points"] + price)
     except Exception as e:
-        logger.error(f"An error occurred while refunding the user: {e}")
+        log_error(f"An error has occurred while refunding the user: {user.name}", e)
 
 async def treat_exceptions(ctx: Context, command: str, user_data: dict, config_data: dict, data: dict) -> bool:
     """
@@ -197,7 +195,7 @@ async def automatic_register(user: discord.Member) -> None:
     else:
         await User.create(user.id, 0)
         await Bank.create(user.id, 0, 1)
-        logger.info(f"{user.display_name} has been registered.")
+        log_info(f"{user.name} has been registered in the database.")
 
 async def verify_if_server_has_modules(ctx: Context, config_data: dict) -> bool:
     """

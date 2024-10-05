@@ -5,12 +5,12 @@ from discord.ext import commands
 from db import Farm
 from lib import send_bot_embed, make_embed_object, user_cache_retriever, return_data, format_number, update_user_param
 from lib.chickenlib import (
-    get_chicken_egg_value, get_rarity_emoji, get_chicken_price, get_max_chicken_limit,
+    get_chicken_egg_value, get_rarity_emoji, get_chicken_price,
     get_rarity_emoji, ChickenMultiplier, ChickenRarity, ChickenFood, rollRates, chicken_ranking,
-    rank_determiner, get_user_bench, EventData, give_total_farm_profit, farm_maintence_tax
+    rank_determiner, give_total_farm_profit, farm_maintence_tax
 )
 from views.selection import ChickenSelectView
-from resources import REGULAR_COOLDOWN, FARM_DROP, MAX_BENCH
+from resources import REGULAR_COOLDOWN, FARM_DROP
 from tools import pricing
 from better_profanity import profanity
 from discord.ext.commands import Context

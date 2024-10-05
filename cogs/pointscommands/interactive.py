@@ -11,8 +11,8 @@ from views import PaginationView
 from temp import steal_status
 from resources import *
 from discord.ext.commands import Context
+from logs import log_error
 import os
-import logging
 import time
 import asyncio
 import discord
@@ -159,7 +159,7 @@ class InteractiveCommands(commands.Cog):
         elif isinstance(error, commands.BadArgument):
             await send_bot_embed(ctx, description=f"{ctx.author.display_name} Please, insert a valid amount.")
         else:
-            logging.warning(f"Error in cassino command: {error}")
+            log_error("Error in cassino command", error)
 
     @commands.hybrid_command(name="stealpoints", aliases=["steal", "rob"], brief="Steal points from another user.", usage="stealPoints [user]", description="Steal points from another user.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)

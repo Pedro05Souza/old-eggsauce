@@ -4,7 +4,7 @@ A cog that contains commands for managing the bot.
 from discord.ext import commands
 from discord.ext.commands import Context
 from db import BotConfig
-from lib import send_bot_embed, make_embed_object, guild_cache_retriever
+from lib import send_bot_embed, make_embed_object, guild_cache_retriever, is_dev
 from views import ShowPointsModules
 import discord
 
@@ -27,7 +27,7 @@ class BotManager(commands.Cog):
             None
         """
         guild_data = await guild_cache_retriever(ctx.guild.id)
-        if ctx.author.id == ctx.guild.owner_id:
+        if ctx.author.id == ctx.guild.owner_id or await is_dev(ctx.author.id):
             embed = await make_embed_object(title="**:gear: MODULES:**", description="1. :infinity: **Total**\n2. 🐣 **Chickens**\n3. 🪩 **Interactives**\n4. :x: **None**\n\n**Important note**: \nSelect one of the modules to enable.")
             view = ShowPointsModules(ctx.author.id, guild_data)
             await ctx.send(embed=embed, view=view)
@@ -84,7 +84,7 @@ class BotManager(commands.Cog):
         Returns:
             None
         """
-        if ctx.author.guild_permissions.administrator:
+        if ctx.author.guild_permissions.administrator or await is_dev(ctx.author.id):
             await BotConfig.update_channel_id(ctx.guild.id, ctx.channel.id)
             await send_bot_embed(ctx, description=":white_check_mark: Commands channel has been set.")
         else:

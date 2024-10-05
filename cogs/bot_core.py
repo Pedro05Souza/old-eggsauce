@@ -4,7 +4,8 @@ This module contains core functionalities of the bot.
 from discord.ext import commands
 from lib import *
 from db import BotConfig
-from tools import refund, setup_logging
+from tools import refund
+from logs import log_info, log_critical, log_error
 from resources import Prices
 from discord.ext.commands import Context
 import discord.ext.commands.errors
@@ -12,9 +13,6 @@ import asyncio
 import discord
 import sys
 import os
-import logging
-
-logger = logging.getLogger('bot_logger')
 
 __all__ = ['BotCore']
 
@@ -22,7 +20,6 @@ class BotCore(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        setup_logging()
 
     async def restart_client(self) -> None:
         """
@@ -32,14 +29,14 @@ class BotCore(commands.Cog):
             None
         """
         try:
-            logger.info("Restarting bot...")
+            log_info("Restarting bot...")
             await self.cancel_all_async_tasks()
             await self.bot.close()
-            logger.info("Bot has been restarted.")
+            log_info("Bot has been restarted.")
             command = [sys.executable, 'main.py'] + sys.argv[1:]
             os.execv(sys.executable, command)
         except Exception as e:
-            logger.critical(f"Error restarting bot: {e}")
+            log_critical(f"Error restarting bot: {e}")
 
     async def cancel_all_async_tasks(self) -> None:
         """
@@ -56,8 +53,8 @@ class BotCore(commands.Cog):
             except asyncio.CancelledError:
                 pass
             except Exception as e:
-                logger.error(f"Error cancelling async task: {e}")
-        logger.info("All async tasks have been cancelled.")
+                log_error(f"Error cancelling async task: {e}")
+        log_info("All async tasks have been cancelled.")
 
     @commands.command("r", aliases=["restart"])
     async def force_restart(self, ctx: Context) -> None:
@@ -67,9 +64,9 @@ class BotCore(commands.Cog):
         Args:
             ctx (Context): The context of the command.
         """
-        if is_dev(ctx):
+        if await is_dev(ctx.author.id):
             await send_bot_embed(ctx, description=":warning: Restarting...")
-            logger.info(f"{ctx.author.name}, user id: {ctx.author.id} has attempted to restart the bot.")
+            log_info(f"{ctx.author.name}, user id: {ctx.author.id} has attempted to restart the bot.")
             await self.restart_client()
     
     async def tutorial(self, target: discord.Guild) -> None:
@@ -105,7 +102,7 @@ class BotCore(commands.Cog):
         Returns:
             None
         """
-        logger.error(f"Error in command: {ctx.command.name}\n In server: {ctx.guild.name}\n In channel: {ctx.channel.name}\n By user: {ctx.author.name}\n Error: {error} \n Type: {type(error)}")
+        log_error(f"Error in command: {ctx.command.name}\n In server: {ctx.guild.name}\n In channel: {ctx.channel.name}\n By user: {ctx.author.name}\n Error: {error} \n Type: {type(error)}")
         devs = dev_list()
         await self.handle_exception(ctx, error)
         user = self.bot.get_user(int(devs[0]))
@@ -149,12 +146,12 @@ class BotCore(commands.Cog):
     async def on_guild_join(self, guild: discord.Guild) -> None:
         await self.tutorial(guild)
         await BotConfig.create(guild.id)
-        logger.info(f"Joined guild {guild.name}")
+        log_info(f"Joined guild {guild.name}")
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild) -> None:
         await BotConfig.delete(guild.id)
-        logger.info(f"Left guild {guild.name}")
+        log_info(f"Left guild {guild.name}")
     
     @commands.Cog.listener()
     async def guild_channel_delete(self, channel: discord.TextChannel) -> None:
@@ -162,7 +159,7 @@ class BotCore(commands.Cog):
         channel_cache = guild_cache.get('channel_id')
         if channel_cache and channel_cache == channel.id:
             await BotConfig.update_channel_id(channel.guild.id, None)
-            logger.info(f"Channel {channel.name} has been deleted. Commands channel has been reset.")
+            log_info(f"Channel {channel.name} has been deleted. Commands channel has been reset.")
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: Context, error: Exception) -> None:

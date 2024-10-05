@@ -4,11 +4,10 @@ This module contains the database functions for the market collection.
 from db.db_setup import mongo_client
 from time import time
 from typing import Union
+from logs import log_info, log_warning, log_error
 import uuid
-import logging
 market_collection = mongo_client.BotDiscord.market
 
-logger = logging.getLogger('bot_logger')
 __all__ = ['Market']
 
 class Market:
@@ -31,7 +30,7 @@ class Market:
         try:
             offer_data = await market_collection.find_one({"offer_id": offer_id})
             if offer_data:
-                logger.warning(f"Offer {offer_id} already exists.")
+                log_warning(f"Offer {offer_id} already exists.")
                 return None
             else:
                 offer = {
@@ -43,9 +42,9 @@ class Market:
                     "created_at": time()
                 }
                 await market_collection.insert_one(offer)
-                logger.info(f"Offer has been created successfully.")
+                log_info(f"Offer has been created successfully with id {offer_id}.")
         except Exception as e:
-            logger.error("Error encountered while creating the offer.", e)
+            log_error(f"Error encountered while creating the offer {offer_id}.", e)
             return None
     
     @staticmethod
@@ -64,10 +63,10 @@ class Market:
             if offer_data:
                 return offer_data
             else:
-                logger.warning(f"Offer {offer_id} does not exist.")
+                log_warning(f"Offer {offer_id} does not exist.")
                 return None
         except Exception as e:
-            logger.error("Error encountered while getting the offer.", e)
+            log_error(f"Error encountered while getting the offer {offer_id}.", e)
             return None
         
     @staticmethod
@@ -93,13 +92,13 @@ class Market:
                             query[key] = value
                     if query:
                         await market_collection.update_one({"offer_id": offer_id}, {"$set": query})
-                        logger.info(f"Offer {offer_id} has been updated successfully.")
+                        log_info(f"Offer {offer_id} has been updated successfully.")
                 else:
-                    logger.warning("Keyword arguments aren't being passed.")
+                    log_warning(f"Keyword arguments aren't being passed for {offer_id}.")
             else:
-                logger.warning(f"Offer {offer_id} does not exist.")
+                log_warning(f"Offer {offer_id} does not exist.")
         except Exception as e:
-            logger.error("Error encountered while updating the offer.", e)
+            log_error("Error encountered while updating the offer {offer_id}.", e)
             return None
     
     @staticmethod
@@ -117,11 +116,11 @@ class Market:
             offer_data = await market_collection.find_one({"offer_id": offer_id})
             if offer_data:
                 await market_collection.delete_one({"offer_id": offer_id})
-                logger.info(f"Offer {offer_id} has been deleted successfully.")
+                log_info(f"Offer {offer_id} has been deleted successfully.")
             else:
-                logger.warning(f"Offer {offer_id} does not exist.")
+                log_warning(f"Offer {offer_id} does not exist.")
         except Exception as e:
-            logger.error("Error encountered while deleting the offer.", e)
+            log_error(f"Error encountered while deleting the offer {offer_id}.", e)
             return None
         
     @staticmethod
@@ -138,9 +137,9 @@ class Market:
         try:
             for offer_id in offer_ids:
                 await market_collection.delete_one({"offer_id": offer_id})
-            logger.info(f"Offers {offer_ids} have been deleted successfully.")
+            log_info(f"Offers {offer_ids} have been deleted successfully.")
         except Exception as e:
-            logger.error("Error encountered while deleting the offers.", e)
+            log_error(f"Error encountered while deleting the offers {offer_ids}.", e)
             return None
     
     @staticmethod
@@ -160,10 +159,10 @@ class Market:
             if offers:
                 return offers
             else:
-                logger.warning(f"User {author_id} has no offers.")
+                log_warning(f"User {author_id} has no offers.")
                 return None
         except Exception as e:
-            logger.error("Error encountered while getting the offers.", e)
+            log_error(f"Error encountered while getting the offers for user {author_id}.", e)
             return None
                 
     @staticmethod
@@ -181,7 +180,7 @@ class Market:
         possible_keywords = ["chicken_rarity", "upkeep_rarity", "price", "author_id"]
         for key, value in kwargs.items():
             if key not in possible_keywords:
-                logger.warning(f"Keyword {key} is not a valid keyword.")
+                log_warning(f"Keyword {key} is not a valid keyword.")
                 return None
             if value:
                 if key == "upkeep_rarity":
@@ -204,10 +203,10 @@ class Market:
             if offers:
                 return offers
             else:
-                logger.warning(f"No offers found with the parameters provided.")
+                log_warning(f"No offers found with the parameters provided for the search.")
                 return None
         except Exception as e:
-            logger.error("Error encountered while getting the offers.", e)
+            log_error(f"Error encountered while getting the offers with the parameters provided.", e)
             return None
         
     @staticmethod    
@@ -222,7 +221,7 @@ class Market:
             count = await market_collection.count_documents({})
             return count
         except Exception as e:
-            logger.error("Error encountered while counting the offers.", e)
+            log_error("Error encountered while counting the offers.", e)
             return None
         
     @staticmethod

@@ -6,10 +6,9 @@ from time import time
 from temp import cache_initiator
 from discord.ext.commands import Context
 from typing import Union
-import logging
+from logs import log_info, log_warning, log_error
 farm_collection = mongo_client.BotDiscord.farm
 
-logger = logging.getLogger('bot_logger')
 __all__ = ['Farm']
 
 class Farm:
@@ -29,7 +28,7 @@ class Farm:
         try:
             farm_data = await farm_collection.find_one({"user_id": user_id})
             if farm_data:
-                logger.warning(f"Farm for {user_id} already exists.")
+                log_warning(f"Farm for {user_id} already exists.")
                 return None
             else:
                 farm = {
@@ -55,9 +54,9 @@ class Farm:
                 }
                 await cache_initiator.put_user(user_id, farm_data=farm)
                 await farm_collection.insert_one(farm)
-                logger.info(f"Farm for {user_id} has been created successfully.")
+                log_info(f"Farm for {user_id} has been created successfully.")
         except Exception as e:
-            logger.error("Error encountered while creating the farm.", e)
+            log_error(f"Error encountered while creating the farm for {user_id}.", e)
             return None
     
     @staticmethod
@@ -76,11 +75,11 @@ class Farm:
             if farm_data:
                 await cache_initiator.delete(user_id)
                 await farm_collection.delete_one({"user_id": user_id})
-                logger.info("Farm has been deleted successfully.")
+                log_info(f"Farm has been deleted successfully for {user_id}.")
             else:
-                logger.warning("Farm not found.")
+                log_warning(f"Farm not found for {user_id}.")
         except Exception as e:
-            logger.error("Error encountered while deleting the farm.", e)
+            log_error(f"Error encountered while deleting the farm for {user_id}.", e)
 
     @staticmethod
     async def update(user_id: int, **kwargs) -> None:
@@ -108,9 +107,9 @@ class Farm:
                         await cache_initiator.put_user(user_id, farm_data=farm_data)
                         await farm_collection.update_one({"user_id": user_id}, {"$set": query})
                 else:
-                    logger.warning("Keyword arguments aren't being passed.")
+                    log_warning(f"Keyword arguments aren't being passed to update the farm for {user_id}.")
         except Exception as e:
-            logger.error("Error encountered while trying to update user farm.", e)
+            log_error(f"Error encountered while trying to update user farm {user_id}.", e)
             
     @staticmethod
     async def update_chicken_drop(user_id: int) -> None:
@@ -130,7 +129,7 @@ class Farm:
                 await cache_initiator.put_user(user_id, farm_data=farm_data)
                 await farm_collection.update_one({"user_id": user_id}, {"$set": {"last_chicken_drop": time()}})
         except Exception as e:
-            logger.error(f"Error encountered while trying to update farm's last drop. {e}")
+            log_error(f"Error encountered while trying to update farm's last drop for {user_id}.", e)
             return None
         
     @staticmethod
@@ -151,7 +150,7 @@ class Farm:
                 await cache_initiator.put_user(user_id, farm_data=farm_data)
                 await farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}})
         except Exception as e:
-            logger.error("Error encountered while trying to update farm's last drop.", e)
+            log_error(f"Error encountered while trying to update farm's last drop for {user_id}.", e)
             return
         
     @staticmethod
@@ -172,7 +171,7 @@ class Farm:
                 await cache_initiator.put_user(user_id, farm_data=farm_data)
                 await farm_collection.update_one({"user_id": user_id}, {"$set": {"last_corn_drop": time()}})
         except Exception as e:
-            logger.error("Error encountered while trying to update farm's last drop.", e)
+            log_error(f"Error encountered while trying to update farm's last drop for {user_id}.", e)
             return None
 
     @staticmethod
@@ -191,10 +190,10 @@ class Farm:
             if farm_data:
                 return farm_data
             else:
-                logger.warning("Farm not found.")
+                log_warning(f"Farm not found for {user_id}.")
                 return None
         except Exception as e:
-            logger.error("Error encountered while reading the farm.", e)
+            log_error(f"Error encountered while reading the farm for {user_id}.", e)
             return None
         
     @staticmethod
@@ -210,11 +209,11 @@ class Farm:
             if farms:
                 for farm in farms:
                     await farm_collection.update_one({"user_id": farm["user_id"]}, {"$set": {"mmr": 0, "highest_mmr": 0}})
-                logger.info("All farms' mmr have been reset successfully.")
+                log_info("All farms' mmr have been reset successfully.")
             else:
-                logger.warning("No farms found.")
+                log_warning("No farms found.")
         except Exception as e:
-            logger.error("Error encountered while resetting all farms' mmr.", e)
+            log_error("Error encountered while resetting all farms' mmr.", e)
             return None
         
     @staticmethod
@@ -236,7 +235,7 @@ class Farm:
                 await cache_initiator.put_user(user_id, farm_data=farm_data)
                 await farm_collection.update_one({"user_id": user_id}, {"$set": {"last_farmer_drop": time()}})
         except Exception as e:
-            logger.error("Error encountered while trying to add last farm drop attribute.", e)
+            log_error(f"Error encountered while trying to add last farm drop attribute for {user_id}.", e)
             return None
         
     @staticmethod
@@ -258,7 +257,7 @@ class Farm:
                 await cache_initiator.put_user(user_id, farm_data=farm_data)
                 await farm_collection.update_one({"user_id": user_id}, {"$unset": {"last_farmer_drop": ""}})
         except Exception as e:
-            logger.error("Error encountered while trying to remove last farm drop attribute.", e)
+            log_error(f"Error encountered while trying to remove last farm drop attribute for {user_id}.", e)
             return None
         
     @staticmethod
@@ -279,5 +278,5 @@ class Farm:
                 await cache_initiator.put_user(user_id, farm_data=farm_data)
                 await farm_collection.update_one({"user_id": user_id}, {"$set": {"last_market_drop": time()}})
         except Exception as e:
-            logger.error("Error encountered while trying to update farm's last drop.", e)
+            log_error(f"Error encountered while trying to update farm's last drop for {user_id}.", e)
             return None

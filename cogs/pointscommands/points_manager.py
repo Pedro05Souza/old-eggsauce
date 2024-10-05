@@ -9,11 +9,8 @@ from temp import message_cache
 import discord
 import time
 import math
-import logging
 
 __all__ = ['PointsManager']
-
-logger = logging.getLogger('bot_logger')
 
 class PointsManager(commands.Cog):
 

@@ -8,9 +8,6 @@ from tools.shared_state import get_shared_event
 from lib.core_utils import send_bot_embed
 import asyncio
 import discord
-import logging
-
-logger = logging.getLogger('bot_logger')
 
 __all__ = ['RollLimit', 'EventData']
     
@@ -60,7 +57,8 @@ class RollLimit:
         try:
             cls.obj_list.pop(user_id)
         except Exception as e:
-            logger.error("Error removing object from list.", e)
+            #logger.error("Error removing object from list.", e)
+            pass
     
     @classmethod
     def update(cls, user_id: int, current: int) -> None:

@@ -7,6 +7,7 @@ from resources import REGULAR_COOLDOWN
 from db import Bank, User
 from tools import pricing, on_user_transaction
 from discord.ext.commands import Context
+from logs import log_info
 import discord
 
 __all__ = ['BankCommands']

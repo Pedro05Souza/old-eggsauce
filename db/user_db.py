@@ -5,10 +5,8 @@ from db.db_setup import mongo_client
 from time import time
 from temp import cache_initiator
 from typing import Union
-import logging
+from logs import log_info, log_error, log_warning
 users_collection = mongo_client.BotDiscord.user
-
-logger = logging.getLogger('bot_logger')
 __all__ = ['User']
 
 # This class is responsible for handling user data in the database.
@@ -30,7 +28,7 @@ class User:
         try:            
             user_data = await users_collection.find_one({"user_id": user_id})
             if user_data:
-                logger.warning(f"User {user_id} already exists.")
+                log_warning(f"User {user_id} already exists.")
                 return None 
             else:
                 if not isinstance(points, int):
@@ -43,9 +41,9 @@ class User:
                 }
                 await cache_initiator.put_user(user_id, user_data=user)
                 await users_collection.insert_one(user)
-                logger.info(f"User {user_id} has been created successfully.")
+                log_info(f"User {user_id} has been created successfully.")
         except Exception as e:
-            logger.error("Error encountered while creating the user.", e)
+            log_error(f"Error encountered while creating the user {user_id}.", e)
             return None    
         
     @staticmethod
@@ -65,9 +63,9 @@ class User:
                 await cache_initiator.delete(user_id)
                 await users_collection.delete_one({"user_id" : user_id})
             else:
-                logger.warning("User not found.")
+                log_warning(f"User not found with id {user_id}.")
         except Exception as e:
-            logger.error("Error encountered while deleting the user.", e)
+            log_error(f"Error encountered while deleting the user {user_id}.", e)
             return None
     
     @staticmethod
@@ -91,7 +89,7 @@ class User:
                 await cache_initiator.put_user(user_id, user_data=user_data)
                 await users_collection.update_one({"user_id": user_id}, {"$set": {"points": points, "roles": roles}})
         except Exception as e:
-            logger.error("Error encountered while trying to update user's status.", e)
+            log_error(f"Error encountered while trying to update user's status {user_id}.", e)
             return None
 
     @staticmethod
@@ -116,7 +114,7 @@ class User:
                 await cache_initiator.put_user(user_id, user_data=user_data)
                 await users_collection.update_one({"user_id": user_id}, {"$set": {"points": points}})
         except Exception as e:
-            logger.error("Error encountered while trying to update user's points.", e)
+            log_error(f"Error encountered while trying to update user's points {user_id}.", e)
             return None
         
     @staticmethod
@@ -138,7 +136,7 @@ class User:
                 cache_initiator.put_user(user_id, user_data=user_data)
                 await users_collection.update_one({"user_id": user_id}, {"$set": {"roles": roles}})
         except Exception as e:
-            logger.error("Error encountered while trying to update user's roles.", e)
+            log_error(f"Error encountered while trying to update user's roles {user_id}.", e)
             return None
 
     @staticmethod
@@ -159,7 +157,7 @@ class User:
                 await cache_initiator.put_user(user_id, user_data=user_data)
                 await users_collection.update_one({"user_id": user_id}, {"$set": {"salary_time": time()}})
         except Exception as e:
-            logger.error("Error encountered while trying to update user's salary time.", e)
+            log_error(f"Error encountered while trying to update user's salary time {user_id}.", e)
             return None
         
     @staticmethod
@@ -179,8 +177,8 @@ class User:
                 return user_data
             else:
                 return None
-        except Exception:
-            logger.error("Error encountered while trying to read the user.")
+        except Exception as e:
+            log_error(f"Error encountered while trying to read the user {user_id}.", e)
             return None
         
     @staticmethod
@@ -194,7 +192,7 @@ class User:
         try:
             await users_collection.update_many({}, {"$set": {"points": 0, "roles": ""}})
         except Exception as e:
-            logger.error("Error encountered while trying to reset all users.", e)
+            log_error(f"Error encountered while trying to reset all users", e)
             return None
     
     @staticmethod
@@ -209,5 +207,5 @@ class User:
             count = await users_collection.count_documents({})
             return count
         except Exception as e:
-            logger.error("Error encountered while trying to count all users.", e)
+            log_error(f"Error encountered while trying to count all users.", e)
             return None

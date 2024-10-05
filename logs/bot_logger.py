@@ -1,7 +1,7 @@
 from colorlog import ColoredFormatter
 import logging
 
-__all__ = ['setup_logging']
+__all__ = ['setup_logging', 'bot_logger']
 
 def setup_logging() -> logging.Logger:
         """
@@ -28,3 +28,6 @@ def setup_logging() -> logging.Logger:
         )
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
+        return logger
+
+bot_logger = setup_logging()

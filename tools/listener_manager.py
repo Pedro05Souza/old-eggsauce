@@ -2,10 +2,8 @@ from discord.ext.commands import Context
 from discord.interactions import Interaction
 from typing import Union
 from lib import format_date
-import logging
+from logs import log_info
 import random
-
-logger = logging.getLogger('bot_logger')
 
 __all__ = ['ListenerManager', 'listener_manager']
 
@@ -97,7 +95,7 @@ class ListenerManager():
         """
         if len(self.store_last_listener_per_user) > 0:
             self.store_last_listener_per_user.clear()
-            logger.info("Listeners cleared.")
+            log_info("All listeners's data has been cleared.")
 
     async def get_last_listener(self, user_id: int) -> Union[dict, None]:
         """

@@ -6,9 +6,7 @@ from discord.ext import commands
 from discord.ext import tasks
 from temp import cache_initiator, cooldown_tracker, steal_status
 from tools import listener_manager, before_loop_decorator
-import logging
-
-logger = logging.getLogger('bot_logger')
+from logs import log_info
 
 __all__ = ['Tasks']
 
@@ -62,7 +60,7 @@ class Tasks(commands.Cog):
         """
         if len(cooldown_tracker) > 0:
             cooldown_tracker.clear()
-            logger.info("Cleared the cooldown tracker.")
+            log_info("Cleared the cooldown tracker.")
 
     @before_loop_decorator
     @tasks.loop(hours=4)
@@ -75,7 +73,7 @@ class Tasks(commands.Cog):
         """
         if len(steal_status) > 0:
             steal_status.clear()
-            logger.info("Cleared the steal status.")
+            log_info("Cleared the steal status.")
 
 async def setup(bot):
     await bot.add_cog(Tasks(bot))

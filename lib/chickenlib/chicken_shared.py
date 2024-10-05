@@ -11,7 +11,6 @@ from random import randint
 from discord.ext.commands import Context
 import discord
 
-
 __all__ = [
     "determine_chicken_upkeep", "get_chicken_egg_value", "get_chicken_price", 
     "load_farmer_upgrades", "get_rarity_emoji", "determine_upkeep_rarity_text", 

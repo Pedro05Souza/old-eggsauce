@@ -4,7 +4,8 @@ This moodule handles the setup of the bot and the loading of the cogs.
 from discord.ext import commands
 from dotenv import load_dotenv
 from pathlib import Path
-from cogs.bot_manager import BotManager
+from cogs import BotManager
+from logs import log_info
 import os
 import discord
 import logging
@@ -17,7 +18,6 @@ __all__ = [
     "bot",
     "load_cogs",
     "load_bot_token",
-    'bot_start'
 ]
 
 async def get_prefix_for_guild(bot, message) -> str:
@@ -61,10 +61,12 @@ async def load_cogs() -> None:
     """
     cogs_dir = Path('./cogs')
     for filepath in cogs_dir.rglob('*.py'):
+
         if filepath.stem == '__init__':
             continue
+
         module_path = filepath.relative_to(cogs_dir).with_suffix('').as_posix().replace('/', '.')
-        logger.info(f"Loading... {module_path}")
+        log_info(f"Loading...{module_path}")
         await bot.load_extension(f'cogs.{module_path}')
 
 def load_bot_token() -> str:
@@ -76,15 +78,7 @@ def load_bot_token() -> str:
     """
     load_dotenv()   
     token = os.getenv("DISCORD_TOKEN")
+
     if token is None:
         raise ValueError("Token not found.")
     return token
-
-def bot_start(bot_logging= False):
-    """
-    Run the bot.
-
-    Args:
-        bot_logging (bool, optional): Whether to log the bot. Defaults to False.
-    """
-    bot.run(load_bot_token())
