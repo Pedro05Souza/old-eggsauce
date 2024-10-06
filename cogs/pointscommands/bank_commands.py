@@ -16,18 +16,6 @@ class BankCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def register_bank(self, User: discord.Member) -> None:
-        """
-        Registers the user in the bank database.
-
-        Args:
-            User (discord.Member): The user to register in the bank database.
-
-        Returns:
-            None
-        """
-        Bank.create(User.id, 0)
-
     @commands.hybrid_command("deposit", aliases=["dep"], brief="Deposits points in the bank", parameters=["amount: int"], description=f"Deposits points in the bank.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
     @pricing()

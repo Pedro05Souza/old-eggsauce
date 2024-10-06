@@ -217,7 +217,6 @@ class BaseCommands(commands.Cog):
             "H" : 5000
         }
 
-
     async def buy_roles(self, ctx: Context, user: discord.Member, roleValue: int, roleChar: str, roleName: str, user_data: dict) -> None:
         """
         Responds to the user's request to buy a role.

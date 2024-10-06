@@ -27,7 +27,6 @@ class RollLimit:
         """
         return cls.obj_list.get(user_id)
     
-
     @classmethod
     def read_key(cls, key: int) -> bool:
         """

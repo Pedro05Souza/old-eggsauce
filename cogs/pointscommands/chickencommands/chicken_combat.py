@@ -215,6 +215,7 @@ class ChickenCombat(commands.Cog):
         """
         attemps = 0
         saved_positive_score, saved_negative_score = current_user.score, current_user.score
+        
         while attemps != 25:
             if current_user.has_opponent:
                 return "opponent"
@@ -274,6 +275,7 @@ class ChickenCombat(commands.Cog):
         embed_per_round.title = ":crossed_swords: Match Results:"
         embed_per_round.description = ""
         accumulator = 0
+
         for match in matchups:
             accumulator += 1
             await self.matches(user, author, match, accumulator, total_matches, embed_per_round, match_type, user_msg, author_msg, dead_chickens_author, dead_chickens_user)

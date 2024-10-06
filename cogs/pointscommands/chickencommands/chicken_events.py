@@ -103,7 +103,7 @@ class ChickenEvents(commands.Cog):
             async with EventData.manage_event_context(ctx.author):
                 rarity_list = list(ChickenRarity.__members__)
                 chicken_selected['rarity'] = rarity_list[rarity_list.index(chicken_selected['rarity']) + 1]
-                chicken_selected['upkeep_multiplier'] = determine_chicken_upkeep(chicken_selected)
+                chicken_selected['upkeep_multiplier'] = await determine_chicken_upkeep(chicken_selected)
                 farm_data['chickens'].remove(chicken_removed)
                 await Farm.update(ctx.author.id, chickens=farm_data['chickens'])
                 await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, the chicken has been evolved to {chicken_selected['rarity']} {chicken_selected['name']}.")

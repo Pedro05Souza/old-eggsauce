@@ -102,7 +102,7 @@ class BotCore(commands.Cog):
         Returns:
             None
         """
-        log_error(f"Error in command: {ctx.command.name}\n In server: {ctx.guild.name}\n In channel: {ctx.channel.name}\n By user: {ctx.author.name}\n Error: {error} \n Type: {type(error)}")
+        log_error(f"Error in command: {ctx.command.name}\n In server: {ctx.guild.name}\n In channel: {ctx.channel.name}\n By user: {ctx.author.name}\n", error)
         devs = dev_list()
         await self.handle_exception(ctx, error)
         user = self.bot.get_user(int(devs[0]))
@@ -122,12 +122,44 @@ class BotCore(commands.Cog):
         Returns:
             None
         """
-        description = f":no_entry_sign: Oops! Something went wrong."
+        emoji_name = ":no_entry_sign:"
+        description = await self.get_exception_message(error)
+        error_message = f"{emoji_name} {description}"
         if await cooldown_user_tracker(ctx.author.id):
-            await send_bot_embed(ctx, description=description)
+            await send_bot_embed(ctx, description=error_message)
             return
         return
     
+    async def get_exception_message(self, error: Exception) -> str:
+        """
+        Gets the exception message.
+
+        Args:
+            error (Exception): The error that occurred.
+
+        Returns:
+            str
+        """
+        if isinstance(error, commands.CommandInvokeError):
+            error = error.original
+
+        if isinstance(error, commands.CommandNotFound):
+            return "Command not found."
+        
+        if isinstance(error, (commands.MemberNotFound, commands.UserNotFound)):
+            return "Member not found."
+        
+        if isinstance(error, commands.MissingRequiredArgument):
+            return "Missing required argument."
+        
+        if isinstance(error, commands.BadArgument):
+            return "Bad argument."
+        
+        if isinstance(error, commands.TooManyArguments):
+            return "Too many arguments."
+    
+        return "Oops! Something went wrong."
+
     async def refund_price_command_on_error(self, ctx) -> None:
         """
         Refunds the user if the command has a price and the command has failed.

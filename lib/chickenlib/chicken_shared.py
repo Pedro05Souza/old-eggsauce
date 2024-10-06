@@ -23,7 +23,7 @@ __all__ = [
     "farm_maintence_tax"
     ]
             
-def determine_chicken_upkeep(chicken: dict) -> float:
+async def determine_chicken_upkeep(chicken: dict) -> float:
     """
     Determine the chicken upkeep. Use this method to define a value for the chicken upkeep.
 
@@ -202,7 +202,7 @@ async def create_chicken(rarity: str, author: str) -> Union[dict, None]:
         if rarity == "ETHEREAL":
             chicken['upkeep_multiplier'] = 0
         else:
-            chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
+            chicken['upkeep_multiplier'] = await determine_chicken_upkeep(chicken)
 
         return chicken
     return None
@@ -258,7 +258,7 @@ async def devolve_chicken(chicken: dict) -> None:
             devolded_rarity = rarity_list[index - 1].name
             chicken['happiness'] = 100
             chicken['rarity'] = devolded_rarity
-            chicken['upkeep_multiplier'] = determine_chicken_upkeep(chicken)
+            chicken['upkeep_multiplier'] = await determine_chicken_upkeep(chicken)
             return
         elif cr == 'COMMON' and chicken['happiness'] <= 0 and devolveChance == 1:
             chicken['rarity'] = 'DEAD'
