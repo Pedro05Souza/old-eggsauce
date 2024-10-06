@@ -7,8 +7,6 @@ from resources import REGULAR_COOLDOWN
 from db import Bank, User
 from tools import pricing, on_user_transaction
 from discord.ext.commands import Context
-from logs import log_info
-import discord
 
 __all__ = ['BankCommands']
 
@@ -114,9 +112,11 @@ class BankCommands(commands.Cog):
         user_data = ctx.data["user_data"]
         bank_data = ctx.data["bank_data"]
         upgrades_formula = 10000 * bank_data['upgrades']
+
         if user_data['points'] < upgrades_formula:
             await send_bot_embed(ctx, description=f":bank: {ctx.author.display_name}, you currently have {bank_data['upgrades'] - 1} upgrades. You need **{upgrades_formula}** eggbux to upgrade the bank.")
             return
+        
         confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to upgrade the bank to level **{bank_data['upgrades']}** for **{upgrades_formula}** eggbux?")
         if confirmation:
             await User.update_points(ctx.author.id, user_data['points'] - upgrades_formula)
