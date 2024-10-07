@@ -5,9 +5,6 @@ from lib import make_embed_object, send_bot_embed, user_cache_retriever
 from tools import on_awaitable
 import asyncio
 import discord
-import logging
-
-logger = logging.getLogger("bot_logger")
 
 __all__ = ["ChickenAuthorTradeMenu", "ChickenUserTradeMenu"]
 
@@ -78,7 +75,6 @@ class ChickenUserTradeMenu(ui.Select):
         
         selected_chickens = [self.chickens[int(value)] for value in self.values]
         self.shared_trade_dict[self.author.id] = selected_chickens
-        logger.info(f"Shared trade dict id for {self.author.display_name}: {id(self.shared_trade_dict)}")
         embed = await make_embed_object(description=f":white_check_mark: {self.author.display_name} have selected the chickens to trade.")
         await interaction.response.send_message(embed=embed)
 
@@ -86,8 +82,6 @@ class ChickenUserTradeMenu(ui.Select):
         current_time = 0
         
         while current_time < cooldown:
-            logger.info(f"Current time: {current_time}")
-            logger.info(self.shared_trade_dict)
             if self.target.id in self.shared_trade_dict:
                 await self.trade_confirmation(interaction)
                 return

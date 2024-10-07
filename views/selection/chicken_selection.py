@@ -9,11 +9,9 @@ from discord import SelectOption, ui
 from db import Farm, User
 from lib.core_utils import make_embed_object, send_bot_embed
 import discord
-import logging
 
 __all__ = ["ChickenSelectView"]
 
-logger = logging.getLogger("bot_logger")
 
 class ChickenSelectView(ui.View):
 
@@ -261,7 +259,6 @@ class CancelButton(ui.Button):
             await self.trade_cancel(interaction)
         else:
             self.author_view.stop()
-            logger.info(self.view_author_id)
             await send_bot_embed(interaction, description=":white_check_mark: The action has been cancelled.", ephemeral=True)
             
             if type(self.view_author_id) == list:

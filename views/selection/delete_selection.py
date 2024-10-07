@@ -5,11 +5,8 @@ from lib.chickenlib import get_chicken_price, get_rarity_emoji, check_if_author
 from lib import make_embed_object, confirmation_embed, user_cache_retriever_copy
 import asyncio
 import discord
-import logging
 
 __all__ = ["ChickenDeleteMenu"]
-
-logger = logging.getLogger("bot_logger")
 
 class ChickenDeleteMenu(ui.Select):
 
