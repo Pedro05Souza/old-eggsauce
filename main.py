@@ -17,10 +17,10 @@ async def on_ready():
 
 def bot_start(bot_logging=False):
     """
-    Run the bot.
+    Runs the bot.
 
     Args:
-        bot_logging (bool, optional): Whether to log the bot's actions. Defaults to False.
+        bot_logging (bool, optional): Whether the bot's logging system should be enabled.
     """
     set_bot_logger_flag(bot_logging)
     bot.run(load_bot_token())
