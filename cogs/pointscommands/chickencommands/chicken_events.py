@@ -14,9 +14,7 @@ from resources import REGULAR_COOLDOWN, FARMER_PRICE
 from discord.ext.commands import Context
 import asyncio
 import discord
-import logging
 
-logger = logging.getLogger("bot_logger")
 
 __all__ = ["ChickenEvents"]
 

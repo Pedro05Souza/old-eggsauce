@@ -5,9 +5,6 @@ from discord.ui import View, Select
 from discord import Interaction, SelectOption
 from lib import make_embed_object, send_bot_embed
 from db import BotConfig
-import logging
-
-logger = logging.getLogger('bot_logger')
 
 __all__ = ["ShowPointsModules"]
 

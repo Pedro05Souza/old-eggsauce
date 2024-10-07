@@ -8,10 +8,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from asyncio import Lock
 from typing import Union
-from logs import log_info
-import logging
-
-logger = logging.getLogger('bot_logger')
+from logs import log_info, log_warning
 
 __all__ = ["BotCache"]
 
@@ -93,7 +90,7 @@ class BotCache():
         async with self.lock:
             while asizeof.asizeof(self.cache) > self.memory_limit_bytes_guild + self.memory_limit_bytes_user:
                 evicted_key, _ = self.cache.popitem(last=False)
-                logger.info(f"Evicting {evicted_key} cache to free up memory.")
+                log_warning(f"Evicting {evicted_key} cache to free up memory.")
 
     async def put_guild(self, key: int, **kwargs) -> None:
         """
