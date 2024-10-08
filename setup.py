@@ -69,15 +69,20 @@ async def load_cogs() -> None:
         log_info(f"Loading...{module_path}")
         await bot.load_extension(f'cogs.{module_path}')
 
-def load_bot_token() -> str:
+def load_bot_token(is_production) -> str:
     """
     Loads the bot token from the environment variables.
 
     Returns:
         str
     """
-    load_dotenv()   
-    token = os.getenv("DISCORD_TOKEN")
+    load_dotenv()
+
+    if is_production:   
+        token = os.getenv("PROD")
+    
+    else:
+        token = os.getenv("DEV")
 
     if token is None:
         raise ValueError("Token not found.")
