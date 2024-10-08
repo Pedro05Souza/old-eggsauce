@@ -4,8 +4,7 @@ Main file to run the bot.
 from setup import *
 from logs import set_bot_logger_flag, log_info
 import discord
-
-        
+ 
 @bot.event
 async def on_ready():   
     await bot.change_presence(activity=discord.Game(name="🥚eggbux."))
@@ -25,4 +24,4 @@ def bot_start(bot_logging=False, is_production=False):
     bot.run(load_bot_token(is_production))
 
 if __name__ == "__main__":
-    bot_start(bot_logging=True)
+    bot_start(bot_logging=True, is_production=True)

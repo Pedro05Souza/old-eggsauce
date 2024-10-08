@@ -44,22 +44,27 @@ async def bot_maker(user_score: int) -> BotMatchMaking:
     for rarity, probability in bot_rarity_list.items():
         cummulative += probability
         cumulative_distribution.append((cummulative, rarity))
+
     for _ in range(bot_farm_size):
         random_number = random()
         index = bisect.bisect_left(cumulative_distribution, (random_number,))
+
         if index >= len(cumulative_distribution):
             index = len(cumulative_distribution) - 1
         else:
-         rarity = cumulative_distribution[index][1]
+            rarity = cumulative_distribution[index][1]
         bot_chickens.append(await create_chicken(rarity, "bot"))
+
     bot.chickens = bot_chickens
     negative_score = user_score * .9
     positive_score = user_score * 1.1
     negative_score = int(negative_score)
     positive_score = int(positive_score)
     bot.score = randint(negative_score, positive_score)
+
     if bot.score < 0:
-        bot.score = 0 
+        bot.score = 0
+
     bot.user_chicken_overrall_score = await define_chicken_overrall_score(bot.chickens)
     return bot
 
@@ -84,13 +89,14 @@ async def define_bot_min_farm_size(player_mmr: int) -> int:
     """
     if player_mmr >= 2000:
         return DEFAULT_FARM_SIZE
+    
     for i in range(0, 2100, 100):
         if player_mmr <= i:
             return min(DEFAULT_FARM_SIZE, max(2, int(i / 100)))
         
 async def define_chicken_rarity_list(player_mmr: int, all_rarities: dict) -> dict:
     """
-    Changes the chicken rarity list for the bot to pick from.
+    Changes the chicken rarity list for the bot to pick from using probabilities distribution.
 
     Args:
         player_mmr (int): The mmr of the player.
@@ -99,13 +105,12 @@ async def define_chicken_rarity_list(player_mmr: int, all_rarities: dict) -> dic
     Returns:
         dict
     """
-    bot_deck = all_rarities.copy()
-    
     if not player_mmr >= 2000:
-        bot_deck.pop('ETHEREAL')
         all_rarities.pop('ETHEREAL')
     else:
         player_mmr = 2000
+
+    bot_deck = all_rarities.copy()
 
     chicken_selected = player_mmr * len(all_rarities) / 2000
     chicken_selected = int(chicken_selected)

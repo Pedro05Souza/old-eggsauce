@@ -8,9 +8,6 @@ from cogs import BotManager
 from logs import log_info
 import os
 import discord
-import logging
-
-logger = logging.getLogger('bot_logger')
 
 __all__ = [
     "get_prefix_for_guild",

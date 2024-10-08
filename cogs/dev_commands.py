@@ -331,6 +331,6 @@ class DevCommands(commands.Cog):
                 farm_data['chickens'][index]['upkeep_multiplier'] = new_upkeep
                 await Farm.update(user.id, chickens=farm_data['chickens'])
                 await send_bot_embed(ctx, description=f"{user.display_name}'s chicken upkeep has been changed.")
-                
+                                
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))
