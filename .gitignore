@@ -170,3 +170,4 @@ docker-compose*.tmp
 
 # Ignore directories created by Docker
 data/
+backup/
