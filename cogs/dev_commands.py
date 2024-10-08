@@ -77,7 +77,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             await send_bot_embed(ctx, description=f":ping_pong: {round(self.bot.latency * 1000)}ms")
 
     @commands.command("deleteDB")
@@ -114,7 +114,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx) and User.read(user.id):
+        if await is_dev(ctx.author.id) and await User.read(user.id):
             if await Bank.read(user.id):
                 await Bank.update(user.id, 0)
             await User.update_all(user.id, 0, "")
@@ -133,7 +133,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             servers = self.bot.guilds
             total_servers = len(servers)
             await send_bot_embed(ctx, description=f"```The bot is currently in: {total_servers} servers```")
@@ -151,7 +151,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             total_users = await User.count_users()
             await send_bot_embed(ctx, description=f"```Total users in the database: {total_users}```")
         else:
@@ -169,7 +169,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             rarity = rarity.upper()
             farm_data = await Farm.read(user.id)
             if farm_data:
@@ -193,7 +193,7 @@ class DevCommands(commands.Cog):
         None
          
      """
-     if await is_dev(ctx):
+     if await is_dev(ctx.author.id):
         total_offers = await Market.count_all_offers()
         await send_bot_embed(ctx, description=f"```Total active offers in the player market: {total_offers}```")
      else:
@@ -210,7 +210,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             process = psutil.Process()
             cache = await cache_initiator.get_cache_memory_consuption()
             embed_obj = await make_embed_object(title="⚙️ Developer Panel")
@@ -231,7 +231,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             await self.bot.tree.sync()
             await send_bot_embed(ctx, description=":warning: bot data has been synced.")
         else:
@@ -249,7 +249,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             user = ctx.author if user is None else user
             farm_data = await Farm.read(user.id)
             if farm_data:
@@ -270,7 +270,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             last_listener = await listener_manager.get_last_listener(user.id)
             if last_listener:
                 await send_bot_embed(ctx, description=await listener_manager.return_listener_description(last_listener))     
@@ -289,7 +289,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             last_listeners = await listener_manager.get_n_last_listeners(user.id, n)
             if last_listeners:
                 description = ""
@@ -313,7 +313,7 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx):
+        if await is_dev(ctx.author.id):
             farm_data = await Farm.read(user.id)
             if farm_data:
                 
