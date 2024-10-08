@@ -99,7 +99,7 @@ def dev_list() -> list:
         list
     """
     load_dotenv()
-    devs = os.getenv("DEVS").split(",")
+    devs = os.getenv("BOT_DEVS").split(",")
     return devs
 
 async def get_user_title(user_data: dict) -> str:
