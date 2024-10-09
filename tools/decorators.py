@@ -7,9 +7,9 @@ from typing import Any, Callable
 from discord.ext import commands
 from discord.ext.commands import Context
 from tools.points_core import get_config_data, retrieve_user_data, validate_command, get_points_commands_submodules, verify_farm_command, verify_and_handle_points
+from lib import is_dev, send_bot_embed
 
-
-__all__ = ['pricing', 'before_loop_decorator']
+__all__ = ['pricing', 'before_loop_decorator', "dev_only"]
 
 
 def pricing(cache_copy: bool = False) -> Callable[[Callable [..., Any]], Callable[..., Any]]:
@@ -64,3 +64,20 @@ def before_loop_decorator(task_func) -> Callable[..., Any]:
         await self.bot.wait_until_ready()
     task_func.before_loop = before_loop
     return task_func
+
+def dev_only() -> Callable[..., Any]:
+    """
+    Decorator for the dev only commands.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
+    async def predicate(ctx: Context) -> bool:
+        if not await is_dev(ctx.author.id):
+            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+            return False
+        return True
+    return commands.check(predicate)

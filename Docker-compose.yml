@@ -1,12 +1,9 @@
-
 services:
   bot:
     build: .
     command: python3 main.py
     volumes:
       - .:/app
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
     depends_on:
       - db
     ports:
@@ -20,3 +17,8 @@ services:
     volumes:
       - ./data/server:/data/db
     restart: on-failure:5
+
+volumes:
+  db_data:
+    driver: local
+    

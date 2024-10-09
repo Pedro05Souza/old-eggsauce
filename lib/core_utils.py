@@ -83,7 +83,7 @@ async def is_dev(author_id: int) -> bool:
     Checks if the user is a developer.
 
     Args:
-        ctx (Context): The context of the command.
+        author_id int: The context of the command.
 
     Returns:
         bool
@@ -99,7 +99,7 @@ def dev_list() -> list:
         list
     """
     load_dotenv()
-    devs = os.getenv("DEVS").split(",")
+    devs = os.getenv("BOT_DEVS").split(",")
     return devs
 
 async def get_user_title(user_data: dict) -> str:

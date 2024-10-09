@@ -51,15 +51,7 @@ class BotCache():
             if identifier not in self.cache:
                 self.cache[identifier] = {}
  
-            for dict_key, value in kwargs.items():
-
-                if dict_key in self.cache[identifier]:
-                    if isinstance(value, dict):
-                        self.cache[identifier][dict_key].update(value)
-                    else:
-                        self.cache[identifier][dict_key] = value
-                else:
-                    self.cache[identifier][dict_key] = value
+            self.cache[identifier].update(kwargs)
 
             self.cache.move_to_end(identifier)
             

@@ -391,7 +391,13 @@ async def validate_command(ctx: Context) -> bool:
     return True
 
 async def retrieve_user_data(ctx: Context, cache_copy: bool) -> Optional[dict]:
+    """
+    Retrieves the cached data from the bot's cache system.
 
+    Args:
+        ctx (Context): The context of the command.
+        cache_copy (bool): Wheter the cache should be a reference or a copy.
+    """
     if cache_copy:
         data = await user_cache_retriever_copy(ctx.author.id)
     else:
@@ -404,6 +410,13 @@ async def retrieve_user_data(ctx: Context, cache_copy: bool) -> Optional[dict]:
     return data
 
 async def verify_farm_command(ctx: Context, data: dict) -> bool:
+    """
+    Verifies if the user can invoke any farm command. Returns if not verified in the database.
+
+    Args:
+        ctx (Contex): The context of the command.
+        data (dict): All of the cached data belonging to the user.
+    """
     if await verify_if_farm_command(ctx.command):
         if not data['farm_data']:
             await send_bot_embed(ctx, description=":no_entry_sign: You don't have a farm. Type **!createfarm** to create one.")
@@ -413,6 +426,19 @@ async def verify_farm_command(ctx: Context, data: dict) -> bool:
     return True
 
 async def verify_and_handle_points(ctx: Context, command_name: str, user_data: dict, config_data: dict, data: dict) -> bool:
+    """
+    Verifies and validates if the user can purchase the bot command.
+
+    Args:
+        ctx (Context): The context of the command.
+        command_name (str): The name of the command that was invoked.
+        user_data (dict): The cached data of the user.
+        config_data (dict): The cache configuration data of the server.
+        data (dict): All cached data belonging to the user.
+
+    Returns:
+        bool 
+    """
     if await verify_points(command_name, user_data):
         result = await treat_exceptions(ctx, command_name, user_data, config_data, data)
         ctx.data = data
