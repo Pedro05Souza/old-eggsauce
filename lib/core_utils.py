@@ -83,7 +83,7 @@ async def is_dev(author_id: int) -> bool:
     Checks if the user is a developer.
 
     Args:
-        ctx (Context): The context of the command.
+        author_id int: The context of the command.
 
     Returns:
         bool
