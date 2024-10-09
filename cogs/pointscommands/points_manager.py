@@ -129,7 +129,7 @@ class PointsManager(commands.Cog):
         """
         Listens to the voice state update event.
         """
-        if not await can_listener_run(user.guild.id):
+        if not await can_listener_run(user.guild):
             return
         
         if user.bot:
@@ -146,7 +146,7 @@ class PointsManager(commands.Cog):
         """
         Listens to the message event.
         """         
-        if not await can_listener_run(message.guild.id):
+        if not await can_listener_run(message.guild):
             return
         
         if message.author.bot:

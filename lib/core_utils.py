@@ -367,11 +367,20 @@ async def button_view_builder(*buttons) -> discord.ui.View:
         view.add_item(button)
     return view
 
-async def can_listener_run(guild_id: int) -> bool:
+async def can_listener_run(guild: discord.Guild) -> bool:
     """
     Checks if the listener can happen based on the guild and the bot's configuration.
+
+    Args:
+        guild (discord.Guild): The guild to check.
+
+    Returns:
+        bool
     """
-    guild_data = await guild_cache_retriever(guild_id)
+    if not hasattr(guild, "id"):
+        return False
+    
+    guild_data = await guild_cache_retriever(guild.id)
 
     if guild_data['toggled_modules'] == 'N':
         return False
