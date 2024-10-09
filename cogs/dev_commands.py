@@ -6,7 +6,7 @@ from lib import make_embed_object, send_bot_embed, is_dev, retrieve_threads
 from db import User, Bank, Farm, Market
 from lib.chickenlib import create_chicken
 from temp import cache_initiator
-from tools import listener_manager
+from tools import listener_manager, dev_only
 from discord.ext.commands import Context
 import psutil
 import discord
@@ -18,7 +18,8 @@ class DevCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.command("addPoints") 
+    @commands.command("addPoints")
+    @dev_only()
     async def add_points(self, ctx: Context, amount: int, user: discord.Member = None) -> None:
         """
         Adds points to a user.
@@ -32,17 +33,17 @@ class DevCommands(commands.Cog):
         """
         if user is None:
             user = ctx.author
+
         user_data = await User.read(user.id)
+        
         if user_data:
-            if await is_dev(ctx.author.id):
-                await User.update_points(user.id, user_data["points"] + amount)
-                await send_bot_embed(ctx, description=f"{user.display_name} received {amount} eggbux")
-            else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
+            await User.update_points(user.id, user_data["points"] + amount)
+            await send_bot_embed(ctx, description=f"{user.display_name} received {amount} eggbux")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
 
     @commands.command("removePoints")
+    @dev_only()
     async def remove_points(self, ctx: Context, amount: int, user: discord.Member = None) -> None:
         """
         Removes points from a user.
@@ -58,15 +59,13 @@ class DevCommands(commands.Cog):
             user = ctx.author
         user_data = await User.read(user.id)
         if user_data:
-            if await is_dev(ctx.author.id):
-                await User.update_points(user.id, user_data["points"] - amount)
-                await send_bot_embed(ctx, description=f"{user.display_name} lost {amount} eggbux")
-            else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
+            await User.update_points(user.id, user_data["points"] - amount)
+            await send_bot_embed(ctx, description=f"{user.display_name} lost {amount} eggbux")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
 
     @commands.command("latency", aliases=["ping"])
+    @dev_only()
     async def latency(self, ctx: Context) -> None:
         """
         Check the bot's latency.
@@ -81,6 +80,7 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=f":ping_pong: {round(self.bot.latency * 1000)}ms")
 
     @commands.command("deleteDB")
+    @dev_only()
     async def delete_db(self, ctx: Context, user: discord.Member) -> None:
         """
         Delete an user from the database.
@@ -92,18 +92,16 @@ class DevCommands(commands.Cog):
             None
         """
         if await User.read(user.id):
-            if await is_dev(ctx.author.id):
-                await User.delete(user.id)
-                await Bank.delete(user.id)
-                await Farm.delete(user.id)
-                await Market.delete(user.id)
-                await send_bot_embed(ctx, description=f":warning: {user.display_name} has been deleted from the database.")
-            else:
-                await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} do not have permission to do this.")
+            await User.delete(user.id)
+            await Bank.delete(user.id)
+            await Farm.delete(user.id)
+            await Market.delete(user.id)
+            await send_bot_embed(ctx, description=f":warning: {user.display_name} has been deleted from the database.")
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: user not found in the database.")
             
     @commands.command()
+    @dev_only()
     async def reset(self, ctx: Context, user: discord.Member) -> None:
         """
         Resets an user from the database.
@@ -114,15 +112,16 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id) and await User.read(user.id):
+        if await User.read(user.id):
             if await Bank.read(user.id):
                 await Bank.update(user.id, 0)
             await User.update_all(user.id, 0, "")
             await send_bot_embed(ctx, description=f"{user.display_name} has been reset.")
         else:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+            await send_bot_embed(ctx, description=":no_entry_sign: User is not registered in the database")
 
     @commands.command("checkbotServers", aliases=["cbs"])
+    @dev_only()
     async def check_bot_servers(self, ctx: Context) -> None:
         """
         Check the servers the bot is in.
@@ -133,14 +132,12 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id):
-            servers = self.bot.guilds
-            total_servers = len(servers)
-            await send_bot_embed(ctx, description=f"```The bot is currently in: {total_servers} servers```")
-        else:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+        servers = self.bot.guilds
+        total_servers = len(servers)
+        await send_bot_embed(ctx, description=f"```The bot is currently in: {total_servers} servers```")
     
     @commands.command("totalusers")
+    @dev_only()
     async def total_users(self, ctx: Context) -> None:
         """
         Check the total number of users in the database.
@@ -151,13 +148,11 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id):
-            total_users = await User.count_users()
-            await send_bot_embed(ctx, description=f"```Total users in the database: {total_users}```")
-        else:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+        total_users = await User.count_users()
+        await send_bot_embed(ctx, description=f"```Total users in the database: {total_users}```")
 
     @commands.command("spawnChicken")
+    @dev_only()
     async def spawn_chicken(self, ctx: Context, user: discord.Member, rarity: str) -> None:
         """
         Adds a chicken to an user's farm.
@@ -169,19 +164,19 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id):
-            rarity = rarity.upper()
-            farm_data = await Farm.read(user.id)
-            if farm_data:
-                chicken = await create_chicken(rarity, "dev")
-                if not chicken:
-                    await send_bot_embed(ctx, description=":no_entry_sign: Invalid rarity.")
-                    return
-                farm_data['chickens'].append(chicken)
-                await Farm.update(user.id, chickens=farm_data['chickens'])
-                await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")
+        rarity = rarity.upper()
+        farm_data = await Farm.read(user.id)
+        if farm_data:
+            chicken = await create_chicken(rarity, "dev")
+            if not chicken:
+                await send_bot_embed(ctx, description=":no_entry_sign: Invalid rarity.")
+                return
+            farm_data['chickens'].append(chicken)
+            await Farm.update(user.id, chickens=farm_data['chickens'])
+            await send_bot_embed(ctx, description=f"{user.display_name} received a **{rarity}** chicken.")
                               
     @commands.command(name="marketLogs")
+    @dev_only()
     async def market_logs(self, ctx: Context) -> None:
      """
     Checks the total number of active offers in the market.
@@ -193,13 +188,11 @@ class DevCommands(commands.Cog):
         None
          
      """
-     if await is_dev(ctx.author.id):
-        total_offers = await Market.count_all_offers()
-        await send_bot_embed(ctx, description=f"```Total active offers in the player market: {total_offers}```")
-     else:
-        await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+     total_offers = await Market.count_all_offers()
+     await send_bot_embed(ctx, description=f"```Total active offers in the player market: {total_offers}```")
     
     @commands.command(name="devpanel")
+    @dev_only()
     async def developer_panel(self, ctx: Context) -> None:
         """
         Check the developer panel. It shows the memory usage, active threads, CPU usage and memory usage.
@@ -210,17 +203,17 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id):
-            process = psutil.Process()
-            cache = await cache_initiator.get_cache_memory_consuption()
-            embed_obj = await make_embed_object(title="⚙️ Developer Panel")
-            embed_obj.add_field(name="🔧 Cache Memory Usage:", value=f"{cache} bytes")
-            embed_obj.add_field(name="🧰 Current active threads:", value=f"{retrieve_threads()}")
-            embed_obj.add_field(name="📊 CPU Usage:", value=f"{process.cpu_percent()}%")
-            embed_obj.add_field(name="🧠 Memory Usage:", value=f"{process.memory_info().rss / 1024 ** 2} MB")
-            await ctx.send(embed=embed_obj)
+        process = psutil.Process()
+        cache = await cache_initiator.get_cache_memory_consuption()
+        embed_obj = await make_embed_object(title="⚙️ Developer Panel")
+        embed_obj.add_field(name="🔧 Cache Memory Usage:", value=f"{cache} bytes")
+        embed_obj.add_field(name="🧰 Current active threads:", value=f"{retrieve_threads()}")
+        embed_obj.add_field(name="📊 CPU Usage:", value=f"{process.cpu_percent()}%")
+        embed_obj.add_field(name="🧠 Memory Usage:", value=f"{process.memory_info().rss / 1024 ** 2} MB")
+        await ctx.send(embed=embed_obj)
 
     @commands.command(name="sync")
+    @dev_only()
     async def sync(self, ctx: Context) -> None:
         """
         Sync the bot commands globally.
@@ -231,13 +224,11 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id):
-            await self.bot.tree.sync()
-            await send_bot_embed(ctx, description=":warning: bot data has been synced.")
-        else:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+        await self.bot.tree.sync()
+        await send_bot_embed(ctx, description=":warning: bot data has been synced.")
 
     @commands.command(name="givecorn")
+    @dev_only()
     async def give_corn(self, ctx: Context, amount: int, user: discord.Member= None) -> None:
         """
         Gives corn to a user.
@@ -249,17 +240,15 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id):
-            user = ctx.author if user is None else user
-            farm_data = await Farm.read(user.id)
-            if farm_data:
-                farm_data['corn'] = min(amount + farm_data['corn'], farm_data['corn_limit'])
-                await Farm.update(user.id, corn=farm_data['corn'])
-                await send_bot_embed(ctx, description=f"{user.display_name} received {amount} corn.")
-        else:
-            await send_bot_embed(ctx, description=":no_entry_sign: You do not have permission to do this.")
+        user = ctx.author if user is None else user
+        farm_data = await Farm.read(user.id)
+        if farm_data:
+            farm_data['corn'] = min(amount + farm_data['corn'], farm_data['corn_limit'])
+            await Farm.update(user.id, corn=farm_data['corn'])
+            await send_bot_embed(ctx, description=f"{user.display_name} received {amount} corn.")
 
     @commands.command(name="lastPurchase", aliases=["lp"])
+    @dev_only()
     async def get_last_purchase(self, ctx: Context, user: discord.Member) -> None:
         """
         Check the last listener of an user.
@@ -270,14 +259,14 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id):
-            last_listener = await listener_manager.get_last_listener(user.id)
-            if last_listener:
-                await send_bot_embed(ctx, description=await listener_manager.return_listener_description(last_listener))     
-            else:
-                await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
+        last_listener = await listener_manager.get_last_listener(user.id)
+        if last_listener:
+            await send_bot_embed(ctx, description=await listener_manager.return_listener_description(last_listener))     
+        else:
+            await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
 
     @commands.command(name="lastPurchases", aliases=["lps"])
+    @dev_only()
     async def get_last_purchases(self, ctx: Context, user: discord.Member, n: int) -> None:
         """
         Check the last n listeners of an user.
@@ -289,17 +278,17 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id):
-            last_listeners = await listener_manager.get_n_last_listeners(user.id, n)
-            if last_listeners:
-                description = ""
-                for listener in last_listeners:
-                    description += await listener_manager.return_listener_description(listener)
-                await send_bot_embed(ctx, description=description)
-            else:
-                await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
+        last_listeners = await listener_manager.get_n_last_listeners(user.id, n)
+        if last_listeners:
+            description = ""
+            for listener in last_listeners:
+                description += await listener_manager.return_listener_description(listener)
+            await send_bot_embed(ctx, description=description)
+        else:
+            await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
 
     @commands.command(name="changechickenupkeep" , aliases=["ccu"])
+    @dev_only()
     async def change_chicken_upkeep(self, ctx: Context, new_upkeep: int, index: int, user: discord.Member):
         """
         Change the upkeep of a chicken.
@@ -313,24 +302,23 @@ class DevCommands(commands.Cog):
         Returns:
             None
         """
-        if await is_dev(ctx.author.id):
-            farm_data = await Farm.read(user.id)
-            if farm_data:
-                
-                if new_upkeep < 0 or new_upkeep > 75:
-                    await send_bot_embed(ctx, description=":no_entry_sign: Upkeep must be between 0 and .75.")
-                    return
-                
-                new_upkeep = new_upkeep / 100
-                index -= 1
+        farm_data = await Farm.read(user.id)
+        if farm_data:
+            
+            if new_upkeep < 0 or new_upkeep > 75:
+                await send_bot_embed(ctx, description=":no_entry_sign: Upkeep must be between 0 and .75.")
+                return
+            
+            new_upkeep = new_upkeep / 100
+            index -= 1
 
-                if index < 0 or index >= len(farm_data['chickens']):
-                    await send_bot_embed(ctx, description=":no_entry_sign: Invalid index.")
-                    return
-                
-                farm_data['chickens'][index]['upkeep_multiplier'] = new_upkeep
-                await Farm.update(user.id, chickens=farm_data['chickens'])
-                await send_bot_embed(ctx, description=f"{user.display_name}'s chicken upkeep has been changed.")
+            if index < 0 or index >= len(farm_data['chickens']):
+                await send_bot_embed(ctx, description=":no_entry_sign: Invalid index.")
+                return
+            
+            farm_data['chickens'][index]['upkeep_multiplier'] = new_upkeep
+            await Farm.update(user.id, chickens=farm_data['chickens'])
+            await send_bot_embed(ctx, description=f"{user.display_name}'s chicken upkeep has been changed.")
                                 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))
