@@ -145,7 +145,7 @@ class PointsManager(commands.Cog):
     async def on_message(self, message: discord.Message):
         """
         Listens to the message event.
-        """
+        """         
         if not await can_listener_run(message.guild.id):
             return
         
