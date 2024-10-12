@@ -11,11 +11,7 @@ __all__ = ["ChickenAuthorTradeMenu", "ChickenUserTradeMenu"]
 
 class ChickenAuthorTradeMenu(ui.Select):
 
-    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, shared_trade_dict: dict):
-        options = [
-            SelectOption(label=chicken['name'], description=f"{chicken['rarity']} {get_chicken_price(chicken)}", value=str(index), emoji=get_rarity_emoji(chicken['rarity']))
-            for index, chicken in enumerate(chickens)
-        ]
+    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, shared_trade_dict: dict, options: list = None):
         self.chickens = chickens
         self.author = author
         self.message = message
@@ -42,16 +38,7 @@ class ChickenAuthorTradeMenu(ui.Select):
         
 class ChickenUserTradeMenu(ui.Select):
 
-    def __init__(self, chickens: list, author: discord.Member, message: discord.Member, target: discord.Member, instance_bot: discord.Client, shared_trade_dict: dict):
-        options = [
-            SelectOption(
-                label=chicken['name'], 
-                description=f"{chicken['rarity']} {get_chicken_price(chicken)}", 
-                value=str(index), 
-                emoji=get_rarity_emoji(chicken['rarity'])
-                )
-            for index, chicken in enumerate(chickens) if chicken['rarity'] != "ETHEREAL"
-        ]
+    def __init__(self, chickens: list, author: discord.Member, message: discord.Member, target: discord.Member, instance_bot: discord.Client, shared_trade_dict: dict, options: list = None):
         self.chickens = chickens
         self.author = author
         self.message = message
@@ -95,10 +82,10 @@ class ChickenUserTradeMenu(ui.Select):
         target_description = None
 
         author_chickens = self.shared_trade_dict[self.author.id]
-        author_description = f"{self.author.display_name} wants to trade the following chickens: " + "\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in author_chickens])
+        author_description = f"{self.author.display_name} wants to trade the following chickens: " + "\n".join([f"{await get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in author_chickens])
     
         target_chickens = self.shared_trade_dict[self.target.id]
-        target_description = f"\n{self.target.display_name} wants to trade the following chickens: " + "\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in target_chickens])
+        target_description = f"\n{self.target.display_name} wants to trade the following chickens: " + "\n".join([f"{await get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in target_chickens])
         embed = await make_embed_object(description=f"{author_description}\n{target_description}")
         embed.set_footer(text="✅ to confirm, ❌ to cancel.")
 
@@ -165,7 +152,7 @@ class ChickenUserTradeMenu(ui.Select):
         author_farm = author_cache["farm_data"]
         user_farm = user_cache["farm_data"]
 
-        if len(author_chickens) + len(user_chickens) > get_max_chicken_limit(author_farm) or len(user_chickens) + len(author_chickens) > get_max_chicken_limit(user_farm):
+        if len(author_chickens) + len(user_chickens) > await get_max_chicken_limit(author_farm) or len(user_chickens) + len(author_chickens) > await get_max_chicken_limit(user_farm):
             embed = await make_embed_object(description="Trade cannot be completed. The total number of chickens after the trade exceeds the maximum limit.")
             return embed
         

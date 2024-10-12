@@ -286,39 +286,6 @@ class DevCommands(commands.Cog):
             await send_bot_embed(ctx, description=description)
         else:
             await send_bot_embed(ctx, description=":no_entry_sign: No listener found.")
-
-    @commands.command(name="changechickenupkeep" , aliases=["ccu"])
-    @dev_only()
-    async def change_chicken_upkeep(self, ctx: Context, new_upkeep: int, index: int, user: discord.Member):
-        """
-        Change the upkeep of a chicken.
-
-        Args:
-            ctx (Context): The context of the command.
-            new_upkeep (float): The new upkeep of the chicken.
-            index (int): The index of the chicken.
-            user (discord.Member): The user to change the upkeep of the chicken.
-
-        Returns:
-            None
-        """
-        farm_data = await Farm.read(user.id)
-        if farm_data:
-            
-            if new_upkeep < 0 or new_upkeep > 75:
-                await send_bot_embed(ctx, description=":no_entry_sign: Upkeep must be between 0 and .75.")
-                return
-            
-            new_upkeep = new_upkeep / 100
-            index -= 1
-
-            if index < 0 or index >= len(farm_data['chickens']):
-                await send_bot_embed(ctx, description=":no_entry_sign: Invalid index.")
-                return
-            
-            farm_data['chickens'][index]['upkeep_multiplier'] = new_upkeep
-            await Farm.update(user.id, chickens=farm_data['chickens'])
-            await send_bot_embed(ctx, description=f"{user.display_name}'s chicken upkeep has been changed.")
                                 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

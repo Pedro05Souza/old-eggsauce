@@ -7,7 +7,7 @@ from lib import send_bot_embed, make_embed_object, confirmation_embed, format_nu
 from lib.chickenlib import get_rarity_emoji, is_non_market_place_chicken, ChickenRarity, EventData
 from resources import REGULAR_COOLDOWN, OFFER_EXPIRE_TIME
 from tools import pricing
-from views.selection import ChickenSelectView
+from views.selection import ChickenSelectView, chicken_options_initializer
 from better_profanity import profanity
 from discord.ext.commands import Context
 import discord
@@ -81,7 +81,7 @@ class PlayerMarket(commands.Cog):
             if not await EventData.is_yieldable(ctx, ctx.author):
                 return
             
-            confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to register your **{get_rarity_emoji(selected_chicken['rarity'])}{selected_chicken['rarity']} {selected_chicken['name']}** to the player market for **{price}** eggbux?")
+            confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to register your **{await get_rarity_emoji(selected_chicken['rarity'])}{selected_chicken['rarity']} {selected_chicken['name']}** to the player market for **{price}** eggbux?")
             
             if confirmation:
                 
@@ -116,7 +116,7 @@ class PlayerMarket(commands.Cog):
                 description=(
                     "Here are your current market offers:\n\n" +
                     "\n\n".join([
-                        f"**{i+1}.** **{get_rarity_emoji(offer['chicken']['rarity'])}"
+                        f"**{i+1}.** **{await get_rarity_emoji(offer['chicken']['rarity'])}"
                         f"{offer['chicken']['rarity']} {offer['chicken']['name']}** - "
                         f"**Price:** {await format_number(offer['price'])} eggbux. :money_with_wings: \n"
                         f"**:gem: Upkeep rarity**: {(offer['chicken']['upkeep_multiplier']) * 100}% \n"
@@ -179,7 +179,7 @@ class PlayerMarket(commands.Cog):
                 description=(
                     "Here are the current player market offers:\n\n" +
                     "\n\n".join([
-                        f"**{i+1}.** **{get_rarity_emoji(offer['chicken']['rarity'])}"
+                        f"**{i+1}.** **{await get_rarity_emoji(offer['chicken']['rarity'])}"
                         f"{offer['chicken']['rarity']} {offer['chicken']['name']}** - "
                         f"**Price:** {await format_number(offer['price'])} eggbux. :money_with_wings:\n"
                         f"**:gem: Upkeep rarity**: {(offer['chicken']['upkeep_multiplier']) * 100}% \n"
@@ -189,7 +189,17 @@ class PlayerMarket(commands.Cog):
                     ])
                 )
             )
-                view = ChickenSelectView(chickens=search, author=interaction.user, embed_text=msg, action="PM", instance_bot=self.bot, author_cached_data=cache, has_cancel_button=False)
+                view_options = await chicken_options_initializer(search, cache)
+                view = ChickenSelectView(
+                    chickens=search, 
+                    author=interaction.user, 
+                    embed_text=msg, 
+                    action="PM", 
+                    instance_bot=self.bot, 
+                    author_cached_data=cache, 
+                    has_cancel_button=False,
+                    selection_options=view_options
+                    )
                 await interaction.response.send_message(embed=msg, view=view)
             else:
                 await send_bot_embed(interaction, ephemeral=True, description=f":no_entry_sign: No offers found with the parameters provided.")

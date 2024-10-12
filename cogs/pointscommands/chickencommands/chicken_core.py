@@ -4,7 +4,7 @@ This module contains the core commands for the chicken system.
 from random import uniform
 from time import time
 from db import Farm
-from views.selection import ChickenSelectView
+from views.selection import ChickenSelectView, chicken_options_initializer
 from lib.chickenlib import get_usr_farm, RollLimit, load_farmer_upgrades, get_rarity_emoji, get_chicken_price, rollRates
 from tools import pricing
 from lib import make_embed_object, send_bot_embed, return_data, update_user_param
@@ -127,7 +127,7 @@ class ChickenCore(commands.Cog):
             if not RollLimit.read_key(ctx.author.id):
 
                 if farm_data['farmer'] == "Executive Farmer":
-                    farmer_upgrades = load_farmer_upgrades("Executive Farmer")
+                    farmer_upgrades = await load_farmer_upgrades("Executive Farmer")
                     farmer_upgd = farmer_upgrades[0]
                     RollLimit.create(ctx.author.id, farmer_upgd + DEFAULT_ROLLS)
                 else:
@@ -140,11 +140,21 @@ class ChickenCore(commands.Cog):
                 RollLimit.remove(ctx.author.id)
 
         if farm_data['farmer'] == "Generous Farmer":
-            DEFAULT_ROLLS += load_farmer_upgrades("Generous Farmer")[0]
+            DEFAULT_ROLLS += await load_farmer_upgrades("Generous Farmer")[0]
             
         generated_chickens = self.generate_chickens(*self.roll_rates_sum(), chickens_to_generate)
-        message = await make_embed_object(title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", description="\n".join([f" {get_rarity_emoji(chicken['rarity'])} **{index + 1}.** **{chicken['rarity']} {chicken['name']}**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux." for index, chicken in enumerate(generated_chickens)]))
-        view = ChickenSelectView(chickens=generated_chickens, author=ctx.author, action="M", embed_text=message, author_cached_data=ctx.data, has_cancel_button=False)
+        message = await make_embed_object(
+        title=f":chicken: {ctx.author.display_name} here are the chickens you generated to buy: \n", 
+        description = "\n".join([
+            f" {await get_rarity_emoji(chicken['rarity'])} "
+            f"**{index + 1}.** "
+            f"**{chicken['rarity']} {chicken['name']}**: "
+            f"{await get_chicken_price(chicken, farm_data['farmer'])} eggbux."
+            for index, chicken in enumerate(generated_chickens)
+            ]))
+        
+        view_options = await chicken_options_initializer(generated_chickens, ctx.data)
+        view = ChickenSelectView(chickens=generated_chickens, author=ctx.author, action="M", embed_text=message, selection_options=view_options, author_cached_data=ctx.data, has_cancel_button=False)
         await ctx.send(embed=message, view=view)
                          
     def roll_rates_sum(self) -> tuple:

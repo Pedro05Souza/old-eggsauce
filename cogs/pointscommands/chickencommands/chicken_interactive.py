@@ -6,11 +6,10 @@ from discord.ext.commands import Context
 from lib import user_cache_retriever, send_bot_embed, confirmation_embed
 from lib.chickenlib import EventData, is_non_tradable_chicken, get_usr_farm, get_non_tradable_chickens, get_max_chicken_limit, get_rarity_emoji
 from db import Farm
-from views.selection.chicken_selection import ChickenSelectView
+from views.selection import ChickenSelectView, chicken_options_initializer
 from resources import REGULAR_COOLDOWN
 from tools import pricing, on_awaitable
 import discord
-
 
 __all__ = ['ChickenInteractive']
 
@@ -96,9 +95,31 @@ class ChickenInteractive(commands.Cog):
             return
         
         shared_trade_dict = {}
-        view_author = ChickenSelectView(chickens=trade_data, author=members_data, action="T", embed_text=embeds, role="author", shared_trade_dict=shared_trade_dict)
-        view_user = ChickenSelectView(chickens=trade_data, author=members_data, action="T", embed_text=embeds, role="user", instance_bot=self.bot, shared_trade_dict=shared_trade_dict, user_view=view_author)
+        options_author = await chicken_options_initializer(trade_data[0], ctx.data)
+        view_author = ChickenSelectView(
+            chickens=trade_data, 
+            author=members_data, 
+            action="T", 
+            embed_text=embeds, 
+            role="author", 
+            shared_trade_dict=shared_trade_dict, 
+            selection_options=options_author
+            )
+
+        options_user = await chicken_options_initializer(trade_data[1], user_cache_data)
+        view_user = ChickenSelectView(
+            chickens=trade_data, 
+            author=members_data, 
+            action="T", 
+            embed_text=embeds, 
+            role="user", 
+            instance_bot=self.bot, 
+            shared_trade_dict=shared_trade_dict, 
+            user_view=view_author,
+            selection_options=options_user
+            )
         view_author.user_view = view_user
+
         await ctx.send(embed=authorEmbed, view=view_author)
         await ctx.send(embed=userEmbed, view=view_user)
 
@@ -136,7 +157,7 @@ class ChickenInteractive(commands.Cog):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you can't gift a chicken to yourself.")
                 return
             
-            if len(user_farm_data['chickens']) >= get_max_chicken_limit(user_farm_data):
+            if len(user_farm_data['chickens']) >= await get_max_chicken_limit(user_farm_data):
                 await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, {user.display_name} already has the maximum amount of chickens.")
                 return
             
@@ -148,7 +169,7 @@ class ChickenInteractive(commands.Cog):
             
             async with EventData.manage_event_context(ctx.author, user, awaitable=True):
             
-                confirmation = await confirmation_embed(ctx, ctx.author, f":question: {ctx.author.display_name}, are you sure you want to gift **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']} to {user.display_name}?")
+                confirmation = await confirmation_embed(ctx, ctx.author, f":question: {ctx.author.display_name}, are you sure you want to gift **{await get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']} to {user.display_name}?")
 
                 if confirmation:
                     await self.gift_request(ctx, user, gifted_chicken, author_data, user_farm_data, index)
@@ -171,7 +192,7 @@ class ChickenInteractive(commands.Cog):
         Returns:
             None
         """  
-        confirmation = await confirmation_embed(ctx, user, f":question: {user.display_name}, {ctx.author.display_name} has sent you a gift request for **{get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']}. Do you accept the gift request?")
+        confirmation = await confirmation_embed(ctx, user, f":question: {user.display_name}, {ctx.author.display_name} has sent you a gift request for **{await get_rarity_emoji(gifted_chicken['rarity'])}{gifted_chicken['rarity']}** {gifted_chicken['name']}. Do you accept the gift request?")
         if confirmation:
             chicken = author_data['chickens'][index]
             user_data['chickens'].append(chicken)

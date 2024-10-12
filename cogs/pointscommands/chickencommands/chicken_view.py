@@ -6,10 +6,10 @@ from db import Farm
 from lib import send_bot_embed, make_embed_object, user_cache_retriever, return_data, format_number, update_user_param
 from lib.chickenlib import (
     get_chicken_egg_value, get_rarity_emoji, get_chicken_price,
-    get_rarity_emoji, ChickenMultiplier, ChickenRarity, ChickenFood, rollRates, chicken_ranking,
+    ChickenMultiplier, ChickenRarity, ChickenFood, rollRates, chicken_ranking,
     rank_determiner, give_total_farm_profit, farm_maintence_tax
 )
-from views.selection import ChickenSelectView
+from views.selection import ChickenSelectView, chicken_options_initializer
 from resources import REGULAR_COOLDOWN, FARM_DROP
 from tools import pricing
 from better_profanity import profanity
@@ -53,7 +53,7 @@ class ChickenView(commands.Cog):
                 title=f":chicken: {chicken['rarity']} {chicken['name']}",
                 description=(
                     f":partying_face: **Happiness**: {chicken['happiness']}%\n"
-                    f":moneybag: **Price**: {get_chicken_price(chicken, farm_data['farmer'])} eggbux\n"
+                    f":moneybag: **Price**: {await get_chicken_price(chicken, farm_data['farmer'])} eggbux\n"
                     f":egg: **Egg value**: {chicken_egg_value}/{ChickenMultiplier[chicken['rarity']].value}\n"
                     f":gem: **Upkeep rarity**: {round(chicken['upkeep_multiplier'] * 100)}%\n"
                     f":coin: **Eggs generated:** {await format_number(chicken['eggs_generated'])}\n"
@@ -77,7 +77,7 @@ class ChickenView(commands.Cog):
         Returns:
             None
         """
-        rarity_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {round(rate/100, 4)}%" for rarity, rate in rollRates.items()])
+        rarity_info = "\n".join([f"{await get_rarity_emoji(rarity)} **{rarity}**: {round(rate/100, 4)}%" for rarity, rate in rollRates.items()])
         await send_bot_embed(ctx, title="Chicken Rarities:", description=rarity_info)
 
     @commands.hybrid_command(name="chickenvalues", aliases=["cv"], usage="chickenValues", description="Check the values of eggs produced by chickens.")
@@ -93,7 +93,7 @@ class ChickenView(commands.Cog):
         Returns:
             None
         """
-        value_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {ChickenMultiplier[rarity].value}x" for rarity in ChickenMultiplier.__members__])
+        value_info = "\n".join([f"{await get_rarity_emoji(rarity)} **{rarity}**: {ChickenMultiplier[rarity].value}x" for rarity in ChickenMultiplier.__members__])
         await send_bot_embed(ctx, title="Amount of eggs produced by rarity:", description=value_info)
     
     @commands.hybrid_command(name="chickencorn", usage="chickencorn", description="Show all the chicken food values.")
@@ -109,7 +109,7 @@ class ChickenView(commands.Cog):
         Returns:
             None
         """
-        corn_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {ChickenFood[rarity].value}" for rarity in ChickenFood.__members__])
+        corn_info = "\n".join([f"{await get_rarity_emoji(rarity)} **{rarity}**: {ChickenFood[rarity].value}" for rarity in ChickenFood.__members__])
         await send_bot_embed(ctx, title="Chicken food values:", description=corn_info)
     
     @commands.hybrid_command(name="chickenprices", aliases=["cprice"], usage="chickenPrices", description="Check the prices of the chickens.")
@@ -125,7 +125,7 @@ class ChickenView(commands.Cog):
         Returns:
             None
         """
-        prices_info = "\n".join([f"{get_rarity_emoji(rarity)} **{rarity}**: {175 * ChickenRarity[rarity].value} eggbux" for rarity in ChickenRarity.__members__])
+        prices_info = "\n".join([f"{await get_rarity_emoji(rarity)} **{rarity}**: {175 * ChickenRarity[rarity].value} eggbux" for rarity in ChickenRarity.__members__])
         await send_bot_embed(ctx, title="Chicken prices:", description=prices_info)
 
     @commands.hybrid_command(name="battleinfo", aliases=["binfo"], brief="Shows your current rank.", description="Shows your current rank.", usage="rank")
@@ -361,9 +361,12 @@ class ChickenView(commands.Cog):
             return
         
         redeemables_info = "\n".join(
-            [f"**{index + 1}.** {get_rarity_emoji(redeemable['rarity'])} **{redeemable['rarity']}** **{redeemable['name']}**" 
+            [f"**{index + 1}.** {await get_rarity_emoji(redeemable['rarity'])} **{redeemable['rarity']}** **{redeemable['name']}**" 
             for index, redeemable in enumerate(redeemables)]
         )
+
+        view_options = await chicken_options_initializer(redeemables, ctx.data)
+
         msg = await make_embed_object(
             title=f":gift: {ctx.author.display_name}'s redeemable items:", 
             description=redeemables_info
@@ -375,7 +378,8 @@ class ChickenView(commands.Cog):
             action="R", 
             embed_text=msg, 
             author_cached_data=ctx.data, 
-            has_cancel_button=False
+            has_cancel_button=False,
+            selection_options=view_options
         )
         await ctx.send(embed=msg, view=view)
         

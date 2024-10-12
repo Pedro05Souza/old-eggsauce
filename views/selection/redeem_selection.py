@@ -9,19 +9,11 @@ __all__ = ["RedeemPlayerMenu"]
 
 class RedeemPlayerMenu(ui.Select):
 
-    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, author_cached_data: dict):
+    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, author_cached_data: dict, options: list = None):
         self.chickens = chickens
         self.author = author
         self.message = message
         self.farm_data = author_cached_data
-        options = [
-            SelectOption(
-                label=f"{chicken['rarity']} {chicken['name']}", 
-                value=str(index), 
-                emoji=get_rarity_emoji(chicken['rarity'])
-                )
-            for index, chicken in enumerate(chickens)
-        ]
         super().__init__(min_values=1, max_values=len(chickens), options=options, placeholder="Select the chickens to redeem:")
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -41,13 +33,13 @@ class RedeemPlayerMenu(ui.Select):
         chickens_selected = [self.chickens[int(index)] for index in self.values]
         chickens_sucessfully_redeemed = []
         
-        if len(chickens_selected) >= get_max_chicken_limit(self.farm_data):
+        if len(chickens_selected) >= await get_max_chicken_limit(self.farm_data):
             await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem more chickens than the farm size.", ephemeral=True)
             return
         
         for chicken in chickens_selected:
 
-            if len(self.farm_data['chickens']) >= get_max_chicken_limit(self.farm_data):
+            if len(self.farm_data['chickens']) >= await get_max_chicken_limit(self.farm_data):
 
                 if len(self.farm_data['bench']) >= MAX_BENCH:
                     await send_bot_embed(interaction, description=":no_entry_sign: You can't redeem more chickens than the farm size.", ephemeral=True)
@@ -60,6 +52,6 @@ class RedeemPlayerMenu(ui.Select):
 
         await asyncio.sleep(1)
         await interaction.delete_original_response()
-        msg = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have redeemed the chickens: **{', '.join([get_rarity_emoji(chicken['rarity']) + ' ' + chicken['rarity'] + ' ' + chicken['name'] for chicken in chickens_sucessfully_redeemed])}**.")
+        msg = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have redeemed the chickens: **{', '.join([await get_rarity_emoji(chicken['rarity']) + ' ' + chicken['rarity'] + ' ' + chicken['name'] for chicken in chickens_sucessfully_redeemed])}**.")
         await interaction.followup.send(embed=msg)
         

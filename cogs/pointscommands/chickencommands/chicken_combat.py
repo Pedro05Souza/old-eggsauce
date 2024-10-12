@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from tools import pricing
 from lib import make_embed_object, send_bot_embed, user_cache_retriever, confirmation_embed
 from lib.chickenlib import (
-    get_rarity_emoji, determine_upkeep_rarity_text, rarities_weight, upkeep_weight, determine_upkeep_rarity_text,
+    get_rarity_emoji, rarities_weight, upkeep_weight, determine_upkeep_rarity_text,
     define_chicken_overrall_score, rank_determiner, define_chicken_overrall_score, EventData, chicken_ranking,
     create_chicken, get_max_chicken_limit, score_determiner
 )
@@ -199,8 +199,8 @@ class ChickenCombat(commands.Cog):
         opponent_deck = opponent.chickens
         author_deck = user.chickens
         both_deck = await make_embed_object(title=":crossed_swords: Battle decks:")
-        both_deck.add_field(name=f"{user.member.name}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in author_deck]), inline=False)
-        both_deck.add_field(name=f"{await self.check_user_name(opponent)}'s deck:", value= f"\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in opponent_deck]), inline=False)
+        both_deck.add_field(name=f"{user.member.name}'s deck:", value= f"\n".join([f"**{await get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in author_deck]), inline=False)
+        both_deck.add_field(name=f"{await self.check_user_name(opponent)}'s deck:", value= f"\n".join([f"**{await get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in opponent_deck]), inline=False)
         await self.check_if_same_guild_edit(user, opponent, user_msg, author_msg, both_deck)
     
     async def search(self, current_user: UserInQueue) -> Union[UserInQueue, BotMatchMaking, str]:
@@ -261,9 +261,9 @@ class ChickenCombat(commands.Cog):
         bench_chickens_user = []
         matchups = []
         matchups, bench_chickens_author, bench_chickens_user = await self.define_bench_chickens(author_chickens, user_chickens, matchups, bench_chickens_author, bench_chickens_user)
-        print_matchups = [f"**{author.member.name}'s {get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']}** vs **{await self.check_user_name(user)}'s {get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']}**" for match in matchups]
-        bench_chickens_author_formatted = "\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in bench_chickens_author] if bench_chickens_author else ["No bench chickens."])
-        bench_chickens_user_formatted = "\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in bench_chickens_user] if bench_chickens_user else ["No bench chickens."])
+        print_matchups = [f"**{author.member.name}'s {await get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']}** vs **{await self.check_user_name(user)}'s {await (match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']}**" for match in matchups]
+        bench_chickens_author_formatted = "\n".join([f"**{await get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in bench_chickens_author] if bench_chickens_author else ["No bench chickens."])
+        bench_chickens_user_formatted = "\n".join([f"**{await get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in bench_chickens_user] if bench_chickens_user else ["No bench chickens."])
         matchups_description = "\n".join(print_matchups)
         embed_per_round = await make_embed_object(
             title="🔥 The matchups have been defined.",
@@ -339,10 +339,10 @@ class ChickenCombat(commands.Cog):
         loser = author if winner == user else user
 
         if dead_chickens_author:
-            embed_per_round.add_field(name=f"{author.member.name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_author]), inline=False)
+            embed_per_round.add_field(name=f"{author.member.name}'s Dead Chickens:", value="\n".join([f"**{await get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_author]), inline=False)
 
         if dead_chickens_user:
-            embed_per_round.add_field(name=f"{user_name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_user]), inline=False)
+            embed_per_round.add_field(name=f"{user_name}'s Dead Chickens:", value="\n".join([f"**{await get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_user]), inline=False)
 
         await self.check_if_same_guild_edit(author, user, user_msg, author_msg, embed_per_round)
         await asyncio.sleep(await self.dynamic_match_cooldown(author.chickens, user.chickens))
@@ -372,10 +372,10 @@ class ChickenCombat(commands.Cog):
         """
         if accumulator == total_matches:
             if dead_chickens_author:
-                embed_per_round.add_field(name=f"{author.member.name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_author]), inline=False)
+                embed_per_round.add_field(name=f"{author.member.name}'s Dead Chickens:", value="\n".join([f"**{await get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_author]), inline=False)
 
             if dead_chickens_user:
-                embed_per_round.add_field(name=f"{user_name}'s Dead Chickens:", value="\n".join([f"**{get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_user]), inline=False)
+                embed_per_round.add_field(name=f"{user_name}'s Dead Chickens:", value="\n".join([f"**{await get_rarity_emoji(chicken['rarity'])}{chicken['rarity']} {chicken['name']}**" for chicken in dead_chickens_user]), inline=False)
 
             await self.check_if_same_guild_edit(author, user, user_msg, author_msg, embed_per_round)
             embed_per_round.clear_fields()
@@ -408,12 +408,12 @@ class ChickenCombat(commands.Cog):
             None
         """
         if random_number < win_rate_for_author:
-            embed_per_round.add_field(name=f"Battle:", value=f"🎉 {author.member.name}'s **{get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']} ({round(win_rate_for_author * 100)}%)** has won against {user_name}'s **{get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']} ({round(win_rate_for_user * 100)}%)**\n", inline=False)
+            embed_per_round.add_field(name=f"Battle:", value=f"🎉 {author.member.name}'s **{await get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']} ({round(win_rate_for_author * 100)}%)** has won against {user_name}'s **{await get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']} ({round(win_rate_for_user * 100)}%)**\n", inline=False)
             if match[1] in user.chickens:
                 user.chickens.remove(match[1])
                 dead_chickens_user.append(match[1])
         else:
-            embed_per_round.add_field(name=f"Battle:", value=f"🎉 {user_name}'s **{get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']} ({round(win_rate_for_user * 100)}%)** has won against {author.member.name}'s **{get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']} ({round(win_rate_for_author * 100)}%)**\n", inline=False) 
+            embed_per_round.add_field(name=f"Battle:", value=f"🎉 {user_name}'s **{await get_rarity_emoji(match[1]['rarity'])}{match[1]['rarity']} {match[1]['name']} ({round(win_rate_for_user * 100)}%)** has won against {author.member.name}'s **{await get_rarity_emoji(match[0]['rarity'])}{match[0]['rarity']} {match[0]['name']} ({round(win_rate_for_author * 100)}%)**\n", inline=False) 
             if match[0] in author.chickens:
                 author.chickens.remove(match[0])
                 dead_chickens_author.append(match[0])
@@ -433,8 +433,10 @@ class ChickenCombat(commands.Cog):
         win_rate_for_user = 0.5
         rarity_chicken_author_position = list(rarities_weight.keys()).index(chicken1['rarity'])
         rarity_chicken_user_position = list(rarities_weight.keys()).index(chicken2['rarity'])
-        upkeep_chicken_author_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity_text(chicken1['upkeep_multiplier']))
-        upkeep_chicken_user_position = list(upkeep_weight.keys()).index(determine_upkeep_rarity_text(chicken2['upkeep_multiplier']))
+
+        upkeep_chicken_author_position = list(upkeep_weight.keys()).index(await determine_upkeep_rarity_text(chicken1['upkeep_multiplier']))
+        upkeep_chicken_user_position = list(upkeep_weight.keys()).index(await determine_upkeep_rarity_text(chicken2['upkeep_multiplier']))
+
         happy_chicken_author = chicken1['happiness']
         happy_chicken_user = chicken2['happiness']
 
@@ -696,8 +698,10 @@ class ChickenCombat(commands.Cog):
         """
         before_rank = await rank_determiner(before_mmr)
         after_rank = await rank_determiner(after_mmr)
+
         if before_rank != after_rank:
-            await send_bot_embed(ctx, description=f"🎉 **{await self.check_user_name(winner)}** has been promoted to **{after_rank}**.")    
+            await send_bot_embed(ctx, description=f"🎉 **{await self.check_user_name(winner)}** has been promoted to **{after_rank}**.")
+
         if not await self.check_if_user_is_bot(winner):
             if after_mmr > highest_mmr:
                 await self.rank_rewards(ctx, after_mmr, highest_mmr, winner)
@@ -743,19 +747,19 @@ class ChickenCombat(commands.Cog):
             msg = await make_embed_object(title=f"🎉 {winner.member.name}'s rank rewards", description=f"You've managed to upgrade your rank, here are the following rewards:\n\n :money_with_wings: **{points_gained}** eggbux.")
             await User.update_points(winner.member.id, user_data['points'] + points_gained)
             
-            if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data) and len(farm_data['bench'] )>= MAX_BENCH:
-                msg.description += f"\n\n:warning: You've reached the maximum amount of chickens in your farm. The **{get_rarity_emoji(chicken_rewarded['rarity'])}** **{chicken_rewarded['rarity']}** **{chicken_rewarded['name']}** has been added to the reedemable rewards. Type **redeemables** to claim it."
+            if len(farm_data['chickens']) >= await get_max_chicken_limit(farm_data) and len(farm_data['bench'] )>= MAX_BENCH:
+                msg.description += f"\n\n:warning: You've reached the maximum amount of chickens in your farm. The **{await get_rarity_emoji(chicken_rewarded['rarity'])}** **{chicken_rewarded['rarity']}** **{chicken_rewarded['name']}** has been added to the reedemable rewards. Type **redeemables** to claim it."
                 farm_data['redeemables'].append(chicken_rewarded)
                 await Farm.update(winner.member.id, redeemables=farm_data['redeemables'])
 
-            elif len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
-                msg.description += f"\n\n:warning: You've reached the maximum amount of chickens in your farm. The **{get_rarity_emoji(chicken_rewarded['rarity'])}** **{chicken_rewarded['rarity']}** **{chicken_rewarded['name']}** has been added to the bench."
+            elif len(farm_data['chickens']) >= await get_max_chicken_limit(farm_data):
+                msg.description += f"\n\n:warning: You've reached the maximum amount of chickens in your farm. The **{await get_rarity_emoji(chicken_rewarded['rarity'])}** **{chicken_rewarded['rarity']}** **{chicken_rewarded['name']}** has been added to the bench."
                 farm_data['bench'].append(chicken_rewarded)
                 await Farm.update(winner.member.id, bench=farm_data['bench'])
 
             else:
                 farm_data['chickens'].append(chicken_rewarded)
-                msg.description += f"\n\n:chicken: **{get_rarity_emoji(chicken_rewarded['rarity'])}** **{chicken_rewarded['rarity']}** **{chicken_rewarded['name']}** has been added to your farm."
+                msg.description += f"\n\n:chicken: **{await get_rarity_emoji(chicken_rewarded['rarity'])}** **{chicken_rewarded['rarity']}** **{chicken_rewarded['name']}** has been added to your farm."
                 await Farm.update(winner.member.id, chickens=farm_data['chickens'])
                 
             await ctx.send(embed=msg)
@@ -776,6 +780,7 @@ class ChickenCombat(commands.Cog):
         rank_dictionary = zip(rank_list[1:], chicken_list[9:])
         rank_dictionary = dict(rank_dictionary)
         points_gained = rank * 6
+
         for key in rank_list:
             if rank == key:
                 return rank_dictionary[key], points_gained
@@ -857,6 +862,7 @@ class ChickenCombat(commands.Cog):
         """
         combat_list = []
         iterations = 0
+        
         for chicken in chickens:
             if chicken['rarity'] != "DEAD":
                 combat_list.append(chicken)

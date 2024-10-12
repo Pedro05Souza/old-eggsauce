@@ -1,8 +1,8 @@
-from discord import SelectOption, ui
+from discord import ui
 from db import Farm, User
 from tools import on_awaitable
 from lib.chickenlib import get_chicken_price, get_rarity_emoji, check_if_author
-from lib import make_embed_object, confirmation_embed, user_cache_retriever_copy
+from lib import make_embed_object, confirmation_embed
 import asyncio
 import discord
 
@@ -10,16 +10,7 @@ __all__ = ["ChickenDeleteMenu"]
 
 class ChickenDeleteMenu(ui.Select):
 
-    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, author_cached_data: dict):
-        options = [
-            SelectOption(
-                label=chicken['name'], 
-                description=f"{chicken['rarity']} {get_chicken_price(chicken)}", 
-                value=str(index), 
-                emoji=get_rarity_emoji(chicken['rarity'])
-                )
-            for index, chicken in enumerate(chickens) if chicken['rarity'] != "DEAD" or chicken['rarity'] != "ETHEREAL"
-        ]
+    def __init__(self, chickens: list, author: discord.Member, message: discord.Embed, author_cached_data: dict, options: list = None):
         self.chickens = chickens
         self.author = author
         self.message = message
@@ -80,7 +71,7 @@ class ChickenDeleteMenu(ui.Select):
         user_data = data["user_data"]
         await Farm.update(interaction.user.id, chickens=farm_data['chickens'])
         await User.update_points(interaction.user.id, user_data['points'] + refund_price)
-        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chickens: \n\n" + "\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_selected]) + f"\n\nYou have been refunded {refund_price} eggbux.")
+        embed = await make_embed_object(description=f":white_check_mark: {interaction.user.display_name} have deleted the chickens: \n\n" + "\n".join([f"{await get_rarity_emoji(chicken['rarity'])} **{chicken['rarity']} {chicken['name']}**" for chicken in chickens_selected]) + f"\n\nYou have been refunded {refund_price} eggbux.")
         await interaction.followup.send(embed=embed)
         await on_awaitable(interaction.user.id)
         await asyncio.sleep(2.5)
@@ -96,7 +87,7 @@ class ChickenDeleteMenu(ui.Select):
         Returns:
             int
         """
-        price_sum = sum([get_chicken_price(chicken, self.farm_data['farmer']) for chicken in chickens_selected])
+        price_sum = sum([await get_chicken_price(chicken, self.farm_data['farmer']) for chicken in chickens_selected])
 
         if self.farm_data['farmer'] == 'Guardian Farmer':
             return price_sum

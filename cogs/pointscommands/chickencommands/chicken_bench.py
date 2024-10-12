@@ -72,7 +72,7 @@ class ChickenBench(commands.Cog):
             farm_data['bench'].append(farm_data['chickens'][index])
             farm_data['chickens'].pop(index)
             await Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
-            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, **{get_rarity_emoji(farm_data['bench'][-1]['rarity'])}{farm_data['bench'][-1]['rarity']} {farm_data['bench'][-1]['name']}** has been added to the bench.")
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, **{await get_rarity_emoji(farm_data['bench'][-1]['rarity'])}{farm_data['bench'][-1]['rarity']} {farm_data['bench'][-1]['name']}** has been added to the bench.")
  
     @commands.hybrid_command(name="removebench", aliases=["rb"], usage="removebench <index>", description="Remove a chicken from the bench to the farm.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)
@@ -95,7 +95,7 @@ class ChickenBench(commands.Cog):
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, the chicken index is invalid.")
             return
         
-        if len(farm_data['chickens']) >= get_max_chicken_limit(farm_data):
+        if len(farm_data['chickens']) >= await get_max_chicken_limit(farm_data):
             await send_bot_embed(ctx,description= f":no_entry_sign: {ctx.author.display_name}, you have reached the maximum chicken limit.")
             return
         
@@ -106,7 +106,7 @@ class ChickenBench(commands.Cog):
             farm_data['chickens'].append(farm_data['bench'][index])
             farm_data['bench'].pop(index)
             await Farm.update(ctx.author.id, bench=farm_data['bench'], chickens=farm_data['chickens'])
-            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the **{get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']}** has been removed from the bench.")
+            await send_bot_embed(ctx,description= f":white_check_mark: {ctx.author.display_name}, the **{await get_rarity_emoji(farm_data['chickens'][-1]['rarity'])}{farm_data['chickens'][-1]['rarity']} {farm_data['chickens'][-1]['name']}** has been removed from the bench.")
             
     @commands.hybrid_command(name="switchbench", aliases=["sb"], usage="switchb <index_farm> <index_bench>", description="Switch a chicken from the farm to the bench.")
     @commands.cooldown(1, REGULAR_COOLDOWN, commands.BucketType.user)

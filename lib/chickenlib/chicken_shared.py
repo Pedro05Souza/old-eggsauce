@@ -50,7 +50,7 @@ async def get_chicken_egg_value(chicken: dict) -> int:
     """
     return ChickenMultiplier[chicken['rarity']].value
 
-def get_chicken_price(chicken: dict, farmer: str = None) -> int:
+async def get_chicken_price(chicken: dict, farmer: str = None) -> int:
     """
     Gets the chicken price.
 
@@ -63,7 +63,7 @@ def get_chicken_price(chicken: dict, farmer: str = None) -> int:
     """	
     if farmer:  
         if farmer == 'Executive Farmer':
-            farmer_upgrades = load_farmer_upgrades(farmer)
+            farmer_upgrades = await load_farmer_upgrades(farmer)
             discount_value = farmer_upgrades[1]
             default_discount = CHICKEN_DEFAULT_VALUE * (discount_value / 100)
             default_discount = int(default_discount)
@@ -72,7 +72,7 @@ def get_chicken_price(chicken: dict, farmer: str = None) -> int:
         
     return ChickenRarity[chicken['rarity']].value * CHICKEN_DEFAULT_VALUE
 
-def load_farmer_upgrades(farmer) -> Union[list, int]:
+async def load_farmer_upgrades(farmer) -> Union[list, int]:
     """
     Loads the farmer upgrades
 
@@ -92,7 +92,7 @@ def load_farmer_upgrades(farmer) -> Union[list, int]:
     }
     return farmer_dict[farmer]
         
-def get_rarity_emoji(rarity) -> str:
+async def get_rarity_emoji(rarity) -> str:
     """
     Gets the rarity emoji for the chicken.
 
@@ -104,7 +104,7 @@ def get_rarity_emoji(rarity) -> str:
     """
     return defineRarityEmojis[rarity]
         
-def determine_upkeep_rarity_text(upkeep_multiplier: float) -> str:
+async def determine_upkeep_rarity_text(upkeep_multiplier: float) -> str:
         """
         Determines the text that will be displayed for the upkeep rarity.
 
@@ -119,7 +119,7 @@ def determine_upkeep_rarity_text(upkeep_multiplier: float) -> str:
             if chicken_upkeep >= value:
                 return rarity
                  
-def get_max_chicken_limit(farm_data: dict) -> int:
+async def get_max_chicken_limit(farm_data: dict) -> int:
         """
         Gets the maximum chicken limit that can be stored in the farm.
 
@@ -130,7 +130,7 @@ def get_max_chicken_limit(farm_data: dict) -> int:
             int
         """
         if farm_data['farmer'] == 'Warrior Farmer':
-            return DEFAULT_FARM_SIZE + load_farmer_upgrades('Warrior Farmer')
+            return DEFAULT_FARM_SIZE + await load_farmer_upgrades('Warrior Farmer')
         else:
             return DEFAULT_FARM_SIZE
 
@@ -156,7 +156,7 @@ async def get_user_bench(ctx: Context, farm_data: dict, user: discord.Member) ->
         discord.Embed
     """
     bench = farm_data['bench']
-    await send_bot_embed(ctx, title=f":chair: {user.display_name}'s bench:", description="\n\n".join([f"{get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {determine_upkeep_rarity_text(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
+    await send_bot_embed(ctx, title=f":chair: {user.display_name}'s bench:", description="\n\n".join([f"{await get_rarity_emoji(chicken['rarity'])} **{index + 1}**. **{chicken['rarity']} {chicken['name']}\n :gem: Upkeep rarity: {await determine_upkeep_rarity_text(chicken['upkeep_multiplier'])} **" for index, chicken in enumerate(bench)])) if bench else await send_bot_embed(ctx, description="You have no chickens in your bench.")
 
 async def rank_determiner(mmr: int) -> str:
     """
@@ -199,7 +199,7 @@ async def create_chicken(rarity: str, author: str) -> Union[dict, None]:
         else:
             chicken["happiness"] = randint(60, 100)
         
-        if rarity == "ETHEREAL":
+        if await is_perfect_chicken(rarity):
             chicken['upkeep_multiplier'] = 0
         else:
             chicken['upkeep_multiplier'] = await determine_chicken_upkeep(chicken)
@@ -230,7 +230,7 @@ async def define_chicken_overrall_score(chickens: list) -> int:
 
         for chicken in chickens:
             chicken_overrall_score += rarities_weight[chicken['rarity']]
-            chicken_overrall_score += upkeep_weight[determine_upkeep_rarity_text(chicken['upkeep_multiplier'])]
+            chicken_overrall_score += upkeep_weight[await determine_upkeep_rarity_text(chicken['upkeep_multiplier'])]
         chicken_overrall_score -= farm_size_weights[len(chickens)]
         if chicken_overrall_score < 0:
             chicken_overrall_score = 0
@@ -292,10 +292,10 @@ async def quick_sell_chicken(ctx: Context, farm_data: dict, debt: int) -> int:
     """
     random_chicken = choice(farm_data['chickens'])
     farm_data['chickens'].remove(random_chicken)
-    money_earned = get_chicken_price(random_chicken)
+    money_earned = await get_chicken_price(random_chicken)
     money_earned -= debt
     money_earned = max(0, money_earned)
-    description =f":exclamation: Your {get_rarity_emoji(random_chicken['rarity'])} **{random_chicken['rarity']} {random_chicken['name']}** has been sold to pay the **{debt}** debt."
+    description =f":exclamation: Your {await get_rarity_emoji(random_chicken['rarity'])} **{random_chicken['rarity']} {random_chicken['name']}** has been sold to pay the **{debt}** debt."
     if money_earned > 0:
         description += f"\n:moneybag: You have earned **{money_earned}**."
     await send_bot_embed(ctx, description=description)
@@ -447,6 +447,27 @@ async def farm_maintence_tax(farm_data: Context, hours_passed=None) -> int:
     total_tax *= hours_passed
 
     if farm_data['farmer'] == 'Guardian Farmer':
-        total_tax = total_tax - (total_tax * load_farmer_upgrades('Guardian Farmer') / 100)
+        total_tax = total_tax - (total_tax * await load_farmer_upgrades('Guardian Farmer') / 100)
 
-    return int(total_tax) 
+    return int(total_tax)
+
+async def is_perfect_chicken(chicken_rarity: str) -> bool:
+    """
+    Checks if the chicken will have a 0% upkeep when created
+
+    Args:
+        chicken_rarity (str): The chicken rarity to check.
+
+    Returns:
+        bool
+    """ 
+    return chicken_rarity in perfected_chickens
+
+async def get_perfect_chickens() -> set:
+    """
+    Gets the perfect chickens.
+
+    Returns:
+        set
+    """
+    return perfected_chickens

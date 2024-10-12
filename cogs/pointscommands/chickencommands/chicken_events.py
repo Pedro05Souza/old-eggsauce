@@ -3,7 +3,7 @@ This module handles events between users and their chickens.
 """
 from discord.ext import commands
 from db import Farm, User
-from views.selection import ChickenSelectView
+from views.selection import ChickenSelectView, chicken_options_initializer
 from lib.chickenlib import (
     get_usr_farm, get_rarity_emoji, create_chicken, determine_chicken_upkeep, get_max_chicken_limit,
     is_non_evolvable_chicken, EventData, ChickenRarity, load_farmer_upgrades
@@ -48,7 +48,8 @@ class ChickenEvents(commands.Cog):
         message = await get_usr_farm(ctx, ctx.author, ctx.data)
               
         async with EventData.manage_event_context(ctx.author, awaitable=True):
-            view = ChickenSelectView(embed_text=message, chickens=farm_data['chickens'], author=ctx.author, action="D", author_cached_data=ctx.data)
+            view_options = await chicken_options_initializer(farm_data['chickens'], ctx.data, prohibited_rarities=["DEAD"])
+            view = ChickenSelectView(embed_text=message, chickens=farm_data['chickens'], author=ctx.author, action="D", author_cached_data=ctx.data, selection_options=view_options)
             await ctx.send(embed=message, view=view)
                 
     @commands.hybrid_command(name="evolvechicken", aliases=["ec", "fuse"], usage="evolveChicken <index> <index2>", description="Evolve a chicken if having 2 of the same rarity.")
@@ -95,7 +96,7 @@ class ChickenEvents(commands.Cog):
         if not await EventData.is_yieldable(ctx, ctx.author):
             return
         
-        confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to evolve your **{get_rarity_emoji(chicken_selected['rarity'])}{chicken_selected['rarity']} {chicken_selected['name']}** to a higher rarity?")
+        confirmation = await confirmation_embed(ctx, ctx.author, f"{ctx.author.display_name}, are you sure you want to evolve your **{await get_rarity_emoji(chicken_selected['rarity'])}{chicken_selected['rarity']} {chicken_selected['name']}** to a higher rarity?")
 
         if confirmation:
             async with EventData.manage_event_context(ctx.author):
@@ -143,7 +144,7 @@ class ChickenEvents(commands.Cog):
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to produce at least {eggs_needed} eggs in order to purchase a farmer role.")
                     return
                 
-                farm_size = get_max_chicken_limit(farm_data)
+                farm_size = await get_max_chicken_limit(farm_data)
 
                 if len(farm_data['chickens']) >= farm_size and len(farm_data['chickens']) > 8:
                     await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name} you have a Warrior farmer, you need to sell the extra farm slots to buy another farmer.")
@@ -167,12 +168,12 @@ class ChickenEvents(commands.Cog):
             str
         """
         description = [
-            f":moneybag: Rich Farmer: Increase the egg value of the chickens by **{load_farmer_upgrades('Rich Farmer')[0]}%** and increases the hourly corn production by **{load_farmer_upgrades('Rich Farmer')[1]}%**\n",
+            f":moneybag: Rich Farmer: Increase the egg value of the chickens by **{await load_farmer_upgrades('Rich Farmer')[0]}%** and increases the hourly corn production by **{await load_farmer_upgrades('Rich Farmer')[1]}%**\n",
             f":shield: Guardian Farmer: Whenever you sell a chicken, sell it for the full price and reduces farm taxes by **{load_farmer_upgrades('Guardian Farmer')}%**.\n",
-            f":briefcase: Executive Farmer: Gives you **{load_farmer_upgrades('Executive Farmer')[0]}** more daily rolls in the market and chickens generated in the market comes with **{load_farmer_upgrades('Executive Farmer')[1]}%** discount. \n",
-            f":crossed_swords: Warrior Farmer: Gives **{load_farmer_upgrades('Warrior Farmer')}** more farm slots.\n",
-            f":leaves: Sustainable Farmer: Auto-feeds the chickens every **{load_farmer_upgrades('Sustainable Farmer')[0] // 3600}** hours, the happiness generated is a number between **{load_farmer_upgrades('Sustainable Farmer')[1][0]}-{load_farmer_upgrades('Sustainable Farmer')[1][1]}%**. The farmer uses the money from your bank account.\n",
-            f":tickets: Generous Farmer: Increases the maximum chickens generated in the market by **{load_farmer_upgrades('Generous Farmer')[0]}** slots.\n"
+            f":briefcase: Executive Farmer: Gives you **{await load_farmer_upgrades('Executive Farmer')[0]}** more daily rolls in the market and chickens generated in the market comes with **{await load_farmer_upgrades('Executive Farmer')[1]}%** discount. \n",
+            f":crossed_swords: Warrior Farmer: Gives **{await load_farmer_upgrades('Warrior Farmer')}** more farm slots.\n",
+            f":leaves: Sustainable Farmer: Auto-feeds the chickens every **{await load_farmer_upgrades('Sustainable Farmer')[0] // 3600}** hours, the happiness generated is a number between **{await load_farmer_upgrades('Sustainable Farmer')[1][0]}-{await load_farmer_upgrades('Sustainable Farmer')[1][1]}%**. The farmer uses the money from your bank account.\n",
+            f":tickets: Generous Farmer: Increases the maximum chickens generated in the market by **{await load_farmer_upgrades('Generous Farmer')[0]}** slots.\n"
             f"\n\nAll the farmer roles have a cost of **{FARMER_PRICE}** eggbux and you can only buy one of them. Buying a farmer when you already have one will override the existing one. You need at least **{eggs_needed}** total eggs produced by your farm in order to buy them.\nReact with the corresponding emoji to purchase the role."
         ]
         return description
@@ -243,7 +244,7 @@ class ChickenEvents(commands.Cog):
         extra_ascended_chickens = []
 
         if len(ascended_chickens) < 8:
-            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to have ** {8 - len(ascended_chickens)} more {get_rarity_emoji('ASCENDED')} ASCENDED chickens** in order to transcend them.")
+            await send_bot_embed(ctx, description=f":no_entry_sign: {ctx.author.display_name}, you need to have ** {8 - len(ascended_chickens)} more {await get_rarity_emoji('ASCENDED')} ASCENDED chickens** in order to transcend them.")
             return
         
         elif len(ascended_chickens) > 8:
@@ -260,7 +261,7 @@ class ChickenEvents(commands.Cog):
                 farm_data['chickens'].extend(extra_ascended_chickens)
                 farm_data['chickens'].append(transcended_chicken)
                 await Farm.update(ctx.author.id, chickens=farm_data['chickens'])
-                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have transcended your chickens to an **{get_rarity_emoji('ETHEREAL')} ETHEREAL Chicken.**")
+                await send_bot_embed(ctx, description=f":white_check_mark: {ctx.author.display_name}, you have transcended your chickens to an **{await get_rarity_emoji('ETHEREAL')} ETHEREAL Chicken.**")
         
     async def verify_player_has_sustainable(self, farm_data: dict) -> bool:
         """

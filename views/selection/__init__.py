@@ -7,6 +7,7 @@ Modules included:
 * playermarketselection: Contains functions for selecting chickens to put on the market.
 * redeemselection: Contains functions for selecting chickens to redeem.
 * tradeselection: Contains functions for selecting chickens to trade.
+* viewslib: Contains general functions for the selection views.
 """
 
 from .chicken_selection import *
@@ -14,3 +15,4 @@ from .delete_selection import *
 from .player_market_selection import *
 from .redeem_selection import *
 from .trade_selection import *
+from .viewslib import *

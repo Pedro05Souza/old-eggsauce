@@ -14,6 +14,9 @@ This module represents the information of the chickens in the game. It contains 
 - non_trandable_chickens: The chickens that are not tradable.
 - non_evolveable_chickens: The chickens that are not evolveable.
 - non_marketplace_chickens: The chickens that are not in the marketplace.
+- non_devolvable_chickens: The chickens that are not devolvable.
+- chicken_rarities: The text that is defined based on the upkeep of the chicken.
+- perfected_chickens: The chickens that are always created with 0% upkeep.
 """
 from enum import Enum
 
@@ -32,7 +35,8 @@ __all__ = [
     "non_evolveable_chickens",
     "non_marketplace_chickens",
     "non_devolvable_chickens",
-    "chicken_rarities"
+    "chicken_rarities",
+    "perfected_chickens"
 ]
 
 rollRates = {
@@ -247,4 +251,9 @@ non_devolvable_chickens = {
     "ETHEREAL",
     "DEAD",
     "BETA"
+}
+
+perfected_chickens = {
+    "ETHEREAL",
+    "BETA",
 }
