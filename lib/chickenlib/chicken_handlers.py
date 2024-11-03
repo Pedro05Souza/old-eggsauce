@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from discord.ext.commands import Context
 from tools.shared_state import get_shared_event
 from lib.core_utils import send_bot_embed
+from logs import log_error
 import asyncio
 import discord
 
@@ -56,8 +57,7 @@ class RollLimit:
         try:
             cls.obj_list.pop(user_id)
         except Exception as e:
-            #logger.error("Error removing object from list.", e)
-            pass
+            log_error("Error removing user from roll limit object list.", e)
     
     @classmethod
     def update(cls, user_id: int, current: int) -> None:

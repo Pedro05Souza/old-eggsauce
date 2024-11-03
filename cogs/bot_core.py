@@ -79,7 +79,10 @@ class BotCore(commands.Cog):
         Returns:
             None
         """
-        embed = await make_embed_object(title=":wave: Thanks for inviting me!", description="I'm a bot with multiple commands and customizations options. Type **!help** for a documentation link for a more detailed description. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Type **!setPrefix** to select the prefix of the bot. My default prefix is **!**.\n5. Have fun! :tada:")
+        embed = await make_embed_object(
+            title=":wave: Thanks for inviting me!", 
+            description=
+            "I'm a bot with multiple commands and customizations options. Type **!help** for a documentation link for a more detailed description. \nTo configure me in your server, you have to follow these steps:\n1. Type **!setChannel** in the channel where you want me to listen for commands.\n2. Type **!modules** to visualize the modules available. \n3. Type **!setmodule** to select a module you desire.\n4. Type **!setPrefix** to select the prefix of the bot. My default prefix is **!**.\n5. Have fun! :tada:")
         owner = target.owner
         if owner:
             try:
@@ -196,14 +199,20 @@ class BotCore(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: Context, error: Exception) -> None:
         config_data = await guild_cache_retriever(ctx.guild.id)
+
         if config_data and config_data['toggled_modules'] == "N":
             return
+        
         if isinstance(error, commands.CommandError) and not isinstance(error, commands.CommandNotFound):
             if ctx is not None and ctx.command is not None:
                 if not isinstance(error, (commands.CommandOnCooldown, commands.CheckFailure)):
                     await self.refund_price_command_on_error(ctx)
                     await self.log_and_raise_error(ctx, error)
                     return
+                
+    @commands.Cog.listener()
+    async def on_application_command_error(self, ctx: Context, error: Exception) -> None:
+        await self.log_and_raise_error(ctx, error)
                         
 async def setup(bot):
     await bot.add_cog(BotCore(bot))
