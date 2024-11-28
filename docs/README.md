@@ -16,7 +16,7 @@
 
 # Maintainability
 
-This Discord bot project, named Eggsauce, was initially started by [Pedro Souza](https://github.com/Pedro05Souza) with early contributions from [Alexius Dias](https://github.com/AlexiusMD). Currently, the project is maintained and developed solely by Pedro Souza.
+This Discord bot project, named Eggsauce, was initially started by [Pedro Souza](https://github.com/Pedro05Souza) with early contributions from [Alexius Dias](https://github.com/AlexiusMD). Currently, this version of the project is deprecated and the bot's development will continue privately.
 
 ## Built With
 
